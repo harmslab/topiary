@@ -18,9 +18,9 @@ from Bio.Blast import NCBIXML
 import Bio.Blast.Applications as apps
 from Bio import pairwise2
 
-Entrez.email = "harmsm@gmail.com"
+Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 import re, sys, os, string, random, pickle, io, urllib, http
 import warnings
@@ -282,23 +282,26 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5):
 
     total_download = []
     print("Downloading sequences... ")
-    for i in tqdm(range(0,len(to_download),block_size)):
+    with tqdm(total=len(to_download)) as pbar:
 
-        ids = ",".join(to_download[i:(i+block_size)])
-        tries = 0
-        while tries < num_tries_allowed:
-            out = _do_download(ids)
+        for i in range(0,len(to_download),block_size):
+
+            ids = ",".join(to_download[i:(i+block_size)])
+            tries = 0
+            while tries < num_tries_allowed:
+                out = _do_download(ids)
+                if out is None:
+                    tries += 1
+                    continue
+                else:
+                    break
+
             if out is None:
-                tries += 1
-                continue
-            else:
-                break
+                err = "could not download sequences\n"
+                raise ValueError(err)
 
-        if out is None:
-            err = "could not download sequences\n"
-            raise ValueError(err)
-
-        total_download.append(out)
+            total_download.append(out)
+            pbar.update(len(to_download[i:(i+block_size)]))
 
     print("Done.")
 

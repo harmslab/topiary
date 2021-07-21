@@ -10,10 +10,10 @@ def _to_pretty(row):
     """
 
     try:
-        pretty = f"{row.rev_call}|{row.species}|{row.accession}"
+        pretty = f"{row.paralog}|{row.species}|{row.accession}"
     except AttributeError:
         err = "\n\nrow does not have all required attributes:"
-        err += " (rev_call, species, accession)\n"
+        err += " (paralog, species, accession)\n"
         raise ValueError(err)
 
     return pretty
