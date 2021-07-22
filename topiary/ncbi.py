@@ -3,7 +3,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2021-04-08"
 __description__ = \
 """
-functions interacting with external tools and file types
+functions interacting with ncbi databases and file types.
 """
 
 from . import util

@@ -7,7 +7,7 @@ Core functions of topiary package, mostly for manipulation of pandas data
 frames.
 """
 
-from . import external
+from . import ncbi
 from . import util
 from . import _private
 
@@ -49,7 +49,7 @@ def ncbi_blast_xml_to_df(xml_files,
     for i, xml in enumerate(xml_files):
 
         # Read xml
-        tmp_df = external.read_blast_xml(xml)
+        tmp_df = ncbi.read_blast_xml(xml)
 
         # Go through and
         for j in range(len(tmp_df)):
@@ -60,9 +60,9 @@ def ncbi_blast_xml_to_df(xml_files,
 
             start = tmp_df.loc[j,"subject_start"]
             end = tmp_df.loc[j,"subject_end"]
-            hit_info = external.parse_ncbi_line(title,
-                                                accession=accession,
-                                                aliases=aliases)
+            hit_info = ncbi.parse_ncbi_line(title,
+                                            accession=accession,
+                                            aliases=aliases)
             if hit_info is None:
                 continue
 
@@ -86,7 +86,7 @@ def ncbi_blast_xml_to_df(xml_files,
 
 
     # Download sequences from entrez
-    all_output = external.entrez_download(to_download)
+    all_output = ncbi.entrez_download(to_download)
 
     # Capture sequences from the downloaded data
     captured = []
@@ -168,7 +168,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         b = df.loc[:,"end"].iloc[i]
 
         seq = s[a:b]
-        hit = external.local_blast(seq,db=rev_blast_db,hitlist_size=1)
+        hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=1)
 
         hit_call = None
         try:
@@ -479,7 +479,7 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
                 raise ValueError(err)
 
         # Actually modify data frame
-        new_df.loc[:,load_into_column].loc[index] = seqs[i]
+        new_df.loc[index,load_into_column] = seqs[i]
 
         # Record the sequence was loaded if it's not all junk (like -?X)
         if len([s for s in seqs[i] if s not in list(empty_char)]) > 0:
