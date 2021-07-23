@@ -7,7 +7,7 @@ Core functions of topiary package, mostly for manipulation of pandas data
 frames.
 """
 
-from . import external
+from . import ncbi
 from . import util
 from . import _private
 
@@ -19,7 +19,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio import pairwise2
 
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 import re, sys, os, string, random, pickle, io, urllib, http
 
@@ -49,7 +49,7 @@ def ncbi_blast_xml_to_df(xml_files,
     for i, xml in enumerate(xml_files):
 
         # Read xml
-        tmp_df = external.read_blast_xml(xml)
+        tmp_df = ncbi.read_blast_xml(xml)
 
         # Go through and
         for j in range(len(tmp_df)):
@@ -60,9 +60,9 @@ def ncbi_blast_xml_to_df(xml_files,
 
             start = tmp_df.loc[j,"subject_start"]
             end = tmp_df.loc[j,"subject_end"]
-            hit_info = external.parse_ncbi_line(title,
-                                                accession=accession,
-                                                aliases=aliases)
+            hit_info = ncbi.parse_ncbi_line(title,
+                                            accession=accession,
+                                            aliases=aliases)
             if hit_info is None:
                 continue
 
@@ -86,7 +86,7 @@ def ncbi_blast_xml_to_df(xml_files,
 
 
     # Download sequences from entrez
-    all_output = external.entrez_download(to_download)
+    all_output = ncbi.entrez_download(to_download)
 
     # Capture sequences from the downloaded data
     captured = []
@@ -138,9 +138,9 @@ def ncbi_blast_xml_to_df(xml_files,
 def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
     """
     df: expects df has "sequence", "start", and "end" columns. Will return a
-        copy of the df with "rev_hit" and "rev_call" columns, corresponding
+        copy of the df with "rev_hit" and "paralog" columns, corresponding
         to top hit title and call based on rev_blast_dict. It will also
-        update "keep" to be False for any rev_call = None sequences.
+        update "keep" to be False for any paralog = None sequences.
     call_dict: dictionary with regular expressions as keys and calls as values.
 
                example:
@@ -160,7 +160,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
             patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
 
     rev_hit = []
-    rev_call = []
+    paralog = []
     for i in tqdm(range(len(df))):
 
         s = df.loc[:,"sequence"].iloc[i]
@@ -168,7 +168,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         b = df.loc[:,"end"].iloc[i]
 
         seq = s[a:b]
-        hit = external.local_blast(seq,db=rev_blast_db,hitlist_size=1)
+        hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=1)
 
         hit_call = None
         try:
@@ -181,14 +181,14 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
             hit_def = None
 
         rev_hit.append(hit_def)
-        rev_call.append(hit_call)
+        paralog.append(hit_call)
 
     new_df = df.copy()
     new_df["rev_hit"] = rev_hit
-    new_df["rev_call"] = rev_call
+    new_df["paralog"] = paralog
 
     # Remove sequences that do not reverse blast from consideration
-    mask = np.array([r is None for r in rev_call],dtype=np.bool)
+    mask = np.array([p is None for p in paralog],dtype=np.bool)
     new_df.loc[mask,"keep"] = False
 
     print("Done.")
@@ -479,7 +479,7 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
                 raise ValueError(err)
 
         # Actually modify data frame
-        new_df.loc[:,load_into_column].loc[index] = seqs[i]
+        new_df.loc[index,load_into_column] = seqs[i]
 
         # Record the sequence was loaded if it's not all junk (like -?X)
         if len([s for s in seqs[i] if s not in list(empty_char)]) > 0:
