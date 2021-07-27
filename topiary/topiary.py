@@ -159,13 +159,17 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         for k in call_dict:
             patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
 
-    rev_hit = []
-    paralog = []
+    results = []
     for i in tqdm(range(len(df))):
 
-        s = df.loc[:,"sequence"].iloc[i]
-        a = df.loc[:,"start"].iloc[i]
-        b = df.loc[:,"end"].iloc[i]
+        #### ------------
+
+        i_start = i
+        index = df.index[i]
+
+        s = df.loc[index,"sequence"]
+        a = df.loc[index,"start"]
+        b = df.loc[index,"end"]
 
         seq = s[a:b]
         hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=1)
@@ -180,8 +184,14 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         except KeyError:
             hit_def = None
 
-        rev_hit.append(hit_def)
-        paralog.append(hit_call)
+        # With lock...
+        results.append((i_start,hit_def,hit_call))
+        ##### -------------
+
+    # Sort results
+    results.sort()
+    rev_hit = [r[1] for r in results]
+    paralog = [r[2] for r in results]
 
     new_df = df.copy()
     new_df["rev_hit"] = rev_hit
@@ -202,40 +212,41 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     Returns a copy of df in which "keep" is set to False for duplicates.
 
     This intelligently chooses between the two sequences. It favors sequences
-    according to specific critera:
+    according to specific criteria (in this order of importance):
 
-    If loops through these parameters, taking whichever sequence is better
-    at the first parameter it encounters:
+        1. whether sequence is from a key species
+        2. how different the sequence length is from the median length
+        3. whether it's annotated as low quality
+        4. whether it's annotated as partial
+        5. whether it's annotated as precursor
+        6. whether it's annotated as structure
+        7. whether it's annotated as hypothetical
+        8. whether it's annotated as isoform
+        9. sequence length (preferring longer)
 
-    length close to median > not low quality > not partial > not partial >
-        not structure > not hypothetical > not isoform > 1/length
-
+    df: data frame with sequences.
+    cutoff: %identity cutoff for combining removing sequences (0-1)
+    key_species: list of key species to prefer.
     """
 
-    def _get_quality_scores(df,index,key_species={}):
+    def _get_quality_scores(row,key_species={}):
         """
-        Get stats in order of importance (allowed_range, low_quality, structure,
-        predicted, isoform, len). These are reported such that high is
-        less preferred to low.
+        Get stats in order of importance (see remove_redundancy doc string).
 
-        df: data frame with sequene data base
-        index: row index (iloc)
+        row: row from dataframe built by topiary
         key_species: dictionary of key species to prefer to others. only uses
-                     keys (for fast look up), ignores values
+                     keys for fast look up and ignores values
 
-        returns new data frame with keep = False for redundant sequences removed
-        from the dataset.
+        returns float array for the sequence
         """
-
-        row = df.iloc[index]
 
         try:
             key_species[row.species]
-            is_key_species = 0.0
+            key_species_score = 0.0
         except KeyError:
-            is_key_species = 1.0
+            key_species_score = 1.0
 
-        return np.array([is_key_species,
+        return np.array([key_species_score,
                          row.diff_from_median,
                          row.low_quality,
                          row.partial,
@@ -244,6 +255,63 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                          row.hypothetical,
                          row.isoform,
                          1/row.length],dtype=np.float)
+
+    def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff):
+        """
+        Compare sequence A and B based on alignment. If the sequences are
+        similar within cutoff, compare A_stats and B_stats and take the sequence
+        with the lower score. Scores have left-right priority.  Will select
+        sequence with the first element with a lower score. If sequences are
+        similar within cutoff and have equal scores, choose A.
+
+        A_seq: sequence A
+        B_seq: sequence B
+        A_qual: quality scores for A
+        B_qual: quality scores for B
+        cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
+
+        returns bool, bool
+
+        True, True: keep both
+        True, False: keep A
+        False, True: keep B
+        """
+
+        # Get a normalized score: matches/len(shortest)
+        score = pairwise2.align.globalxx(A_seq,B_seq,score_only=True)
+        norm = score/min((len(A_seq),len(B_seq)))
+
+        # If sequence similarity is less than the cutoff, keep both
+        if norm <= cutoff:
+            return True, True
+
+        # If sequence similarity is greater than the cutoff, select one.
+        else:
+
+            # Compare two vectors. Identify first element that differs.
+
+            # Return
+            #   True, False if A is smaller
+            #   False, True if B is smaller
+            #   True, False if equal
+
+            comp = np.zeros(A_qual.shape[0],dtype=np.int8)
+            comp[B_qual > A_qual] = 1
+            comp[B_qual < A_qual] = -1
+            diffs = np.nonzero(comp)[0]
+
+            # No difference, keep A arbitrarily
+            if diffs.shape[0] == 0:
+                return True, False
+
+            # B > A at first difference, keep A
+            elif comp[diffs[0]] > 0:
+                return True, False
+
+            # B < A at first difference, keep B
+            else:
+                return False, True
+
 
     key_species = dict([(k,None) for k in key_species])
 
@@ -260,63 +328,94 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     lengths = df.loc[df.keep,"length"]
     counts, lengths = np.histogram(lengths,bins=np.int(np.round(2*np.sqrt(len(lengths)),0)))
     median_length = lengths[np.argmax(counts)]
-
     new_df["diff_from_median"] = np.abs(new_df.length - median_length)
 
-    print("Removing redundant sequences.")
-    for i in tqdm(range(len(new_df))):
+    # Get quality scores for each sequence
+    quality_scores = []
+    for i in range(len(new_df)):
+        quality_scores.append(_get_quality_scores(new_df.iloc[i,:],key_species))
+
+    print("Removing redundant sequences within species.")
+    unique_species = np.unique(new_df.species)
+    for s in tqdm(unique_species):
+
+        # species indexs are iloc row indexes corresponding to species of
+        # interest.
+        species_mask = new_df.species == s
+        species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
+        for x in range(len(species_rows)):
+
+            # Get species index (i). If it's already set to keep = False,
+            # don't compare to other sequences.
+            i = df.index[species_rows[x]]
+            if not new_df.loc[i,"keep"]:
+                continue
+
+            # Get sequence and quality score for A
+            A_seq = new_df.loc[i,"sequence"]
+            A_qual = quality_scores[species_rows[x]]
+
+            # Loop over other sequences in this species
+            for y in range(x+1,len(species_rows)):
+
+                # Get species index (j). If it's already set to keep = False,
+                # don't compare to other sequences.
+                j = df.index[species_rows[y]]
+                if not new_df.loc[j,"keep"]:
+                    continue
+
+                # Get sequence and quality score for B
+                B_seq = new_df.loc[j,"sequence"]
+                B_qual = quality_scores[species_rows[y]]
+
+                # Decide which sequence to keep (or both)
+                A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff)
+
+                # Update keep for each sequence
+                new_df.loc[i,"keep"] = A_bool
+                new_df.loc[j,"keep"] = B_bool
+
+                # If we got rid of A, break out of this loop.  Do not need to
+                # compare to A any more.
+                if not A_bool:
+                    break
+
+    print("Removing redundant sequences, all-on-all.")
+    for x in tqdm(range(len(new_df))):
+
+        i = new_df.index[x]
 
         # If we've already decided not to keep i, don't even look at it
-        if not new_df.keep[i]:
+        if not new_df.loc[i,"keep"]:
             continue
 
         # Get sequence of sequence and quality scores for i
-        A = new_df.sequence.iloc[i]
-        A_stats = _get_quality_scores(new_df,i,key_species)
+        A_seq = new_df.loc[i,"sequence"]
+        A_qual = quality_scores[x]
 
-        for j in range(i+1,len(new_df)):
+        for y in range(i+1,len(new_df)):
+
+            j = new_df.index[y]
 
             # If we've already decided not to keep j, don't even look at it
-            if not new_df.keep[j]:
+            if not new_df.loc[j,"keep"]:
                 continue
 
             # Get sequence of sequence and quality scores for j
-            B = new_df.sequence.iloc[j]
-            B_stats = _get_quality_scores(new_df,i,key_species)
+            B_seq = new_df.loc[j,"sequence"]
+            B_qual = quality_scores[y]
 
-            # Get a normalized score: matches/len(shortest)
-            score = pairwise2.align.globalxx(A,B,score_only=True)
-            norm = score/min((len(A),len(B)))
+            # Decide which sequence to keep (or both)
+            A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff)
 
-            # If the sequences are similar enough
-            if norm > cutoff:
+            # Update keep for each sequence
+            new_df.loc[i,"keep"] = A_bool
+            new_df.loc[j,"keep"] = B_bool
 
-                # Compare A and B stats starting from beginning and going to the end
-                made_call = False
-                for comp in A_stats - B_stats:
-
-                    # If A is above B, we want B rather than A.  Set keep[i] to
-                    # False and break loop.
-                    if comp > 0:
-                        new_df.loc[:,"keep"].iloc[i] = False
-                        made_call = True
-                        break
-
-                    # If B is above A, we want A rather than B.  Set keep[j] to
-                    # false and break loop.
-                    elif comp < 0:
-                        new_df.loc[:,"keep"].iloc[j] = False
-                        made_call = True
-                        break
-
-                    # If A and B have the same score, keep comparing the next
-                    # lower priority quality score
-                    else:
-                        continue
-
-                # If same quality scores, toss B arbitrarily
-                if not made_call:
-                    new_df.loc[:,"keep"].iloc[j] = False
+            # If we got rid of A, break out of this loop.  Do not need to
+            # compare to A any more.
+            if not A_bool:
+                break
 
     print("Done.")
 
@@ -407,9 +506,34 @@ def write_phy(df,out_file,seq_column="sequence",
     else:
         num_to_write = len(df.keep)
 
-    ali_length = len(df[seq_column].iloc[0])
+    all_lengths = []
+    for i in range(len(df)):
+        try:
+            l = len(df[seq_column].iloc[i])
+            if l == 0:
+                raise TypeError
+            all_lengths.append(l)
+        except TypeError:
+            if not df.keep.iloc[i] and write_only_keepers:
+                pass
+            else:
+                err = "\n\nRow does not have sequence\n\n"
+                err += f"...{df.iloc[i]}\n"
+                raise ValueError(err)
 
-    # Construct fasta output
+    all_lengths = set(all_lengths)
+    if len(all_lengths) == 0:
+        err = "\n\nno sequences found\n"
+        raise ValueError(err)
+
+    if len(all_lengths) != 1:
+        err = "\n\nnot all rows have the same alignment length\n\n"
+        raise ValueError(err)
+
+    # Finally, get length of alignment
+    ali_length = all_lengths[0]
+
+    # Construct phy output
     out = []
     for i in range(len(df)):
         row = df.iloc[i]
