@@ -531,7 +531,7 @@ def write_phy(df,out_file,seq_column="sequence",
         raise ValueError(err)
 
     # Finally, get length of alignment
-    ali_length = all_lengths[0]
+    ali_length = list(all_lengths)[0]
 
     # Construct phy output
     out = []
