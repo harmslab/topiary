@@ -317,9 +317,17 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
 
     # Figure out number of threads to use
     if num_threads < 0:
-        num_threads = mp.cpu_count()
+        try:
+            num_threads = mp.cpu_count()
+        except NotImplementedError:
+            num_threads = os.cpu_count()
+            if num_threads is None:
+                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                num_threads = 1
 
-    print("Downloading sequences... ")
+
+    num_blocks = len(to_download) // block_size + len(to_download) % block_size
+    print(f"Downloading {num_blocks} blocks of {block_size} sequences... ")
 
     # queue will hold results from each download batch.
     queue = mp.Manager().Queue()

@@ -217,7 +217,7 @@ def _reverse_blast_thread(args):
     queue.put((i,hit_def,hit_call,hit_e_value,next_hit_e_value))
 
 
-def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
+def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
     """
     df: expects df has "sequence", "start", and "end" columns. Will return a
         copy of the df with new columns:
@@ -238,6 +238,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
                 "MD-1":"LY86"}
 
     rev_blast_db: pointer to local blast database for reverse blasting.
+    num_threads: number of threads to use. if -1, use all available.
     """
 
     print("Performing reverse blast...")
@@ -247,9 +248,19 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         for k in call_dict:
             patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
 
+    # Figure out number of threads to use
+    if num_threads < 0:
+        try:
+            num_threads = mp.cpu_count()
+        except NotImplementedError:
+            num_threads = os.cpu_count()
+            if num_threads is None:
+                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                num_threads = 1
+
     # queue will hold results from each run.
     queue = mp.Manager().Queue()
-    with mp.Pool(processes=mp.cpu_count()) as pool:
+    with mp.Pool(num_threads) as pool:
 
         # This is a bit obscure. Build a list of args to pass to the pool.
         # all_args has all len(df) reverse blast runs we want to do.
@@ -298,11 +309,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     according to specific criteria (in this order of importance):
 
         1. whether sequence is from a key species
-        2. how different the sequence length is from the median length
-        3. whether it's annotated as low quality
-        4. whether it's annotated as partial
-        5. whether it's annotated as precursor
-        6. whether it's annotated as structure
+        2. whether it's annotated as structure
+        3. how different the sequence length is from the median length
+        4. whether it's annotated as low quality
+        5. whether it's annotated as partial
+        6. whether it's annotated as precursor
         7. whether it's annotated as hypothetical
         8. whether it's annotated as isoform
         9. sequence length (preferring longer)
@@ -330,11 +341,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
             key_species_score = 1.0
 
         return np.array([key_species_score,
+                         row.structure,
                          row.diff_from_median,
                          row.low_quality,
                          row.partial,
                          row.precursor,
-                         row.structure,
                          row.hypothetical,
                          row.isoform,
                          1/row.length],dtype=np.float)
@@ -429,7 +440,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     print("Removing redundant sequences within species.")
     unique_species = np.unique(new_df.species)
 
-    N = len(species_rows)
+    N = len(unique_species)
     total_calcs = N*(N-1)//2
     with tqdm(total=total_calcs) as pbar:
         counter = 1
@@ -481,10 +492,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
                 pbar.update(N - counter)
                 counter += 1
+        pbar.update(1)
 
     print("Removing redundant sequences, all-on-all.")
 
-    N = len(species_rows)
+    N = len(new_df)
     total_calcs = N*(N-1)//2
     with tqdm(total=total_calcs) as pbar:
         counter = 1
@@ -530,12 +542,14 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
             pbar.update(N - counter)
             counter += 1
 
+        pbar.update(1)
+
     print("Done.")
 
     return new_df
 
 def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
-                write_only_keepers=True,empty_char="X-?"):
+                write_only_keepers=True,empty_char="X-?",clean_sequence=False):
     """
     df: data frame to write out
     out_file: output file
@@ -545,6 +559,7 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
+    clean_sequence: replace any non-aa characters with "-"
     """
 
     # Make sure seq name is sane
@@ -585,6 +600,10 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
         if seq == "" or seq is None or is_empty:
             continue
 
+        # Replace non-aa characters with '-'
+        if clean_sequence:
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
+
         out.append(f">{h}\n{seq}\n")
 
     # Write output
@@ -595,7 +614,8 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
 
 def write_phy(df,out_file,seq_column="sequence",
               write_only_keepers=True,
-              empty_char="X-?"):
+              empty_char="X-?",
+              clean_sequence=False):
     """
     Write out a .phy file using uid as keys.
 
@@ -605,6 +625,7 @@ def write_phy(df,out_file,seq_column="sequence",
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
+    clean_sequence: replace any non-aa characters with "-"
     """
 
     # Make sure seq column is sane
@@ -661,6 +682,10 @@ def write_phy(df,out_file,seq_column="sequence",
         if seq == "" or seq is None or is_empty:
             num_to_write -= 1
             continue
+
+        # Replace non-aa characters with '-'
+        if clean_sequence:
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
 
         out.append(f"{h}\n{seq}\n")
 
