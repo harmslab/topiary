@@ -18,22 +18,31 @@ def _to_pretty(row):
 
     return pretty
 
-def _convert_file(some_file,out_file,df,uid_to_pretty=False):
+def convert(df,to_convert,out_file=None,overwrite=False,
+            uid_to_pretty=False):
     """
-    Convert uid to pretty or vice versa within a file.
-    Private.  Should call pretty_to_uid or uid_to_pretty wrapper functions.
+    Private function wrapped by uid_to_pretty and pretty_to_uid that converts
+    a file or string between uid and pretty.
 
-    some_file: file to work on
-    out_file: output
-    df: dataframe with uid and contents for _to_pretty mapping
+    df: dataframe with pretty name data and uid
+    to_convert: content to edit. if this is a file, read in. If not, treat as
+                a text string to edit.
+    out_file: output file name. If specified, write to a file.
+    overwrite: if writing an output file, whether or not to overwrite.
     uid_to_pretty: if True, uid->pretty; if False, pretty->uid
+
+    returns converted string
     """
 
-    # Load file
-    f = open(some_file)
-    file_string = f.read()
-    f.close()
+    # If the file specifies an input file, read it in and convert that file
+    if os.path.isfile(to_convert):
+        f = open(to_convert,'r')
+        some_string = f.read()
+        f.close()
+    else:
+        some_string = to_convert
 
+    # Convert the string
     for i in range(len(df)):
 
         # Grab uid and pretty
@@ -51,14 +60,23 @@ def _convert_file(some_file,out_file,df,uid_to_pretty=False):
             convert_to = uid
 
         # Do substitutions
-        file_string = search.sub(convert_to,file_string)
+        some_string = search.sub(convert_to,some_string)
 
-    # Write output file
-    f = open(out_file,'w')
-    f.write(file_string)
-    f.close()
+    # If an output file is specified
+    if out_file is not None:
 
-def _get_index_maps(df):
+        if os.path.isfile(out_file):
+            if not overwrite:
+                err = f"file {out_file} already exists.\n"
+                raise FileExistsError(err)
+
+        f = open(out_file,'w')
+        f.write(some_string)
+        f.close()
+
+    return some_string
+
+def get_index_maps(df):
     """
     Create dictionaries that map pretty_to_uid and uid_to_pretty.
 

@@ -60,25 +60,35 @@ def grab_line_meta_data(line):
 
     return out
 
-def pretty_to_uid(some_file,out_file,df):
+def pretty_to_uid(df,to_convert,out_file=None,overwrite=False):
     """
     Use contents of data frame to convert from pretty names to uid within
     some text file.
 
-    some_file: text file to edit
-    out_file: output file name
     df: dataframe with pretty name data and uid
-    """
-    _private._convert_file(some_file,out_file,df,uid_to_pretty=False)
+    to_convert: content to edit. if this is a file, read in. If not, treat as
+                a text string to edit.
+    out_file: output file name. If specified, write to a file.
+    overwrite: if writing an output file, whether or not to overwrite.
 
-def uid_to_pretty(some_file,out_file,df):
+    returns converted string
+    """
+
+    return _private.convert(df,to_convert,out_file,overwrite,uid_to_pretty=False)
+
+
+def uid_to_pretty(df,to_convert,out_file=None,overwrite=False):
     """
     Use contents of data frame to convert from uid to pretty names
     some text file.
 
-    some_file: text file to edit
-    out_file: output file name
     df: dataframe with pretty name data and uid
+    to_convert: content to edit. if this is a file, read in. If not, treat as
+                a text string to edit.
+    out_file: output file name. If specified, write to a file.
+    overwrite: if writing an output file, whether or not to overwrite.
+
+    returns converted string
     """
 
-    _private._convert_file(some_file,out_file,df,uid_to_pretty=True)
+    return _private.convert(df,to_convert,out_file,overwrite,uid_to_pretty=True)

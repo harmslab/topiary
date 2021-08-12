@@ -215,14 +215,14 @@ def get_species_tree(df):
 
     # Write out without all the ancestor junk returned by opentree
     t = ret["labelled_tree"].as_string(schema="newick",
-                               suppress_leaf_taxon_labels=False,
-                               suppress_leaf_node_labels=True,
-                               suppress_internal_taxon_labels=True,
-                               suppress_internal_node_labels=True,
-                               suppress_edge_lengths=True,
-                               suppress_rooting=False,
-                               suppress_annotations=True,
-                               suppress_item_comments=True)
+                                       suppress_leaf_taxon_labels=False,
+                                       suppress_leaf_node_labels=True,
+                                       suppress_internal_taxon_labels=True,
+                                       suppress_internal_node_labels=True,
+                                       suppress_edge_lengths=True,
+                                       suppress_rooting=False,
+                                       suppress_annotations=True,
+                                       suppress_item_comments=True)
 
     # Read in new tree
     stripped_tree = dp.Tree.get(data=t,schema="newick")
@@ -234,7 +234,7 @@ def get_species_tree(df):
 
     # Rename labels on tree so they are ott
     for n in final_tree.taxon_namespace:
-        n.label = n.label.split("ott")[1]
+        n.label = n.label.split("ott")[-1]
 
     return final_tree
 
@@ -374,3 +374,40 @@ def build_species_corrected_gene_tree(df,species_tree,gene_tree_string):
         edge.length = 0.01
 
     return final_tree
+
+def annotate_tree_with_calls(df,some_tree,work_on_copy=True):
+    """
+    Annotate the leaves of an ete3 tree with information extracted from a
+    topiary dataframe.
+    """
+
+    # Copy tree -- do not operate on input tree directly
+    if work_on_copy:
+        tree = some_tree.copy(method="deepcopy")
+    else:
+        tree = some_tree
+
+    # Create dictionaries mapping uid to species, paralog, ott, and call.
+    out_dict = {}
+    for i in range(len(df)):
+
+        uid = df.uid.iloc[i]
+        species = df.species.iloc[i]
+        ott = f"{df.ott.iloc[i]:d}"
+        paralog = df.paralog.iloc[i]
+        call = f"{ott}|{paralog}"
+
+        out_dict[uid] = {"species":species,
+                         "paralog":paralog,
+                         "ott":ott,
+                         "call":call}
+
+    # Go through tree and assign leaves their calls etc.
+    for node in tree.get_leaves():
+        if node.is_leaf():
+            for k in out_dict[node.name]:
+                node.add_feature(k,out_dict[node.name][k])
+
+            node.add_feature("merge_stack",[])
+
+    return tree

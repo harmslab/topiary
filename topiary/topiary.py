@@ -572,7 +572,7 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
         new_df[load_into_column] = None
 
     # Figure out how pretty and uid calls map to df index
-    pretty_to_index, uid_to_index = _private._get_index_maps(new_df)
+    pretty_to_index, uid_to_index = _private.get_index_maps(new_df)
 
     # Go through the fasta file and get sequences
     header = []
