@@ -238,3 +238,140 @@ def leaves_bifurcating_on_ancestor(some_tree,node_1,node_2):
                 "right_leaves":right_leaves}
 
     return out_dict
+
+def build_species_corrected_gene_tree(df,species_tree,gene_tree_string):
+    """
+    Hacked attempt to build a species-corrected gene tree. Use at your peril. 
+
+    df: data frame with paralog, ott, keep, and uid columns
+    species_tree: species tree as dendropy object ott as leaf labels
+    gene_tree_string: string newick representation of desired gene tree.
+                      for example, '(((A9,A8),A12),MRP126);'
+
+    The paralogs in the dataframe must exactly match the paralogs shown
+    in the gene tree.  The ott in the data frame must be a subset of the
+    ott in the species tree.  Each paralog in the data frame can only have
+    each species once, meaning that having two S100A9 for Mus musculus
+    is not allowed. Not all species need to be seen for each paralog.
+
+    Returns a dendropy tree with uid as tip labels.
+    """
+
+    # Create local data frame only including 'keep = True'
+    local_df = df.loc[df.keep==True,:]
+
+    # Make sure gene_tree_string is parsable and print back out so user can
+    # see what they specified
+    gene_tree = dp.Tree()
+    gene_tree = gene_tree.get(data=gene_tree_string,schema="newick")
+    for edge in gene_tree.postorder_edge_iter():
+        edge.length = 0.1
+
+    print("Using this paralog tree")
+    print(gene_tree.as_ascii_plot(width=60))
+    print()
+
+    # Get all paralogs from the specified gene tree
+    paralogs_in_gene_tree = []
+    for leaf in gene_tree.leaf_node_iter():
+        if leaf.taxon is None:
+            err = "\nall paralogs must have names in the gene tree\n"
+            raise ValueError(err)
+        paralogs_in_gene_tree.append(leaf.taxon.label)
+
+    # Make sure paralogs in the gene tree are unique
+    if len(paralogs_in_gene_tree) != len(set(paralogs_in_gene_tree)):
+        err = "\nparalogs in gene tree must be unique\n\n"
+        raise ValueError(err)
+
+    # Get paralogs seen in gene tree as unique set
+    paralogs_in_gene_tree = set(paralogs_in_gene_tree)
+
+    # Get set of unique paralogs seen in data frame
+    try:
+        paralogs_in_df = set(local_df.paralog.drop_duplicates())
+    except KeyError:
+        err = "data frame must have a 'paralog' column.\n"
+        raise ValueError(err)
+
+    # Make sure exactly the same set of paralogs in both gene tree and df
+    if paralogs_in_gene_tree != paralogs_in_df:
+        err = "\nparalogs must be identical in gene tree and df\n"
+        err += f"df paralogs: {paralogs_in_df}\n"
+        err += f"gene tree paralogs: {paralogs_in_gene_tree}\n"
+        err += "\n\n"
+        raise ValueError(err)
+
+    # Make sure each species has its own unique paralog assigned
+    duplicates = {}
+    for paralog in paralogs_in_df:
+        species = local_df[local_df.paralog == paralog].species
+        duplicate_species = list(species[species.duplicated()])
+        if len(duplicate_species) > 0:
+            duplicates[paralog] = duplicate_species
+
+    if len(duplicates) > 0:
+        err = "each paralog can only be assigned once to each species\n"
+        err = "duplicates:\n"
+        for k in duplicates:
+            for this_duplicate in duplicates[k]:
+                err += f"    {k} {this_duplicate}\n"
+            err += "\n"
+        err += "\n\n"
+        raise ValueError(err)
+
+    # Get all ott seen in the species tree
+    ott_in_species_tree = []
+    for leaf in species_tree.leaf_node_iter():
+        ott_in_species_tree.append(leaf.taxon.label)
+    ott_in_species_tree = set(ott_in_species_tree)
+
+    # Get all ott seen in df
+    ott_in_df = set([f"{ott}" for ott in local_df.ott])
+
+    # Make sure all ott in data frame are in species tree
+    if not ott_in_df.issubset(ott_in_species_tree):
+        err = "every ott in data frame must be seen in species tree\n"
+        raise ValueError(err)
+
+    # Now build newick
+    final_tree_str = copy.copy(gene_tree_string)
+    for paralog in paralogs_in_df:
+
+        # Make df with only this paralog
+        tmp_df = local_df[local_df.paralog == paralog]
+
+        # Dictionary mapping the ott to uid (for this paralog)
+        ott_to_uid = {}
+        for i in range(len(tmp_df)):
+            uid = tmp_df.iloc[i].uid
+            ott = tmp_df.iloc[i].ott
+
+            ott_to_uid[f"{ott}"] = uid
+
+        # Figure out what species need to be removed
+        paralog_ott = set([f"{ott}" for ott in tmp_df.ott])
+        paralog_to_trim  = ott_in_species_tree - paralog_ott
+
+        # Remove species from paralog tree
+        paralog_tree = copy.deepcopy(species_tree)
+        paralog_tree.prune_taxa_with_labels(paralog_to_trim)
+
+        # Rename leaves on paralog tree to uid
+        for leaf in paralog_tree.leaf_node_iter():
+            leaf.taxon.label = ott_to_uid[leaf.taxon.label]
+
+        # Write out paralog tree as a newick string
+        paralog_tree_str = r"{}".format(paralog_tree.as_string(schema="newick")[:-2])
+
+        # Replace the gene name with the new tree
+        final_tree_str = re.sub(paralog,paralog_tree_str,final_tree_str)
+
+    # Generate a final dendropy tree
+    final_tree = dp.Tree()
+    final_tree = final_tree.get(data=final_tree_str,
+                                schema="newick")
+    for edge in final_tree.postorder_edge_iter():
+        edge.length = 0.01
+
+    return final_tree

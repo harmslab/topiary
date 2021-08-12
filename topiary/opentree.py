@@ -1,13 +1,11 @@
 from opentree import OT, taxonomy_helpers
 import dendropy as dp
+import ete3
 
 import pandas as pd
 import numpy as np
 
-from tqdm.auto import tqdm
-
 import re, copy
-
 
 def get_ott_id(df,
                context_name="All life",
@@ -195,21 +193,32 @@ def get_species_tree(df):
 
     df: dataframe that has an ott column with Open Tree of Life taxon ids
 
-    Returns a dendropy tree
+    Returns an ete3 tree with branch lengths of 1, supports of 1, and only
+    tip labels. Note: any polytomies are arbirarily resolved.
     """
 
-    # Only get keep = True and get unique ott
-    local_df = df.loc[df.keep,:]
+    # Only get keep = True
+    df = df.loc[df.keep,:].copy()
 
-    # Get only rows with unique species names
-    local_df = local_df.loc[local_df.loc[:,"ott"].drop_duplicates().index,:]
+    # coerce ott to string int
+    tmp_ott = [f"{o}" for o in np.array(df.loc[:,"ott"],dtype=np.int64)]
+    df.loc[:,"ott"] = tmp_ott
+
+    # Get only rows with unique ott
+    df = df.loc[df.loc[:,"ott"].drop_duplicates().index,:]
 
     # Make sure every species has ott
-    if np.sum(pd.isnull(local_df.loc[:,"ott"])) > 0:
+    if np.sum(pd.isnull(df.loc[:,"ott"])) > 0:
         err = "not all species OTT in dataframe."
         raise ValueError(err)
 
-    ret = taxonomy_helpers.labelled_induced_synth(ott_ids = list(local_df.loc[:,"ott"]),
+    ott_ids = list(df.loc[:,"ott"])
+    species = list(df.loc[:,"species"])
+    ott_species_dict = {}
+    for i in range(len(ott_ids)):
+        ott_species_dict[ott_ids[i]] = species[i]
+
+    ret = taxonomy_helpers.labelled_induced_synth(ott_ids = ott_ids,
                                                   label_format="name_and_id",
                                                   inc_unlabelled_mrca=False)
 
@@ -230,184 +239,30 @@ def get_species_tree(df):
 
     # Extract tree with labels.  This will remove all of the empty singleton
     # entries that otl brings down.
-    final_tree = stripped_tree.extract_tree_with_taxa_labels(taxon_names)
+    clean_tree = stripped_tree.extract_tree_with_taxa_labels(taxon_names)
 
     # Rename labels on tree so they are ott
-    for n in final_tree.taxon_namespace:
-        n.label = n.label.split("ott")[-1]
+    for n in clean_tree.taxon_namespace:
+        label = n.label.split("ott")[-1]
+        n.label = label
+
+    # Convert tree to ete3 tree.
+    final_tree = ete3.Tree(clean_tree.as_string(schema="newick",
+                                                suppress_rooting=True),
+                           format=9)
+
+    # Arbitrarily resolve any polytomies
+    final_tree.resolve_polytomy()
+
+    # Give every node a support of 1 and a branch length of 1
+    for n in final_tree.traverse():
+        if n.dist != 1:
+            n.dist = 1
+        if n.support != 1:
+            n.support = 1
+
+        # Give leaves species name as a feature
+        if n.is_leaf():
+            n.add_feature("species",ott_species_dict[n.name])
 
     return final_tree
-
-def build_species_corrected_gene_tree(df,species_tree,gene_tree_string):
-    """
-    Build a species-corrected gene tree.
-
-    df: data frame with paralog, ott, keep, and uid columns
-    species_tree: species tree as dendropy object ott as leaf labels
-    gene_tree_string: string newick representation of desired gene tree.
-                      for example, '(((A9,A8),A12),MRP126);'
-
-    The paralogs in the dataframe must exactly match the paralogs shown
-    in the gene tree.  The ott in the data frame must be a subset of the
-    ott in the species tree.  Each paralog in the data frame can only have
-    each species once, meaning that having two S100A9 for Mus musculus
-    is not allowed. Not all species need to be seen for each paralog.
-
-    Returns a dendropy tree with uid as tip labels.
-    """
-
-    # Create local data frame only including 'keep = True'
-    local_df = df.loc[df.keep==True,:]
-
-    # Make sure gene_tree_string is parsable and print back out so user can
-    # see what they specified
-    gene_tree = dp.Tree()
-    gene_tree = gene_tree.get(data=gene_tree_string,schema="newick")
-    for edge in gene_tree.postorder_edge_iter():
-        edge.length = 0.1
-
-    print("Using this paralog tree")
-    print(gene_tree.as_ascii_plot(width=60))
-    print()
-
-    # Get all paralogs from the specified gene tree
-    paralogs_in_gene_tree = []
-    for leaf in gene_tree.leaf_node_iter():
-        if leaf.taxon is None:
-            err = "\nall paralogs must have names in the gene tree\n"
-            raise ValueError(err)
-        paralogs_in_gene_tree.append(leaf.taxon.label)
-
-    # Make sure paralogs in the gene tree are unique
-    if len(paralogs_in_gene_tree) != len(set(paralogs_in_gene_tree)):
-        err = "\nparalogs in gene tree must be unique\n\n"
-        raise ValueError(err)
-
-    # Get paralogs seen in gene tree as unique set
-    paralogs_in_gene_tree = set(paralogs_in_gene_tree)
-
-    # Get set of unique paralogs seen in data frame
-    try:
-        paralogs_in_df = set(local_df.paralog.drop_duplicates())
-    except KeyError:
-        err = "data frame must have a 'paralog' column.\n"
-        raise ValueError(err)
-
-    # Make sure exactly the same set of paralogs in both gene tree and df
-    if paralogs_in_gene_tree != paralogs_in_df:
-        err = "\nparalogs must be identical in gene tree and df\n"
-        err += f"df paralogs: {paralogs_in_df}\n"
-        err += f"gene tree paralogs: {paralogs_in_gene_tree}\n"
-        err += "\n\n"
-        raise ValueError(err)
-
-    # Make sure each species has its own unique paralog assigned
-    duplicates = {}
-    for paralog in paralogs_in_df:
-        species = local_df[local_df.paralog == paralog].species
-        duplicate_species = list(species[species.duplicated()])
-        if len(duplicate_species) > 0:
-            duplicates[paralog] = duplicate_species
-
-    if len(duplicates) > 0:
-        err = "each paralog can only be assigned once to each species\n"
-        err = "duplicates:\n"
-        for k in duplicates:
-            for this_duplicate in duplicates[k]:
-                err += f"    {k} {this_duplicate}\n"
-            err += "\n"
-        err += "\n\n"
-        raise ValueError(err)
-
-    # Get all ott seen in the species tree
-    ott_in_species_tree = []
-    for leaf in species_tree.leaf_node_iter():
-        ott_in_species_tree.append(leaf.taxon.label)
-    ott_in_species_tree = set(ott_in_species_tree)
-
-    # Get all ott seen in df
-    ott_in_df = set([f"{ott}" for ott in local_df.ott])
-
-    # Make sure all ott in data frame are in species tree
-    if not ott_in_df.issubset(ott_in_species_tree):
-        err = "every ott in data frame must be seen in species tree\n"
-        raise ValueError(err)
-
-    # Now build newick
-    final_tree_str = copy.copy(gene_tree_string)
-    for paralog in paralogs_in_df:
-
-        # Make df with only this paralog
-        tmp_df = local_df[local_df.paralog == paralog]
-
-        # Dictionary mapping the ott to uid (for this paralog)
-        ott_to_uid = {}
-        for i in range(len(tmp_df)):
-            uid = tmp_df.iloc[i].uid
-            ott = tmp_df.iloc[i].ott
-
-            ott_to_uid[f"{ott}"] = uid
-
-        # Figure out what species need to be removed
-        paralog_ott = set([f"{ott}" for ott in tmp_df.ott])
-        paralog_to_trim  = ott_in_species_tree - paralog_ott
-
-        # Remove species from paralog tree
-        paralog_tree = copy.deepcopy(species_tree)
-        paralog_tree.prune_taxa_with_labels(paralog_to_trim)
-
-        # Rename leaves on paralog tree to uid
-        for leaf in paralog_tree.leaf_node_iter():
-            leaf.taxon.label = ott_to_uid[leaf.taxon.label]
-
-        # Write out paralog tree as a newick string
-        paralog_tree_str = r"{}".format(paralog_tree.as_string(schema="newick")[:-2])
-
-        # Replace the gene name with the new tree
-        final_tree_str = re.sub(paralog,paralog_tree_str,final_tree_str)
-
-    # Generate a final dendropy tree
-    final_tree = dp.Tree()
-    final_tree = final_tree.get(data=final_tree_str,
-                                schema="newick")
-    for edge in final_tree.postorder_edge_iter():
-        edge.length = 0.01
-
-    return final_tree
-
-def annotate_tree_with_calls(df,some_tree,work_on_copy=True):
-    """
-    Annotate the leaves of an ete3 tree with information extracted from a
-    topiary dataframe.
-    """
-
-    # Copy tree -- do not operate on input tree directly
-    if work_on_copy:
-        tree = some_tree.copy(method="deepcopy")
-    else:
-        tree = some_tree
-
-    # Create dictionaries mapping uid to species, paralog, ott, and call.
-    out_dict = {}
-    for i in range(len(df)):
-
-        uid = df.uid.iloc[i]
-        species = df.species.iloc[i]
-        ott = f"{df.ott.iloc[i]:d}"
-        paralog = df.paralog.iloc[i]
-        call = f"{ott}|{paralog}"
-
-        out_dict[uid] = {"species":species,
-                         "paralog":paralog,
-                         "ott":ott,
-                         "call":call}
-
-    # Go through tree and assign leaves their calls etc.
-    for node in tree.get_leaves():
-        if node.is_leaf():
-            for k in out_dict[node.name]:
-                node.add_feature(k,out_dict[node.name][k])
-
-            node.add_feature("merge_stack",[])
-
-    return tree
