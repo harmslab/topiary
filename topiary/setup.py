@@ -10,10 +10,10 @@ from setuptools import find_packages, setup, Command, Extension
 
 # Package meta-data.
 NAME = 'topiary'
-DESCRIPTION = 'A lightweight python package for doing phylogenetics work (tailored for ancestral sequence reconstruction).'
+DESCRIPTION = 'A lightweight python package using pandas dataframes for phylogenetics.'
 URL = 'https://github.com/harmslab/topiary'
 EMAIL = 'harmsm@gmail.com'
-AUTHOR = 'Mike Harms'
+AUTHOR = 'Michael J. Harms'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = None
 
