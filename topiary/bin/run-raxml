@@ -39,9 +39,9 @@ def main(argv):
                         help="anc mode: alternate ancestor posterior probability cutoff",
                         type=float,
                         default=0.25)
-    parser.add_argument("--anc-get-supports",
-                        help="anc mode: should raxml get node supports before reconstruction?",
-                        action='store_true')
+    parser.add_argument("--anc-support-tree",nargs=1,
+                        help="anc mode: tree with supports",
+                        type=str)
 
     # Parse arguments
     args = parser.parse_args(argv)
@@ -105,6 +105,9 @@ def main(argv):
     # Ancestor-specific arguments
     if mode == "anc":
         kwargs["alt_cutoff"] = args.anc_alt_pp
+
+    if mode == "anc":
+        kwargs["tree_file_with_supports"] = args.anc_support_tree[0]
 
     # Figure out what kwargs are required and allowed for the function being
     # called
