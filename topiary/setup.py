@@ -19,9 +19,9 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "Bio>=1.79",
+    "biopython>=1.79",
     "ete3>=3.1.2",
-    "opentree>=1.01",
+    "opentree>=1.0.1",
     "tqdm>=4.61.2",
     "dendropy>=4.5.2",
     "numpy>=1.21.1",
@@ -58,11 +58,11 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=find_packages(exclude=('tests',)),
-    ext_modules=[extension],
     install_requires=REQUIRED,
     extras_require = {
         'test': ['pytest'],
     },
+    scripts=['bin/run-raxml'],
     include_package_data=True,
     license='MIT',
     classifiers=[
