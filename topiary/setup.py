@@ -62,7 +62,7 @@ setup(
     extras_require = {
         'test': ['pytest'],
     },
-    scripts=['bin/run-raxml'],
+    scripts=['bin/run-raxml','bin/setup-generax'],
     include_package_data=True,
     license='MIT',
     classifiers=[
