@@ -107,7 +107,8 @@ def main(argv):
         kwargs["alt_cutoff"] = args.anc_alt_pp
 
     if mode == "anc":
-        kwargs["tree_file_with_supports"] = args.anc_support_tree[0]
+        if args.anc_support_tree is not None:
+            kwargs["tree_file_with_supports"] = args.anc_support_tree[0]
 
     # Figure out what kwargs are required and allowed for the function being
     # called
