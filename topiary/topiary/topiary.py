@@ -440,17 +440,21 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     print("Removing redundant sequences within species.")
     unique_species = np.unique(new_df.species)
 
-    N = len(unique_species)
-    total_calcs = N*(N-1)//2
+    total_calcs = 0
+    for s in unique_species:
+        a = np.sum(new_df.species == s)
+        total_calcs += a*(a - 1)//2
+
     with tqdm(total=total_calcs) as pbar:
-        counter = 1
+
         for s in unique_species:
 
             # species indexes are iloc row indexes corresponding to species of
             # interest.
             species_mask = new_df.species == s
             species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
-            for x in range(len(species_rows)):
+            num_this_species = np.sum(species_mask)
+            for x in range(num_this_species):
 
                 # Get species index (i). If it's already set to keep = False,
                 # don't compare to other sequences.
@@ -463,7 +467,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                 A_qual = quality_scores[species_rows[x]]
 
                 # Loop over other sequences in this species
-                for y in range(x+1,len(species_rows)):
+                for y in range(x+1,num_this_species):
 
                     # Get species index (j). If it's already set to keep = False,
                     # don't compare to other sequences.
@@ -490,23 +494,23 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                     if not A_bool:
                         break
 
-                pbar.update(N - counter)
-                counter += 1
-        pbar.update(1)
+            pbar.update(num_this_species*(num_this_species - 1)//2)
 
     print("Removing redundant sequences, all-on-all.")
 
     N = len(new_df)
     total_calcs = N*(N-1)//2
     with tqdm(total=total_calcs) as pbar:
-        counter = 1
 
+        counter = 1
         for x in range(len(new_df)):
 
             i = new_df.index[x]
 
             # If we've already decided not to keep i, don't even look at it
             if not new_df.loc[i,"keep"]:
+                pbar.update(N - counter)
+                counter += 1
                 continue
 
             # Get sequence of sequence and quality scores for i
@@ -541,8 +545,6 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
             pbar.update(N - counter)
             counter += 1
-
-        pbar.update(1)
 
     print("Done.")
 

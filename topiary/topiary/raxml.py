@@ -335,111 +335,6 @@ def _fix_raxml_tree(raxml_tree,out_file):
     g.write(tree)
     g.close()
 
-def _copy_root(unrooted_newick,
-               rooted_newick,
-               output_newick,
-               unrooted_tree_fmt=0,
-               rooted_tree_fmt=0):
-    """
-    Root the tree in an unrooted newick file using the root from a rooted
-    newick file with the same taxa. Write to an output file.
-
-    unrooted_newick: newick file containing an unrooted tree
-    rooted_newick: newick file containing a rooted tree with the same taxa
-                   as the unrooted tree
-    output_newick: output file to write results
-    unrooted_tree_fmt: what to preserve from unrooted tree. integer.
-                       interpretation is done by ETE3 (table below
-                       current as of v. 3.1.1).
-    rooted_tree_fmt:   what to preserve from rooted tree. integer.
-                       interpretation is done by ETE3 (table below
-                       current as of v. 3.1.1).
-
-     |        ======  ==============================================
-     |        FORMAT  DESCRIPTION
-     |        ======  ==============================================
-     |        0        flexible with support values
-     |        1        flexible with internal node names
-     |        2        all branches + leaf names + internal supports
-     |        3        all branches + all names
-     |        4        leaf branches + leaf names
-     |        5        internal and leaf branches + leaf names
-     |        6        internal branches + leaf names
-     |        7        leaf branches + all names
-     |        8        all names
-     |        9        leaf names
-     |        100      topology only
-     |        ======  ==============================================
-
-    """
-
-    # Load trees
-    rooted_tree = Tree(rooted_newick,format=rooted_tree_fmt)
-    unrooted_tree = Tree(unrooted_newick,format=unrooted_tree_fmt)
-
-    # Make sure they have the same taxa
-    rooted_leaves = set(rooted_tree.get_leaf_names())
-    unrooted_leaves = set(unrooted_tree.get_leaf_names())
-    if rooted_leaves != unrooted_leaves:
-        err = "both trees must have the exact same leaves\n"
-        raise ValueError(err)
-
-    left_leaves = []
-    right_leaves = []
-
-    root_node = None
-    left_anc_node = None
-
-    # Pre-order traverses root, left, right
-    for node in rooted_tree.traverse("preorder"):
-
-        # First iteration gets root node
-        if root_node is None:
-            root_node = node
-            continue
-
-        # Second iteration gets ancestor of all left. Get leaves.
-        if left_anc_node is None:
-            left_anc_node = node
-            left_leaves = [l.name for l in left_anc_node.get_leaves()]
-            continue
-
-        # First node without left_anc_node as a descendant is the
-        # right ancestor. Get leaves.
-        if left_anc_node not in node.get_ancestors():
-            right_anc_node = node
-            right_leaves = right_anc_node.get_leaves()
-            break
-
-    # If we have single outgroups on the left or right, root on that
-    if len(left_leaves) == 1:
-        unrooted_tree.set_outgroup(left_leaves[0])
-    elif len(right_leaves) == 1:
-        unrooted_tree.set_outgroup(right_leaves[0])
-
-    # Otherwise, try to root on last common ancestor of left or right. This
-    # may throw error, depending on tree topology, so we try left first,
-    # and then try right if that does not work.
-    else:
-
-        root_successful = False
-        try:
-            root_anc = unrooted_tree.get_common_ancestor(*left_leaves)
-            unrooted_tree.set_outgroup(root_anc)
-            root_successful = True
-        except ete3.coretype.tree.TreeError:
-            try:
-                root_anc = unrooted_tree.get_common_ancestor(*right_leaves)
-                unrooted_tree.set_outgroup(root_anc)
-                root_successful = True
-            except ete3.coretype.tree.TreeError:
-                pass
-
-        if not root_successful:
-            unrooted_tree.set_outgroup(root_anc.get_children()[1])
-
-    # Write out newly rooted tree
-    unrooted_tree.write(outfile=output_newick)
 
 # -----------------------------------------------------------------------------
 # Ancestor processing functions
@@ -694,14 +589,6 @@ def _make_ancestor_summary_trees(avg_pp_dict,
         ancestors_all.newick: tree where internal names are name|pp OR name|pp|support
     """
 
-    # Fix raxml supports and copy root to support tree
-    #base_file = f"{tree_file_with_bl}.rooted.anc-tmp"
-    #_copy_root(tree_file_with_bl,
-    #           tree_file_with_labels,
-    #           base_file,
-    #           unrooted_tree_fmt=0,
-    #           rooted_tree_fmt=1)
-
     # Create label trees
     t_labeled = Tree(tree_file_with_labels,format=1)
 
@@ -719,12 +606,7 @@ def _make_ancestor_summary_trees(avg_pp_dict,
     all_iterator = t_out_all.traverse("preorder")
 
     if tree_file_with_supports is not None:
-        #_copy_root(tree_file_with_supports,
-        #           tree_file_with_labels,
-        #           f"{tree_file_with_supports}.rooted.anc-tmp",
-        #           unrooted_tree_fmt=0,
-        #           rooted_tree_fmt=1)
-        t_out_supports = Tree(tree_file_with_labels,format=0)
+        t_out_supports = Tree(tree_file_with_supports,format=0)
         support_iterator = t_out_supports.traverse("preorder")
 
     # Iterate over main iterator
@@ -779,8 +661,6 @@ def _make_ancestor_summary_trees(avg_pp_dict,
 
         all_node.name = "|".join(combo)
 
-
-
     t_out_pp.write(outfile="ancestors_pp.newick",
                    format=2,format_root_node=True)
     t_out_label.write(outfile="ancestors_label.newick",
@@ -791,11 +671,6 @@ def _make_ancestor_summary_trees(avg_pp_dict,
     if tree_file_with_supports is not None:
         t_out_all.write(outfile="ancestors_support.newick",
                         format=3,format_root_node=True)
-
-    # Delete temporary files
-    to_remove = glob.glob(os.path.join("00_input","*.anc-tmp"))
-    for r in to_remove:
-        os.remove(r)
 
 
 def _parse_raxml_anc_output(anc_prob_file,
@@ -1269,6 +1144,7 @@ def generate_ml_tree(alignment_file,
 def generate_ancestors(alignment_file,
                        model,
                        tree_file,
+                       tree_file_with_supports=None,
                        output=None,
                        threads=1,
                        raxml_binary=RAXML_BINARY,
@@ -1315,40 +1191,34 @@ def generate_ancestors(alignment_file,
                                  dir_name,
                                  make_input_dir=True)
 
+    if tree_file_with_supports is not None:
+        tree_file_with_supports = _copy_input_file(tree_file_with_supports,
+                                                   dir_name,
+                                                   make_input_dir=True)
+
     # Move into working directory
     cwd = os.getcwd()
     os.chdir(dir_name)
 
-    # Optimize branch lengths for this tree
-    _run_raxml(algorithm="--evaluate",
-               alignment_file=alignment_file,
-               tree_file=tree_file,
-               model=model,
-               dir_name="01_optimize-branch-lengths",
-               seed=True,
-               threads=threads,
-               raxml_binary=raxml_binary)
-
-    tree_file_with_bl = "01_optimize-branch-lengths/alignment.raxml.bestTree"
-
     # Do marginal reconstruction on the tree
     _run_raxml(algorithm="--ancestral",
                alignment_file=alignment_file,
-               tree_file=tree_file_with_bl,
+               tree_file=tree_file,
                model=model,
                seed=True,
-               dir_name="02_calc-marginal-anc",
+               dir_name="01_calc-marginal-anc",
                threads=threads,
                raxml_binary=raxml_binary)
 
-    anc_prob_file = "02_calc-marginal-anc/alignment.raxml.ancestralProbs"
-    tree_file_with_labels = "02_calc-marginal-anc/alignment.raxml.ancestralTree"
+    anc_prob_file = "01_calc-marginal-anc/alignment.raxml.ancestralProbs"
+    tree_file_with_labels = "01_calc-marginal-anc/alignment.raxml.ancestralTree"
 
     # Parse output and make something human-readable
     _parse_raxml_anc_output(anc_prob_file,
                             alignment_file,
                             tree_file_with_labels,
-                            dir_name="03_final-ancestors",
+                            tree_file_with_supports,
+                            dir_name="02_final-ancestors",
                             alt_cutoff=alt_cutoff)
 
     # Leave working directory

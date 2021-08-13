@@ -10,6 +10,7 @@ from . import _private
 
 import ete3
 from ete3 import Tree
+import dendropy as dp
 
 import pandas as pd
 import numpy as np

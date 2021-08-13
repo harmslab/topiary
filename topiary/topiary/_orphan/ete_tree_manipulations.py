@@ -241,7 +241,7 @@ def leaves_bifurcating_on_ancestor(some_tree,node_1,node_2):
 
 def build_species_corrected_gene_tree(df,species_tree,gene_tree_string):
     """
-    Hacked attempt to build a species-corrected gene tree. Use at your peril. 
+    Hacked attempt to build a species-corrected gene tree. Use at your peril.
 
     df: data frame with paralog, ott, keep, and uid columns
     species_tree: species tree as dendropy object ott as leaf labels
@@ -375,3 +375,109 @@ def build_species_corrected_gene_tree(df,species_tree,gene_tree_string):
         edge.length = 0.01
 
     return final_tree
+
+def _copy_root(unrooted_newick,
+               rooted_newick,
+               output_newick,
+               unrooted_tree_fmt=0,
+               rooted_tree_fmt=0):
+    """
+    Root the tree in an unrooted newick file using the root from a rooted
+    newick file with the same taxa. Write to an output file.
+
+    unrooted_newick: newick file containing an unrooted tree
+    rooted_newick: newick file containing a rooted tree with the same taxa
+                   as the unrooted tree
+    output_newick: output file to write results
+    unrooted_tree_fmt: what to preserve from unrooted tree. integer.
+                       interpretation is done by ETE3 (table below
+                       current as of v. 3.1.1).
+    rooted_tree_fmt:   what to preserve from rooted tree. integer.
+                       interpretation is done by ETE3 (table below
+                       current as of v. 3.1.1).
+
+     |        ======  ==============================================
+     |        FORMAT  DESCRIPTION
+     |        ======  ==============================================
+     |        0        flexible with support values
+     |        1        flexible with internal node names
+     |        2        all branches + leaf names + internal supports
+     |        3        all branches + all names
+     |        4        leaf branches + leaf names
+     |        5        internal and leaf branches + leaf names
+     |        6        internal branches + leaf names
+     |        7        leaf branches + all names
+     |        8        all names
+     |        9        leaf names
+     |        100      topology only
+     |        ======  ==============================================
+
+    """
+
+    # Load trees
+    rooted_tree = Tree(rooted_newick,format=rooted_tree_fmt)
+    unrooted_tree = Tree(unrooted_newick,format=unrooted_tree_fmt)
+
+    # Make sure they have the same taxa
+    rooted_leaves = set(rooted_tree.get_leaf_names())
+    unrooted_leaves = set(unrooted_tree.get_leaf_names())
+    if rooted_leaves != unrooted_leaves:
+        err = "both trees must have the exact same leaves\n"
+        raise ValueError(err)
+
+    left_leaves = []
+    right_leaves = []
+
+    root_node = None
+    left_anc_node = None
+
+    # Pre-order traverses root, left, right
+    for node in rooted_tree.traverse("preorder"):
+
+        # First iteration gets root node
+        if root_node is None:
+            root_node = node
+            continue
+
+        # Second iteration gets ancestor of all left. Get leaves.
+        if left_anc_node is None:
+            left_anc_node = node
+            left_leaves = [l.name for l in left_anc_node.get_leaves()]
+            continue
+
+        # First node without left_anc_node as a descendant is the
+        # right ancestor. Get leaves.
+        if left_anc_node not in node.get_ancestors():
+            right_anc_node = node
+            right_leaves = right_anc_node.get_leaves()
+            break
+
+    # If we have single outgroups on the left or right, root on that
+    if len(left_leaves) == 1:
+        unrooted_tree.set_outgroup(left_leaves[0])
+    elif len(right_leaves) == 1:
+        unrooted_tree.set_outgroup(right_leaves[0])
+
+    # Otherwise, try to root on last common ancestor of left or right. This
+    # may throw error, depending on tree topology, so we try left first,
+    # and then try right if that does not work.
+    else:
+
+        root_successful = False
+        try:
+            root_anc = unrooted_tree.get_common_ancestor(*left_leaves)
+            unrooted_tree.set_outgroup(root_anc)
+            root_successful = True
+        except ete3.coretype.tree.TreeError:
+            try:
+                root_anc = unrooted_tree.get_common_ancestor(*right_leaves)
+                unrooted_tree.set_outgroup(root_anc)
+                root_successful = True
+            except ete3.coretype.tree.TreeError:
+                pass
+
+        if not root_successful:
+            unrooted_tree.set_outgroup(root_anc.get_children()[1])
+
+    # Write out newly rooted tree
+    unrooted_tree.write(outfile=output_newick)

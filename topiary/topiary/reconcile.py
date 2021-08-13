@@ -1,13 +1,20 @@
 
+import topiary
 
-def annotate_tree_with_calls(df,tree,work_on_copy=True):
+import numpy as np
+
+import os
+
+
+def _annotate_tree_with_calls(df,tree,work_on_copy=True):
     """
     Annotate the leaves of an ete3 tree with information extracted from a
     topiary dataframe.
     """
-
     # Copy tree -- do not operate on input tree directly
-    tree = util.load_tree(tree)
+    tree = topiary.util.load_tree(tree)
+    if work_on_copy:
+        tree = tree.copy(method="deepcopy")
 
     # Create dictionaries mapping uid to species, paralog, ott, and call.
     out_dict = {}
@@ -35,7 +42,7 @@ def annotate_tree_with_calls(df,tree,work_on_copy=True):
 
     return tree
 
-def create_generax(df,gene_tree):
+def create_generax(df,gene_tree,model,out_dir="yo"):
     """
     Gene tree, expected to have uid taxon names.
     """
@@ -45,7 +52,7 @@ def create_generax(df,gene_tree):
 
     # Annotate gene tree with uid, ott, etc. and arbitrarily resolve any
     # polytomies.
-    gene_tree = annotate_tree_with_calls(df,gene_tree)
+    gene_tree = _annotate_tree_with_calls(df,gene_tree)
     gene_tree.resolve_polytomy()
 
     uid_in_gene_tree = []
@@ -72,31 +79,44 @@ def create_generax(df,gene_tree):
     df = df.loc[mask]
 
     # Get species tree.
-    dp_tree = topiary.get_species_tree(df)
-    dp_tree_str = dp_tree.as_string(schema="newick")
-    dp_tree_str = re.sub("\'","",dp_tree_str)
-    species_tree = ete3.Tree(dp_tree_str)
-
-    # Get species tree that has only the species from the gene tree
-    species_tree_to_write = species_tree.copy(method="deepcopy")
-    species_tree_to_write.prune(list(seen_in_gene_tree))
+    species_tree = topiary.get_species_tree(df)
 
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()
-    for n in species_tree_to_write.traverse():
+    for n in species_tree.traverse():
         if n.dist != 1:
             n.dist = 1
         if n.support != 1:
             n.support = 1
 
-    f = open("generax-test/alignment.fasta","w")
-    f.write("".join(fasta_out))
+
+    # Construct the control file for generax
+    control_out = []
+    control_out.append("[FAMILIES]")
+    control_out.append("- reconcile")
+    control_out.append("starting_gene_tree = gene_tree.newick")
+    control_out.append("alignment = alignment.phy")
+    control_out.append("mapping = mapping.link")
+    control_out.append(f"subst_model = {model}")
+
+    # Write out control file
+    f = open(os.path.join(out_dir,"control.txt"),"w")
+    f.write("\n".join(control_out))
     f.close()
 
-    gene_tree_to_write.write(outfile="generax-test/gene_tree.newick",format=5)
-    species_tree_to_write.write(outfile="generax-test/species_tree.newick")
+    # Write out .phy file
+    topiary.write_phy(df,os.path.join(out_dir,"alignment.phy"),
+                      seq_column="alignment")
 
-    f = open("generax-test/mapping.link","w")
+    # Write out gene tree
+    gene_tree.write(outfile=os.path.join(out_dir,"gene_tree.newick"),
+                    format=5)
+
+    # Write out species tree
+    species_tree.write(outfile=os.path.join(out_dir,"species_tree.newick"))
+
+    # Write out link file
+    f = open(os.path.join(out_dir,"mapping.link"),"w")
     for k in link_dict:
         f.write(f"{k}:")
         f.write(";".join(link_dict[k]))
