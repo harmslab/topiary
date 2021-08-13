@@ -1,15 +1,18 @@
 
 import topiary
-
 import numpy as np
-
 import os
-
 
 def _annotate_tree_with_calls(df,tree,work_on_copy=True):
     """
     Annotate the leaves of an ete3 tree with information extracted from a
     topiary dataframe.
+
+    df: topiary data frame
+    tree: tree (newick, dendropy, or ete3)
+    work_on_copy: whether or not to work on copy of existing tree.
+
+    returns: ete3 with annotations.
     """
     # Copy tree -- do not operate on input tree directly
     tree = topiary.util.load_tree(tree)
@@ -42,9 +45,15 @@ def _annotate_tree_with_calls(df,tree,work_on_copy=True):
 
     return tree
 
-def create_generax(df,gene_tree,model,out_dir="yo"):
+def _create_generax_input(df,gene_tree):
     """
-    Gene tree, expected to have uid taxon names.
+    Take a dataframe and generate the data structures necessary for a GeneRax
+    run.
+
+    df: topiary data frame.
+    gene_tree: gene tree with uid taxon names.
+
+    returns consistently named gene_tree, species_tree, and link_dict
     """
 
     # Only look at sequences flagged to keep
@@ -89,6 +98,20 @@ def create_generax(df,gene_tree,model,out_dir="yo"):
         if n.support != 1:
             n.support = 1
 
+    return gene_tree, species_tree, link_dict
+
+def _write_generax_input(df,gene_tree,species_tree,link_dict,model,out_dir):
+    """
+    Write out files for running generax. The contents of this directory can be
+    run on the command line by:
+
+    df: topiary data frame
+    gene_tree: gene tree returned from _create_generax_input
+    species_tree: species tree returned from _create_generax_input
+    link_dict: link_dict returned from _create_generax_input
+    model: phylogenetic model to use (should match ml tree)
+    out_dir: output directory to write files
+    """
 
     # Construct the control file for generax
     control_out = []
@@ -122,3 +145,49 @@ def create_generax(df,gene_tree,model,out_dir="yo"):
         f.write(";".join(link_dict[k]))
         f.write("\n")
     f.close()
+
+    # Command that would run generax
+    f = open(os.path.join(out_dir,"run.sh"),"w")
+    f.write("generax -f control.txt -s species_tree.newick -p result -r UndatedDL\n")
+    f.close()
+
+def setup_generax(df,gene_tree,model,out_dir,dir_with_bootstraps=None):
+
+    if os.path.isdir(out_dir):
+        err = f"out_dir '{out_dir}' already exists."
+        raise FileExistsError(err)
+
+    os.mkdir(out_dir)
+    template_dir = os.path.join(out_dir,"template")
+    os.mkdir(template_dir)
+
+    # Create generax data structures
+    gene_tree, species_tree, link_dict = _create_generax_input(df,gene_tree)
+
+    # Actually write out generax output
+    _write_generax_input(df,gene_tree,species_tree,link_dict,model,template_dir)
+
+    if dir_with_bootstraps is not None:
+
+        bs_tree_file = os.path.join(dir_with_bootstraps,"alignment.raxml.bootstraps")
+        bs_trees = []
+        with open(dir_with_bootstraps) as f:
+            for line in f:
+                bs_trees.append(line.strip())
+
+        bs_msas = []
+        for i in range(len(bs_trees)):
+
+            # Create the bootstrap directory from the template directory
+            bs_dir = os.path.join(out_dir,f"bs_{i+1:04}")
+            shutil.copytree(template_dir,bs_dir)
+
+            # Copy in bootstrap msa
+            bs_msa = append(os.path.join(dir_with_bootstraps,
+                                         f"alignment.raxml.bootstrapMSA.{i+1}.phy"))
+            shutil.copy(bs_msa,os.path.join(bs_dir,"alignment.phy"))
+
+            # Copy in the bootstrap tree
+            f = open(os.path.join(bs_dir,"ene_tree.newick"),"w")
+            f.write(bs_trees[i])
+            f.close()
