@@ -22,6 +22,7 @@ from Bio import pairwise2
 from tqdm.auto import tqdm
 
 import re, sys, os, string, random, pickle, io, urllib, http
+import multiprocessing as mp
 
 def ncbi_blast_xml_to_df(xml_files,
                          aliases=None):
@@ -135,12 +136,99 @@ def ncbi_blast_xml_to_df(xml_files,
 
     return pd.DataFrame(out)
 
-def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
+def _reverse_blast_thread(args):
     """
+    Run reverse blast on a thread. Should only be called via reverse_blast.
+
+    takes args which are interpreted as (df,i,rev_blast_db,patterns,queue)
+
     df: expects df has "sequence", "start", and "end" columns. Will return a
         copy of the df with "rev_hit" and "paralog" columns, corresponding
         to top hit title and call based on rev_blast_dict. It will also
         update "keep" to be False for any paralog = None sequences.
+    i: iloc index to grab
+    rev_blast_db: reverse blast database
+    patterns: list of regular expression patterns to match sequences
+    queue: multiprocessing queue for storing results
+    """
+
+    # parse args
+    df = args[0]
+    i = args[1]
+    rev_blast_db = args[2]
+    patterns = args[3]
+    queue = args[4]
+
+    index = df.index[i]
+
+    s = df.loc[index,"sequence"]
+    a = df.loc[index,"start"]
+    b = df.loc[index,"end"]
+
+    seq = s[a:b]
+    hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=50)
+
+    hit_call = None
+    hit_def = None
+    hit_e_value = None
+    next_hit_e_value = None
+    try:
+
+        # Look at the top hit. See if it matches one of the patterns.
+        hit_def = hit.loc[0,"hit_def"]
+        for p in patterns:
+            if p[0].search(hit_def):
+                hit_call = p[1]
+                break
+
+        # If we made a hit call...
+        if hit_call is not None:
+
+            # Get e-value for the top hit
+            hit_e_value = hit.loc[0,"e_value"]
+
+            # Go through the next hits sequentially, looking for the first
+            # hit that does not match the search pattern.  Record that
+            # match e value. The ratio between hit_e_value and
+            # next_hit_e_value tells us whether we are confident in the
+            # reverse blast.
+            for j in range(1,len(hit)):
+                try:
+                    next_hit_def = hit.loc[j,"hit_def"]
+                    found_match = False
+                    for p in patterns:
+                        if p[0].search(next_hit_def):
+                            found_match = True
+                            break
+
+                    # If we did not find a match, record the e-value
+                    if not found_match:
+                        next_hit_e_value = hit.loc[j,"e_value"]
+                        break
+
+                except KeyError:
+                    # No more hits!
+                    break
+
+    except KeyError:
+        pass
+
+    # update queue
+    queue.put((i,hit_def,hit_call,hit_e_value,next_hit_e_value))
+
+
+def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
+    """
+    df: expects df has "sequence", "start", and "end" columns. Will return a
+        copy of the df with new columns:
+
+        rev_hit: top reverse blast hit
+        paralog: paralog, if pattern from call_dict matched top hit
+        rev_e_value: e-value for top reverse hit
+        next_rev_e_value: e-value for best reverse hit that does *not* match a
+                          pattern.
+
+        It will also update "keep" to be False for any paralog = None sequences.
     call_dict: dictionary with regular expressions as keys and calls as values.
 
                example:
@@ -150,6 +238,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
                 "MD-1":"LY86"}
 
     rev_blast_db: pointer to local blast database for reverse blasting.
+    num_threads: number of threads to use. if -1, use all available.
     """
 
     print("Performing reverse blast...")
@@ -159,43 +248,47 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
         for k in call_dict:
             patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
 
-    results = []
-    for i in tqdm(range(len(df))):
-
-        #### ------------
-
-        i_start = i
-        index = df.index[i]
-
-        s = df.loc[index,"sequence"]
-        a = df.loc[index,"start"]
-        b = df.loc[index,"end"]
-
-        seq = s[a:b]
-        hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=1)
-
-        hit_call = None
+    # Figure out number of threads to use
+    if num_threads < 0:
         try:
-            hit_def = hit.loc[0,"hit_def"]
-            for j in range(len(patterns)):
-                if patterns[j][0].search(hit_def):
-                    hit_call = patterns[j][1]
-                    break
-        except KeyError:
-            hit_def = None
+            num_threads = mp.cpu_count()
+        except NotImplementedError:
+            num_threads = os.cpu_count()
+            if num_threads is None:
+                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                num_threads = 1
 
-        # With lock...
-        results.append((i_start,hit_def,hit_call))
-        ##### -------------
+    # queue will hold results from each run.
+    queue = mp.Manager().Queue()
+    with mp.Pool(num_threads) as pool:
+
+        # This is a bit obscure. Build a list of args to pass to the pool.
+        # all_args has all len(df) reverse blast runs we want to do.
+        all_args = [(df,i,rev_blast_db,patterns,queue) for i in range(len(df))]
+
+        # Black magic. pool.imap() runs a function on elements in iterable,
+        # filling threads as each job finishes. tqdm gives us a status bar.
+        # By wrapping pool iterator, we get a status bar that updates as each
+        # thread finishes.
+        list(tqdm(pool.imap(_reverse_blast_thread,all_args),total=len(all_args)))
+
+    # Get results out of the queue. s
+    results = []
+    while not queue.empty():
+        results.append(queue.get())
 
     # Sort results
     results.sort()
     rev_hit = [r[1] for r in results]
     paralog = [r[2] for r in results]
+    rev_e_value = [r[3] for r in results]
+    next_rev_e_value = [r[4] for r in results]
 
     new_df = df.copy()
     new_df["rev_hit"] = rev_hit
     new_df["paralog"] = paralog
+    new_df["rev_e_value"] = rev_e_value
+    new_df["next_rev_e_value"] = next_rev_e_value
 
     # Remove sequences that do not reverse blast from consideration
     mask = np.array([p is None for p in paralog],dtype=np.bool)
@@ -207,7 +300,8 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38"):
 
 def remove_redundancy(df,cutoff=0.95,key_species=[]):
     """
-    De-duplicate sequences according to cutoff.
+    De-duplicate sequences according to cutoff and semi-intelligent heuristic
+    criteria.
 
     Returns a copy of df in which "keep" is set to False for duplicates.
 
@@ -215,11 +309,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     according to specific criteria (in this order of importance):
 
         1. whether sequence is from a key species
-        2. how different the sequence length is from the median length
-        3. whether it's annotated as low quality
-        4. whether it's annotated as partial
-        5. whether it's annotated as precursor
-        6. whether it's annotated as structure
+        2. whether it's annotated as structure
+        3. how different the sequence length is from the median length
+        4. whether it's annotated as low quality
+        5. whether it's annotated as partial
+        6. whether it's annotated as precursor
         7. whether it's annotated as hypothetical
         8. whether it's annotated as isoform
         9. sequence length (preferring longer)
@@ -247,16 +341,16 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
             key_species_score = 1.0
 
         return np.array([key_species_score,
+                         row.structure,
                          row.diff_from_median,
                          row.low_quality,
                          row.partial,
                          row.precursor,
-                         row.structure,
                          row.hypothetical,
                          row.isoform,
                          1/row.length],dtype=np.float)
 
-    def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff):
+    def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
         """
         Compare sequence A and B based on alignment. If the sequences are
         similar within cutoff, compare A_stats and B_stats and take the sequence
@@ -269,6 +363,8 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
         A_qual: quality scores for A
         B_qual: quality scores for B
         cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
+        discard_key: whether or not to discard key species, regardless of their
+                     qualities.
 
         returns bool, bool
 
@@ -287,6 +383,12 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
         # If sequence similarity is greater than the cutoff, select one.
         else:
+
+            # If we are not discarding key sequences and both sequences are
+            # from key species, automatically keep both.
+            if not discard_key:
+                if A_qual[0] == 1 and B_qual[0] == 1:
+                    return True, True
 
             # Compare two vectors. Identify first element that differs.
 
@@ -337,39 +439,100 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
     print("Removing redundant sequences within species.")
     unique_species = np.unique(new_df.species)
-    for s in tqdm(unique_species):
 
-        # species indexs are iloc row indexes corresponding to species of
-        # interest.
-        species_mask = new_df.species == s
-        species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
-        for x in range(len(species_rows)):
+    total_calcs = 0
+    for s in unique_species:
+        a = np.sum(new_df.species == s)
+        total_calcs += a*(a - 1)//2
 
-            # Get species index (i). If it's already set to keep = False,
-            # don't compare to other sequences.
-            i = df.index[species_rows[x]]
+    with tqdm(total=total_calcs) as pbar:
+
+        for s in unique_species:
+
+            # species indexes are iloc row indexes corresponding to species of
+            # interest.
+            species_mask = new_df.species == s
+            species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
+            num_this_species = np.sum(species_mask)
+            for x in range(num_this_species):
+
+                # Get species index (i). If it's already set to keep = False,
+                # don't compare to other sequences.
+                i = df.index[species_rows[x]]
+                if not new_df.loc[i,"keep"]:
+                    continue
+
+                # Get sequence and quality score for A
+                A_seq = new_df.loc[i,"sequence"]
+                A_qual = quality_scores[species_rows[x]]
+
+                # Loop over other sequences in this species
+                for y in range(x+1,num_this_species):
+
+                    # Get species index (j). If it's already set to keep = False,
+                    # don't compare to other sequences.
+                    j = df.index[species_rows[y]]
+                    if not new_df.loc[j,"keep"]:
+                        continue
+
+                    # Get sequence and quality score for B
+                    B_seq = new_df.loc[j,"sequence"]
+                    B_qual = quality_scores[species_rows[y]]
+
+                    # Decide which sequence to keep (or both). Discard sequences
+                    # even if they are from key species--removing redundancy within
+                    # a given species.
+                    A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
+                                                   discard_key=True)
+
+                    # Update keep for each sequence
+                    new_df.loc[i,"keep"] = A_bool
+                    new_df.loc[j,"keep"] = B_bool
+
+                    # If we got rid of A, break out of this loop.  Do not need to
+                    # compare to A any more.
+                    if not A_bool:
+                        break
+
+            pbar.update(num_this_species*(num_this_species - 1)//2)
+
+    print("Removing redundant sequences, all-on-all.")
+
+    N = len(new_df)
+    total_calcs = N*(N-1)//2
+    with tqdm(total=total_calcs) as pbar:
+
+        counter = 1
+        for x in range(len(new_df)):
+
+            i = new_df.index[x]
+
+            # If we've already decided not to keep i, don't even look at it
             if not new_df.loc[i,"keep"]:
+                pbar.update(N - counter)
+                counter += 1
                 continue
 
-            # Get sequence and quality score for A
+            # Get sequence of sequence and quality scores for i
             A_seq = new_df.loc[i,"sequence"]
-            A_qual = quality_scores[species_rows[x]]
+            A_qual = quality_scores[x]
 
-            # Loop over other sequences in this species
-            for y in range(x+1,len(species_rows)):
+            for y in range(i+1,len(new_df)):
 
-                # Get species index (j). If it's already set to keep = False,
-                # don't compare to other sequences.
-                j = df.index[species_rows[y]]
+                j = new_df.index[y]
+
+                # If we've already decided not to keep j, don't even look at it
                 if not new_df.loc[j,"keep"]:
                     continue
 
-                # Get sequence and quality score for B
+                # Get sequence of sequence and quality scores for j
                 B_seq = new_df.loc[j,"sequence"]
-                B_qual = quality_scores[species_rows[y]]
+                B_qual = quality_scores[y]
 
-                # Decide which sequence to keep (or both)
-                A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff)
+                # Decide which sequence to keep (or both). Do not discard any
+                # sequence from a key species.
+                A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
+                                               discard_key=False)
 
                 # Update keep for each sequence
                 new_df.loc[i,"keep"] = A_bool
@@ -380,49 +543,15 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                 if not A_bool:
                     break
 
-    print("Removing redundant sequences, all-on-all.")
-    for x in tqdm(range(len(new_df))):
-
-        i = new_df.index[x]
-
-        # If we've already decided not to keep i, don't even look at it
-        if not new_df.loc[i,"keep"]:
-            continue
-
-        # Get sequence of sequence and quality scores for i
-        A_seq = new_df.loc[i,"sequence"]
-        A_qual = quality_scores[x]
-
-        for y in range(i+1,len(new_df)):
-
-            j = new_df.index[y]
-
-            # If we've already decided not to keep j, don't even look at it
-            if not new_df.loc[j,"keep"]:
-                continue
-
-            # Get sequence of sequence and quality scores for j
-            B_seq = new_df.loc[j,"sequence"]
-            B_qual = quality_scores[y]
-
-            # Decide which sequence to keep (or both)
-            A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff)
-
-            # Update keep for each sequence
-            new_df.loc[i,"keep"] = A_bool
-            new_df.loc[j,"keep"] = B_bool
-
-            # If we got rid of A, break out of this loop.  Do not need to
-            # compare to A any more.
-            if not A_bool:
-                break
+            pbar.update(N - counter)
+            counter += 1
 
     print("Done.")
 
     return new_df
 
 def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
-                write_only_keepers=True,empty_char="X-?"):
+                write_only_keepers=True,empty_char="X-?",clean_sequence=False):
     """
     df: data frame to write out
     out_file: output file
@@ -432,6 +561,7 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
+    clean_sequence: replace any non-aa characters with "-"
     """
 
     # Make sure seq name is sane
@@ -472,6 +602,10 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
         if seq == "" or seq is None or is_empty:
             continue
 
+        # Replace non-aa characters with '-'
+        if clean_sequence:
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
+
         out.append(f">{h}\n{seq}\n")
 
     # Write output
@@ -482,7 +616,8 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
 
 def write_phy(df,out_file,seq_column="sequence",
               write_only_keepers=True,
-              empty_char="X-?"):
+              empty_char="X-?",
+              clean_sequence=False):
     """
     Write out a .phy file using uid as keys.
 
@@ -492,6 +627,7 @@ def write_phy(df,out_file,seq_column="sequence",
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
+    clean_sequence: replace any non-aa characters with "-"
     """
 
     # Make sure seq column is sane
@@ -549,6 +685,10 @@ def write_phy(df,out_file,seq_column="sequence",
             num_to_write -= 1
             continue
 
+        # Replace non-aa characters with '-'
+        if clean_sequence:
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
+
         out.append(f"{h}\n{seq}\n")
 
     out.insert(0,f"{num_to_write}  {ali_length}\n\n")
@@ -572,7 +712,7 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
         new_df[load_into_column] = None
 
     # Figure out how pretty and uid calls map to df index
-    pretty_to_index, uid_to_index = _private._get_index_maps(new_df)
+    pretty_to_index, uid_to_index = _private.get_index_maps(new_df)
 
     # Go through the fasta file and get sequences
     header = []

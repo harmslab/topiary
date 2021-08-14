@@ -24,6 +24,7 @@ from tqdm.auto import tqdm
 
 import re, sys, os, string, random, pickle, io, urllib, http
 import warnings
+import multiprocessing as mp
 
 def read_blast_xml(filename):
     """
@@ -253,55 +254,113 @@ def parse_ncbi_line(line,accession=None,aliases=None):
 
     return out
 
-def entrez_download(to_download,block_size=50,num_tries_allowed=5):
+def _entrez_download_thread(args):
     """
-    Download sequences off of entrez, catching errors.
+    Download ids from the NCBI. args is interpreted as:
+
+    index: number of request, used for sorting results after multithreading
+    ids: string with comma-separated list of ids to download
+    num_tries_allowed: how many attempts should be made to actually do
+                       a given query
+    queue: multiprocessing queue in which to store results
+    """
+
+    index = args[0]
+    ids = args[1]
+    num_tries_allowed = args[2]
+    queue = args[3]
+
+    # While we haven't run out of tries...
+    tries = 0
+    while tries < num_tries_allowed:
+
+        # Try to read output.
+        try:
+            handle = Entrez.efetch(db="protein",
+                                   id=ids,
+                                   rettype="fasta",
+                                   retmode="text")
+            out = handle.read()
+            handle.close()
+
+        # If some kind of http error or timeout, set out to None
+        except (urllib.error.HTTPError,http.client.IncompleteRead):
+            out = None
+
+        # If out is None, try again. If not, break out of loop--success!
+        if out is None:
+            tries += 1
+            continue
+        else:
+            break
+
+    # We failed to download. Throw an error.
+    if out is None:
+        err = "could not download sequences\n"
+        raise ValueError(err)
+
+    # Record out and initial index in the output queue.
+    queue.put((index,out))
+
+def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1):
+    """
+    Download sequences off of entrez, catching errors. This is done in a
+    multi-threaded fashion, allowing multiple requests to NCBI at the same
+    time.
 
     to_download: list of ids to download
     block_size: download in chunks this size
     num_tries_allowed: number of times to try before giving up and throwing
                        an error.
+    num_threads: number of threads to use. if -1, use all available.
     """
 
-    def _do_download(ids):
-        """
-        Download ids from the NCBI, doing some error checking.
-        """
-
+    # Figure out number of threads to use
+    if num_threads < 0:
         try:
-            handle = Entrez.efetch(db="protein",
-                       id=ids,
-                       rettype="fasta",
-                       retmode="text")
-            out = handle.read()
-            handle.close()
-        except (urllib.error.HTTPError,http.client.IncompleteRead):
-            return None
+            num_threads = mp.cpu_count()
+        except NotImplementedError:
+            num_threads = os.cpu_count()
+            if num_threads is None:
+                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                num_threads = 1
 
-        return out
 
-    total_download = []
-    print("Downloading sequences... ")
-    with tqdm(total=len(to_download)) as pbar:
+    # Figure out how many blocks we're going to download
+    num_blocks = len(to_download) // block_size
+    if len(to_download) % block_size > 0:
+        num_blocks += 1
+    print(f"Downloading {num_blocks} blocks of {block_size} sequences... ")
 
+    # queue will hold results from each download batch.
+    queue = mp.Manager().Queue()
+    with mp.Pool(num_threads) as pool:
+
+        # This is a bit obscure. Build a list of args to pass to the pool.
+        # all_args blocks of ids to download on individual threads. Each block
+        # is block_size in length
+        all_args = []
         for i in range(0,len(to_download),block_size):
-
             ids = ",".join(to_download[i:(i+block_size)])
-            tries = 0
-            while tries < num_tries_allowed:
-                out = _do_download(ids)
-                if out is None:
-                    tries += 1
-                    continue
-                else:
-                    break
+            all_args.append((i,ids,num_tries_allowed,queue))
 
-            if out is None:
-                err = "could not download sequences\n"
-                raise ValueError(err)
+        # Black magic. pool.imap() runs a function on elements in iterable,
+        # filling threads as each job finishes. tqdm gives us a status bar.
+        # By wrapping pool iterator, we get a status bar that updates as each
+        # thread finishes.
+        list(tqdm(pool.imap(_entrez_download_thread,all_args),
+                  total=len(all_args)))
 
-            total_download.append(out)
-            pbar.update(len(to_download[i:(i+block_size)]))
+    # Get results out of the queue. Sort by i to put in correct order
+    results = []
+    while not queue.empty():
+        results.append(queue.get())
+    results.sort()
+
+    # Get final downloaded stuff
+    total_download = []
+    for r in results:
+        total_download.append(r[1])
 
     print("Done.")
 

@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+__description__ = \
+"""
+Command line script for setting up a generax genetree/species tree
+reconciliation.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2021-08-12"
+
+import topiary
+
+import pandas as pd
+
+import sys, argparse, inspect, os, shutil
+import multiprocessing as mp
+
+
+def main(argv=None):
+
+    if argv is None:
+        argv = sys.argv[1:]
+
+    parser = argparse.ArgumentParser(prog="setup-generax",
+                                     description="Set up generax species tree reconcilation")
+
+    parser.add_argument("-c","--csv",nargs=1,help="topiary csv file",required=True)
+    parser.add_argument("-t","--tree",nargs=1,help="newick file with gene tree",required=True)
+    parser.add_argument("-m","--model",nargs=1,help="phylogenetic model",required=True)
+    parser.add_argument("-b","--bs-dir",nargs=1,
+                        help="directory with bootstrap replicate alignments and trees",default=None)
+    parser.add_argument("-o","--output",nargs=1,help="name for outputs",default="generax-run")
+    parser.add_argument("-f","--force",action='store_true',help="overwrite existing output")
+
+    args = parser.parse_args(argv)
+
+    # Get kwarg arguments specified
+    kwargs = {}
+
+    # csv file
+    csv_file = args.csv
+    if csv_file is not None:
+        kwargs["df"] = pd.read_csv(csv_file[0])
+
+    # tree file
+    tree_file = args.tree
+    if tree_file is not None:
+        kwargs["gene_tree"] = tree_file[0]
+
+    # phylogenetic model
+    model = args.model
+    if model is not None:
+        kwargs["model"] = model[0]
+
+    bs_dir = args.bs_dir
+    if bs_dir is not None:
+        kwargs["dir_with_bootstraps"] = bs_dir[0]
+
+    # output directory
+    output = args.output
+    if output is not None:
+        if type(output) is str:
+            kwargs["out_dir"] = output
+        else:
+            kwargs["out_dir"] = output[0]
+
+    if os.path.exists(kwargs["out_dir"]):
+        if args.force:
+            shutil.rmtree(kwargs["out_dir"])
+        else:
+            out_dir = kwargs["out_dir"]
+            err = f"output directory '{out_dir}' already exists\n"
+            raise FileExistsError(err)
+
+    topiary.reconcile.setup_generax(**kwargs)
+    topiary.reconcile.write_hpc_templates(kwargs['out_dir'])
+
+
+if __name__ == "__main__":
+    main()
