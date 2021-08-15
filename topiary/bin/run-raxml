@@ -9,7 +9,7 @@ __date__ = "2021-08-12"
 
 import topiary
 
-import sys, argparse, inspect
+import sys, argparse, inspect, os, shutil
 import multiprocessing as mp
 
 def main(argv):
@@ -25,7 +25,7 @@ def main(argv):
     parser.add_argument("mode",nargs=1,help="mode. must be ml, model, or anc")
 
     # Arguments shared by all modes
-    parser.add_argument("-a","--alignment",nargs=1,help="alignment file (.phy)")
+    parser.add_argument("-c","--csv",nargs=1,help="topiary csv file (.csv)")
     parser.add_argument("-t","--tree",nargs=1,help="tree file (newick)")
     parser.add_argument("-m","--model",nargs=1,help="phylogenetic model")
     parser.add_argument("-o","--output",nargs=1,help="name for outputs")
@@ -42,6 +42,8 @@ def main(argv):
     parser.add_argument("--anc-support-tree",nargs=1,
                         help="anc mode: tree with supports",
                         type=str)
+
+    parser.add_argument("--force",action='store_true',help="overwrite existing output")
 
     # Parse arguments
     args = parser.parse_args(argv)
@@ -70,10 +72,10 @@ def main(argv):
     if tree_file is not None:
         kwargs["tree_file"] = tree_file[0]
 
-    # alignment file
-    alignment_file = args.alignment
-    if alignment_file is not None:
-        kwargs["alignment_file"] = alignment_file[0]
+    # csv file
+    csv_file = args.csv
+    if csv_file is not None:
+        kwargs["df"] = csv_file[0]
 
     # phylogenetic model
     model = args.model
@@ -147,6 +149,10 @@ def main(argv):
     if err != "":
         err += "\n\n"
         raise ValueError(err)
+
+    if args.force:
+        if os.path.exists(kwargs["output"]):
+            shutil.rmtree(kwargs["output"])
 
     # Call actual function
     func(**kwargs)
