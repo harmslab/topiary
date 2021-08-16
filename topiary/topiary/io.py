@@ -174,7 +174,7 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
                 continue
 
         if take_pretty:
-            h = _private._to_pretty(row)
+            h = _private.to_pretty(row)
         else:
             h = row[seq_name]
 

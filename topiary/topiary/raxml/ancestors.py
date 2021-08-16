@@ -1,18 +1,14 @@
 __description__ = \
 """
-Wrap key features of raxml for asr work.
+Generate maximum likelihood ancestors using raxml.
 """
 __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
 
-# raxml binary to use it not specified by user
-RAXML_BINARY = "raxml-ng.dev"
-
-# -----------------------------------------------------------------------------
-# Module import
-# -----------------------------------------------------------------------------
-
 import topiary
+
+from ._raxml import create_new_dir, copy_input_file, prep_calc
+from ._raxml import run_raxml, RAXML_BINARY
 
 import pastml.acr
 import ete3
@@ -20,13 +16,12 @@ from ete3 import Tree
 
 import pandas as pd
 import numpy as np
+
+import os, re
+
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
 from matplotlib import gridspec
-
-import subprocess, os, glob, re, sys, time, random, string
-import shutil
-import multiprocessing as mp
 
 # -----------------------------------------------------------------------------
 # Configure plotting
@@ -56,379 +51,6 @@ CHEM_SIMILAR = [["A","C","N","Q","S","T"],
                 ["D","E"],
                 ["F","W","Y"],
                 ["I","L","M","V"]]
-
-# -----------------------------------------------------------------------------
-# raxml interaction functions
-# -----------------------------------------------------------------------------
-
-def _parse_raxml_info_for_aic(info_file):
-    """
-    Open a log file from a tree evaluation run and get log likelihood,
-    number of fit parameters, and various AIC scores.
-    """
-
-    # Open the file and read lines
-    out = {}
-    with open(info_file,'r') as f:
-        for line in f:
-
-            # Look for likelihood
-            if re.search("Final LogLikelihood:",line):
-                out["L"] = float(line.strip().split(":")[-1])
-                continue
-
-            # Look for number of parameters
-            if re.search("Free parameters",line):
-                out["N"] = int(line.strip().split(":")[-1])
-                continue
-
-            if re.search("AIC score",line):
-                cols = line.split("/")
-                for c in cols:
-
-                    value = float(c.strip().split(":")[-1])
-                    key = c.strip().split(":")[0].split()[0].strip()
-                    out[key] = value
-
-    # Return L, N, and AIC
-    return out
-
-def _gen_seed():
-    """
-    Generate a random string of 10 integers and return as a string for passing
-    to raxml.
-    """
-
-    return "".join([f"{random.choice(range(10)):d}" for _ in range(10)])
-
-def _create_new_dir(dir_name=None):
-    """
-    Create a new directory.
-
-    dir_name: if specified, name the directory this
-
-    returns name of created directory
-    """
-
-    # if dir_name is not specified, build it in a stereotyped fashion
-    if dir_name is None:
-        rand_name = "".join([random.choice(string.ascii_letters)
-                              for _ in range(10)])
-        dir_base = os.path.split(RAXML_BINARY)[-1]
-
-        dir_name = f"{dir_base}_{rand_name}"
-
-    # If directory already exists, throw error
-    if os.path.exists(dir_name):
-        err = f"{dir_name} already exists.\n"
-        raise FileExistsError(err)
-
-    # Make directory
-    os.mkdir(dir_name)
-
-    return dir_name
-
-def _copy_input_file(input_file,
-                     dir_name,
-                     file_name=None,
-                     make_input_dir=True,
-                     pretty_to_uid=False,
-                     df=None):
-    """
-    copy an input file into a directory in a stereotyped way.
-
-    If make_input_dir is specified, copy input_file into dir_name/00_input,
-    creating 00_input if necessary.  If make_input_dir is not specified,
-    copy in the file as dir_name/{input_file}.
-
-    input_file: file to copy in
-    dir_name: copy into dir_name
-    file_name: what to call file in new directory. If none, use same name.
-    make_input_dir: (bool) make input directory 00_input or not.
-    pretty_to_uid: (bool) convert file to uid
-    df: topiary data frame (required if pretty_to_uid is True)
-
-    returns name of copied file
-    """
-
-
-    if file_name is None:
-        file_name = os.path.split(input_file)[-1]
-    file_alone = os.path.split(file_name)[-1]
-
-    # If we are putting this into an input subdirectory
-    if make_input_dir:
-        input_dir = os.path.join(dir_name,"00_input")
-        if not os.path.exists(input_dir):
-            os.mkdir(input_dir)
-        file_alone = os.path.join("00_input",file_alone)
-
-    # Copy in file, potentially converting from to uid
-    out_file = os.path.join(dir_name,file_alone)
-    if pretty_to_uid:
-        if df is None:
-            err = "you must specify df if you set pretty_to_uid = True\n"
-            raise ValueError(err)
-        topiary.util.pretty_to_uid(df,input_file,out_file=out_file)
-    else:
-        shutil.copy(input_file,out_file)
-
-    return file_alone
-
-def _prep_calc_inputs(df=None,
-                      output=None,
-                      other_files=[],
-                      output_base="raxml-calc"):
-
-    # Create output directory
-    if output is None:
-        rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
-        output = f"{output_base}_{rand}"
-
-    dir_name = _create_new_dir(dir_name=output)
-
-    # Deal with data frame
-    if df is not None:
-
-        # Read/parse csv file.
-        csv_file = None
-        if type(df) is pd.DataFrame:
-            pass
-        elif type(df) is str:
-            csv_file = df
-            df = pd.read_csv(csv_file)
-        else:
-            err = "df must be a pandas data frame or csv file that can be read as\n"
-            err += "a pandas data frame\n"
-            raise ValueError(err)
-    else:
-        df = None
-        csv_file = None
-
-    if csv_file is not None:
-        csv_file = _copy_input_file(csv_file,dir_name,make_input_dir=True)
-
-    # Copy files into input directory. This will put them in 00_input and keep
-    # their original filenames so we have some notion of where they came from.
-    final_files = []
-    for f in other_files:
-        if f is None:
-            final_files.append(None)
-        else:
-            final_files.append(_copy_input_file(f,
-                                                dir_name,
-                                                make_input_dir=True,
-                                                pretty_to_uid=True,
-                                                df=df))
-
-    # Move into the output directory
-    starting_dir = os.getcwd()
-    os.chdir(dir_name)
-
-    # Write out alignment
-    if not os.path.exists("00_input"):
-        os.mkdir("00_input")
-
-    alignment_file = os.path.join("00_input","alignment")
-    topiary.write_phy(df,out_file=alignment_file,seq_column="alignment",
-                      write_only_keepers=True,clean_sequence=True)
-
-    out = {"df":df,
-           "csv_file":csv_file,
-           "alignment_file":alignment_file,
-           "starting_dir":starting_dir,
-           "other_files":final_files}
-
-    return out
-
-def _subproc_wrapper(cmd,stdout,queue):
-    """
-    Wrap the subprocess.run call to allow multithreading.
-
-    args: args to pass to subprocess.run
-    kwargs: kwargs to pass to subprocess.run
-    queue: multiprocessing queue to catch return value
-    """
-
-    ret = subprocess.run(cmd,stdout=stdout)
-    queue.put(ret)
-
-
-def _run_raxml(algorithm=None,
-               alignment_file=None,
-               tree_file=None,
-               model=None,
-               dir_name=None,
-               seed=None,
-               threads=1,
-               raxml_binary=RAXML_BINARY,
-               log_to_stdout=True,
-               other_args=[]):
-    """
-    Run raxml. Creates a working directory, copies in the relevant files, runs
-    there, and then returns to the previous directory.
-
-    algorithm: algorithm to run (--all, --ancestral, etc.)
-    alignment_file: alignment file in .phy format (passed via --msa)
-    tree_file: tree file in .newick format (passed via --tree)
-    model: model in format recognized by --model
-    dir_name: If specified, this will be the name of the working directory.
-    seed: true/false, int, or str. If true, pass a randomly generated seed to
-          raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads)
-    raxml_binary: raxml binary to use
-    log_to_stdout: capture log and write to std out.
-    other_args: list of arguments to pass to raxml
-    """
-
-    # Create directory in which to do calculation
-    dir_name = _create_new_dir(dir_name=dir_name)
-
-    # Copy alignment and tree files into the directory (if specified)
-    if alignment_file is not None:
-        alignment_file = _copy_input_file(alignment_file,
-                                          dir_name,
-                                          file_name="alignment",
-                                          make_input_dir=False)
-    if tree_file is not None:
-        tree_file = _copy_input_file(tree_file,
-                                     dir_name,
-                                     file_name="tree",
-                                     make_input_dir=False)
-
-    # Go into working directory
-    cwd = os.getcwd()
-    os.chdir(dir_name)
-
-    # Build a command list
-    cmd = [raxml_binary]
-
-    if algorithm is not None:
-        cmd.append(algorithm)
-
-    if alignment_file is not None:
-        cmd.extend(["--msa",alignment_file])
-
-    if tree_file is not None:
-        cmd.extend(["--tree",tree_file])
-
-    if model is not None:
-        cmd.extend(["--model",model])
-
-    # seed argument is overloaded. Interpret based on type
-    if seed is not None:
-        if type(seed) is bool:
-            cmd.extend(["--seed",_gen_seed()])
-        elif type(seed) is int:
-            cmd.extend(["--seed",f"{seed:d}"])
-        elif type(seed) is str:
-
-            try:
-                int(seed)
-            except ValueError:
-                err = f"seed {seed} could not be interpreted as an int\n"
-                raise ValueError(err)
-
-            cmd.extend(["--seed",seed])
-        else:
-            err = "seed must be True/False, int, or string representation of int\n"
-            raise ValueError(err)
-
-    cmd.extend(["--threads",f"{threads:d}"])
-
-    # Put on any custom args
-    for a in other_args:
-        cmd.append(a)
-
-    # Construct command and dump to std out
-    full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'")
-    sys.stdout.flush()
-
-
-    queue = mp.Queue()
-    main_process = mp.Process(target=_subproc_wrapper,
-                              args=(cmd,subprocess.PIPE,queue))
-
-    main_process.start()
-
-
-    def _follow_generator(f,process):
-
-        # start infinite loop
-        while process.is_alive():
-            # read last line of file
-            line = f.readline()
-            # sleep if file hasn't been updated
-            if not line:
-                time.sleep(0.1)
-                continue
-
-            yield line
-
-    # If dumping log
-    if log_to_stdout:
-
-        # While main process is running
-        while main_process.is_alive():
-
-            # Try to open log every second
-            try:
-                f = open("alignment.raxml.log","r")
-                # Use follow generator function to catch lines as the come out
-                for line in _follow_generator(f,main_process):
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
-                f.close()
-            except FileNotFoundError:
-                time.sleep(1)
-
-    # Wait for main process to complete and get return
-    main_process.join()
-    ret = queue.get()
-
-    # Call subprocess with command
-    if ret.returncode != 0:
-        err = f"ERROR: raxml returned {ret.returncode}\n\n"
-        err += "------------------------------------------------------------\n"
-        err += " raxml output \n"
-        err += "------------------------------------------------------------\n"
-        err += "\n\n"
-
-        err += "".join([line for line in ret.stdout.decode()])
-
-        raise RuntimeError(err)
-
-    # Leave working directory
-    os.chdir(cwd)
-
-# -----------------------------------------------------------------------------
-# Tree operations
-# -----------------------------------------------------------------------------
-
-def _generate_parsimony_tree(alignment_file,
-                             dir_name="parsimony-tree",
-                             threads=1,
-                             raxml_binary=RAXML_BINARY):
-    """
-    Generate a parsimony tree from an alignment.
-
-    alignment_file: alignment file in .phy format
-    dir_name: name to give directory
-    threads: number of threads to use
-    raxml_binary: raxml binary to use
-    """
-
-    _run_raxml(algorithm="--start",
-               alignment_file=alignment_file,
-               dir_name=dir_name,
-               seed=True,
-               model="LG",
-               threads=threads,
-               raxml_binary=raxml_binary,
-               log_to_stdout=False,
-               other_args=["--tree","pars{1}"])
-
 
 # -----------------------------------------------------------------------------
 # Ancestor processing functions
@@ -803,14 +425,14 @@ def _parse_raxml_anc_output(df,
     """
 
     # Make directory and copy in files
-    dir_name = _create_new_dir(dir_name)
+    dir_name = create_new_dir(dir_name)
 
-    anc_prob_file = _copy_input_file(anc_prob_file,dir_name)
-    alignment_file = _copy_input_file(alignment_file,dir_name)
-    tree_file_with_labels = _copy_input_file(tree_file_with_labels,dir_name)
+    anc_prob_file = copy_input_file(anc_prob_file,dir_name)
+    alignment_file = copy_input_file(alignment_file,dir_name)
+    tree_file_with_labels = copy_input_file(tree_file_with_labels,dir_name)
     if tree_file_with_supports is not None:
-        tree_file_with_supports = _copy_input_file(tree_file_with_supports,
-                                                   dir_name)
+        tree_file_with_supports = copy_input_file(tree_file_with_supports,
+                                                  dir_name)
 
     # Move into output directory
     cwd = os.getcwd()
@@ -1030,199 +652,6 @@ def _parse_raxml_anc_output(df,
     os.chdir(cwd)
 
 
-# -----------------------------------------------------------------------------
-# Public functions for doing main raxml calculations
-# -----------------------------------------------------------------------------
-
-def find_best_model(df,
-                    tree_file=None,
-                    model_matrices=["Blosum62","cpREV"], #,"Dayhoff","DCMut","DEN",
-                                    #"FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
-                                    #"mtART","mtMAM","mtREV","mtZOA","PMB",
-                                    #"rtREV","stmtREV","VT","WAG","LG4M","LG4X",
-                                    #"PROTGTR"],
-                    model_rates=["","G8"],
-                    model_freqs=["","FC","FO"],
-                    model_invariant=["","IO","IC"],
-                    output=None,
-                    threads=1,
-                    raxml_binary=RAXML_BINARY):
-    """
-    Find the best phylogentic model to use for tree and ancestor reconstruction
-    given an alignment and (possibly) a tree.
-
-    df: topiary data frame or csv written out from topiary df
-    tree_file: tree file in newick format. If not specified, parsimony tree
-               is generated and used
-    model_matrices: list of model matrices to check
-    model_rates: ways to treat model rates
-    model_freqs: ways to treat model freqs.
-    output: directory for output. it none, will generate random name
-    threads: number of threads to use
-    raxml_binary: raxml binary to use
-    """
-
-    # Copy files in, write out alignment, etc.
-    result = _prep_calc_inputs(df=df,
-                               output=output,
-                               other_files=[tree_file],
-                               output_base="find_best_model")
-
-    df = result["df"]
-    csv_file = result["csv_file"]
-    alignment_file = result["alignment_file"]
-    tree_file = result["other_files"][0]
-    starting_dir = result["starting_dir"]
-
-    # Generate a parsimony tree if not was specified
-    if tree_file is None:
-        _generate_parsimony_tree(alignment_file,
-                                 dir_name="01_make-parsimony-tree",
-                                 threads=threads,
-                                 raxml_binary=raxml_binary)
-        tree_file = "02_parsimony-tree.newick"
-        shutil.copy(os.path.join("01_make-parsimony-tree",
-                                 "alignment.raxml.startTree"),
-                    tree_file)
-
-    # Dictionary to hold stats for each model
-    out = {"model":[]}
-
-    seed = _gen_seed()
-
-    # All possible models, dropping rate, freq, invariant for LG4M and LG4X.
-    num_mat = len([m for m in model_matrices if m not in ["LG4M","LG4X"]])
-    num_models = num_mat*len(model_rates)*len(model_freqs)*len(model_invariant) + 2
-
-    # Go over all combos of the requested matrices, rates, and freqs.
-    model_counter = 1
-    for matrix in model_matrices:
-        for rate in model_rates:
-            for freq in model_freqs:
-                for invariant in model_invariant:
-
-                    # Check for incompatible matrix/freq/rate combos
-                    if matrix in ["LG4M","LG4X"]:
-                        if rate != "" or freq != "" or invariant != "":
-                            continue
-
-                    # Build model string (for example: LG+G8+FC+IO)
-                    model = [matrix,rate,freq,invariant]
-                    model = [m for m in model if m != ""]
-                    model = "+".join(model)
-
-                    # Print model number we're trying
-                    print(f"{model} ({model_counter}/{num_models})")
-                    model_counter += 1
-
-                    # Optimize branch lengths etc. on the existing tree
-                    _run_raxml(algorithm="--evaluate",
-                               alignment_file=alignment_file,
-                               tree_file=tree_file,
-                               model=model,
-                               seed=seed,
-                               dir_name="tmp",
-                               threads=threads,
-                               raxml_binary=raxml_binary,
-                               log_to_stdout=False)
-
-                    # Grab the info file from this run
-                    os.chdir("tmp")
-
-                    # Get results from the info file
-                    result = _parse_raxml_info_for_aic("alignment.raxml.log")
-                    out["model"].append(model)
-                    for r in result:
-                        try:
-                            out[r].append(result[r])
-                        except KeyError:
-                            out[r] = [result[r]]
-
-                    # Get out of temporary directory and nuke
-                    os.chdir("..")
-                    shutil.rmtree("tmp")
-
-    # Create a csv file sorted best to worst aicc
-    final_df = pd.DataFrame(out)
-
-    min_aic = np.min(final_df.AICc)
-    final_df["p"] = np.exp((min_aic - final_df.AICc)/2)
-    indexer = np.argsort(final_df.p)[::-1]
-    final_df = final_df.iloc[indexer,:]
-    final_df.to_csv("model-comparison.csv")
-
-    # Get best model
-    best_model = final_df.model.iloc[0]
-
-    # Write model to a file
-    f = open("best-model.txt","w")
-    f.write(best_model)
-    f.close()
-
-    # Print best model to stdout
-    print(f"\n\nBest model: {best_model}\nAICc Prob:{final_df.p.iloc[0]}\n\n")
-
-    # Leave the output directory
-    os.chdir(starting_dir)
-
-def generate_ml_tree(df,
-                     model,
-                     tree_file=None,
-                     output=None,
-                     threads=1,
-                     raxml_binary=RAXML_BINARY,
-                     write_bs_msa=True):
-    """
-    Generate maximum likelihood tree with SH supports from an alignment given
-    a substitution model.
-
-    df: topiary data frame or csv written out from topiary df
-    model: model (e.g. LG+G8).
-    tree_file: tree_file in newick format. If not specified, a parsimony tree
-               will be generated. used as starting point.
-    output: name of output directory.
-    threads: number of threads to use
-    raxml_binary: what raxml binary to use
-    write_bs_msa: whether or not to write out all bootstrap alignments
-    """
-
-    # Copy files in, write out alignment, etc.
-    result = _prep_calc_inputs(df=df,
-                               output=output,
-                               other_files=[tree_file],
-                               output_base="generate_ml_tree_")
-
-    df = result["df"]
-    csv_file = result["csv_file"]
-    alignment_file = result["alignment_file"]
-    tree_file = result["other_files"][0]
-    starting_dir = result["starting_dir"]
-
-    other_args = ["--bs-trees","autoMRE"]
-    if write_bs_msa:
-        other_args.append("--bs-write-msa")
-
-    # Run raxml to create tree
-    _run_raxml(algorithm="--all",
-               alignment_file=alignment_file,
-               tree_file=tree_file,
-               model=model,
-               dir_name="01_make-ml-tree",
-               seed=True,
-               threads=threads,
-               raxml_binary=raxml_binary,
-               other_args=other_args)
-    tree_file = "02_ml-tree.newick"
-
-    # Write out a pretty version of the tree
-    topiary.util.uid_to_pretty(df,
-                               "01_make-ml-tree/alignment.raxml.support",
-                               out_file=tree_file)
-
-    # Leave working directory
-    os.chdir(starting_dir)
-
-
 def generate_ancestors(df,
                        model,
                        tree_file,
@@ -1247,10 +676,10 @@ def generate_ancestors(df,
     plots, and a tree with ancestral names and supports
     """
 
-    result = _prep_calc_inputs(df=df,
-                               output=output,
-                               other_files=[tree_file,tree_file_with_supports],
-                               output_base="generate_ancestors")
+    result = prep_calc(df=df,
+                       output=output,
+                       other_files=[tree_file,tree_file_with_supports],
+                       output_base="generate_ancestors")
 
     df = result["df"]
     csv_file = result["csv_file"]
@@ -1260,14 +689,14 @@ def generate_ancestors(df,
     starting_dir = result["starting_dir"]
 
     # Do marginal reconstruction on the tree
-    _run_raxml(algorithm="--ancestral",
-               alignment_file=alignment_file,
-               tree_file=tree_file,
-               model=model,
-               seed=True,
-               dir_name="01_calc-marginal-anc",
-               threads=threads,
-               raxml_binary=raxml_binary)
+    run_raxml(algorithm="--ancestral",
+              alignment_file=alignment_file,
+              tree_file=tree_file,
+              model=model,
+              seed=True,
+              dir_name="01_calc-marginal-anc",
+              threads=threads,
+              raxml_binary=raxml_binary)
 
     anc_prob_file = "01_calc-marginal-anc/alignment.raxml.ancestralProbs"
     tree_file_with_labels = "01_calc-marginal-anc/alignment.raxml.ancestralTree"

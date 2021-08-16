@@ -4,7 +4,7 @@ import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http
 
-def _to_pretty(row):
+def to_pretty(row):
     """
     Given a pandas Series, create pretty output.
     """
