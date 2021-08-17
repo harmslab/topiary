@@ -330,7 +330,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
     num_blocks = len(to_download) // block_size
     if len(to_download) % block_size > 0:
         num_blocks += 1
-    print(f"Downloading {num_blocks} blocks of {block_size} sequences... ")
+    print(f"Downloading {num_blocks} blocks of <={block_size} sequences... ")
 
     # queue will hold results from each download batch.
     queue = mp.Manager().Queue()

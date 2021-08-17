@@ -15,6 +15,8 @@ from tqdm.auto import tqdm
 import re, os
 import multiprocessing as mp
 
+import sys
+
 def _reverse_blast_thread(args):
     """
     Run reverse blast on a thread. Should only be called via reverse_blast.
@@ -62,6 +64,9 @@ def _reverse_blast_thread(args):
 
         # If we made a hit call...
         if hit_call is not None:
+
+            print(hit_call)
+            sys.stdout.flush()
 
             # Get e-value for the top hit
             hit_e_value = hit.loc[0,"e_value"]
@@ -153,7 +158,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
         # updates as each thread finishes.
         list(tqdm(pool.imap(_reverse_blast_thread,all_args),total=len(all_args)))
 
-    # Get results out of the queue. 
+    # Get results out of the queue.
     results = []
     while not queue.empty():
         results.append(queue.get())

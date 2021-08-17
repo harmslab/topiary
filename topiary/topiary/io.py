@@ -8,6 +8,7 @@ Input/output functions for topiary.
 from . import ncbi
 from . import util
 from . import _private
+from . import opentree
 
 import pandas as pd
 import numpy as np
@@ -20,16 +21,50 @@ from tqdm.auto import tqdm
 import re, string, random, io
 
 def ncbi_blast_xml_to_df(xml_files,
-                         aliases=None):
+                         aliases=None,
+                         phylo_context="All life"):
     """
-    xml_files: blast xml files to load. if a string, treat as a single xml file. if a
-               list, treat as a list of xml files.
+    Take a list of blast xml files and load in all sequences as a single
+    topiary data frame. Parse meta data in an intelligent way, download
+    sequences via entrez, and find unique taxonomic identifiers on the open
+    tree of life.
+
+    xml_files: blast xml files to load. if a string, treat as a single xml file.
+               if a list, treat as a list of xml files.
     aliases: dictionary for standardizing protein names.  Key specifies what
              should be output, values degenerate names that map back to that
              key.  For example:
                  "S100A9":("S100-A9","S100 A9","S-100 A9")
              would replace "S100-A9", "S100 A9", and "S-100 A9" with "S100A9"
+    phylo_context: string. used to limit species seach for looking up species
+                   ids on open tree of life.  To get latest strings recognized
+                   by the database, use the following code:
 
+                   ```
+                   from opentree import OT
+                   print(OT.tnrs_contexts().response_dict)
+                   ```
+
+                   As of 2021-08-16, the following are recognized. You can use
+                   either the keys or values in this dictionary.
+
+                   {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
+                                'Amphibians','Vertebrates','Arthropods',
+                                'Molluscs','Nematodes','Platyhelminthes',
+                                'Annelids','Cnidarians','Arachnids','Insects'],
+                    'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
+                    'LIFE': ['All life'],
+                    'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
+                                 'Amoebozoa','Centrohelida','Haptophyta',
+                                 'Apusozoa','Diatoms','Ciliates','Forams'],
+                    'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
+                               'Vascular plants','Club mosses','Ferns',
+                               'Seed plants','Flowering plants','Monocots',
+                               'Eudicots','Rosids','Asterids','Asterales',
+                               'Asteraceae','Aster','Symphyotrichum',
+                               'Campanulaceae','Lobelia']}
+
+    returns a pandas data frame
     """
 
     # If only one xml file is specified, convert it to a list (of one) xml
@@ -47,7 +82,7 @@ def ncbi_blast_xml_to_df(xml_files,
         # Read xml
         tmp_df = ncbi.read_blast_xml(xml)
 
-        # Go through and
+        # Go through and parse meta data
         for j in range(len(tmp_df)):
 
             accession = tmp_df.loc[j,"accession"]
@@ -79,7 +114,6 @@ def ncbi_blast_xml_to_df(xml_files,
 
         all_hits = unique_hits
         to_download = unique_download
-
 
     # Download sequences from entrez
     all_output = ncbi.entrez_download(to_download)
@@ -129,7 +163,12 @@ def ncbi_blast_xml_to_df(xml_files,
 
         out["keep"].append(True)
 
-    return pd.DataFrame(out)
+    df = pd.DataFrame(out)
+
+    df = opentree.get_ott_id(df,context_name=phylo_context)
+
+    return df
+
 
 def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False):
