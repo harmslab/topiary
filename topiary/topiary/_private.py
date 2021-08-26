@@ -4,7 +4,7 @@ import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http
 
-def _to_pretty(row):
+def to_pretty(row):
     """
     Given a pandas Series, create pretty output.
     """
@@ -48,7 +48,7 @@ def convert(df,to_convert,out_file=None,overwrite=False,
         # Grab uid and pretty
         row = df.iloc[i]
         uid = row.uid
-        pretty = _to_pretty(row)
+        pretty = to_pretty(row)
         escaped_pretty = re.escape(pretty)
 
         # Set search and convert_to
@@ -90,7 +90,7 @@ def get_index_maps(df):
     for i in range(len(df)):
 
         row = df.iloc[i,:]
-        pretty = _to_pretty(row)
+        pretty = to_pretty(row)
         uid = row.uid
 
         try:

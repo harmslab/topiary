@@ -330,24 +330,25 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
     num_blocks = len(to_download) // block_size
     if len(to_download) % block_size > 0:
         num_blocks += 1
-    print(f"Downloading {num_blocks} blocks of {block_size} sequences... ")
+    print(f"Downloading {num_blocks} blocks of <={block_size} sequences... ")
 
     # queue will hold results from each download batch.
     queue = mp.Manager().Queue()
     with mp.Pool(num_threads) as pool:
 
-        # This is a bit obscure. Build a list of args to pass to the pool.
-        # all_args blocks of ids to download on individual threads. Each block
-        # is block_size in length
+        # This is a bit obscure. Build a list of args to pass to the pool. Each
+        # tuple of args matches the args in _entrez_download_thread.
+        # all_args has all len(df) reverse blast runs we want to do.
         all_args = []
         for i in range(0,len(to_download),block_size):
             ids = ",".join(to_download[i:(i+block_size)])
             all_args.append((i,ids,num_tries_allowed,queue))
 
         # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. tqdm gives us a status bar.
-        # By wrapping pool iterator, we get a status bar that updates as each
-        # thread finishes.
+        # filling threads as each job finishes. (Calls _entrez_download_thread
+        # on every args tuple in all_args). tqdm gives us a status bar.
+        # By wrapping pool.imap iterator in tqdm, we get a status bar that
+        # updates as each thread finishes.
         list(tqdm(pool.imap(_entrez_download_thread,all_args),
                   total=len(all_args)))
 

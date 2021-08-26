@@ -5,7 +5,7 @@ import ete3
 import pandas as pd
 import numpy as np
 
-import re, copy
+import re, copy, warnings
 
 def get_ott_id(df,
                context_name="All life",
@@ -159,6 +159,7 @@ def get_ott_id(df,
         local_df.loc[row_name,"ott"] = ott_id
 
     # Print warning data for user -- species we could not find OTT for
+    ott_error_found = False
     unrecognized_name = set(unrecognized_name)
     if len(unrecognized_name) != 0:
 
@@ -167,9 +168,9 @@ def get_ott_id(df,
         for u in unrecognized_name:
             print(f"    {u}")
 
-        print()
-        print("Setting `keep = False` for all of these species.")
-        print()
+        print("\nSetting `keep = False` for all of these species\n")
+
+        ott_error_found = True
 
     # Print warning data for user -- species we could not resolve
     unresolved_taxa = set(unresolved_taxa)
@@ -179,17 +180,50 @@ def get_ott_id(df,
         print("Following species have OTT, but cannot be placed on tree:")
         for u in unresolved_taxa:
             print(f"    {u}")
+        print("\nSetting `keep = False` for all of these species.\n")
 
-        print()
-        print("Setting `keep = False` for all of these species.")
-        print()
+        ott_error_found = True
+
+    if ott_error_found:
+
+        print(re.sub("        ","",
+        """
+        topiary looks up unique identifiers for every species (OTT ids) using the
+        opentreeoflife database. This did not work for the species listed above.
+        For the moment, topiary has simply set `keep = False` for any sequences
+        from these species in the dataframe, meaning they will be excluded from
+        the analysis. If you want to keep these sequences, you can look up the
+        OTT for the species manually on https://tree.opentreeoflife.org/.
+
+        This is often caused when a species has two names (for example,
+        Apteryx mantelli mantelli vs. Apteryx australis mantelli). If ncbi uses
+        one species name and opentreeoflife uses another, this will lead to this
+        error.  This can also occur when the ncbi species name is ambiguous,
+        referring to genus/species pair that has more than one subspecies
+        annotated in opentreeoflife. A final common problem is when the ncbi
+        sequence comes from a hybrid (for example, Bos indicus x Bos taurus).
+        This is a unique species, but can't be placed on a bifurcating species
+        tree.
+
+        If you are able to find a name for the speices that successfully resolves
+        on the opentreeoflife database, you can update the dataframe. For the
+        example of Apteryx mantelli mantellii above, you could fix this error
+        by running the following code. (Note we set `keep = True` because the
+        failed look up automatically set `keep = False` fo these species.)
+
+        ```
+        df.loc[df.species == "Apteryx mantelli mantelli","species"] = "Apteryx australis mantelli"
+        df.loc[df.species == "Apteryx australis mantelli","keep"] = True
+        df = topiary.get_ott_id(df,context_name="Animals")
+        ```
+        """))
 
     return local_df
 
 
 def get_species_tree(df):
     """
-    Return a dendropy cladogram of species in tree.
+    Return an ete3 cladogram of species in tree.
 
     df: dataframe that has an ott column with Open Tree of Life taxon ids
 

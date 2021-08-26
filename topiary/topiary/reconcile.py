@@ -1,7 +1,7 @@
 
 import topiary
 import numpy as np
-import os, shutil
+import os, shutil, re
 
 def _annotate_tree_with_calls(df,tree,work_on_copy=True):
     """
@@ -148,20 +148,39 @@ def _write_generax_input(df,gene_tree,species_tree,link_dict,model,out_dir):
 
     # Command that would run generax
     f = open(os.path.join(out_dir,"run.sh"),"w")
-    f.write(\
-"""#!/bin/bash
-num_nodes="${1}"
-if [[ ! "${num_nodes}" ]]; then
-    start_cmd=""
-else
-    start_cmd="mpirun -np ${num_nodes} "
-fi
-${start_cmd}generax -f control.txt -s species_tree.newick -p result -r UndatedDL
+    f.write(re.sub("    ","",
+    """#!/bin/bash
+    num_nodes="${1}"
+    if [[ ! "${num_nodes}" ]]; then
+        start_cmd=""
+    else
+        start_cmd="mpirun -np ${num_nodes} "
+    fi
+    ${start_cmd}generax -f control.txt -s species_tree.newick -p result -r UndatedDL
 
-"""
-    )
+    """))
 
     f.close()
+
+def _write_script(script_string,out_file,strip_indent=1):
+    """
+    Write a script given a string, stripping leading indents due to them being
+    in python code. (Yes, this is janky).
+
+    script_string: string with script
+    out_file: where to write out script
+    strip_indent: strip indents to this level (assumes 4 space indent)
+    """
+
+    f = open(out_file,"w")
+    for l in script_string.split("\n"):
+        if l.strip() == "":
+            continue
+
+        f.write(re.sub("    ","",l,count=strip_indent))
+        f.write("\n")
+    f.close()
+
 
 def setup_generax(df,gene_tree,model,out_dir,dir_with_bootstraps=None):
 
@@ -212,84 +231,80 @@ def write_hpc_templates(out_dir):
     out_dir: output directory
     """
 
-    f = open(os.path.join(out_dir,"_generax_bootstrap.srun","w"))
-    f.write( \
-"""#!/bin/bash -l
-#SBATCH --account=harmslab      ### change this to your actual account for charging
-#SBATCH --job-name=generax      ### job name
-#SBATCH --output=hostname.out   ### file in which to store job stdout
-#SBATCH --error=hostname.err    ### file in which to store job stderr
-#SBATCH --partition=short       ### can be short long fat longfat
-#SBATCH --time=01-00:00:00      ### Run for 1 day
-#SBATCH --ntasks=3              ### 3 mpi tasks
+    this_str = \
+    """#!/bin/bash -l
+    #SBATCH --account=harmslab      ### change this to your actual account for charging
+    #SBATCH --job-name=generax      ### job name
+    #SBATCH --output=hostname.out   ### file in which to store job stdout
+    #SBATCH --error=hostname.err    ### file in which to store job stderr
+    #SBATCH --partition=short       ### can be short long fat longfat
+    #SBATCH --time=01-00:00:00      ### Run for 1 day
+    #SBATCH --ntasks=3              ### 3 mpi tasks
 
-# Loop over all directories specified on the command line
-for dir in "$@"; do
+    # Loop over all directories specified on the command line
+    for dir in "$@"; do
 
-    # Go into the directory and launch with 3 threads. (This 3 should match
-    # --ntasks above)
-    cd ${dir}
-    bash run.sh 3
-    cd ../
+        # Go into the directory and launch with 3 threads. (This 3 should match
+        # --ntasks above)
+        cd ${dir}
+        bash run.sh 3
+        cd ../
 
-done
-"""
-    )
-    f.close()
+    done
+    """
+    _write_script(this_str,os.path.join(out_dir,"_generax_bootstrap.srun"))
 
+    this_str = \
+    """
+    #!/bin/bash
 
-    f = open(os.path.join(out_dir,"00_launch_generax_bootstrap.sh","w"))
-    f.write( \
-"""#!/bin/bash
-
-# How many replicates to run per job. Lower number runs faster. If you have
-# 1000 bootstrap replicates and select 5, this will run 1000/5 = 200 jobs,
-# each with 5 replicates.
-num_per_node="${1}"
-if [[ ! "${num_per_node}" ]]; then
-    echo "launch_generax-bs.sh num_to_run_per_node"
-    exit
-fi
-
-# Start with command string planning to run on ml
-cmd_string="ml "
-counter=0
-
-# Go over bootstrap directories
-for bs_rep in bs_*; do
-
-    # Grab the name of the bootstrap directory
-    cmd_string="${cmd_string} ${bs_rep}"
-    counter=$(($counter + 1))
-
-    # If our counter is big enough, launch the job with these directories and
-    # reset the counter.
-    if [[ ${counter} -ge num_per_node ]]; then
-        echo ${cmd_string}
-        qsub _generax_bootstrap.srun
-
-        cmd_string=""
-        counter=0
+    # How many replicates to run per job. Lower number runs faster. If you have
+    # 1000 bootstrap replicates and select 5, this will run 1000/5 = 200 jobs,
+    # each with 5 replicates.
+    num_per_node="${1}"
+    if [[ ! "${num_per_node}" ]]; then
+        echo "launch_generax-bs.sh num_to_run_per_node"
+        exit
     fi
-done
-"""
-    )
-    f.close()
 
-    f = open(os.path.join(out_dir,"01_assemble_generax_bootstrap.sh","w"))
-    f.write( \
-"""#!/bin/bash
+    # Start with command string planning to run on ml
+    cmd_string="ml "
+    counter=0
 
-rm -f bs-trees.newick
-for dir in bs_*; do
-    cat ${dir}/result/results/reconcile/geneTree.newick >> bs-trees.newick
-    echo "" >> bs-trees.newick
-done
+    # Go over bootstrap directories
+    for bs_rep in bs_*; do
 
-raxml-ng.dev --support --tree ml/result/results/reconcile/geneTree.newick --bs-trees bs-trees.newick --redo
+        # Grab the name of the bootstrap directory
+        cmd_string="${cmd_string} ${bs_rep}"
+        counter=$(($counter + 1))
 
-cp ml/result/results/reconcile/geneTree.newick reconciled-tree.newick
-cp ml/result/results/reconcile/geneTree.newick.raxml.support reconciled-tree-with-supports.newick
-"""
-    )
-    f.close()
+        # If our counter is big enough, launch the job with these directories and
+        # reset the counter.
+        if [[ ${counter} -ge num_per_node ]]; then
+            echo ${cmd_string}
+            qsub _generax_bootstrap.srun
+
+            cmd_string=""
+            counter=0
+        fi
+    done
+    """
+    _write_script(this_str,os.path.join(out_dir,"00_launch_generax_bootstrap.sh"))
+
+
+    this_str = \
+    """
+    #!/bin/bash
+
+    rm -f bs-trees.newick
+    for dir in bs_*; do
+        cat ${dir}/result/results/reconcile/geneTree.newick >> bs-trees.newick
+        echo "" >> bs-trees.newick
+    done
+
+    raxml-ng.dev --support --tree ml/result/results/reconcile/geneTree.newick --bs-trees bs-trees.newick --redo
+
+    cp ml/result/results/reconcile/geneTree.newick reconciled-tree.newick
+    cp ml/result/results/reconcile/geneTree.newick.raxml.support reconciled-tree-with-supports.newick
+    """
+    _write_script(this_str,os.path.join(out_dir,"01_assemble_generax_bootstrap.sh"))

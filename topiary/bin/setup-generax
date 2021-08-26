@@ -29,7 +29,7 @@ def main(argv=None):
     parser.add_argument("-b","--bs-dir",nargs=1,
                         help="directory with bootstrap replicate alignments and trees",default=None)
     parser.add_argument("-o","--output",nargs=1,help="name for outputs",default="generax-run")
-    parser.add_argument("-f","--force",action='store_true',help="overwrite existing output")
+    parser.add_argument("--force",action='store_true',help="overwrite existing output")
 
     args = parser.parse_args(argv)
 
