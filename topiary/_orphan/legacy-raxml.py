@@ -1,4 +1,6 @@
 
+import re
+
 def _fix_raxml_tree(raxml_tree,out_file):
     """
     Clean up an raxml [support] newick tree so it is readable by other software.
