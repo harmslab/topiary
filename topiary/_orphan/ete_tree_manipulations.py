@@ -6,6 +6,11 @@ helpful in future.
 """
 __date__ = "2021-08-06"
 
+import ete3
+from ete3 import Tree
+import dendropy as dp
+import copy, re
+
 def copy_node_features(copy_from,copy_to):
     """
     Copy features from one node to another. Use copy.deepcopy to make sure

@@ -322,7 +322,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
         except NotImplementedError:
             num_threads = os.cpu_count()
             if num_threads is None:
-                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                warnings.warn("Could not determine number of cpus. Using single thread.\n")
                 num_threads = 1
 
 

@@ -12,7 +12,7 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-import re, os
+import re, os, warnings
 import multiprocessing as mp
 
 import sys
@@ -136,7 +136,7 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
         except NotImplementedError:
             num_threads = os.cpu_count()
             if num_threads is None:
-                warning.warning("Could not determine number of cpus. Using single thread.\n")
+                warnings.warn("Could not determine number of cpus. Using single thread.\n")
                 num_threads = 1
 
     # queue will hold results from each run.
