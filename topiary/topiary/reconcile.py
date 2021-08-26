@@ -241,6 +241,8 @@ def write_hpc_templates(out_dir):
     #SBATCH --time=01-00:00:00      ### Run for 1 day
     #SBATCH --ntasks=3              ### 3 mpi tasks
 
+    module load openmpi
+
     # Loop over all directories specified on the command line
     for dir in "$@"; do
 
