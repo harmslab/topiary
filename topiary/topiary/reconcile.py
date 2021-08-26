@@ -282,7 +282,7 @@ def write_hpc_templates(out_dir):
         # reset the counter.
         if [[ ${counter} -ge num_per_node ]]; then
             echo ${cmd_string}
-            qsub _generax_bootstrap.srun
+            qsub _generax_bootstrap.srun ${cmd_string}
 
             cmd_string=""
             counter=0
