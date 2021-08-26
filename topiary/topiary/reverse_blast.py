@@ -65,9 +65,6 @@ def _reverse_blast_thread(args):
         # If we made a hit call...
         if hit_call is not None:
 
-            print(hit_call)
-            sys.stdout.flush()
-
             # Get e-value for the top hit
             hit_e_value = hit.loc[0,"e_value"]
 

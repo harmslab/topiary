@@ -1,6 +1,6 @@
 __description__ = \
 """
-Core functions for wrapping raxml-ng. 
+Core functions for wrapping raxml-ng.
 """
 __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
@@ -118,7 +118,7 @@ def prep_calc(df=None,
         rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
         output = f"{output_base}_{rand}"
 
-    dir_name = _create_new_dir(dir_name=output)
+    dir_name = create_new_dir(dir_name=output)
 
     # Deal with data frame
     if df is not None:
@@ -139,7 +139,7 @@ def prep_calc(df=None,
         csv_file = None
 
     if csv_file is not None:
-        csv_file = _copy_input_file(csv_file,dir_name,make_input_dir=True)
+        csv_file = copy_input_file(csv_file,dir_name,make_input_dir=True)
 
     # Copy files into input directory. This will put them in 00_input and keep
     # their original filenames so we have some notion of where they came from.
@@ -148,11 +148,11 @@ def prep_calc(df=None,
         if f is None:
             final_files.append(None)
         else:
-            final_files.append(_copy_input_file(f,
-                                                dir_name,
-                                                make_input_dir=True,
-                                                pretty_to_uid=True,
-                                                df=df))
+            final_files.append(copy_input_file(f,
+                                               dir_name,
+                                               make_input_dir=True,
+                                               pretty_to_uid=True,
+                                               df=df))
 
     # Move into the output directory
     starting_dir = os.getcwd()
@@ -234,19 +234,19 @@ def run_raxml(algorithm=None,
     """
 
     # Create directory in which to do calculation
-    dir_name = _create_new_dir(dir_name=dir_name)
+    dir_name = create_new_dir(dir_name=dir_name)
 
     # Copy alignment and tree files into the directory (if specified)
     if alignment_file is not None:
-        alignment_file = _copy_input_file(alignment_file,
-                                          dir_name,
-                                          file_name="alignment",
-                                          make_input_dir=False)
+        alignment_file = copy_input_file(alignment_file,
+                                         dir_name,
+                                         file_name="alignment",
+                                         make_input_dir=False)
     if tree_file is not None:
-        tree_file = _copy_input_file(tree_file,
-                                     dir_name,
-                                     file_name="tree",
-                                     make_input_dir=False)
+        tree_file = copy_input_file(tree_file,
+                                    dir_name,
+                                    file_name="tree",
+                                    make_input_dir=False)
 
     # Go into working directory
     cwd = os.getcwd()
@@ -270,7 +270,7 @@ def run_raxml(algorithm=None,
     # seed argument is overloaded. Interpret based on type
     if seed is not None:
         if type(seed) is bool:
-            cmd.extend(["--seed",_gen_seed()])
+            cmd.extend(["--seed",gen_seed()])
         elif type(seed) is int:
             cmd.extend(["--seed",f"{seed:d}"])
         elif type(seed) is str:
@@ -309,6 +309,10 @@ def run_raxml(algorithm=None,
 
         # While main process is running
         while main_process.is_alive():
+
+            # If queue is empty, raxml job hasn't finished yet
+            if not queue.empty():
+                break
 
             # Try to open log every second
             try:

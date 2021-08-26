@@ -1,7 +1,7 @@
 
 import topiary
 import numpy as np
-import os, shutil
+import os, shutil, re
 
 def _annotate_tree_with_calls(df,tree,work_on_copy=True):
     """
@@ -162,6 +162,26 @@ def _write_generax_input(df,gene_tree,species_tree,link_dict,model,out_dir):
 
     f.close()
 
+def _write_script(script_string,out_file,strip_indent=1):
+    """
+    Write a script given a string, stripping leading indents due to them being
+    in python code. (Yes, this is janky).
+
+    script_string: string with script
+    out_file: where to write out script
+    strip_indent: strip indents to this level (assumes 4 space indent)
+    """
+
+    f = open(out_file,"w")
+    for l in script_string.split("\n"):
+        if l.strip() == "":
+            continue
+
+        f.write(re.sub("    ","",l,count=strip_indent))
+        f.write("\n")
+    f.close()
+
+
 def setup_generax(df,gene_tree,model,out_dir,dir_with_bootstraps=None):
 
     if os.path.isdir(out_dir):
@@ -211,8 +231,7 @@ def write_hpc_templates(out_dir):
     out_dir: output directory
     """
 
-    f = open(os.path.join(out_dir,"_generax_bootstrap.srun","w"))
-    f.write(re.sub("    ","",
+    this_str = \
     """#!/bin/bash -l
     #SBATCH --account=harmslab      ### change this to your actual account for charging
     #SBATCH --job-name=generax      ### job name
@@ -232,13 +251,12 @@ def write_hpc_templates(out_dir):
         cd ../
 
     done
-    """))
-    f.close()
+    """
+    _write_script(this_str,os.path.join(out_dir,"_generax_bootstrap.srun"))
 
-
-    f = open(os.path.join(out_dir,"00_launch_generax_bootstrap.sh","w"))
-    f.write(re.sub("    ","",
-    """#!/bin/bash
+    this_str = \
+    """
+    #!/bin/bash
 
     # How many replicates to run per job. Lower number runs faster. If you have
     # 1000 bootstrap replicates and select 5, this will run 1000/5 = 200 jobs,
@@ -270,12 +288,13 @@ def write_hpc_templates(out_dir):
             counter=0
         fi
     done
-    """))
-    f.close()
+    """
+    _write_script(this_str,os.path.join(out_dir,"00_launch_generax_bootstrap.sh"))
 
-    f = open(os.path.join(out_dir,"01_assemble_generax_bootstrap.sh","w"))
-    f.write(re.sub("    ","",
-    """#!/bin/bash
+
+    this_str = \
+    """
+    #!/bin/bash
 
     rm -f bs-trees.newick
     for dir in bs_*; do
@@ -287,5 +306,5 @@ def write_hpc_templates(out_dir):
 
     cp ml/result/results/reconcile/geneTree.newick reconciled-tree.newick
     cp ml/result/results/reconcile/geneTree.newick.raxml.support reconciled-tree-with-supports.newick
-    """))
-    f.close()
+    """
+    _write_script(this_str,os.path.join(out_dir,"01_assemble_generax_bootstrap.sh"))

@@ -5,7 +5,7 @@ Find ML model using parsimony tree.
 __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
 
-from ._raxml import prep_calc, run_raxml, RAXML_BINARY
+from ._raxml import prep_calc, run_raxml, RAXML_BINARY, gen_seed
 
 import pandas as pd
 import numpy as np
@@ -121,7 +121,7 @@ def find_best_model(df,
     # Dictionary to hold stats for each model
     out = {"model":[]}
 
-    seed = _gen_seed()
+    seed = gen_seed()
 
     # All possible models, dropping rate, freq, invariant for LG4M and LG4X.
     num_mat = len([m for m in model_matrices if m not in ["LG4M","LG4X"]])

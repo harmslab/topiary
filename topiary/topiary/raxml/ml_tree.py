@@ -9,6 +9,8 @@ import topiary
 
 from ._raxml import prep_calc, run_raxml, RAXML_BINARY
 
+import os
+
 def generate_ml_tree(df,
                      model,
                      tree_file=None,
@@ -47,15 +49,15 @@ def generate_ml_tree(df,
         other_args.append("--bs-write-msa")
 
     # Run raxml to create tree
-    _run_raxml(algorithm="--all",
-               alignment_file=alignment_file,
-               tree_file=tree_file,
-               model=model,
-               dir_name="01_make-ml-tree",
-               seed=True,
-               threads=threads,
-               raxml_binary=raxml_binary,
-               other_args=other_args)
+    run_raxml(algorithm="--all",
+              alignment_file=alignment_file,
+              tree_file=tree_file,
+              model=model,
+              dir_name="01_make-ml-tree",
+              seed=True,
+              threads=threads,
+              raxml_binary=raxml_binary,
+              other_args=other_args)
     tree_file = "02_ml-tree.newick"
 
     # Write out a pretty version of the tree
