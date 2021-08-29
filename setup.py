@@ -14,7 +14,7 @@ DESCRIPTION = 'A lightweight python package using pandas dataframes for phylogen
 URL = 'https://github.com/harmslab/topiary'
 EMAIL = 'harmsm@gmail.com'
 AUTHOR = 'Michael J. Harms'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.7.0'
 VERSION = None
 
 # What packages are required for this module to be executed?
@@ -68,7 +68,6 @@ setup(
     classifiers=[
       'Development Status :: 3 - Alpha',
       'Intended Audience :: Science/Research',
-      'Programming Language :: Python :: 3.6',
       'Programming Language :: Python :: 3.7',
       'Programming Language :: Python :: 3.8',
       'Programming Language :: Python :: 3.9',
