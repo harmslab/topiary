@@ -28,6 +28,7 @@ REQUIRED = [
     "pandas>=1.3.1",
     "matplotlib>=3.4.2",
     "pastml>=1.9.34",
+    "openpyxl"
 ]
 
 
