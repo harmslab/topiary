@@ -46,8 +46,9 @@ def get_ott_id(df,
     local_df = df.copy()
     local_df["orig_species"] = local_df.loc[:,"species"]
 
-    # Get unique list of species
+    # Get unique list of species, stripping any leading/trailing spaces.
     species_list = list(local_df.species.drop_duplicates())
+    species_list = [s.strip() for s in species_list]
 
     # Do fuzzy match for species names
     w = OT.tnrs_match(species_list,
@@ -156,7 +157,7 @@ def get_ott_id(df,
         # Update the local_df keep, species, and ott
         local_df.loc[row_name,"keep"] = keep
         local_df.loc[row_name,"species"] = species
-        local_df.loc[row_name,"ott"] = ott_id
+        local_df.loc[row_name,"ott"] = f"ott{ott_id}"
 
     # Print warning data for user -- species we could not find OTT for
     ott_error_found = False
@@ -205,7 +206,7 @@ def get_ott_id(df,
         This is a unique species, but can't be placed on a bifurcating species
         tree.
 
-        If you are able to find a name for the speices that successfully resolves
+        If you are able to find a name for the spieces that successfully resolves
         on the opentreeoflife database, you can update the dataframe. For the
         example of Apteryx mantelli mantellii above, you could fix this error
         by running the following code. (Note we set `keep = True` because the
@@ -234,10 +235,6 @@ def get_species_tree(df):
     # Only get keep = True
     df = df.loc[df.keep,:].copy()
 
-    # coerce ott to string int
-    tmp_ott = [f"{o}" for o in np.array(df.loc[:,"ott"],dtype=np.int64)]
-    df.loc[:,"ott"] = tmp_ott
-
     # Get only rows with unique ott
     df = df.loc[df.loc[:,"ott"].drop_duplicates().index,:]
 
@@ -246,7 +243,7 @@ def get_species_tree(df):
         err = "not all species OTT in dataframe."
         raise ValueError(err)
 
-    ott_ids = list(df.loc[:,"ott"])
+    ott_ids = [int(o[3:]) for o in df.loc[:,"ott"]]
     species = list(df.loc[:,"species"])
     ott_species_dict = {}
     for i in range(len(ott_ids)):

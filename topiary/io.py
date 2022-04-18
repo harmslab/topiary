@@ -18,7 +18,280 @@ from Bio import SeqIO
 
 from tqdm.auto import tqdm
 
-import re, string, random, io
+import re, string, random, io, warnings
+
+
+def check_topiary_dataframe(df):
+    """
+    Check to make sure topiary dataframe is sane.
+
+    Enforces following:
+
+    'keep':
+        + Must be boolean.
+        + If present but not boolean, try to coerce it into boolean.
+            + if str, map regex [1yt] --> True and regex[0nf] --> False
+            + if int, map !0 --> True and 0 --> False
+            + if float, map !~0 --> True and ~0 --> False
+        + If keep is not present, add and set all to True.
+    'uid':
+        + Must be unique str of length 10 consisting only of [a-z][A-Z]
+        + If present:
+            + If missing values, fill them in
+            + If values do not meet rules, replace them with uid that do
+            + If values are not unique, update them to be unique
+        + If not present, create them.
+
+    """
+
+    # Make sure the dataframe has all required columns
+    required_columns = ["species","name","sequence"]
+    for c in required_columns:
+
+        try:
+            df[c]
+        except KeyError:
+            err = f"\n\nA topiary dataframe must have a {c} column.\n\n"
+            raise ValueError(err)
+            
+    # -------------------------------------------------------------------------
+    # Process keep column
+
+    # Try to extract keep column
+    try:
+        keep = df.loc[:,"keep"]
+
+        # If it's not a boolean column, try to turn into one
+        if not np.dtype(keep.dtypes) is np.dtype(bool):
+
+            # Base message. If everything works great, let user know what
+            # happened as warning. If things go awry, use as start of error
+            # message
+            w = "\n\n"
+            w += "The 'keep' column must be boolean (True/False). pandas did\n"
+            w += "not recognize the column as boolean, so we're parsing it\n"
+            w += "manually by looking for 0/1, yes/no, true/false, etc.\n\n"
+
+            new_keep = []
+            look_for_true = re.compile("[1yt]",re.IGNORECASE)
+            look_for_false = re.compile("[0nf]",re.IGNORECASE)
+            for k in df.keep:
+                if type(k) is str:
+                    is_true = look_for_true.search(k) is not None
+                    is_false = look_for_false.search(k) is not None
+                    looks_like_a = "string"
+                elif type(k) is int:
+                    is_true = (k != 0)
+                    is_false = (k == 0)
+                    looks_like_a = "int"
+                elif type(k) is float:
+                    is_true = np.logical_not(np.isclose(k,0))
+                    is_false = np.isclose(k,0)
+                    looks_like_a = "float"
+                else:
+                    w += f"Could not figure out how to parse '{k}'\n\n"
+                    raise ValueError(w)
+
+                if (is_true and is_false) or (not is_true and not is_false):
+                    w += f"Trying to parse '{k}' as a {looks_like_a}, but\n"
+                    w += f"could not figure out whether true or false.\n\n"
+                    raise ValueError(w)
+                else:
+                    if is_true:
+                        new_keep.append(True)
+                    else:
+                        new_keep.append(False)
+
+            # Record newly boolean-ized values
+            df["keep"] = np.array(new_keep,dtype=bool)
+
+            # Let user know we manually parsed the keep column...
+            warings.warn(w)
+
+    # No column: create one and set all to True
+    except KeyError:
+        df["keep"] = np.ones(len(df),dtype=bool)
+
+    # -------------------------------------------------------------------------
+    # Process uid column
+
+    warn_uid = ""
+
+    # Make sure the dataframe has a uid column
+    try:
+        uid = df.loc[:,"uid"]
+
+        # Look for a-z and A-Z (only allowed characters in uid)
+        p = re.compile("[^a-z]",re.IGNORECASE)
+
+        final_uid = []
+
+        # Go through uid...
+        for u in uid:
+
+            # Force to be a spring
+            if type(u) is not str:
+                u = str(u)
+
+            # Disallowed character(s) in uid or uid not right length
+            if p.search(u) or len(u) != 10:
+
+                new_uid = _private.generate_uid()
+                warn_uid += f"  + uid '{u}' is invalid. Replacing with '{new_uid}'\n"
+                final_uid.append(new_uid)
+
+            else:
+                final_uid.append(u)
+
+        df.loc[:,"uid"] = final_uid
+
+    # No uid column --> make one
+    except KeyError:
+        warn_uid += "  + No 'uid' column found. Creating column.\n"
+        df["uid"] = _private.generate_uid(len(df))
+
+    # Make sure uid are unique
+    uid, counts = np.unique(df.loc[:,"uid"],return_counts=True)
+    for u in uid[counts != 1]:
+        warn_uid = f"  + uid '{u}' is not unique. This will be replaced with a\n"
+        warn_uid += "    new unique uid for each sequence.\n"
+
+        mask = df.loc[:,"uid"] == u
+        df.loc[mask,"uid"] = _private.generate_uid(sum(mask))
+
+    if warn_uid != "":
+        w = "\n\n"
+        w += "'uid' column was invalid. topiary has fixed the problems noted below.\n"
+        w += "If you have already generated phylogenetic trees using a previous\n"
+        w += "version of this dataframe, **those trees are no longer compatible\n"
+        w += "with this dataframe**. To ensure compatibility, fix the problems\n"
+        w += "noted below and then re-read the dataframe into topiary. If you\n"
+        w += "have not already generated trees (or plan to generate new ones from\n"
+        w += "scratch) you may safely disregard this warning.\n"
+        w += "\n"
+        w += warn_uid
+        warnings.warn(w)
+
+    # -------------------------------------------------------------------------
+    # Check format of ott column if present
+
+    try:
+        ott = df.ott
+        for index in df.index:
+
+            # Get ott id
+            o = df.loc[index,"ott"]
+
+            # Missing value is okay --> make sure it's a pandas NULL datatype
+            if pd.isna(o) or pd.isnull(o) or o == "":
+                df.loc[index,"ott"] = pd.NA
+                continue
+
+            # If there is an ott that is not a null, make sure it is sane and
+            # reasable.
+            failed = False
+            if type(o) is str and o[:3] == "ott":
+                try:
+                    int(o[3:])
+                except ValueError:
+                    failed = True
+            else:
+                failed = True
+
+            if failed:
+                err = "\n\nott column must have format 'ottINTEGER', where \n"
+                err += "INTEGER is a the integer OTT accession number.\n"
+                raise ValueError(err)
+
+
+    except AttributeError:
+        pass
+
+    return df
+
+def read_dataframe(input,remove_extra_index=True):
+    """
+    Read a spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is not one
+    of these, attempts to parse text as a spreadsheet using
+    pandas.read_csv(sep=None).
+
+    input: either a pandas dataframe OR the filename to read in.
+    remove_extra_index: look for the 'Unnamed: 0' column that pandas writes out
+        for pd.to_csv(index=True) and, if found, drop column.
+    """
+
+    # If this is a string, try to load it as a file
+    if type(input) is str:
+
+        filename = input
+
+        ext = filename.split(".")[-1]
+
+        if ext in ["xlsx","xls"]:
+            df = pd.read_excel(filename)
+        elif ext == "csv":
+            df = pd.read_csv(filename,sep=",")
+        elif ext == "tsv":
+            df = pd.read_csv(filename,sep="\t")
+        else:
+            # Fall back -- try to guess delimiter
+            df = pd.read_csv(filename,sep=None,engine="python")
+
+    # If this is a pandas dataframe, work in a copy of it.
+    elif type(input) is pd.DataFrame:
+        df = input.copy()
+
+    # Otherwise, fail
+    else:
+        err = f"\n\n'input' {input} not recognized. Should be the filename of\n"
+        err += "spreadsheet or a pandas dataframe.\n"
+        raise ValueError(err)
+
+    # Look for extra index column that pandas writes out (in case user wrote out
+    # pandas frame manually, then re-read). Looks for first column that is
+    # Unnamed and has values [0,1,2,...,L]
+    if remove_extra_index:
+        if df.columns[0].startswith("Unnamed:"):
+            possible_index = df.loc[:,df.columns[0]]
+            if np.issubdtype(possible_index.dtypes,int):
+                if np.array_equal(possible_index,np.arange(len(possible_index),dtype=int)):
+                    df = df.drop(columns=[df.columns[0]])
+
+    # Validate the dataframe
+    df = check_topiary_dataframe(df)
+
+    return df
+
+def write_dataframe(df,out_file):
+    """
+    Write a dataframe to an output file. The type of file written depends on the
+    extension of out_file. If .csv, write comma-separated. If .tsv, write tab-
+    separated. If .xlsx, write excel. Otherwise, write as a .csv file.
+
+    df: topiary dataframe
+    out_file: output file name
+    """
+
+    if type(out_file) is not str:
+        err = f"\n\nout_file '{out_file}' should be a string.\n"
+        raise ValueError(err)
+
+    ext = out_file.split(".")[-1]
+    if ext not in ["csv","tsv","xlsx"]:
+        w = "\n\nOutput file extension not recognized. Will write as csv.\n\n"
+        warnings.warn(w)
+        ext = "csv"
+
+    # Write out appropriate file type
+    if ext == "csv":
+        df.to_csv(out_file,sep=",",index=False)
+    elif ext == "tsv":
+        df.to_csv(out_file,sep="\t",index=False)
+    else:
+        df.to_excel(out_file,index=False)
+
+
+
 
 def ncbi_blast_xml_to_df(xml_files,
                          aliases=None,

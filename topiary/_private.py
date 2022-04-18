@@ -4,6 +4,29 @@ import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http
 
+def generate_uid(number=1):
+    """
+    Generate a unique uid. This will be a 10 character random combination of
+    ascii letters.
+
+    number: number of uid to generate. if 1, return a single uid. if > 1,
+            return a list of uid.
+    """
+
+    if number < 1:
+        err = "number must be 1 or more\n"
+        raise ValueError(err)
+
+    out = []
+    for n in range(number):
+        out.append("".join([random.choice(string.ascii_letters)
+                            for _ in range(10)]))
+
+    if number == 1:
+        return out[0]
+
+    return out
+
 def to_pretty(row):
     """
     Given a pandas Series, create pretty output.
@@ -12,9 +35,14 @@ def to_pretty(row):
     try:
         pretty = f"{row.paralog}|{row.species}|{row.accession}"
     except AttributeError:
-        err = "\n\nrow does not have all required attributes:"
-        err += " (paralog, species, accession)\n"
-        raise ValueError(err)
+        try:
+            pretty = f"{row.protein}|{row.species}|{row.accession}"
+        except AttributeError:
+            err = "\n\nrow does not have all required attributes:"
+            err += " (paralog, species, accession)\n"
+            raise ValueError(err)
+
+    pretty = re.sub("[,:;\"\'\(\)\.]","-",pretty)
 
     return pretty
 
