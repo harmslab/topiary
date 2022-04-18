@@ -106,7 +106,7 @@ def check_topiary_dataframe(df):
             df["keep"] = np.array(new_keep,dtype=bool)
 
             # Let user know we manually parsed the keep column...
-            warings.warn(w)
+            warnings.warn(w)
 
     # No column: create one and set all to True
     except KeyError:
