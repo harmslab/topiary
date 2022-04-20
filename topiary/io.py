@@ -23,26 +23,34 @@ import re, string, random, io, warnings
 
 def check_topiary_dataframe(df):
     """
-    Check to make sure topiary dataframe is sane.
+    Check to make sure topiary dataframe is sane. Edits dataframe, returning a
+    copy.
 
-    Enforces following:
+    + Checks for required columns 'species', 'name', and 'sequence'
+    + Deletes duplicated rows.
+    + Deletes empty rows.
 
-    'keep':
+    + 'keep':
         + Must be boolean.
         + If present but not boolean, try to coerce it into boolean.
             + if str, map regex [1yt] --> True and regex[0nf] --> False
             + if int, map !0 --> True and 0 --> False
             + if float, map !~0 --> True and ~0 --> False
         + If keep is not present, add and set all to True.
-    'uid':
+    + 'uid':
         + Must be unique str of length 10 consisting only of [a-z][A-Z]
         + If present:
             + If missing values, fill them in
             + If values do not meet rules, replace them with uid that do
             + If values are not unique, update them to be unique
         + If not present, create them.
-
+    + 'ott': If present, makes sure it has the format ottINTEGER.
     """
+
+    # Make sure type is right
+    if type(df) is not pd.DataFrame:
+        err = "\ndf must be a pandas dataframe.\n\n"
+        raise ValueError(err)
 
     # Make sure the dataframe has all required columns
     required_columns = ["species","name","sequence"]
@@ -53,13 +61,72 @@ def check_topiary_dataframe(df):
         except KeyError:
             err = f"\n\nA topiary dataframe must have a {c} column.\n\n"
             raise ValueError(err)
-            
+
+    # Drop duplicates
+    df = df.drop_duplicates(ignore_index=True)
+
+    # Get mask for cells that are either null or nan
+    bad_mask = np.logical_or(pd.isnull(df),pd.isna(df))
+    idx = list(df.index)
+    final_mask = []
+    for i in range(len(bad_mask)):
+
+        # Grab row
+        row = df.loc[idx[i],:]
+
+        # Get all non-null and non-na entries from the row
+        mask = np.logical_not(np.logical_or(pd.isnull(row),pd.isna(row)))
+        not_null = row[mask]
+
+        # Default to not keeping a row
+        keep = False
+
+        # If there are any non-null entries left...
+        if len(not_null) > 0:
+
+            # Loop will end up with keep = False if only columns remaining are
+            # type string and "".
+            for n in not_null:
+
+                # If an empty string, this is basically a null.
+                if type(n) is str and n.strip() == "":
+                    continue
+
+                # If we get here, we have some kind of non-empty cell. Break out
+                # and keep row
+                keep = True
+                break
+
+        final_mask.append(keep)
+
+    final_mask = np.array(final_mask,dtype=bool)
+
+    # Let user know we're dropping lines
+    if np.sum(np.logical_not(final_mask)) > 0:
+        lines = ",".join(["{}".format(i) for i in df.index[np.logical_not(final_mask)]])
+        w = f"\nDropping apparently empty lines ({lines})\n\n"
+        warnings.warn(w)
+
+    # Drop rows that are all empty
+    df = df.loc[df.index[final_mask],:]
+
     # -------------------------------------------------------------------------
     # Process keep column
 
     # Try to extract keep column
     try:
         keep = df.loc[:,"keep"]
+    # No column: create one and set all to True
+    except KeyError:
+        keep = None
+        df["keep"] = np.ones(len(df),dtype=bool)
+
+    if keep is not None:
+
+        # Do a pass trying to infer the datatype of keep. (This is useful if we
+        # dropped empty rows that made the original pandas read this column in
+        # as a mix of bool and object).
+        df.loc[:,"keep"] = df.keep.infer_objects()
 
         # If it's not a boolean column, try to turn into one
         if not np.dtype(keep.dtypes) is np.dtype(bool):
@@ -76,7 +143,11 @@ def check_topiary_dataframe(df):
             look_for_true = re.compile("[1yt]",re.IGNORECASE)
             look_for_false = re.compile("[0nf]",re.IGNORECASE)
             for k in df.keep:
-                if type(k) is str:
+                if type(k) is bool:
+                    is_true = True and k
+                    is_false = not is_true
+                    looks_like_a = "bool"
+                elif type(k) is str:
                     is_true = look_for_true.search(k) is not None
                     is_false = look_for_false.search(k) is not None
                     looks_like_a = "string"
@@ -97,20 +168,13 @@ def check_topiary_dataframe(df):
                     w += f"could not figure out whether true or false.\n\n"
                     raise ValueError(w)
                 else:
-                    if is_true:
-                        new_keep.append(True)
-                    else:
-                        new_keep.append(False)
+                    new_keep.append(is_true)
 
             # Record newly boolean-ized values
-            df["keep"] = np.array(new_keep,dtype=bool)
+            df.loc[:,"keep"] = np.array(new_keep,dtype=bool)
 
             # Let user know we manually parsed the keep column...
             warnings.warn(w)
-
-    # No column: create one and set all to True
-    except KeyError:
-        df["keep"] = np.ones(len(df),dtype=bool)
 
     # -------------------------------------------------------------------------
     # Process uid column
@@ -120,6 +184,12 @@ def check_topiary_dataframe(df):
     # Make sure the dataframe has a uid column
     try:
         uid = df.loc[:,"uid"]
+    except KeyError:
+        uid =  None
+        warn_uid += "  + No 'uid' column found. Creating column.\n"
+        df["uid"] = _private.generate_uid(len(df))
+
+    if uid is not None:
 
         # Look for a-z and A-Z (only allowed characters in uid)
         p = re.compile("[^a-z]",re.IGNORECASE)
@@ -144,11 +214,6 @@ def check_topiary_dataframe(df):
                 final_uid.append(u)
 
         df.loc[:,"uid"] = final_uid
-
-    # No uid column --> make one
-    except KeyError:
-        warn_uid += "  + No 'uid' column found. Creating column.\n"
-        df["uid"] = _private.generate_uid(len(df))
 
     # Make sure uid are unique
     uid, counts = np.unique(df.loc[:,"uid"],return_counts=True)
@@ -176,7 +241,12 @@ def check_topiary_dataframe(df):
     # Check format of ott column if present
 
     try:
-        ott = df.ott
+        ott = df.loc[:,"ott"]
+    except KeyError:
+        ott = None
+
+    if ott is not None:
+
         for index in df.index:
 
             # Get ott id
@@ -202,10 +272,6 @@ def check_topiary_dataframe(df):
                 err = "\n\nott column must have format 'ottINTEGER', where \n"
                 err += "INTEGER is a the integer OTT accession number.\n"
                 raise ValueError(err)
-
-
-    except AttributeError:
-        pass
 
     return df
 
@@ -289,8 +355,6 @@ def write_dataframe(df,out_file):
         df.to_csv(out_file,sep="\t",index=False)
     else:
         df.to_excel(out_file,index=False)
-
-
 
 
 def ncbi_blast_xml_to_df(xml_files,

@@ -33,7 +33,7 @@ def dataframe_good_files():
     """
 
     dir = os.path.dirname(os.path.realpath(__file__))
-    files = glob.glob(os.path.join(dir,"data","good_*"))
+    files = glob.glob(os.path.join(dir,"data","good","*"))
 
     return files
 
@@ -46,10 +46,11 @@ def test_dataframes():
     """
 
     dir = os.path.dirname(os.path.realpath(__file__))
+    search_string = os.path.join(dir,"data","*.csv")
 
-    df_dict = {"good-df":pd.read_csv(os.path.join(dir,"data/good-df.csv")),
-               "bad-uid":pd.read_csv(os.path.join(dir,"data/bad-uid.csv")),
-               "duplicate-uid":pd.read_csv(os.path.join(dir,"data/duplicate-uid.csv")),
-               "no-uid":pd.read_csv(os.path.join(dir,"data/no-uid.csv"))}
+    df_dict = {}
+    for g in glob.glob(search_string):
+        key = ".".join(os.path.split(g)[1].split(".")[:-1])
+        df_dict[key] = pd.read_csv(g)
 
     return df_dict
