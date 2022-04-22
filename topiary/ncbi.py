@@ -137,23 +137,18 @@ def local_blast(sequence,
 
     return out_df
 
-def parse_ncbi_line(line,accession=None,aliases=None):
+def parse_ncbi_line(line,accession=None):
     """
     Parse an ncbi line of the sort seen in the BLAST title field or on each
     line of a fasta file.
 
     accession: extract entry from line that matches acccession.  Ignores version
                (e.g. "1" in XXXXXXXXX.1).  If None, parse first entry on line.
-    aliases: dictionary for standardizing protein names.  Key specifies what
-             should be output, values degenerate names that map back to that
-             key.  For example:
-                 "S100A9":("S100-A9","S100 A9","S-100 A9")
-             would replace "S100-A9", "S100 A9", and "S-100 A9" with "S100A9"
 
     Returns a dictionary with following keys:
         raw_line -> unprocessed line (input)
         line -> processed line (remove multiple titles)
-        protein -> protein name (renamed using aliases)
+        name -> protein name
         structure -> whether or not this is a structure (bool)
         low_quality -> whether or not this is low quality (bool)
         predicted -> whether or not this is predicted (bool)
@@ -230,27 +225,11 @@ def parse_ncbi_line(line,accession=None,aliases=None):
     else:
         out["species"] = None
 
-    # Use "aliases" to clean up the protein bit
-    if aliases is None:
-        aliases = {}
-    try:
-        aliases[""]
-    except KeyError:
-        aliases[""] = ("protein",
-                       "product",
-                       "PREDICTED:",
-                       "Crystal structure of",
-                       "hypothetical")
-    for a in aliases:
-        for p in aliases[a]:
-            ap = re.compile(p,re.IGNORECASE)
-            line = ap.sub(a,line)
-
     # Clean up any double spaces introduced into the line at this point
     line = re.sub("  "," ",line)
 
     # Protein name (takes between '| XXXXXXXXX [' ).
-    out["protein"] = line.split("|")[-1].split("[")[0].strip()
+    out["name"] = line.split("|")[-1].split("[")[0].strip()
 
     return out
 

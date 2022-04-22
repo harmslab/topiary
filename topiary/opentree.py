@@ -114,8 +114,7 @@ def get_ott_id(df,
         not_resolved.append(ott_id)
 
     # Create new, empty column for "ott" in the local df
-    local_df["ott"] = pd.array([None for _ in range(len(local_df))],
-                               dtype=pd.Int64Dtype())
+    local_df["ott"] = pd.array(["" for _ in range(len(local_df))])
 
     # Go through the local_df and populate species, ott, and keep
     unrecognized_name = []

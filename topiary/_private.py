@@ -4,6 +4,10 @@ import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http
 
+required_columns = ["species","name","sequence"]
+reserved_columns = required_columns[:]
+reserved_columns.extend(["uid","ott"])
+
 def generate_uid(number=1):
     """
     Generate a unique uid. This will be a 10 character random combination of
