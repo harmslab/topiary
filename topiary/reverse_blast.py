@@ -17,37 +17,16 @@ import multiprocessing as mp
 
 import sys
 
-def _reverse_blast_thread(args):
+def _check_for_match(hit,patterns):
     """
-    Run reverse blast on a thread. Should only be called via reverse_blast.
+    Check to see if a blast hit matches a pattern in patterns. If no matched
+    pattern is called, return None.
 
-    takes args which are interpreted as (df,i,rev_blast_db,patterns,queue)
+    hit: biopython blast hit instance
+    patterns: list of compiled regular expressions.
 
-    df: expects df has "sequence", "start", and "end" columns. Will return a
-        copy of the df with "rev_hit" and "paralog" columns, corresponding
-        to top hit title and call based on rev_blast_dict. It will also
-        update "keep" to be False for any paralog = None sequences.
-    i: iloc index to grab
-    rev_blast_db: reverse blast database
-    patterns: list of regular expression patterns to match sequences
-    queue: multiprocessing queue for storing results
+    returns: reverse blast hit call, hit definition, called hit e value, e value for best non-call
     """
-
-    # parse args
-    df = args[0]
-    i = args[1]
-    rev_blast_db = args[2]
-    patterns = args[3]
-    queue = args[4]
-
-    index = df.index[i]
-
-    s = df.loc[index,"sequence"]
-    a = df.loc[index,"start"]
-    b = df.loc[index,"end"]
-
-    seq = s[a:b]
-    hit = ncbi.local_blast(seq,db=rev_blast_db,hitlist_size=50)
 
     hit_call = None
     hit_def = None
@@ -94,23 +73,24 @@ def _reverse_blast_thread(args):
     except KeyError:
         pass
 
-    # update queue
-    queue.put((i,hit_def,hit_call,hit_e_value,next_hit_e_value))
+    return hit_call, hit_def, hit_e_value, next_hit_e_value
 
 
-def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
+
+def reverse_blast(df,
+                  call_dict,
+                  ncbi_rev_blast_db=None,
+                  local_rev_blast_db=None,
+                  ncbi_taxid=None,
+                  hitlist_size=50,
+                  e_value_cutoff=0.01,
+                  gapcosts=(11,1),
+                  local_num_threads=-1,
+                  **kwargs):
     """
-    df: expects df has "sequence", "start", and "end" columns. Will return a
-        copy of the df with new columns:
-
-        rev_hit: top reverse blast hit
-        paralog: paralog, if pattern from call_dict matched top hit
-        rev_e_value: e-value for top reverse hit
-        next_rev_e_value: e-value for best reverse hit that does *not* match a
-                          pattern.
-
-        It will also update "keep" to be False for any paralog = None sequences.
-    call_dict: dictionary with regular expressions as keys and calls as values.
+    df: topiary dataframe
+    call_dict: dictionary with regular expressions as keys and paralog calls as
+               values. Both keys and values must be strings.
 
                example:
                {"lymphogen antigen 96":"LY96",
@@ -118,50 +98,114 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
                 "lymophogen antigen 86":"LY86",
                 "MD-1":"LY86"}
 
-    rev_blast_db: pointer to local blast database for reverse blasting.
-    num_threads: number of threads to use. if -1, use all available.
+                This would mean hits with 'lymophogen antigen 96' and 'MD-2'
+                will map to LY96; hits with 'lymphogen antigen 86' and 'MD-1'
+                will map to LY86.
+
+    ncbi_rev_blast_db: database on ncbi against which to blast (incompatible
+                       with local_rev_blast_db)
+    local_rev_blast_db: local database against which to blast (incompatible with
+                        ncbi_rev_blast_db)
+    ncbi_taxid: limit search to species specified by taxid for an ncbi search
+    histlist_size: number of hits to look at
+    e_value_cutoff: minimum allowable e value for a hit
+    gapcosts: gap costs (must be length 2 tuple of ints)
+    local_num_threads: number of threads to use. if -1, use all available.
+    kwargs: extra keyword arguments are passed directly to biopython
+            NcbiblastXXXCommandline (for local blast) or qblast (for remote
+            blast). These take precedence over anything specified above
+            (hitlist_size, for example).
     """
 
-    print("Performing reverse blast...")
+    if type(df) is not pd.DataFrame:
+        err = "\ndf should be a topiary dataframe\n\n"
+        raise ValueError(err)
 
-    patterns = []
-    if call_dict is not None:
-        for k in call_dict:
-            patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
+    # Make sure this is a clean topiary dataframe
+    df = util.check_topiary_dataframe(df)
 
-    # Figure out number of threads to use
-    if num_threads < 0:
+    # Create list of all sequences in dataframe
+    sequence_list = []
+    for i in range(len(df)):
+
+        # Get sequence
+        idx = df.index[i]
+        s = df.loc[idx,"sequence"]
+
+        # Try to get start/end (only blasts subset of sequences). If start and
+        # end are not defined in this dataframe, take whole sequence
         try:
-            num_threads = mp.cpu_count()
-        except NotImplementedError:
-            num_threads = os.cpu_count()
-            if num_threads is None:
-                warnings.warn("Could not determine number of cpus. Using single thread.\n")
-                num_threads = 1
+            a = df.loc[idx,"start"]
+            b = df.loc[idx,"end"]
+        except KeyError:
+            a = 0
+            b = None
 
-    # queue will hold results from each run.
-    queue = mp.Manager().Queue()
-    with mp.Pool(num_threads) as pool:
+        # Record this sequence
+        sequence_list.append(s[a:b])
 
-        # This is a bit obscure. Build a list of args to pass to the pool. Each
-        # tuple of args matches the args in _reverse_blast_thread.
-        # all_args has all len(df) reverse blast runs we want to do.
-        all_args = [(df,i,rev_blast_db,patterns,queue) for i in range(len(df))]
+    # Check the call_dict argument for sanity
+    good_call_dict = True
+    if type(call_dict) is not dict:
+        good_call_dict = False
+    else:
+        for k in call_dict:
+            if (type(k) is not str) or (call_dict[k] is not str):
+                good_call_dict = False
+                break
+    if not good_call_dict:
+        err = "\ncall_dict should be a dictionary keying patterns to look for\n"
+        err += "in the blast hits to the paralog call. Both keys and values\n"
+        err += "must be strings.\n\n"
+        raise ValueError(err)
 
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _reverse_blast_thread
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        list(tqdm(pool.imap(_reverse_blast_thread,all_args),total=len(all_args)))
+    # Compile patterns to look for in the blast hits
+    patterns = []
+    for k in call_dict:
+        if type(k) is not str:
+            err = "call_dict should be a diti"
 
-    # Get results out of the queue.
+        patterns.append((re.compile(k,re.IGNORECASE),call_dict[k]))
+
+    # Figure out what we're blasting against
+    if ncbi_rev_blast_db is None and local_rev_blast_db is None:
+        err = "\nPlease specificy either ncbi_rev_blast_db OR local_rev_blast_db\n\n"
+        raise ValueError(err)
+
+    if ncbi_rev_blast_db is not None and local_rev_blast_db is not None:
+        err = "\nPlease specificy either ncbi_rev_blast_db OR\n"
+        err += "local_rev_blast_db, but not both.\n\n"
+        raise ValueError(err)
+
+    # NCBI blast
+    if ncbi_rev_blast_db:
+        hit_dfs = ncbi.ncbi_blast(sequence_list,
+                                  db=ncbi_rev_blast_db,
+                                  taxid=ncbi_taxid,
+                                  blast_program="blastp",
+                                  hitlist_size=hitlist_size,
+                                  e_value_cutoff=e_value_cutoff,
+                                  gapcosts=gapcosts,
+                                  **kwargs)
+
+    # Local blast
+    else:
+        hit_dfs = ncbi.local_blast(sequence_list,
+                                   db=local_rev_blast_db,
+                                   blast_program="blastp",
+                                   hitlist_size=hitlist_size,
+                                   e_value_cutoff=e_value_cutoff,
+                                   gapcosts=gapcosts,
+                                   num_threads=local_num_threads,
+                                   **kwargs)
+
+    # hit_dfs has a dataframe of blast hits for each sequence in the input
+    # topiary dataframe.
+
     results = []
-    while not queue.empty():
-        results.append(queue.get())
+    for h in hits:
+        results.append(_check_for_match(h,patterns))
 
-    # Sort results
-    results.sort()
     rev_hit = [r[1] for r in results]
     paralog = [r[2] for r in results]
     rev_e_value = [r[3] for r in results]
@@ -178,5 +222,3 @@ def reverse_blast(df,call_dict=None,rev_blast_db="GRCh38",num_threads=-1):
     new_df.loc[mask,"keep"] = False
 
     print("Done.")
-
-    return new_df

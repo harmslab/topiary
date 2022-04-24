@@ -9,9 +9,10 @@ from . base import read_blast_xml
 
 import Bio.Blast.Applications as apps
 
+import pandas as pd
 from tqdm.auto import tqdm
 
-import sys, os, string, random, subprocess
+import sys, os, string, random, subprocess, copy
 import warnings
 import multiprocessing as mp
 
@@ -35,8 +36,8 @@ def _blast_thread(args):
     # parse args
     sequence_list = args[0]
     i = args[1]
-    blast_kwargs = args[2]
-    blast_function = args[3]
+    blast_function = args[2]
+    blast_kwargs = args[3]
     keep_tmp = args[4]
     queue = args[5]
 
@@ -46,16 +47,22 @@ def _blast_thread(args):
     out_file = "{}_blast_out.xml".format(tmp_file_root)
 
     f = open(input_file,'w')
-    f.write("".join(sequence_input))
+    f.write("".join(f">sequence{i}\n{sequence_list[i]}"))
     f.close()
 
-    blast_kwargs["query"] = input_file,
+    blast_kwargs = copy.deepcopy(blast_kwargs)
+    blast_kwargs["query"] = input_file
     blast_kwargs["out"] = out_file
 
-    blast_function(sequence[i],db=rev_blast_db,hitlist_size=50)
+    blast_function(**blast_kwargs)()
 
     # Parse output
-    out_df = read_blast_xml(out_file)
+    try:
+        out_df = read_blast_xml(out_file)
+    except FileNotFoundError:
+        err = "\nLocal blast failed on sequence:\n"
+        err += f"    '{sequence_list[i]}'\n\n"
+        raise RuntimeError(err)
 
     # Delete temporary files
     if not keep_tmp:
@@ -85,7 +92,7 @@ def _blast_thread_manager(sequence_list,
     sequence list.
     """
 
-    print("Performing reverse blast...")
+    print("Performing blast...")
     sys.stdout.flush()
 
     # Figure out number of threads to use
@@ -115,12 +122,12 @@ def _blast_thread_manager(sequence_list,
                              queue))
 
         # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _reverse_blast_thread
+        # filling threads as each job finishes. (Calls _blast_thread
         # on every args tuple in all_args). tqdm gives us a status bar.
         # By wrapping pool.imap iterator in tqdm, we get a status bar that
         # updates as each thread finishes.
         list(tqdm(pool.imap(_blast_thread,all_args),total=len(all_args)))
-
+        
     # Get results out of the queue.
     results = []
     while not queue.empty():
@@ -197,6 +204,13 @@ def local_blast(sequence,
         # If sequence is not a string, make a single fasta-formatted string
         # from contents
         if type(sequence) is not str:
+
+            # pandas dataframes will pass below because enumeration goes over
+            # columns, which are strings. Manually check for dataframe...
+            if type(sequence) is pd.DataFrame:
+                err = "\nsequence must either be a string or list of strings, one for each sequence\n\n"
+                raise ValueError(err)
+
             sequence_list = []
             for i, s in enumerate(sequence):
                 if type(s) is not str:
