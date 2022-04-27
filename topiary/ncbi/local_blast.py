@@ -59,6 +59,8 @@ def _blast_thread(args):
     # Parse output
     try:
         out_df = read_blast_xml(out_file)
+        if len(out_df) == 1:
+            out_df = out_df[0]
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
@@ -127,7 +129,7 @@ def _blast_thread_manager(sequence_list,
         # By wrapping pool.imap iterator in tqdm, we get a status bar that
         # updates as each thread finishes.
         list(tqdm(pool.imap(_blast_thread,all_args),total=len(all_args)))
-        
+
     # Get results out of the queue.
     results = []
     while not queue.empty():
@@ -152,7 +154,9 @@ def local_blast(sequence,
                 num_threads=-1,
                 **kwargs):
     """
-    Perform a blast query against a local blast data base.
+    Perform a blast query against a local blast database. Takes a sequence or
+    list of sequences and returns a list of topiary dataframes containing hits
+    for each sequence.
 
     ssequence: sequence as a string OR list of string sequences
     db: name of local blast database
@@ -164,6 +168,9 @@ def local_blast(sequence,
     num_threads: number of threads to use. if -1, use all available.
     kwargs: extra keyword arguments are passed directly to apps.NcbiblastXXXCommandline,
             overriding anything constructed above.
+
+    returns: dataframe (single query) or list of dataframes (multiple sequences).
+             if no hits found, warns and returns None.
     """
 
     recognized_functions = {"blastp":apps.NcbiblastpCommandline,
@@ -199,6 +206,7 @@ def local_blast(sequence,
     # Parse the sequence input. Should either be a list of strings or a single
     # string sequence. Create sequence_list which is a list of sequences (even
     # if only one)
+    return_singleton = False
     if hasattr(sequence,"__iter__"):
 
         # If sequence is not a string, make a single fasta-formatted string
@@ -220,6 +228,7 @@ def local_blast(sequence,
                     sequence_list.append(s)
         else:
             sequence_list = [sequence]
+            return_singleton = True
     else:
         err = "\nsequence must either be a string or list of strings, one for each sequence\n\n"
         raise ValueError(err)
@@ -256,8 +265,9 @@ def local_blast(sequence,
                                    keep_tmp,
                                    num_threads)
 
-    # If there was only one blast sequence, return it instead of a list
-    if len(out_df) == 1:
+    # If user passed in single sequence (not list) return a single dataframe
+    # instead of a list of dataframes
+    if return_singleton:
         out_df = out_df[0]
 
     return out_df

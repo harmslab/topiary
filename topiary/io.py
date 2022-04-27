@@ -20,9 +20,6 @@ from tqdm.auto import tqdm
 
 import re, string, random, io, warnings, copy
 
-
-
-
 def read_dataframe(input,remove_extra_index=True):
     """
     Read a spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is not one
@@ -103,8 +100,6 @@ def write_dataframe(df,out_file):
         df.to_csv(out_file,sep="\t",index=False)
     else:
         df.to_excel(out_file,index=False)
-
-
 
 def ncbi_blast_xml_to_df(xml_files):
     """

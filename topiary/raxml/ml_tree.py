@@ -19,8 +19,8 @@ def generate_ml_tree(df,
                      raxml_binary=RAXML_BINARY,
                      write_bs_msa=True):
     """
-    Generate maximum likelihood tree with SH supports from an alignment given
-    a substitution model.
+    Generate maximum likelihood tree from an alignment given a substitution
+    model.
 
     df: topiary data frame or csv written out from topiary df
     model: model (e.g. LG+G8).
