@@ -25,8 +25,12 @@ def _annotate_tree_with_calls(df,tree,work_on_copy=True):
 
         uid = df.uid.iloc[i]
         species = df.species.iloc[i]
-        ott = f"{df.ott.iloc[i]:d}"
-        paralog = df.paralog.iloc[i]
+        ott = f"{int(np.round(df.ott.iloc[i],0)):d}"
+        try:
+            paralog = df.paralog.iloc[i]
+        except AttributeError:
+            paralog = df.protein.iloc[i]
+
         call = f"{ott}|{paralog}"
 
         out_dict[uid] = {"species":species,

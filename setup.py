@@ -19,15 +19,16 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "biopython>=1.79",
+    "biopython>=1.78",
     "ete3>=3.1.2",
     "opentree>=1.0.1",
     "tqdm>=4.61.2",
     "dendropy>=4.5.2",
-    "numpy>=1.21.1",
+    "numpy",
     "pandas>=1.3.1",
     "matplotlib>=3.4.2",
     "pastml>=1.9.34",
+    "openpyxl"
 ]
 
 

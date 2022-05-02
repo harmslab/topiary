@@ -5,7 +5,7 @@ import ete3
 import pandas as pd
 import numpy as np
 
-import re, copy, warnings
+import re, copy
 
 def get_ott_id(df,
                context_name="All life",
@@ -46,8 +46,9 @@ def get_ott_id(df,
     local_df = df.copy()
     local_df["orig_species"] = local_df.loc[:,"species"]
 
-    # Get unique list of species
+    # Get unique list of species, stripping any leading/trailing spaces.
     species_list = list(local_df.species.drop_duplicates())
+    species_list = [s.strip() for s in species_list]
 
     # Do fuzzy match for species names
     w = OT.tnrs_match(species_list,
@@ -74,10 +75,11 @@ def get_ott_id(df,
                 # equal to the query, warn the user
                 if matches[0]['matched_name'] != matches[0]['taxon']['unique_name']:
 
-                    print(f"Species {matches[0]['matched_name']} had multiple hits. Taking first.")
+                    w = f"\n\nSpecies {matches[0]['matched_name']} had multiple hits. Taking first.\n"
+                    w += "Matches:\n"
                     for i in range(len(matches)):
-                        print(f"    {matches[i]['taxon']['unique_name']}")
-                    print()
+                        w += f"    {matches[i]['taxon']['unique_name']}\n"
+                    print(w)
 
             # Record data about hit
             hit = matches[0]
@@ -113,8 +115,7 @@ def get_ott_id(df,
         not_resolved.append(ott_id)
 
     # Create new, empty column for "ott" in the local df
-    local_df["ott"] = pd.array([None for _ in range(len(local_df))],
-                               dtype=pd.Int64Dtype())
+    local_df["ott"] = pd.array(["" for _ in range(len(local_df))])
 
     # Go through the local_df and populate species, ott, and keep
     unrecognized_name = []
@@ -156,44 +157,29 @@ def get_ott_id(df,
         # Update the local_df keep, species, and ott
         local_df.loc[row_name,"keep"] = keep
         local_df.loc[row_name,"species"] = species
-        local_df.loc[row_name,"ott"] = ott_id
+        local_df.loc[row_name,"ott"] = f"ott{ott_id}"
 
     # Print warning data for user -- species we could not find OTT for
-    ott_error_found = False
+
     unrecognized_name = set(unrecognized_name)
     if len(unrecognized_name) != 0:
 
-        print()
-        print("Could not find OTT for following species:")
+        w = "\n"
+        w += "Could not find OTT for following species:\n"
         for u in unrecognized_name:
-            print(f"    {u}")
+            print(f"    {u}\n")
 
-        print("\nSetting `keep = False` for all of these species\n")
-
-        ott_error_found = True
-
-    # Print warning data for user -- species we could not resolve
-    unresolved_taxa = set(unresolved_taxa)
-    if len(unresolved_taxa) != 0:
-
-        print()
-        print("Following species have OTT, but cannot be placed on tree:")
-        for u in unresolved_taxa:
-            print(f"    {u}")
-        print("\nSetting `keep = False` for all of these species.\n")
-
-        ott_error_found = True
-
-    if ott_error_found:
-
-        print(re.sub("        ","",
+        w += "\nSetting `keep = False` for all of these species\n"
+        w += re.sub("        ","",
         """
         topiary looks up unique identifiers for every species (OTT ids) using the
         opentreeoflife database. This did not work for the species listed above.
         For the moment, topiary has simply set `keep = False` for any sequences
         from these species in the dataframe, meaning they will be excluded from
         the analysis. If you want to keep these sequences, you can look up the
-        OTT for the species manually on https://tree.opentreeoflife.org/.
+        OTT for the species manually on https://tree.opentreeoflife.org/,
+        manually add that ott to the dataframe, and set `keep = True` for that
+        row.
 
         This is often caused when a species has two names (for example,
         Apteryx mantelli mantelli vs. Apteryx australis mantelli). If ncbi uses
@@ -205,7 +191,7 @@ def get_ott_id(df,
         This is a unique species, but can't be placed on a bifurcating species
         tree.
 
-        If you are able to find a name for the speices that successfully resolves
+        If you are able to find a name for the spieces that successfully resolves
         on the opentreeoflife database, you can update the dataframe. For the
         example of Apteryx mantelli mantellii above, you could fix this error
         by running the following code. (Note we set `keep = True` because the
@@ -216,7 +202,40 @@ def get_ott_id(df,
         df.loc[df.species == "Apteryx australis mantelli","keep"] = True
         df = topiary.get_ott_id(df,context_name="Animals")
         ```
-        """))
+        \n""")
+
+        print(w)
+
+    # Print warning data for user -- species we could not resolve
+    unresolved_taxa = set(unresolved_taxa)
+    if len(unresolved_taxa) != 0:
+
+        w = "\n"
+        w += "Following species have OTT, but cannot be placed on tree:\n"
+        for u in unresolved_taxa:
+            w += f"    {u}\n"
+        w += "\nSetting `keep = False` for all of these species.\n"
+        w += re.sub("        ","",
+        """
+        topiary looks up unique identifiers for every species (OTT ids) using the
+        opentreeoflife database. This did not work for the species listed above.
+        For the moment, topiary has simply set `keep = False` for any sequences
+        from these species in the dataframe, meaning they will be excluded from
+        the analysis.
+
+        This particular problem usually occurs for hybrids (i.e. mules). These
+        cannot be placed on a branching tree because they are the result of a
+        cross between branches. You have two options to fix this problem. 1)
+        Remove the sequence from the analysis. This is what will happen if you
+        leave `keep = False`. 2) If you need this sequence, look up the OTT for
+        one of the hybrid parents (e.g. horse/donkey for mule) on
+        https://tree.opentreeoflife.org/ and then use that as the OTT for this
+        sequence. This is only recommended if you do not have the parent species
+        in the alignment already. After adding the new OTT, make sure to set
+        `keep = True` for this sequence.
+        """)
+
+        print(w)
 
     return local_df
 
@@ -234,10 +253,6 @@ def get_species_tree(df):
     # Only get keep = True
     df = df.loc[df.keep,:].copy()
 
-    # coerce ott to string int
-    tmp_ott = [f"{o}" for o in np.array(df.loc[:,"ott"],dtype=np.int64)]
-    df.loc[:,"ott"] = tmp_ott
-
     # Get only rows with unique ott
     df = df.loc[df.loc[:,"ott"].drop_duplicates().index,:]
 
@@ -246,7 +261,7 @@ def get_species_tree(df):
         err = "not all species OTT in dataframe."
         raise ValueError(err)
 
-    ott_ids = list(df.loc[:,"ott"])
+    ott_ids = [int(o[3:]) for o in df.loc[:,"ott"]]
     species = list(df.loc[:,"species"])
     ott_species_dict = {}
     for i in range(len(ott_ids)):

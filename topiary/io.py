@@ -18,11 +18,89 @@ from Bio import SeqIO
 
 from tqdm.auto import tqdm
 
-import re, string, random, io
+import re, string, random, io, copy
 
-def ncbi_blast_xml_to_df(xml_files,
-                         aliases=None,
-                         phylo_context="All life"):
+def read_dataframe(input,remove_extra_index=True):
+    """
+    Read a spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is not one
+    of these, attempts to parse text as a spreadsheet using
+    pandas.read_csv(sep=None).
+
+    input: either a pandas dataframe OR the filename to read in.
+    remove_extra_index: look for the 'Unnamed: 0' column that pandas writes out
+        for pd.to_csv(index=True) and, if found, drop column.
+    """
+
+    # If this is a string, try to load it as a file
+    if type(input) is str:
+
+        filename = input
+
+        ext = filename.split(".")[-1]
+
+        if ext in ["xlsx","xls"]:
+            df = pd.read_excel(filename)
+        elif ext == "csv":
+            df = pd.read_csv(filename,sep=",")
+        elif ext == "tsv":
+            df = pd.read_csv(filename,sep="\t")
+        else:
+            # Fall back -- try to guess delimiter
+            df = pd.read_csv(filename,sep=None,engine="python")
+
+    # If this is a pandas dataframe, work in a copy of it.
+    elif type(input) is pd.DataFrame:
+        df = input.copy()
+
+    # Otherwise, fail
+    else:
+        err = f"\n\n'input' {input} not recognized. Should be the filename of\n"
+        err += "spreadsheet or a pandas dataframe.\n"
+        raise ValueError(err)
+
+    # Look for extra index column that pandas writes out (in case user wrote out
+    # pandas frame manually, then re-read). Looks for first column that is
+    # Unnamed and has values [0,1,2,...,L]
+    if remove_extra_index:
+        if df.columns[0].startswith("Unnamed:"):
+            possible_index = df.loc[:,df.columns[0]]
+            if np.issubdtype(possible_index.dtypes,int):
+                if np.array_equal(possible_index,np.arange(len(possible_index),dtype=int)):
+                    df = df.drop(columns=[df.columns[0]])
+
+    # Validate the dataframe
+    df = util.check_topiary_dataframe(df)
+
+    return df
+
+def write_dataframe(df,out_file):
+    """
+    Write a dataframe to an output file. The type of file written depends on the
+    extension of out_file. If .csv, write comma-separated. If .tsv, write tab-
+    separated. If .xlsx, write excel. Otherwise, write as a .csv file.
+
+    df: topiary dataframe
+    out_file: output file name
+    """
+
+    if type(out_file) is not str:
+        err = f"\n\nout_file '{out_file}' should be a string.\n"
+        raise ValueError(err)
+
+    ext = out_file.split(".")[-1]
+    if ext not in ["csv","tsv","xlsx"]:
+        print("\n\nOutput file extension not recognized. Will write as csv.\n\n")
+        ext = "csv"
+
+    # Write out appropriate file type
+    if ext == "csv":
+        df.to_csv(out_file,sep=",",index=False)
+    elif ext == "tsv":
+        df.to_csv(out_file,sep="\t",index=False)
+    else:
+        df.to_excel(out_file,index=False)
+
+def ncbi_blast_xml_to_df(xml_files):
     """
     Take a list of blast xml files and load in all sequences as a single
     topiary data frame. Parse meta data in an intelligent way, download
@@ -31,38 +109,6 @@ def ncbi_blast_xml_to_df(xml_files,
 
     xml_files: blast xml files to load. if a string, treat as a single xml file.
                if a list, treat as a list of xml files.
-    aliases: dictionary for standardizing protein names.  Key specifies what
-             should be output, values degenerate names that map back to that
-             key.  For example:
-                 "S100A9":("S100-A9","S100 A9","S-100 A9")
-             would replace "S100-A9", "S100 A9", and "S-100 A9" with "S100A9"
-    phylo_context: string. used to limit species seach for looking up species
-                   ids on open tree of life.  To get latest strings recognized
-                   by the database, use the following code:
-
-                   ```
-                   from opentree import OT
-                   print(OT.tnrs_contexts().response_dict)
-                   ```
-
-                   As of 2021-08-16, the following are recognized. You can use
-                   either the keys or values in this dictionary.
-
-                   {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
-                                'Amphibians','Vertebrates','Arthropods',
-                                'Molluscs','Nematodes','Platyhelminthes',
-                                'Annelids','Cnidarians','Arachnids','Insects'],
-                    'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
-                    'LIFE': ['All life'],
-                    'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
-                                 'Amoebozoa','Centrohelida','Haptophyta',
-                                 'Apusozoa','Diatoms','Ciliates','Forams'],
-                    'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
-                               'Vascular plants','Club mosses','Ferns',
-                               'Seed plants','Flowering plants','Monocots',
-                               'Eudicots','Rosids','Asterids','Asterales',
-                               'Asteraceae','Aster','Symphyotrichum',
-                               'Campanulaceae','Lobelia']}
 
     returns a pandas data frame
     """
@@ -92,8 +138,7 @@ def ncbi_blast_xml_to_df(xml_files,
             start = tmp_df.loc[j,"subject_start"]
             end = tmp_df.loc[j,"subject_end"]
             hit_info = ncbi.parse_ncbi_line(title,
-                                            accession=accession,
-                                            aliases=aliases)
+                                            accession=accession)
             if hit_info is None:
                 continue
 
@@ -128,6 +173,13 @@ def ncbi_blast_xml_to_df(xml_files,
     # Create a dictionary with appropriate keys to load into dataframe.
     out = util.create_pipeline_dict()
 
+    # Add blast-specific columns
+    blast_key_list = ["accession","xml","length","evalue","start","end",
+                      "structure","low_quality","precursor","predicted",
+                      "isoform","hypothetical","partial","raw_line"]
+    for k in blast_key_list:
+        out[k] = []
+
     # Go through every hit
     for i in range(len(all_hits)):
 
@@ -159,42 +211,44 @@ def ncbi_blast_xml_to_df(xml_files,
         out["start"].append(start)
         out["end"].append(end)
 
-        out["uid"].append("".join([random.choice(string.ascii_letters) for _ in range(10)]))
+        out["uid"].append(_private.generate_uid())
 
         out["keep"].append(True)
 
     df = pd.DataFrame(out)
-
-    df = opentree.get_ott_id(df,context_name=phylo_context)
+    df = util.check_topiary_dataframe(df)
 
     return df
 
 
-def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
+def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False):
     """
     df: data frame to write out
     out_file: output file
     seq_column: column in data frame to use as sequence
-    seq_name: column in data frame to use as >NAME.  If "pretty",
-              write out a pretty names.
+    label_columns: list of columns to use for the label
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
     clean_sequence: replace any non-aa characters with "-"
     """
 
-    # Make sure seq name is sane
-    try:
-        df[seq_name]
-        take_pretty = False
-    except KeyError:
-        if seq_name == "pretty":
-            take_pretty = True
-        else:
-            err = f"seq_name '{seq_name}' not recognized."
-            err += "Should be a column name or 'pretty'\n"
+    # Make sure label columns are  sane
+    for c in label_columns:
+        try:
+            df[c]
+        except KeyError:
+            err = f"label_column '{c}' not recognized."
+            err += "Should be a a column name in the dataframe.\n"
             raise ValueError(err)
+
+    # Make sure label columns has uid in the first position
+    try:
+        label_columns.remove("uid")
+    except ValueError:
+        pass
+    label_columns.insert(0,"uid")
 
     # Make sure seq column is sane
     try:
@@ -212,10 +266,11 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
             if not row.keep:
                 continue
 
-        if take_pretty:
-            h = _private.to_pretty(row)
-        else:
-            h = row[seq_name]
+        # Create label for header
+        h = []
+        for c in label_columns:
+            h.append(row[c])
+        h = "|".join(h)
 
         seq = row[seq_column]
         is_empty = len([s for s in seq if s not in list(empty_char)]) == 0
@@ -318,56 +373,62 @@ def write_phy(df,out_file,seq_column="sequence",
     f.write("".join(out))
     f.close()
 
-def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkeep_missing=True):
+def read_fasta(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
     """
+    Load sequences from a fasta file into a topiary dataframe
+
+    df: topiary data frame
+    fasta_file: a fasta file with headers formatted like >uid|other stuff
+    load_into_column: what column in the dataframe to load the sequences into
     unkeep_missing: set sequences not loading into keep = False
-    empty_char: empty char. if the sequence is only empty char, set keep = False
+
+    returns: topiary dataframe with sequences now in load_into_column
     """
 
-    # Create new data frame and make sure it has the column in which to load
-    new_df = df.copy()
+    # Create data frame and make sure it has the column in which to load
+    new_df = util.check_topiary_dataframe(df)
     try:
         new_df[load_into_column]
     except KeyError:
         new_df[load_into_column] = None
 
-    # Figure out how pretty and uid calls map to df index
-    pretty_to_index, uid_to_index = _private.get_index_maps(new_df)
-
     # Go through the fasta file and get sequences
-    header = []
+    headers = []
+    uids = []
     seqs = []
     with open(fasta_file) as f:
         for line in f:
             if line.startswith(">"):
-                if len(seqs) > 0:
-                    seqs[-1] = "".join(seqs[-1])
-                header.append(line.strip()[1:])
+                headers.append(line.strip())
+                uids.append(line[1:].split("|")[0].strip())
                 seqs.append([])
             else:
-                seqs[-1].extend(list(line.strip()))
-    seqs[-1] = "".join(seqs[-1])
+                seqs[-1].append(line.strip())
+
+    if len(uids) != len(set(uids)):
+        err = "Not all uids unique in this fasta file\n"
+        raise ValueError(err)
+
+    final_seqs = []
+    for s in seqs:
+        final_seqs.append("".join(s))
+    uid_to_index = dict(zip(df.uid,df.index))
 
     # Load sequences from fasta into data frame
     loaded_seq = {}
-    for i in range(len(header)):
+    for i in range(len(seqs)):
 
-        # Figure out the index to modify
         try:
-            index = pretty_to_index[header[i]]
-        except KeyError:
-            try:
-                index = uid_to_index[header[i]]
-            except KeyError:
-                err = f"could not map {header[i]} to data frame\n"
-                raise ValueError(err)
-
-        # Actually modify data frame
-        new_df.loc[index,load_into_column] = seqs[i]
-
-        # Record the sequence was loaded if it's not all junk (like -?X)
-        if len([s for s in seqs[i] if s not in list(empty_char)]) > 0:
+            index = uid_to_index[uids[i]]
+            new_df.loc[index,load_into_column] = final_seqs[i]
             loaded_seq[index] = None
+        except KeyError:
+            err = f"Could not map the sequence titled {headers[i]} to an index\n"
+            err += "in the data frame. This function expects the sequence titles\n"
+            err += "in a fasta file to have the format:\n"
+            err += ">uid|other stuff here\n"
+            err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
+            raise ValueError(err)
 
     # If requested, set all sequences not in alignment to Keep = False
     if unkeep_missing:
@@ -377,4 +438,5 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
             except KeyError:
                 new_df.loc[i,"keep"] = False
 
-    return new_df
+    # Return dataframe with final sanity check to make sure uid stayed unique
+    return util.check_topiary_dataframe(new_df)
