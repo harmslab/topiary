@@ -11,6 +11,8 @@ from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
 Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
+import numpy as np
+
 import sys, urllib, http
 
 def ncbi_blast(sequence,
@@ -192,13 +194,23 @@ def ncbi_blast(sequence,
     print("Success.")
     sys.stdout.flush()
 
-    out_df = read_blast_xml(out)
+    # NCBI returns a single blast record, with all query sequences in a single
+    # big dataframe.
+    ncbi_df = read_blast_xml(out)
+
+    # Break big dataframe into a list of dataframes, one for each query sequence
+    queries = np.unique(ncbi_df["query"])
+    query_order = [(q[5:],q) for q in queries]
+    query_order.sort()
+    out_df = []
+    for q in query_order:
+        out_df.append(ncbi_df[ncbi_df["query"] == q[1]])
 
     # If no hits were found, return None
     if len(out_df) == 0:
         w = "\nNo hits returned. This can happen if there is a silent error\n"
-        w += "on a remote server. Try changing your query and blasting again.\n\n"
-        warnings.warn(w)
+        w += "on a remote server. Try changing your query and blasting again.\n"
+        print(w)
         return None
 
     # If user passed in single sequence (not list) return a single dataframe

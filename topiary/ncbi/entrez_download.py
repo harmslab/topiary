@@ -11,7 +11,6 @@ Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 from tqdm.auto import tqdm
 
 import os, urllib, http
-import warnings
 import multiprocessing as mp
 
 def _entrez_download_thread(args):
@@ -82,7 +81,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
         except NotImplementedError:
             num_threads = os.cpu_count()
             if num_threads is None:
-                warnings.warn("Could not determine number of cpus. Using single thread.\n")
+                print("Could not determine number of cpus. Using single thread.\n")
                 num_threads = 1
 
 

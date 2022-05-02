@@ -17,7 +17,6 @@ import pandas as pd
 import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http, copy
-import warnings
 
 def create_pipeline_dict():
     """
@@ -151,7 +150,7 @@ def load_tree(tree,fmt=None):
             # Try all possible formats now, in succession
             w = "\n\nCould not parse tree without format string. Going to try different\n"
             w += "formats. Please check output carefully.\n\n"
-            warnings.warn(w)
+            print(w)
 
             formats = list(range(10))
             formats.append(100)
@@ -163,7 +162,7 @@ def load_tree(tree,fmt=None):
                     w = f"\n\nSuccessfully parsed tree with format style {f}.\n"
                     w += "Please see ete3 documentation for details:\n\n"
                     w += "http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#reading-and-writing-newick-trees\n\n"
-                    warnings.warn(w)
+                    print(w)
                     break
 
                 except ete3.parser.newick.NewickError:
@@ -203,6 +202,14 @@ def check_topiary_dataframe(df):
             + If values are not unique, update them to be unique
         + If not present, create them.
     + 'ott': If present, makes sure it has the format ottINTEGER.
+
+    + Enforces following column order:
+        + nickname (if present)
+        + keep
+        + species
+        + name
+        + sequence
+        + all other columns, in order they came in
     """
 
     # Make sure type is right
@@ -262,7 +269,7 @@ def check_topiary_dataframe(df):
     if np.sum(np.logical_not(final_mask)) > 0:
         lines = ",".join(["{}".format(i) for i in df.index[np.logical_not(final_mask)]])
         w = f"\nDropping apparently empty lines ({lines})\n\n"
-        warnings.warn(w)
+        print(w)
 
     # Drop rows that are all empty
     df = df.loc[df.index[final_mask],:]
@@ -331,7 +338,7 @@ def check_topiary_dataframe(df):
             df.loc[:,"keep"] = np.array(new_keep,dtype=bool)
 
             # Let user know we manually parsed the keep column...
-            warnings.warn(w)
+            print(w)
 
     # -------------------------------------------------------------------------
     # Process uid column
@@ -392,7 +399,7 @@ def check_topiary_dataframe(df):
         w += "scratch) you may safely disregard this warning.\n"
         w += "\n"
         w += warn_uid
-        warnings.warn(w)
+        print(w)
 
     # -------------------------------------------------------------------------
     # Check format of ott column if present
@@ -430,7 +437,20 @@ def check_topiary_dataframe(df):
                 err += "INTEGER is a the integer OTT accession number.\n"
                 raise ValueError(err)
 
-    return df
+
+    # Make sure columns have order nickname, keep, species, name, sequence
+    columns = list(df.columns)
+    if "nickname" in columns:
+        output_order = ["nickname"]
+    else:
+        output_order = []
+    output_order.extend(["keep","species","name","sequence"])
+
+    for c in columns:
+        if c not in output_order:
+            output_order.append(c)
+
+    return df.loc[:,output_order]
 
 def create_nicknames(df,
                      aliases=None,
@@ -569,7 +589,7 @@ def create_nicknames(df,
 
     df.loc[:,output_column] = output
 
-    return df
+    return check_topiary_dataframe(df)
 
 def get_ott_id(df,phylo_context="All life"):
     """

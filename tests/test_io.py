@@ -7,7 +7,6 @@ import pandas as pd
 import warnings, os
 
 
-
 def test_read_dataframe(dataframe_good_files,test_dataframes):
     """
     Test read dataframe function.
@@ -37,17 +36,6 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
     assert df is not ref_df # make sure it's a copy
     df.uid
     df.keep
-
-    # Check "remove_extra_index" flag
-    ref_df.to_csv("junk.csv")
-    df = io.read_dataframe("junk.csv",remove_extra_index=False)
-    assert df.columns[0].startswith("Unnamed:")
-    assert len(df) == len(ref_df)
-
-    df = io.read_dataframe("junk.csv",remove_extra_index=True)
-    assert not df.columns[0].startswith("Unnamed:")
-    assert len(df) == len(ref_df)
-    os.remove("junk.csv")
 
     # Make sure dies with useful error
     bad_inputs = [1,-1,1.5,None,False,pd.DataFrame]
@@ -84,6 +72,6 @@ def test_write_dataframe():
 #     #          empty_char="X-?",
 #     #          clean_sequence=False):
 #
-# def test_load_fasta():
+# def test_read_fasta():
 #     pass
 #     #df,fasta_file,load_into_column="alignment",empty_char="X-?",unkeep_missing=True):

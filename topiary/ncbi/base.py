@@ -22,7 +22,6 @@ Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 from tqdm.auto import tqdm
 
 import re, sys, os, string, random, pickle, io, urllib, http, subprocess
-import warnings
 import multiprocessing as mp
 
 def read_blast_xml(blast_record):
@@ -36,14 +35,15 @@ def read_blast_xml(blast_record):
 
     # If argument is a string, treat as xml file
     if type(blast_record) is str:
+
         f = open(blast_record, 'r')
         p = NCBIXML.parse(f)
 
         blast_record = []
         for r in p:
             blast_record.append(r)
-
         f.close()
+
 
     out_df = []
     for record in blast_record:
@@ -59,7 +59,8 @@ def read_blast_xml(blast_record):
                 'subject_start': [],
                 'subject_end':[],
                 'query_start':[],
-                'query_end':[]}
+                'query_end':[],
+                'query':[]}
 
         # Get alignments from blast result.
         for i, s in enumerate(record.alignments):
@@ -74,9 +75,12 @@ def read_blast_xml(blast_record):
             data['subject_end'].append(s.hsps[0].sbjct_end)
             data['query_start'].append(s.hsps[0].query_start)
             data['query_end'].append(s.hsps[0].query_end)
+            data['query'].append(record.query)
 
         # Port to DataFrame.
         out_df.append(pd.DataFrame(data))
+
+    out_df = pd.concat(out_df)
 
     return out_df
 
@@ -132,7 +136,7 @@ def parse_ncbi_line(line,accession=None):
                 k = e.split("|")[-2].split(".")[0].strip()
             accession_dict[k] = e
         except IndexError:
-            warnings.warn(f"Could not parse line {e}. Skipping.\n")
+            print(f"Could not parse line {e}. Skipping.")
             return None
 
     # If accession is specified, grab entry corresponding to that from the
@@ -146,7 +150,7 @@ def parse_ncbi_line(line,accession=None):
     except KeyError:
         warn = f"accession '{accession}' not found in line '{line}'\n"
         warn += f"Using accession {accession} anyway."
-        warnings.warn(warn)
+        print(warn)
 
     out["accession"] = accession
 

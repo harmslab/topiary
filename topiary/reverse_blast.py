@@ -10,7 +10,7 @@ from . import ncbi, util
 import pandas as pd
 import numpy as np
 
-import re
+import re, sys
 
 def reverse_blast(df,
                   call_dict,
@@ -211,6 +211,25 @@ def reverse_blast(df,
 
     # NCBI blast
     if ncbi_rev_blast_db:
+
+        try:
+            taxid = kwargs.pop("taxid")
+            if ncbi_taxid is None:
+                ncbi_taxid = taxid
+            else:
+                err = "\nplease specify the taxid to use for an ncbi blast search\n"
+                err += "using the `ncbi_taxid` keyword argument.\n"
+                raise ValueError(err)
+        except KeyError:
+            pass
+
+        # Warn that NCBI blasting can be slow
+        w = "\nBlasting against the NCBI database can be slow. You might\n"
+        w += "consider creating a local BLAST database for your reverse BLAST\n"
+        w += "needs.\n"
+        print(w)
+        sys.stdout.flush()
+
         hit_dfs = ncbi.ncbi_blast(sequence_list,
                                   db=ncbi_rev_blast_db,
                                   taxid=ncbi_taxid,

@@ -44,7 +44,14 @@ def test_check_topiary_dataframe(test_dataframes):
     # Make sure reads good dataframe without mangling
     good_df = test_dataframes["good-df"]
     df = util.check_topiary_dataframe(test_dataframes["good-df"])
-    assert np.sum(np.asarray(good_df == df) == False) == 0
+
+    # Sort by column name
+    orig_columns = list(good_df.columns)
+    orig_columns.sort()
+    new_columns = list(df.columns)
+    new_columns.sort()
+
+    assert np.sum(np.asarray(good_df.loc[:,orig_columns] == df.loc[:,new_columns]) == False) == 0
 
     # make sure it properly deals with all sorts of wacky input
     bad_inputs = [1,-1,1.5,None,False,pd.DataFrame]
@@ -53,8 +60,7 @@ def test_check_topiary_dataframe(test_dataframes):
             util.check_topiary_dataframe(b)
 
     # Make sure it drops empty lines
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["good-test_blank-lines"])
+    df = util.check_topiary_dataframe(test_dataframes["good-test_blank-lines"])
     assert len(df) == 5
 
     # Make sure it properly looks for required columns
@@ -66,35 +72,30 @@ def test_check_topiary_dataframe(test_dataframes):
             util.check_topiary_dataframe(bad_df)
 
     # Check keep
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["good-test-keep-parse"])
+    df = util.check_topiary_dataframe(test_dataframes["good-test-keep-parse"])
     assert df.keep.dtypes is np.dtype(bool)
     assert np.array_equal(df.keep,np.array([True,False,
                                             True,False,
                                             True,False]))
 
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["good-test-keep-parse_number"])
+    df = util.check_topiary_dataframe(test_dataframes["good-test-keep-parse_number"])
     assert df.keep.dtypes is np.dtype(bool)
     assert np.array_equal(df.keep,np.array([True,False,
                                             True,False]))
 
 
-    # Check add uid column. Should warn that it's editing uid
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["no-uid"])
+    # Check add uid column.
+    df = util.check_topiary_dataframe(test_dataframes["no-uid"])
     assert len(np.unique(df.uid)) == len(df)
 
-    # Check replace bad uid. Should warn that it's editing uid
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["bad-uid"])
+    # Check replace bad uid.
+    df = util.check_topiary_dataframe(test_dataframes["bad-uid"])
     for d in df.uid:
         assert type(d) is str
         assert len(d) == 10
 
-    # Check make uid unique. Should warn that it's editing uid
-    with pytest.warns():
-        df = util.check_topiary_dataframe(test_dataframes["duplicate-uid"])
+    # Check make uid unique.
+    df = util.check_topiary_dataframe(test_dataframes["duplicate-uid"])
     assert len(np.unique(df.uid)) == len(df)
 
     # Check ott

@@ -13,7 +13,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 import sys, os, string, random, subprocess, copy
-import warnings
 import multiprocessing as mp
 
 def _blast_thread(args):
@@ -104,7 +103,7 @@ def _blast_thread_manager(sequence_list,
         except NotImplementedError:
             num_threads = os.cpu_count()
             if num_threads is None:
-                warnings.warn("Could not determine number of cpus. Using single thread.\n")
+                print("Could not determine number of cpus. Using single thread.\n")
                 num_threads = 1
 
     # queue will hold results from each run.
@@ -200,7 +199,7 @@ def local_blast(sequence,
     try:
         ret = subprocess.run([blast_program],stderr=subprocess.DEVNULL)
     except FileNotFoundError:
-        err = f"\nBLAST program {_local_blast} is not in path. Is it installed?\n\n"
+        err = f"\nBLAST program {blast_program} is not in path. Is it installed?\n\n"
         raise FileNotFoundError(err)
 
     # Parse the sequence input. Should either be a list of strings or a single

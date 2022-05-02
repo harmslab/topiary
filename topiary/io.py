@@ -18,7 +18,7 @@ from Bio import SeqIO
 
 from tqdm.auto import tqdm
 
-import re, string, random, io, warnings, copy
+import re, string, random, io, copy
 
 def read_dataframe(input,remove_extra_index=True):
     """
@@ -89,8 +89,7 @@ def write_dataframe(df,out_file):
 
     ext = out_file.split(".")[-1]
     if ext not in ["csv","tsv","xlsx"]:
-        w = "\n\nOutput file extension not recognized. Will write as csv.\n\n"
-        warnings.warn(w)
+        print("\n\nOutput file extension not recognized. Will write as csv.\n\n")
         ext = "csv"
 
     # Write out appropriate file type
@@ -222,31 +221,34 @@ def ncbi_blast_xml_to_df(xml_files):
     return df
 
 
-def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
+def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False):
     """
     df: data frame to write out
     out_file: output file
     seq_column: column in data frame to use as sequence
-    seq_name: column in data frame to use as >NAME.  If "pretty",
-              write out a pretty names.
+    label_columns: list of columns to use for the label
     write_only_keepers: whether or not to write only seq with keep = True
     empty_char: empty char. if the sequence is only empty char, do not write
                 out.
     clean_sequence: replace any non-aa characters with "-"
     """
 
-    # Make sure seq name is sane
-    try:
-        df[seq_name]
-        take_pretty = False
-    except KeyError:
-        if seq_name == "pretty":
-            take_pretty = True
-        else:
-            err = f"seq_name '{seq_name}' not recognized."
-            err += "Should be a column name or 'pretty'\n"
+    # Make sure label columns are  sane
+    for c in label_columns:
+        try:
+            df[c]
+        except KeyError:
+            err = f"label_column '{c}' not recognized."
+            err += "Should be a a column name in the dataframe.\n"
             raise ValueError(err)
+
+    # Make sure label columns has uid in the first position
+    try:
+        label_columns.remove("uid")
+    except ValueError:
+        pass
+    label_columns.insert(0,"uid")
 
     # Make sure seq column is sane
     try:
@@ -264,10 +266,11 @@ def write_fasta(df,out_file,seq_column="sequence",seq_name="pretty",
             if not row.keep:
                 continue
 
-        if take_pretty:
-            h = _private.to_pretty(row)
-        else:
-            h = row[seq_name]
+        # Create label for header
+        h = []
+        for c in label_columns:
+            h.append(row[c])
+        h = "|".join(h)
 
         seq = row[seq_column]
         is_empty = len([s for s in seq if s not in list(empty_char)]) == 0
@@ -370,56 +373,62 @@ def write_phy(df,out_file,seq_column="sequence",
     f.write("".join(out))
     f.close()
 
-def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkeep_missing=True):
+def read_fasta(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
     """
+    Load sequences from a fasta file into a topiary dataframe
+
+    df: topiary data frame
+    fasta_file: a fasta file with headers formatted like >uid|other stuff
+    load_into_column: what column in the dataframe to load the sequences into
     unkeep_missing: set sequences not loading into keep = False
-    empty_char: empty char. if the sequence is only empty char, set keep = False
+
+    returns: topiary dataframe with sequences now in load_into_column
     """
 
-    # Create new data frame and make sure it has the column in which to load
-    new_df = df.copy()
+    # Create data frame and make sure it has the column in which to load
+    new_df = util.check_topiary_dataframe(df)
     try:
         new_df[load_into_column]
     except KeyError:
         new_df[load_into_column] = None
 
-    # Figure out how pretty and uid calls map to df index
-    pretty_to_index, uid_to_index = _private.get_index_maps(new_df)
-
     # Go through the fasta file and get sequences
-    header = []
+    headers = []
+    uids = []
     seqs = []
     with open(fasta_file) as f:
         for line in f:
             if line.startswith(">"):
-                if len(seqs) > 0:
-                    seqs[-1] = "".join(seqs[-1])
-                header.append(line.strip()[1:])
+                headers.append(line.strip())
+                uids.append(line[1:].split("|")[0].strip())
                 seqs.append([])
             else:
-                seqs[-1].extend(list(line.strip()))
-    seqs[-1] = "".join(seqs[-1])
+                seqs[-1].append(line.strip())
+
+    if len(uids) != len(set(uids)):
+        err = "Not all uids unique in this fasta file\n"
+        raise ValueError(err)
+
+    final_seqs = []
+    for s in seqs:
+        final_seqs.append("".join(s))
+    uid_to_index = dict(zip(df.uid,df.index))
 
     # Load sequences from fasta into data frame
     loaded_seq = {}
-    for i in range(len(header)):
+    for i in range(len(seqs)):
 
-        # Figure out the index to modify
         try:
-            index = pretty_to_index[header[i]]
-        except KeyError:
-            try:
-                index = uid_to_index[header[i]]
-            except KeyError:
-                err = f"could not map {header[i]} to data frame\n"
-                raise ValueError(err)
-
-        # Actually modify data frame
-        new_df.loc[index,load_into_column] = seqs[i]
-
-        # Record the sequence was loaded if it's not all junk (like -?X)
-        if len([s for s in seqs[i] if s not in list(empty_char)]) > 0:
+            index = uid_to_index[uids[i]]
+            new_df.loc[index,load_into_column] = final_seqs[i]
             loaded_seq[index] = None
+        except KeyError:
+            err = f"Could not map the sequence titled {headers[i]} to an index\n"
+            err += "in the data frame. This function expects the sequence titles\n"
+            err += "in a fasta file to have the format:\n"
+            err += ">uid|other stuff here\n"
+            err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
+            raise ValueError(err)
 
     # If requested, set all sequences not in alignment to Keep = False
     if unkeep_missing:
@@ -429,4 +438,5 @@ def load_fasta(df,fasta_file,load_into_column="alignment",empty_char="X-?",unkee
             except KeyError:
                 new_df.loc[i,"keep"] = False
 
-    return new_df
+    # Return dataframe with final sanity check to make sure uid stayed unique
+    return util.check_topiary_dataframe(new_df)
