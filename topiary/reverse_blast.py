@@ -262,12 +262,12 @@ def reverse_blast(df,
 
     for hits in hit_dfs:
 
-        # Get best e-value
-        best_e_value = hits["e_value"].iloc[0]
+        # Get e-value for top hit in list, whether it matches or not
+        top_e_value = hits["e_value"].iloc[0]
 
         # Now go through each regular expression pattern
         e_values = []
-        indexes = []
+        hit_defs = []
         paralogs = []
         for i, p in enumerate(patterns):
 
@@ -277,31 +277,70 @@ def reverse_blast(df,
                 # If the pattern matches this hit description
                 if p[0].search(description):
 
-                    idx = hits.index[j]
-
                     # get e value, index, and paralog call for this match
-                    e_values.append(hits.loc[idx,"e_value"])
-                    indexes.append(idx)
+                    e_values.append(hits.loc[hits.index[j],"e_value"])
+                    hit_defs.append(description)
                     paralogs.append(p[1])
 
                     break
+
 
         # If we got at least one hit that matched
         reverse_found_paralog = False
         if len(paralogs) > 0:
 
             # calculate posterior probability
-            pp = 1/np.array(e_values)
-            pp = pp/np.sum(pp)
-            hit_order = np.argsort(pp)
+            e_values = np.array(e_values)
+
+            # If none of the e-values are zero, calculate the posterior
+            # probability of the top hit.
+            if np.sum(e_values == 0) == 0:
+                pp = 1/np.array(e_values)
+                pp = pp/np.sum(pp)
+                match_idx = np.argsort(pp)[-1]
+                match_pp = pp[match_idx]
+
+            # If there is a zero e-value, take the first hit a zero e-value.
+            # This is an (apparently) infinite posterior probaility
+            else:
+                match_idx = np.where(e_values == 0)[0][0]
+                match_pp = np.inf
 
             # Get the match hit definition, paralog call, match probability
             # (relative to other possible paralogs), and difference in e value
             # relative to the best overall hit.
-            reverse_hit = hits["hit_def"].iloc[hit_order[-1]]
-            reverse_paralog = paralogs[hit_order[-1]]
-            reverse_prob_match = pp[hit_order[-1]]
-            reverse_del_best = np.log10(best_e_value) - np.log10(e_values[hit_order[-1]])
+            reverse_hit = hit_defs[match_idx]
+            reverse_paralog = paralogs[match_idx]
+            reverse_prob_match = match_pp
+            reverse_e_value = e_values[match_idx]
+
+            # If the top hit has e-value of zero...
+            if top_e_value == 0:
+
+                # If the reverse blast hit matches this, the difference in those
+                # e-values is zero
+                if reverse_e_value == 0:
+                    reverse_del_best = 0
+
+                # If the reverse blast hit does *not* match the top, the
+                # difference in those e-values is
+                else:
+                    reverse_del_best = -np.inf
+                    w += "WARNING:\n"
+                    w += "\n\nBLAST returned an e-value = 0.0 for the top hit:\n\n"
+                    w += f"  {hits['hit_def'].iloc[0]}\n\n"
+                    w += "This hit does not match any of the patterns in call_dict.\n"
+                    w += "The best hit that matches something in call_dict has\n"
+                    w += f"an e-value of {reverse_e_value} and matches '{reverse_paralog}'.\n"
+                    w += "Topiary will set reverse_found_paralog to 'False' for\n"
+                    w += "this sequence.\n"
+                    print(w)
+
+            # If we get here, neither top_e_value or reverse_e_value are zero.
+            # (if reverse_e_value was zero, it would be top_e_value and thus be
+            # caught above.)
+            else:
+                reverse_del_best = np.log10(top_e_value) - np.log10(reverse_e_value)
 
             # Decide if we can make a paralog call based on del_best and
             # prob_match
