@@ -417,7 +417,7 @@ def check_topiary_dataframe(df):
             o = df.loc[index,"ott"]
 
             # Missing value is okay --> make sure it's a pandas NULL datatype
-            if pd.isna(o) or pd.isnull(o) or o == "" or None:
+            if pd.isna(o) or pd.isnull(o) or o is None or not o or o in ["","none","None"]:
                 df.loc[index,"ott"] = pd.NA
                 continue
 
