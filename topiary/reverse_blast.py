@@ -224,9 +224,8 @@ def reverse_blast(df,
             pass
 
         # Warn that NCBI blasting can be slow
-        w = "\nBlasting against the NCBI database can be slow. You might\n"
-        w += "consider creating a local BLAST database for your reverse BLAST\n"
-        w += "needs.\n"
+        w = "\nBlasting against the NCBI database can be slow/unstable. Consider\n"
+        w += "creating a local BLAST database for your reverse BLAST needs.\n"
         print(w)
         sys.stdout.flush()
 
