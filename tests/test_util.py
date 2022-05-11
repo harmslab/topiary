@@ -6,6 +6,8 @@ from topiary import util
 import pandas as pd
 import numpy as np
 
+import re
+
 # ---------------------------------------------------------------------------- #
 # Test __init__
 # ---------------------------------------------------------------------------- #
@@ -109,29 +111,54 @@ def test_create_nicknames(test_dataframes):
     df = test_dataframes["good-df"]
 
     # Make sure it runs on a copy
-    out_df = util.create_nicknames(df)
+    out_df = util.create_nicknames(df,aliases={})
     assert out_df is not df
 
+    # Check source column check
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,source_column="not_a_column")
+        out_df = util.create_nicknames(df,aliases={},source_column="not_a_column")
 
+    # Check trying to overwrite reserved column
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,output_column="ott")
+        out_df = util.create_nicknames(df,aliases={},output_column="ott")
+
+    # Check trying to overwrite reserved column -- should still throw error
+    # even if we try to force overwrite
+    with pytest.raises(ValueError):
+        out_df = util.create_nicknames(df,aliases={},output_column="ott",overwrite_output=True)
 
     # Throw error to avoid overwrite
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,output_column="isoform")
+        out_df = util.create_nicknames(df,aliases={},output_column="isoform")
 
     # Force overwrite
-    out_df = util.create_nicknames(df,output_column="isoform",overwrite_output=True)
+    out_df = util.create_nicknames(df,aliases={},output_column="isoform",overwrite_output=True)
 
-    # Send in bad alias data types
+    # Send in bad alias separator (should be string)
+    bad_inputs = [1,-1,1.5,False,pd.DataFrame]
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            out_df = util.create_nicknames(df,aliases={},separator=b)
+
+    # Should work without error
+    out_df = util.create_nicknames(df,aliases={},separator="a string")
+
+    # Send in bad unassigned  (should be string)
+    bad_inputs = [1,-1,1.5,False,pd.DataFrame]
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            out_df = util.create_nicknames(df,aliases={},unassigned_name=b)
+
+    # Should work without error
+    out_df = util.create_nicknames(df,aliases={},unassigned_name="a string")
+
+    # Send in bad alias data types (should be dict)
     bad_inputs = [1,-1,1.5,False,pd.DataFrame]
     for b in bad_inputs:
         with pytest.raises(ValueError):
             out_df = util.create_nicknames(df,aliases=b)
 
-    # Send bad aliases keys
+    # Send bad aliases keys (should be bad)
     bad_inputs = [(1,2),-1,False]
     with pytest.raises(ValueError):
         out_df = util.create_nicknames(df,aliases={b:"test"})
@@ -145,30 +172,60 @@ def test_create_nicknames(test_dataframes):
     out_df = util.create_nicknames(df,aliases={"test":"this"})
     out_df = util.create_nicknames(df,aliases={"test":["this","this"]})
     out_df = util.create_nicknames(df,aliases={"test":("this","this")})
+    out_df = util.create_nicknames(df,aliases={"test":(re.compile("this"),"this")})
 
-    # Check to make sure replacement happening
+    # Check to make nicknaming is doing what we expect
     test_df = df.copy()
     test_df.loc[:,"name"] = ["rocking","out","in","the","usa"]
+    aliases = {"fixed":("rock","out"),
+               "junk":("the",re.compile("usa"))}
+    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
+
+    assert np.array_equal(np.array(out_df.loc[:,"test1"]),
+                          np.array(["fixed","fixed","unassigned","junk","junk"]))
+
+    # Do again, but do some stuff that requires escape characters and more
+    # interesting regular expressions
+    test_df = df.copy()
+    test_df.loc[:,"name"] = ["|rocking","rock","\in","the","usa"]
+    aliases = {"fixed":("|rock","out"),
+               "junk":("the",re.compile("us."))}
+    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
+
+    assert np.array_equal(np.array(out_df.loc[:,"test1"]),
+                          np.array(["fixed","unassigned","unassigned","junk","junk"]))
+
+    # Make sure ignorecase is done correctly (this should work because ignorecase
+    # defaults to True)
+    test_df = df.copy()
+    test_df.loc[:,"name"] = ["rocking","OUT","in","the","usa"]
     aliases = {"fixed":("rock","out"),
                "junk":("the","usa")}
     out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),
-                          np.array(["fixeding","fixed","in","junk","junk"]))
+                          np.array(["fixed","fixed","unassigned","junk","junk"]))
 
-    # Check auto_remove_common functionality
+    # Make sure ignorecase is done correctly (this should not replace "OUT"
+    # because ignorecase is False
     test_df = df.copy()
-    test_df.loc[:,"name"] = "protein powder"
-    out_df = util.create_nicknames(test_df,output_column="test1")
-    assert out_df["test1"].iloc[0] == "powder"
+    test_df.loc[:,"name"] = ["rocking","OUT","in","the","usa"]
+    aliases = {"fixed":("rock","out"),
+               "junk":("the","usa")}
+    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases,
+                                   ignorecase=False)
 
-    out_df = util.create_nicknames(test_df,output_column="test1",auto_remove_common=False)
-    assert out_df["test1"].iloc[0] == "protein powder"
+    assert np.array_equal(np.array(out_df.loc[:,"test1"]),
+                          np.array(["fixed","unassigned","unassigned","junk","junk"]))
 
+    # Make sure we can control the source column
     test_df = df.copy()
     aliases = {"froggy":"Hylobates"}
     out_df = util.create_nicknames(test_df,source_column="species",aliases=aliases)
-    assert out_df["nickname"].iloc[0] == "froggy moloch"
+    assert out_df["nickname"].iloc[0] == "froggy"
+
+
+
 
 def test_get_ott_id(test_dataframes):
 
