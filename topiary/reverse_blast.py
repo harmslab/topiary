@@ -10,13 +10,14 @@ from . import ncbi, util
 import pandas as pd
 import numpy as np
 
-import re, sys
+import re, sys, copy
 
 def reverse_blast(df,
                   call_dict,
                   local_rev_blast_db=None,
                   ncbi_rev_blast_db=None,
                   ncbi_taxid=None,
+                  ignorecase=True,
                   max_del_best=100,
                   min_call_prob=0.95,
                   use_start_stop=True,
@@ -40,21 +41,30 @@ def reverse_blast(df,
         reverse_del_best: float. how much worse paralog call is than the best
                           blast hit. log(e_hit_match) - log(e_hit_best)
 
+    Parameters
+    ----------
+
     df: topiary dataframe. Will pull sequences from df.sequences. If there are
         'start' and 'stop' columns in the dataframe, only blast sequences
         between start/top (for example: start = 5, stop = 20 would blast
         sequence[5:20]. To turn this off, set use_start_stop = False.
 
-    call_dict: dictionary with paralogs as values and lists of regular
-               as values. Keys and regular expressions must be strings.
+    call_dict: dictionary with paralogs as values and lists of patterns to look
+               for as values. Keys must be strings. Values may be strings or
+               compiled re.Pattern instances.
 
                example:
                {"LY96":["lymphocyte antigen 96","MD-2"],
                 "LY86":["lymphocyte antigen 86","MD-1"]}
 
-                This would mean hits with 'lymphocyte antigen 96' and 'MD-2'
-                will map to LY96; hits with 'lymphocyte antigen 86' and 'MD-1'
+                This would mean hits with 'lymphocyte antigen 96' or 'MD-2'
+                will map to LY96; hits with 'lymphocyte antigen 86' or 'MD-1'
                 will map to LY86.
+
+                NOTE: string patterns are interpreted literally. The pattern
+                "[A-Z]" would be escaped to look for "\[A\-Z\]". If you want to
+                use regular expressions in your patterns, pass them in as
+                compiled regular expressions: pattern = re.compile("[A-Z]")
 
     local_rev_blast_db: local database against which to blast (incompatible with
                     ncbi_rev_blast_db)
@@ -66,6 +76,11 @@ def reverse_blast(df,
                 We recommend setting this to well-annotated genomes like
                 human (9606), mouse (10090), chicken (9031), and zebrafish (7955).
                 This can either be a single value or a list of values.
+
+    ignorecase: whether to ignore letter case when searching blast (default True).
+                NOTE: if you pass in compiled regular expressions, the flags
+                (such as re.IGNORECASE) on the *last* pattern for each paralog
+                will be used for all patterns.
 
     max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
                   allows for paralog call. This means the matched reverse blast
@@ -111,6 +126,9 @@ def reverse_blast(df,
     if type(call_dict) is not dict:
         good_call_dict = False
     else:
+
+        # Work on copy of call dict
+        call_dict = copy.deepcopy(call_dict)
         for paralog in call_dict:
 
             # If key isn't a string, throw error
@@ -118,33 +136,54 @@ def reverse_blast(df,
                 good_call_dict = False
                 break
 
-            # If value isn't iterable, thrown an error
+            # If value isn't iterable...
             if not hasattr(call_dict[paralog],"__iter__"):
-                good_call_dict = False
-                break
 
-            # If value is a string, make it a length-one list containing that
-            # string
+                # If it's a naked re.Pattern, put that in a length-one list
+                if type(call_dict[paralog]) is re.Pattern:
+                    call_dict[paralog] = [call_dict[paralog]]
+
+                # Otherwise, throw an error
+                else:
+                    good_call_dict = False
+                    break
+
+            # If value is a string, put it a length-one list
             if type(call_dict[paralog]) is str:
                 call_dict[paralog] = [call_dict[paralog]]
 
-            # Now go through patterns in list and make sure they are strings
+            # Deal with flags from ignorecase (should be reset fo reach paralog
+            # in case user sends in compiled regex that overwrites for one
+            # paralog)
+            if ignorecase:
+                re_flags = {"flags":re.IGNORECASE}
+            else:
+                re_flags = {}
+
+            # Now go through patterns in list and prepare for regex
+            to_compile = []
             for pattern in call_dict[paralog]:
-                if type(pattern) is not str:
+
+                if type(pattern) is str:
+                    to_compile.append(re.escape(pattern))
+                elif type(pattern) is re.Pattern:
+                    to_compile.append(pattern.pattern)
+                    re_flags["flags"] = pattern.flags
+                else:
                     good_call_dict = False
                     break
 
             # If we got here, looks good; compile pattern
-            p = re.compile("|".join(call_dict[paralog]),re.IGNORECASE)
+            p = re.compile("|".join(to_compile),**re_flags)
             patterns.append((p,paralog))
 
     if not good_call_dict:
         err = "\ncall_dict should be a dictionary keying each paralog to a list\n"
-        err += "of regular expressions to look for in the hit_def of each blast\n"
-        err += "hit. The paralog (key), as well as each regular expression,\n"
-        err += "must be a string. Example: \n\n"
-        err += "    {'paralog1':['regexA','regexB',...],\n"
-        err += "     'paralog2':['regexC','regexD',...],...}\n\n"
+        err += "of patterns to look for in the hit_def of each blast bit. The\n"
+        err += "paralog (key) must be a key. Each pattern must be a string\n"
+        err += "or a compiled re.Pattern instance. Example:\n"
+        err += "    {'paralog1':['patternA','patternB',...],\n"
+        err += "     'paralog2':['patternC','patternD',...],...}\n\n"
         raise ValueError(err)
 
     # Validate blast database arguments
@@ -273,12 +312,22 @@ def reverse_blast(df,
             # Go through each hit description...
             for j, description in enumerate(hits.hit_def):
 
+                row = hits.iloc[j]
+
                 # If the pattern matches this hit description
                 if p[0].search(description):
 
-                    # get e value, index, and paralog call for this match
-                    e_values.append(hits.loc[hits.index[j],"e_value"])
-                    hit_defs.append(description)
+                    # Get hit definition
+                    hd = ncbi.parse_ncbi_line(row["title"],row["accession"])
+                    if hd is not None:
+                        hit_defs.append(hd["name"])
+                    else:
+                        hit_defs.append(row["hit_def"])
+
+                    # get e value
+                    e_values.append(row["e_value"])
+
+                    # Get paralog call
                     paralogs.append(p[1])
 
                     break
