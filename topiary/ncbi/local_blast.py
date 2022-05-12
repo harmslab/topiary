@@ -224,6 +224,10 @@ def local_blast(sequence,
                     err = "\nsequence must either be a string or list of strings, one for each sequence\n\n"
                     raise ValueError(err)
                 else:
+                    if len(s) == 0:
+                        err = "\nsequence lengths must all be greater than 0\n\n"
+                        raise ValueError(err)
+
                     sequence_list.append(s)
         else:
             sequence_list = [sequence]

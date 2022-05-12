@@ -157,10 +157,13 @@ def get_ott_id(df,
         # Update the local_df keep, species, and ott
         local_df.loc[row_name,"keep"] = keep
         local_df.loc[row_name,"species"] = species
-        local_df.loc[row_name,"ott"] = f"ott{ott_id}"
+
+        if ott_id is None:
+            local_df.loc[row_name,"ott"] = pd.NA
+        else:
+            local_df.loc[row_name,"ott"] = f"ott{ott_id}"
 
     # Print warning data for user -- species we could not find OTT for
-
     unrecognized_name = set(unrecognized_name)
     if len(unrecognized_name) != 0:
 
