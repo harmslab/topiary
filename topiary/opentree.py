@@ -170,7 +170,7 @@ def get_ott_id(df,
         w = "\n"
         w += "Could not find OTT for following species:\n"
         for u in unrecognized_name:
-            print(f"    {u}\n")
+            w += f"    {u}\n"
 
         w += "\nSetting `keep = False` for all of these species\n"
         w += re.sub("        ","",
@@ -264,7 +264,7 @@ def get_species_tree(df):
         err = "not all species OTT in dataframe."
         raise ValueError(err)
 
-    ott_ids = [int(o[3:]) for o in df.loc[:,"ott"]]
+    ott_ids = [o[3:] for o in df.loc[:,"ott"]]
     species = list(df.loc[:,"species"])
     ott_species_dict = {}
     for i in range(len(ott_ids)):

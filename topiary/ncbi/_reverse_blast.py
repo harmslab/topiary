@@ -265,9 +265,18 @@ def _make_reverse_blast_calls(df,
                "reverse_prob_match":[],
                "reverse_del_best":[]}
 
-    for hits in hit_dfs:
+    for blah, hits in enumerate(hit_dfs):
 
-        # Get e-value for top hit in list, whether it matches or not
+        # No reverse blast hits at all for this sequence
+        if len(hits) == 0:
+            results["reverse_found_paralog"].append(False)
+            results["reverse_hit"].append(pd.NA)
+            results["reverse_paralog"].append(pd.NA)
+            results["reverse_prob_match"].append(np.nan)
+            results["reverse_del_best"].append(np.nan)
+            continue
+
+        # Get e value of top hit
         top_e_value = hits["e_value"].iloc[0]
 
         # Now go through each regular expression pattern

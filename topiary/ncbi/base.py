@@ -81,7 +81,7 @@ def read_blast_xml(blast_record):
         out_df.append(pd.DataFrame(data))
 
     out_df = pd.concat(out_df)
-
+    
     return out_df
 
 def parse_ncbi_line(line,accession=None):

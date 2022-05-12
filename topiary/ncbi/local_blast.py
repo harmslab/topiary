@@ -42,8 +42,8 @@ def _blast_thread(args):
 
     # make a 10-character random string for temporary files
     tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
-    input_file = "{}_blast_in.fasta".format(tmp_file_root)
-    out_file = "{}_blast_out.xml".format(tmp_file_root)
+    input_file = "topiary-tmp_{}_blast-in.fasta".format(tmp_file_root)
+    out_file = "topiary-tmp_{}_blast-out.xml".format(tmp_file_root)
 
     f = open(input_file,'w')
     f.write("".join(f">sequence{i}\n{sequence_list[i]}"))
@@ -58,8 +58,8 @@ def _blast_thread(args):
     # Parse output
     try:
         out_df = read_blast_xml(out_file)
-        if len(out_df) == 1:
-            out_df = out_df[0]
+        # if len(out_df) == 1:
+        #     out_df = out_df.iloc[0]
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
