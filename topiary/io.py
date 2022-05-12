@@ -373,7 +373,7 @@ def write_phy(df,out_file,seq_column="sequence",
     f.write("".join(out))
     f.close()
 
-def read_fasta(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
+def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
     """
     Load sequences from a fasta file into a topiary dataframe
 
@@ -437,6 +437,7 @@ def read_fasta(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
                 loaded_seq[i]
             except KeyError:
                 new_df.loc[i,"keep"] = False
+                new_df.loc[i,load_into_column] = pd.NA
 
     # Return dataframe with final sanity check to make sure uid stayed unique
     return util.check_topiary_dataframe(new_df)

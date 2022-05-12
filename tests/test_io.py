@@ -6,7 +6,6 @@ import pandas as pd
 
 import warnings, os
 
-
 def test_read_dataframe(dataframe_good_files,test_dataframes):
     """
     Test read dataframe function.
@@ -19,7 +18,7 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
         # Print f in case parsing dies... so we know which file causes failure.
         print(f)
 
-        # Read file and make sure it does not throuw warning.
+        # Read file and make sure it does not throw warning.
         with warnings.catch_warnings():
             warnings.simplefilter("error")
 
