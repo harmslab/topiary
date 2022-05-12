@@ -5,7 +5,11 @@ __description__ = \
 Reverse blast sequence datasets.
 """
 
-from . import ncbi, util
+from topiary import util
+
+from .local_blast import local_blast
+from .ncbi_blast import ncbi_blast
+from .base import parse_ncbi_line
 
 import pandas as pd
 import numpy as np
@@ -19,7 +23,7 @@ def _prepare_for_blast(df,
                        ignorecase,
                        max_del_best,
                        min_call_prob,
-                       use_start_stop):
+                       use_start_end):
     """
     Check sanity of input parameters and compile patterns. Return a validated
     topiary dataframe, list of sequences, compiled set of patterns to search,
@@ -118,8 +122,9 @@ def _prepare_for_blast(df,
     # Check max_del_best
     try:
         max_del_best = float(max_del_best)
-        if max_del_best < 0:
+        if max_del_best < 0 or np.isnan(max_del_best):
             raise ValueError
+
     except (ValueError,TypeError):
         err = "\nmax_del_best must be a number between 0 and positive infinity\n\n"
         raise ValueError(err)
@@ -129,15 +134,17 @@ def _prepare_for_blast(df,
         min_call_prob = float(min_call_prob)
         if min_call_prob <= 0 or min_call_prob >= 1:
             raise ValueError
+        if np.isnan(min_call_prob):
+            raise ValueError
     except (ValueError,TypeError):
         err = "\nmin_call_prob must be a number between 0 and 1 (not inclusive)\n\n"
         raise ValueError(err)
 
-    # Check use_start_stop
+    # Check use_start_end
     try:
-        use_start_stop = bool(int(use_start_stop))
+        use_start_end = bool(int(use_start_end))
     except (ValueError,TypeError):
-        err = "\nuse_start_stop must be True or False\n\n"
+        err = "\nuse_start_end must be True or False\n\n"
         raise ValueError(err)
 
     # Make sure dataframe is a topiary dataframe
@@ -161,12 +168,22 @@ def _prepare_for_blast(df,
             b = None
 
         # Ignore start/stop if specified.
-        if not use_start_stop:
+        if not use_start_end:
             a = 0
             b = None
 
         # Record this sequence
-        sequence_list.append(s[a:b])
+        try:
+            sequence_list.append(s[a:b])
+        except TypeError:
+            err = "\nstart and end columns must be integers\n\n"
+            raise ValueError(err)
+
+        # Warn if the sequence is empty after slicing
+        if sequence_list[-1] == "":
+            err = "\nsequence has zero length (after slicing with start/end).\n"
+            err += f"row: {df.loc[idx,:]}\n\n"
+            raise ValueError(err)
 
     return df, sequence_list, patterns, max_del_best, min_call_prob
 
@@ -205,25 +222,25 @@ def _run_blast(sequence_list,
         print(w)
         sys.stdout.flush()
 
-        hit_dfs = ncbi.ncbi_blast(sequence_list,
-                                  db=ncbi_rev_blast_db,
-                                  taxid=ncbi_taxid,
-                                  blast_program="blastp",
-                                  hitlist_size=hitlist_size,
-                                  e_value_cutoff=e_value_cutoff,
-                                  gapcosts=gapcosts,
-                                  **kwargs)
+        hit_dfs = ncbi_blast(sequence_list,
+                             db=ncbi_rev_blast_db,
+                             taxid=ncbi_taxid,
+                             blast_program="blastp",
+                             hitlist_size=hitlist_size,
+                             e_value_cutoff=e_value_cutoff,
+                             gapcosts=gapcosts,
+                             **kwargs)
 
     # Local blast
     else:
-        hit_dfs = ncbi.local_blast(sequence_list,
-                                   db=local_rev_blast_db,
-                                   blast_program="blastp",
-                                   hitlist_size=hitlist_size,
-                                   e_value_cutoff=e_value_cutoff,
-                                   gapcosts=gapcosts,
-                                   num_threads=local_num_threads,
-                                   **kwargs)
+        hit_dfs = local_blast(sequence_list,
+                              db=local_rev_blast_db,
+                              blast_program="blastp",
+                              hitlist_size=hitlist_size,
+                              e_value_cutoff=e_value_cutoff,
+                              gapcosts=gapcosts,
+                              num_threads=local_num_threads,
+                              **kwargs)
 
     return hit_dfs
 
@@ -273,7 +290,7 @@ def _make_reverse_blast_calls(df,
                     # If this was an NCBI blast, try to parse the NCBI line,
                     # pulling apart multi-titles
                     if ncbi_rev_blast_db:
-                        hd = ncbi.parse_ncbi_line(row["title"],row["accession"])
+                        hd = parse_ncbi_line(row["title"],row["accession"])
                         if hd is not None:
                             this_def = hd["name"]
 
@@ -366,6 +383,9 @@ def _make_reverse_blast_calls(df,
     for k in results:
         df[k] = results[k]
 
+    # Update keep with reverse_found_paralog
+    df["keep"] = np.logical_and(df["keep"],df["reverse_found_paralog"])
+
     return df
 
 
@@ -377,7 +397,7 @@ def reverse_blast(df,
                   ignorecase=True,
                   max_del_best=100,
                   min_call_prob=0.95,
-                  use_start_stop=True,
+                  use_start_end=True,
                   hitlist_size=50,
                   e_value_cutoff=0.01,
                   gapcosts=(11,1),
@@ -404,7 +424,7 @@ def reverse_blast(df,
     df: topiary dataframe. Will pull sequences from df.sequences. If there are
         'start' and 'stop' columns in the dataframe, only blast sequences
         between start/top (for example: start = 5, stop = 20 would blast
-        sequence[5:20]. To turn this off, set use_start_stop = False.
+        sequence[5:20]. To turn this off, set use_start_end = False.
 
     call_dict: dictionary with paralogs as values and lists of patterns to look
                for as values. Keys must be strings. Values may be strings or
@@ -453,7 +473,7 @@ def reverse_blast(df,
                    paralog call. Value should be between 0 and 1 (not inclusive),
                    where min_call_prob --> 1 increases the stringency.
 
-    use_start_stop: boolean. whether or not to use start/stop columns in
+    use_start_end: boolean. whether or not to use start/stop columns in
                     dataframe (if present) to slice subset of sequence to blast.
 
     histlist_size: number of hits to look at for reverse blast.
@@ -483,7 +503,7 @@ def reverse_blast(df,
                              ignorecase,
                              max_del_best,
                              min_call_prob,
-                             use_start_stop)
+                             use_start_end)
     df, sequence_list, patterns, max_del_best, min_call_prob = out
 
     # Run BLAST on sequence list, returning list of dataframes -- one for each

@@ -149,7 +149,7 @@ def parse_ncbi_line(line,accession=None):
         line = accession_dict[accession]
     except KeyError:
         warn = f"accession '{accession}' not found in line '{line}'\n"
-        warn += f"Using accession {accession} anyway."
+        warn += f"Using accession {accession} anyway and returning entire line."
         print(warn)
 
     out["accession"] = accession

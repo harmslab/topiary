@@ -208,7 +208,7 @@ def ncbi_blast_xml_to_df(xml_files):
         out["sequence"].append(seq)
         out["length"].append(len(seq))
         out["evalue"].append(evalue)
-        out["start"].append(start)
+        out["start"].append(start-1)
         out["end"].append(end)
 
         out["uid"].append(_private.generate_uid())
