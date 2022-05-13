@@ -6,7 +6,7 @@ __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
 
 # raxml binary to use it not specified by user
-RAXML_BINARY = "raxml-ng.dev"
+RAXML_BINARY = "raxml-ng"
 
 import topiary
 
@@ -55,7 +55,6 @@ def copy_input_file(input_file,
                      dir_name,
                      file_name=None,
                      make_input_dir=True,
-                     pretty_to_uid=False,
                      df=None):
     """
     copy an input file into a directory in a stereotyped way.
@@ -68,8 +67,7 @@ def copy_input_file(input_file,
     dir_name: copy into dir_name
     file_name: what to call file in new directory. If none, use same name.
     make_input_dir: (bool) make input directory 00_input or not.
-    pretty_to_uid: (bool) convert file to uid
-    df: topiary data frame (required if pretty_to_uid is True)
+    df: topiary data frame
 
     returns name of copied file
     """
@@ -88,13 +86,7 @@ def copy_input_file(input_file,
 
     # Copy in file, potentially converting from to uid
     out_file = os.path.join(dir_name,file_alone)
-    if pretty_to_uid:
-        if df is None:
-            err = "you must specify df if you set pretty_to_uid = True\n"
-            raise ValueError(err)
-        topiary.util.pretty_to_uid(df,input_file,out_file=out_file)
-    else:
-        shutil.copy(input_file,out_file)
+    shutil.copy(input_file,out_file)
 
     return file_alone
 
@@ -151,7 +143,6 @@ def prep_calc(df=None,
             final_files.append(copy_input_file(f,
                                                dir_name,
                                                make_input_dir=True,
-                                               pretty_to_uid=True,
                                                df=df))
 
     # Move into the output directory
@@ -207,15 +198,15 @@ def _follow_log_generator(f,p):
         yield line
 
 def run_raxml(algorithm=None,
-               alignment_file=None,
-               tree_file=None,
-               model=None,
-               dir_name=None,
-               seed=None,
-               threads=1,
-               raxml_binary=RAXML_BINARY,
-               log_to_stdout=True,
-               other_args=[]):
+              alignment_file=None,
+              tree_file=None,
+              model=None,
+              dir_name=None,
+              seed=None,
+              threads=1,
+              raxml_binary=RAXML_BINARY,
+              log_to_stdout=True,
+              other_args=[]):
     """
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
@@ -294,8 +285,7 @@ def run_raxml(algorithm=None,
 
     # Construct command and dump to std out
     full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'")
-    sys.stdout.flush()
+    print(f"Running '{full_cmd}'",flush=True)
 
     # Launch raxml as a multiprocessing process dumpint its output to a
     # multiprocessing queue.

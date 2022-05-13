@@ -34,10 +34,6 @@ def test_grab_line_meta_data(ncbi_lines,ncbi_lines_parsed):
 
         assert sum(out) == len(ncbi_lines_parsed[i])
 
-#def pretty_to_uid(df,to_convert,out_file=None,overwrite=False):
-#def uid_to_pretty(df,to_convert,out_file=None,overwrite=False):
-#def load_tree(tree,fmt=None):
-
 def test_check_topiary_dataframe(test_dataframes):
     """
     Test check for topiary dataframe.

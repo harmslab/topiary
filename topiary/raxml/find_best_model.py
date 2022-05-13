@@ -10,7 +10,7 @@ from ._raxml import prep_calc, run_raxml, RAXML_BINARY, gen_seed
 import pandas as pd
 import numpy as np
 
-import os, re, shutil
+import os, re, shutil, sys
 
 def _parse_raxml_info_for_aic(info_file):
     """
@@ -109,6 +109,8 @@ def find_best_model(df,
 
     # Generate a parsimony tree if not was specified
     if tree_file is None:
+        print("\nGenerating maximum parsimony tree.",flush=True)
+
         _generate_parsimony_tree(alignment_file,
                                  dir_name="01_make-parsimony-tree",
                                  threads=threads,
@@ -126,6 +128,9 @@ def find_best_model(df,
     # All possible models, dropping rate, freq, invariant for LG4M and LG4X.
     num_mat = len([m for m in model_matrices if m not in ["LG4M","LG4X"]])
     num_models = num_mat*len(model_rates)*len(model_freqs)*len(model_invariant) + 2
+
+    print(f"\nTrying {num_models} combinations of matrix and model parameters.",flush=True)
+    sys.stdout.flush()
 
     # Go over all combos of the requested matrices, rates, and freqs.
     model_counter = 1
@@ -145,7 +150,7 @@ def find_best_model(df,
                     model = "+".join(model)
 
                     # Print model number we're trying
-                    print(f"{model} ({model_counter}/{num_models})")
+                    print(f"{model} ({model_counter}/{num_models})",flush=True)
                     model_counter += 1
 
                     # Optimize branch lengths etc. on the existing tree
@@ -193,7 +198,7 @@ def find_best_model(df,
     f.close()
 
     # Print best model to stdout
-    print(f"\n\nBest model: {best_model}\nAICc Prob:{final_df.p.iloc[0]}\n\n")
+    print(f"\n\nBest model: {best_model}\nAICc Prob:{final_df.p.iloc[0]}\n\n",flush=True)
 
     # Leave the output directory
     os.chdir(starting_dir)

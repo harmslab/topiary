@@ -416,7 +416,7 @@ def reverse_blast(df,
     Take sequences from a topiary dataframe and do a reverse blast analysis
     against an NCBI or local blast database. Looks in blast hits for the
     regular expressions defined in call_dict to call paralog for each sequence
-    in df. Returns a new topiary dataframe with five new columns:
+    in df. Returns a copy of the input topiary dataframe with five new columns:
 
         reverse_found_paralog: True/False, whether a paralog was found
         reverse_hit: string, description for paralog hit (if found) or best hit

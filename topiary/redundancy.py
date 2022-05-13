@@ -5,6 +5,8 @@ __description__ = \
 Remove redundancy for datasets in a semi-intelligent way.
 """
 
+from topiary import util
+
 import pandas as pd
 import numpy as np
 
@@ -134,7 +136,10 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     key_species = dict([(k,None) for k in key_species])
 
     # This will hold output
+    df = util.check_topiary_dataframe(df)
     new_df = df.copy()
+
+    starting_keep_number = np.sum(new_df.keep)
 
     # If not more than one seq, don't do anything
     if len(df) < 2:
@@ -153,7 +158,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     for i in range(len(new_df)):
         quality_scores.append(_get_quality_scores(new_df.iloc[i,:],key_species))
 
-    print("Removing redundant sequences within species.")
+    print("Removing redundant sequences within species.",flush=True)
     unique_species = np.unique(new_df.species)
 
     total_calcs = 0
@@ -212,7 +217,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
             pbar.update(num_this_species*(num_this_species - 1)//2)
 
-    print("Removing redundant sequences, all-on-all.")
+    print("Removing redundant sequences, all-on-all.",flush=True)
 
     N = len(new_df)
     total_calcs = N*(N-1)//2
@@ -262,6 +267,8 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
             pbar.update(N - counter)
             counter += 1
 
-    print("Done.")
+    final_keep_number = np.sum(new_df.keep)
+    print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
+    print("Done.",flush=True)
 
     return new_df

@@ -9,7 +9,7 @@ import topiary
 
 from ._raxml import prep_calc, run_raxml, RAXML_BINARY
 
-import os
+import os, shutil
 
 def generate_ml_tree(df,
                      model,
@@ -17,6 +17,7 @@ def generate_ml_tree(df,
                      output=None,
                      threads=1,
                      raxml_binary=RAXML_BINARY,
+                     bootstrap=True,
                      write_bs_msa=True):
     """
     Generate maximum likelihood tree from an alignment given a substitution
@@ -29,6 +30,7 @@ def generate_ml_tree(df,
     output: name of output directory.
     threads: number of threads to use
     raxml_binary: what raxml binary to use
+    bootstrap: whether or not to do bootstrap replicates
     write_bs_msa: whether or not to write out all bootstrap alignments
     """
 
@@ -44,9 +46,17 @@ def generate_ml_tree(df,
     tree_file = result["other_files"][0]
     starting_dir = result["starting_dir"]
 
-    other_args = ["--bs-trees","autoMRE"]
-    if write_bs_msa:
-        other_args.append("--bs-write-msa")
+    other_args = []
+
+    # If we're doing bootstrapping
+    if bootstrap:
+
+        # Configure bootstrap
+        other_args.extend(["--bs-trees","autoMRE"])
+
+        # write out bootstrap alignments
+        if write_bs_msa:
+            other_args.append("--bs-write-msa")
 
     # Run raxml to create tree
     run_raxml(algorithm="--all",
@@ -58,12 +68,9 @@ def generate_ml_tree(df,
               threads=threads,
               raxml_binary=raxml_binary,
               other_args=other_args)
-    tree_file = "02_ml-tree.newick"
 
     # Write out a pretty version of the tree
-    topiary.util.uid_to_pretty(df,
-                               "01_make-ml-tree/alignment.raxml.support",
-                               out_file=tree_file)
+    shutil.copy("01_make-ml-tree/alignment.raxml.support","02_ml-tree.newick")
 
     # Leave working directory
     os.chdir(starting_dir)

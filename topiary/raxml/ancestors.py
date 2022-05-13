@@ -208,6 +208,10 @@ def _plot_ancestor_data(df_anc,
     # Iterate over contiguous blocks
     for c in contiguous:
 
+        # Skip contigous gaps with no length.
+        if len(c) == 0:
+            continue
+
         # Find gap width.  Minimum gap width is 1.
         width = c[-1] - c[0]
         if width == 0:
@@ -379,21 +383,13 @@ def _make_ancestor_summary_trees(df,
 
         all_node.name = "|".join(combo)
 
-    topiary.util.uid_to_pretty(df,
-                               t_out_pp.write(format=2,format_root_node=True),
-                               out_file="ancestors_pp.newick")
 
-    topiary.util.uid_to_pretty(df,
-                               t_out_label.write(format=3,format_root_node=True),
-                               out_file="ancestors_label.newick")
-    topiary.util.uid_to_pretty(df,
-                               t_out_all.write(format=3,format_root_node=True),
-                               out_file="ancestors_all.newick")
+    t_out_pp.write(format=2,format_root_node=True,outfile="ancestors_pp.newick")
+    t_out_label.write(format=3,format_root_node=True,outfile="ancestors_label.newick")
+    t_out_all.write(format=3,format_root_node=True,outfile="ancestors_all.newick")
 
     if tree_file_with_supports is not None:
-        topiary.util.uid_to_pretty(df,
-                                   t_out_all.write(format=3,format_root_node=True),
-                                   out_file="ancestors_support.newick")
+        t_out_all.write(format=3,format_root_node=True,outfile="ancestors_support.newick")
 
 
 def _parse_raxml_anc_output(df,
