@@ -62,40 +62,6 @@ def grab_line_meta_data(line):
 
     return out
 
-def pretty_to_uid(df,to_convert,out_file=None,overwrite=False):
-    """
-    Use contents of data frame to convert from pretty names to uid within
-    some text file.
-
-    df: dataframe with pretty name data and uid
-    to_convert: content to edit. if this is a file, read in. If not, treat as
-                a text string to edit.
-    out_file: output file name. If specified, write to a file.
-    overwrite: if writing an output file, whether or not to overwrite.
-
-    returns converted string
-    """
-
-    return _private.convert(df,to_convert,out_file,overwrite,uid_to_pretty=False)
-
-
-def uid_to_pretty(df,to_convert,out_file=None,overwrite=False):
-    """
-    Use contents of data frame to convert from uid to pretty names
-    some text file.
-
-    df: dataframe with pretty name data and uid
-    to_convert: content to edit. if this is a file, read in. If not, treat as
-                a text string to edit.
-    out_file: output file name. If specified, write to a file.
-    overwrite: if writing an output file, whether or not to overwrite.
-
-    returns converted string
-    """
-
-    return _private.convert(df,to_convert,out_file,overwrite,uid_to_pretty=True)
-
-
 def load_tree(tree,fmt=None):
     """
     Load a tree into an ete3 tree data structure.
@@ -635,7 +601,7 @@ def create_nicknames(df,
 
     # Validate topiary dataframe to make sure not mangled; will also update
     # column order so nickname is early and thus in a user-friendly place
-        
+
     return check_topiary_dataframe(df)
 
 def get_ott_id(df,phylo_context="All life"):

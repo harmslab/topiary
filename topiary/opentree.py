@@ -1,3 +1,5 @@
+import topiary
+
 from opentree import OT, taxonomy_helpers
 import dendropy as dp
 import ete3
@@ -253,24 +255,55 @@ def get_species_tree(df):
     tip labels. Note: any polytomies are arbirarily resolved.
     """
 
+    # Make sure this is a clean topiary dataframe
+    df = topiary.util.check_topiary_dataframe(df)
+
     # Only get keep = True
     df = df.loc[df.keep,:].copy()
+
+    # ott_to_df_columns will be a dictionary of dictionaries. The top-level
+    # dictionary is keyed to different columns (nickname, uid, etc.). Each of
+    # those keys maps to a dictionary mapping ott to a tuple of values in that
+    # column that have this ott. These will be attached as features to the
+    # leaf nodes in the final ete3 tree.
+    to_get = ["nickname","species","sequence","name","ott","uid"]
+    ott_to_df_columns = dict([(k,{}) for k in to_get])
+    for k in to_get:
+
+        # If the dataframe doesn't have the relevant column, do not grab
+        if k not in df.columns:
+            ott_to_df_columns.pop(k)
+            continue
+
+        # Load values from the dataframe into the dictionary
+        for i in range(len(df)):
+            row = df.iloc[i]
+            try:
+                ott_to_df_columns[k][row.ott].append(row[k])
+            except KeyError:
+                ott_to_df_columns[k][row.ott] = [row[k]]
+
+        # Convert to tuple for each of these, as ete3 requires features are
+        # hashable types.
+        for o in ott_to_df_columns[k]:
+            ott_to_df_columns[k][o] = tuple(ott_to_df_columns[k][o])
 
     # Get only rows with unique ott
     df = df.loc[df.loc[:,"ott"].drop_duplicates().index,:]
 
-    # Make sure every species has ott
+    # Make sure every species has an ott
     if np.sum(pd.isnull(df.loc[:,"ott"])) > 0:
-        err = "not all species OTT in dataframe."
+        err = "\nNot all species have ott in the dataframe.\n"
         raise ValueError(err)
 
-    ott_ids = [o[3:] for o in df.loc[:,"ott"]]
+    ott_ids = list(df.loc[:,"ott"])
     species = list(df.loc[:,"species"])
     ott_species_dict = {}
     for i in range(len(ott_ids)):
         ott_species_dict[ott_ids[i]] = species[i]
 
-    ret = taxonomy_helpers.labelled_induced_synth(ott_ids = ott_ids,
+    ott_as_int = [o[3:] for o in ott_ids]
+    ret = taxonomy_helpers.labelled_induced_synth(ott_ids=ott_as_int,
                                                   label_format="name_and_id",
                                                   inc_unlabelled_mrca=False)
 
@@ -296,7 +329,7 @@ def get_species_tree(df):
     # Rename labels on tree so they are ott
     for n in clean_tree.taxon_namespace:
         label = n.label.split("ott")[-1]
-        n.label = label
+        n.label = f"ott{label}"
 
     # Convert tree to ete3 tree.
     final_tree = ete3.Tree(clean_tree.as_string(schema="newick",
@@ -315,6 +348,10 @@ def get_species_tree(df):
 
         # Give leaves species name as a feature
         if n.is_leaf():
-            n.add_feature("species",ott_species_dict[n.name])
+            name_key = str(copy.deepcopy(n.name))
+            for k in ott_to_df_columns:
+                n.add_feature(k,ott_to_df_columns[k][name_key])
+
+            n.name = copy.deepcopy(n.species[0])
 
     return final_tree
