@@ -5,6 +5,8 @@ Find ML model using parsimony tree.
 __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
 
+import topiary
+
 from ._raxml import prep_calc, run_raxml, RAXML_BINARY, gen_seed
 
 import pandas as pd
@@ -96,29 +98,28 @@ def find_best_model(df,
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
-    result = prep_calc(df=df,
-                       output=output,
-                       other_files=[tree_file],
+    result = prep_calc(output=output,
+                       df=df,
+                       tree_file=tree_file,
                        output_base="find_best_model")
 
     df = result["df"]
     csv_file = result["csv_file"]
     alignment_file = result["alignment_file"]
-    tree_file = result["other_files"][0]
+    tree_file = result["tree_file"]
     starting_dir = result["starting_dir"]
 
     # Generate a parsimony tree if not was specified
     if tree_file is None:
-        print("\nGenerating maximum parsimony tree.",flush=True)
+
+        print("\nGenerating maximum parsimony tree.\n",flush=True)
 
         _generate_parsimony_tree(alignment_file,
-                                 dir_name="01_make-parsimony-tree",
+                                 dir_name="working",
                                  threads=threads,
                                  raxml_binary=raxml_binary)
-        tree_file = "02_parsimony-tree.newick"
-        shutil.copy(os.path.join("01_make-parsimony-tree",
-                                 "alignment.raxml.startTree"),
-                    tree_file)
+        tree_file = os.path.join("working",
+                                 "alignment.raxml.startTree")
 
     # Dictionary to hold stats for each model
     out = {"model":[]}
@@ -129,7 +130,7 @@ def find_best_model(df,
     num_mat = len([m for m in model_matrices if m not in ["LG4M","LG4X"]])
     num_models = num_mat*len(model_rates)*len(model_freqs)*len(model_invariant) + 2
 
-    print(f"\nTrying {num_models} combinations of matrix and model parameters.",flush=True)
+    print(f"\nTrying {num_models} combinations of matrix and model parameters.\n",flush=True)
     sys.stdout.flush()
 
     # Go over all combos of the requested matrices, rates, and freqs.
@@ -180,25 +181,39 @@ def find_best_model(df,
                     os.chdir("..")
                     shutil.rmtree("tmp")
 
+    # All output goes into the output directory
+    outdir = "output"
+    os.mkdir(outdir)
+
     # Create a csv file sorted best to worst aicc
     final_df = pd.DataFrame(out)
 
     min_aic = np.min(final_df.AICc)
     final_df["p"] = np.exp((min_aic - final_df.AICc)/2)
+    final_df["p"] = final_df["p"]/np.sum(final_df["p"])
     indexer = np.argsort(final_df.p)[::-1]
     final_df = final_df.iloc[indexer,:]
-    final_df.to_csv("model-comparison.csv")
+    final_df.to_csv(os.path.join(outdir,"model-comparison.csv"))
 
     # Get best model
     best_model = final_df.model.iloc[0]
 
     # Write model to a file
-    f = open("best-model.txt","w")
-    f.write(best_model)
+    f = open(os.path.join(outdir,"model.txt"),"w")
+    f.write(f"{best_model}\n")
     f.close()
 
+    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
+
     # Print best model to stdout
-    print(f"\n\nBest model: {best_model}\nAICc Prob:{final_df.p.iloc[0]}\n\n",flush=True)
+    print("\nTop 10 models:\n")
+    print(f"{'model':>20s}{'AICc prob':>20s}",flush=True)
+    for i in range(10):
+        if i >= len(final_df):
+            break
+        print(f"{final_df.model.iloc[i]:>20s}{final_df.p.iloc[i]:>20.3f}",flush=True)
+
+    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 
     # Leave the output directory
     os.chdir(starting_dir)

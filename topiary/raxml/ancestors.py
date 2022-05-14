@@ -17,7 +17,7 @@ from ete3 import Tree
 import pandas as pd
 import numpy as np
 
-import os, re
+import os, re, glob, shutil
 
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
@@ -648,15 +648,15 @@ def _parse_raxml_anc_output(df,
     os.chdir(cwd)
 
 
-def generate_ancestors(df,
-                       model,
-                       tree_file,
-                       tree_file_with_supports=None,
+def generate_ancestors(previous_dir=None,
                        output=None,
+                       df=None,
+                       model=None,
+                       tree_file=None,
+                       tree_file_with_supports=None,
                        threads=1,
                        raxml_binary=RAXML_BINARY,
-                       alt_cutoff=0.25,
-                       calculate_supports=False):
+                       alt_cutoff=0.25):
     """
     Generate ancestors and various summary outputs.
 
@@ -672,16 +672,20 @@ def generate_ancestors(df,
     plots, and a tree with ancestral names and supports
     """
 
-    result = prep_calc(df=df,
+    result = prep_calc(previous_dir=previous_dir,
                        output=output,
-                       other_files=[tree_file,tree_file_with_supports],
+                       df=df,
+                       model=model,
+                       tree_file=tree_file,
+                       other_files=[tree_file_with_supports],
                        output_base="generate_ancestors")
 
     df = result["df"]
     csv_file = result["csv_file"]
+    model = result["model"]
+    tree_file = result["tree_file"]
     alignment_file = result["alignment_file"]
-    tree_file = result["other_files"][0]
-    tree_file_with_supports = result["other_files"][1]
+    tree_file_with_supports = result["other_files"][0]
     starting_dir = result["starting_dir"]
 
     # Do marginal reconstruction on the tree
@@ -690,12 +694,14 @@ def generate_ancestors(df,
               tree_file=tree_file,
               model=model,
               seed=True,
-              dir_name="01_calc-marginal-anc",
+              dir_name="working_inference",
               threads=threads,
               raxml_binary=raxml_binary)
 
-    anc_prob_file = "01_calc-marginal-anc/alignment.raxml.ancestralProbs"
-    tree_file_with_labels = "01_calc-marginal-anc/alignment.raxml.ancestralTree"
+    anc_prob_file = os.path.join("working_inference",
+                                 "alignment.raxml.ancestralProbs")
+    tree_file_with_labels = os.path.join("working_inference",
+                                         "alignment.raxml.ancestralTree")
 
     # Parse output and make something human-readable
     _parse_raxml_anc_output(df,
@@ -703,8 +709,29 @@ def generate_ancestors(df,
                             alignment_file,
                             tree_file_with_labels,
                             tree_file_with_supports,
-                            dir_name="02_final-ancestors",
+                            dir_name="working_analysis",
                             alt_cutoff=alt_cutoff)
+
+    outdir = "output"
+    os.mkdir(outdir)
+
+    # tree file
+    shutil.copy(tree_file,os.path.join(outdir,"tree.newick"))
+    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
+
+    # Write model to a file
+    f = open(os.path.join(outdir,"model.txt"),"w")
+    f.write(f"{model}\n")
+    f.close()
+
+    # Copy ancestor files into an ancestors directory
+    files_to_grab = glob.glob(os.path.join("working_analysis","*.*"))
+    anc_out = os.path.join(outdir,"ancestors")
+    os.mkdir(anc_out)
+    for f in files_to_grab:
+        shutil.copy(f,os.path.join(anc_out,os.path.split(f)[-1]))
+
+    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
