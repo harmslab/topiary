@@ -13,9 +13,6 @@ from topiary.external import interface
 
 import pandas as pd
 
-import subprocess, time, os, sys
-import multiprocessing as mp
-
 def run_raxml(algorithm=None,
               alignment_file=None,
               tree_file=None,
@@ -58,10 +55,6 @@ def run_raxml(algorithm=None,
                                               file_name="tree",
                                               make_input_dir=False)
 
-    # Go into working directory
-    cwd = os.getcwd()
-    os.chdir(dir_name)
-
     # Build a command list
     cmd = [raxml_binary]
 
@@ -103,53 +96,10 @@ def run_raxml(algorithm=None,
     for a in other_args:
         cmd.append(a)
 
-    # Construct command and dump to std out
-    full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'",flush=True)
-
-    # Launch raxml as a multiprocessing process dumping its output to a
-    # multiprocessing queue.
-    queue = mp.Queue()
-    main_process = mp.Process(target=interface.subproc_wrapper,
-                              args=(cmd,subprocess.PIPE,queue))
-    main_process.start()
-
-    # If dumping log
+    # If logging to standard out, get log file name
+    log_file = None
     if log_to_stdout:
+        log_file = "alignment.raxml.log"
 
-        # While main process is running
-        while main_process.is_alive():
-
-            # If queue is empty, raxml job hasn't finished yet
-            if not queue.empty():
-                break
-
-            # Try to open log every second
-            try:
-                f = open("alignment.raxml.log","r")
-                # Use follow generator function to catch lines as the come out
-                for line in interface.follow_log_generator(f,main_process):
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
-                f.close()
-            except FileNotFoundError:
-                time.sleep(1)
-
-    # Wait for main process to complete and get return
-    main_process.join()
-    ret = queue.get()
-
-    # Check for error on return
-    if ret.returncode != 0:
-        err = f"ERROR: raxml returned {ret.returncode}\n\n"
-        err += "------------------------------------------------------------\n"
-        err += " raxml output \n"
-        err += "------------------------------------------------------------\n"
-        err += "\n\n"
-
-        err += "".join([line for line in ret.stdout.decode()])
-
-        raise RuntimeError(err)
-
-    # Leave working directory
-    os.chdir(cwd)
+    # Run job
+    interface.launch(cmd,dir_name,log_file)

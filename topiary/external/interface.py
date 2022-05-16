@@ -4,6 +4,7 @@ import topiary
 import pandas as pd
 
 import subprocess, os, sys, time, random, string, shutil, copy
+import multiprocessing as mp
 
 def gen_seed():
     """
@@ -106,12 +107,10 @@ def _load_previous_dir(previous_dir):
     if os.path.exists(df_file):
         previous["df"] = topiary.read_dataframe(df_file)
 
-
     # Try to grab the tree file
     tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
     if os.path.exists(tree_file):
         previous["tree_file"] = tree_file
-
 
     # Try to grab the model
     model_file = os.path.abspath(os.path.join(out_dir,"model.txt"))
@@ -262,7 +261,7 @@ def prep_calc(previous_dir=None,
 
     return out
 
-def subproc_wrapper(cmd,stdout,queue):
+def _subproc_wrapper(cmd,stdout,queue):
     """
     Wrap the subprocess.run call to allow multithreading.
 
@@ -274,7 +273,7 @@ def subproc_wrapper(cmd,stdout,queue):
     ret = subprocess.run(cmd,stdout=stdout)
     queue.put(ret)
 
-def follow_log_generator(f,p):
+def _follow_log_generator(f,p):
     """
     Generator function that follows some file object (f) until some
     multiprocessing Process (p) is not longer alive. This is useful for
@@ -294,3 +293,60 @@ def follow_log_generator(f,p):
             continue
 
         yield line
+
+def launch(cmd,run_directory,log_file=None):
+
+    # Go into working directory
+    cwd = os.getcwd()
+    os.chdir(run_directory)
+
+    # Print command
+    full_cmd = " ".join(cmd)
+    print(f"Running '{full_cmd}'",flush=True)
+
+    # Launch generax as a multiprocessing process dumping its output to a
+    # multiprocessing queue.
+    queue = mp.Queue()
+    main_process = mp.Process(target=_subproc_wrapper,
+                              args=(cmd,subprocess.PIPE,queue))
+    main_process.start()
+
+    # If dumping log
+    if log_file is not None:
+
+        # While main process is running
+        while main_process.is_alive():
+
+            # If queue is empty, raxml job hasn't finished yet
+            if not queue.empty():
+                break
+
+            # Try to open log every second
+            try:
+                f = open(log_file,"r")
+                # Use follow generator function to catch lines as the come out
+                for line in _follow_log_generator(f,main_process):
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                f.close()
+            except FileNotFoundError:
+                time.sleep(1)
+
+    # Wait for main process to complete and get return
+    main_process.join()
+    ret = queue.get()
+
+    # Check for error on return
+    if ret.returncode != 0:
+        err = f"ERROR: {cmd[0]} returned {ret.returncode}\n\n"
+        err += "------------------------------------------------------------\n"
+        err += f" {cmd[0]} output \n"
+        err += "------------------------------------------------------------\n"
+        err += "\n\n"
+
+        err += "".join([line for line in ret.stdout.decode()])
+
+        raise RuntimeError(err)
+
+    # Leave working directory
+    os.chdir(cwd)

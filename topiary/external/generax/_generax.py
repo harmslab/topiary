@@ -1,8 +1,15 @@
+__description__ = \
+"""
+Wrapper for generax to perform gene/species tree reconcilation.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-05-15"
 
 # raxml binary to use it not specified by user
 GENERAX_BINARY = "generax"
 
 import topiary
+import topiary.external.interface as interface
 
 import numpy as np
 
@@ -57,6 +64,8 @@ def _create_generax_input(df,gene_tree):
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()
     for n in species_tree.traverse():
+        if n.is_leaf():
+            n.name = copy.deepcopy(n.ott[0])
         if n.dist != 1:
             n.dist = 1
         if n.support != 1:
@@ -64,7 +73,7 @@ def _create_generax_input(df,gene_tree):
 
     return gene_tree, species_tree, link_dict
 
-def _write_generax_input(df,gene_tree,species_tree,link_dict,model,out_dir):
+def _write_generax_input(df,gene_tree,species_tree,link_dict,model):
     """
     Write out files for running generax. The contents of this directory can be
     run on the command line by:
@@ -87,23 +96,23 @@ def _write_generax_input(df,gene_tree,species_tree,link_dict,model,out_dir):
     control_out.append(f"subst_model = {model}")
 
     # Write out control file
-    f = open(os.path.join(out_dir,"control.txt"),"w")
+    f = open("control.txt","w")
     f.write("\n".join(control_out))
     f.close()
 
     # Write out .phy file
-    topiary.write_phy(df,os.path.join(out_dir,"alignment.phy"),
+    topiary.write_phy(df,"alignment.phy",
                       seq_column="alignment")
 
     # Write out gene tree
-    gene_tree.write(outfile=os.path.join(out_dir,"gene_tree.newick"),
+    gene_tree.write(outfile="gene_tree.newick",
                     format=5)
 
     # Write out species tree
-    species_tree.write(outfile=os.path.join(out_dir,"species_tree.newick"))
+    species_tree.write(outfile="species_tree.newick",format=5)
 
     # Write out link file
-    f = open(os.path.join(out_dir,"mapping.link"),"w")
+    f = open("mapping.link","w")
     for k in link_dict:
         f.write(f"{k}:")
         f.write(";".join(link_dict[k]))
@@ -129,49 +138,6 @@ def setup_generax(df,
 
     # Write out generax input
     _write_generax_input(df,gene_tree,species_tree,link_dict,model,template_dir)
-
-
-
-def gen_seed():
-    """
-    Generate a random string of 10 integers and return as a string.
-    """
-
-    return "".join([f"{random.choice(range(10)):d}" for _ in range(10)])
-
-
-def _subproc_wrapper(cmd,stdout,queue):
-    """
-    Wrap the subprocess.run call to allow multithreading.
-
-    args: args to pass to subprocess.run
-    kwargs: kwargs to pass to subprocess.run
-    queue: multiprocessing queue to catch return value
-    """
-
-    ret = subprocess.run(cmd,stdout=stdout)
-    queue.put(ret)
-
-def _follow_log_generator(f,p):
-    """
-    Generator function that follows some file object (f) until some
-    multiprocessing Process (p) is not longer alive. This is useful for
-    following a log file being spit out by an external program running on p.
-
-    f: open file object
-    p: multiprocessing.Process object
-    """
-
-    # start infinite loop
-    while p.is_alive():
-        # read last line of file
-        line = f.readline()
-        # sleep if file hasn't been updated
-        if not line:
-            time.sleep(0.1)
-            continue
-
-        yield line
 
 
 def run_generax(run_directory,
@@ -223,7 +189,7 @@ def run_generax(run_directory,
             cmd.extend(["--seed",seed])
         elif type(seed) is bool:
             if seed:
-                cmd.extend(["--seed",gen_seed()])
+                cmd.extend(["--seed",interface.gen_seed()])
         else:
             err = "seed must be True/False, int, or string representation of int\n"
             raise ValueError(err)
@@ -247,7 +213,8 @@ def run_generax(run_directory,
         raise ValueError(err)
 
     required_files = ["control.txt","alignment.phy",
-                      "gene_tree.newick","species_tree.newick"]
+                      "gene_tree.newick","species_tree.newick",
+                      "mapping.link"]
     for f in required_files:
         filename = os.path.join(run_directory,f)
         if not os.path.exists(filename):
@@ -258,58 +225,9 @@ def run_generax(run_directory,
             err += "\n"
             raise FileNotFoundError(err)
 
-    # Go into working directory
-    cwd = os.getcwd()
-    os.chdir(run_directory)
-
-    # Print command
-    full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'",flush=True)
-
-    # Launch generax as a multiprocessing process dumping its output to a
-    # multiprocessing queue.
-    queue = mp.Queue()
-    main_process = mp.Process(target=_subproc_wrapper,
-                              args=(cmd,subprocess.PIPE,queue))
-    main_process.start()
-
-    # If dumping log
-    log_file = os.path.join("result","generax.log")
+    log_file = None
     if log_to_stdout:
+        log_file = os.path.join("result","generax.log")
 
-        # While main process is running
-        while main_process.is_alive():
-
-            # If queue is empty, raxml job hasn't finished yet
-            if not queue.empty():
-                break
-
-            # Try to open log every second
-            try:
-                f = open(log_file,"r")
-                # Use follow generator function to catch lines as the come out
-                for line in _follow_log_generator(f,main_process):
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
-                f.close()
-            except FileNotFoundError:
-                time.sleep(1)
-
-    # Wait for main process to complete and get return
-    main_process.join()
-    ret = queue.get()
-
-    # Check for error on return
-    if ret.returncode != 0:
-        err = f"ERROR: generax returned {ret.returncode}\n\n"
-        err += "------------------------------------------------------------\n"
-        err += " generax output \n"
-        err += "------------------------------------------------------------\n"
-        err += "\n\n"
-
-        err += "".join([line for line in ret.stdout.decode()])
-
-        raise RuntimeError(err)
-
-    # Leave working directory
-    os.chdir(cwd)
+    # Launch run
+    interface.launch(cmd,run_directory,log_file)

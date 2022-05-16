@@ -1,6 +1,6 @@
 __description__ = \
 """
-Find ML model using parsimony tree.
+Find maximum likelihood phylogenetic model.
 """
 __author__ = "Michael J. Harms (harmsm@gmail.com)"
 __date__ = "2021-07-22"
@@ -128,8 +128,7 @@ def find_best_model(df,
     seed = gen_seed()
 
     # All possible models, dropping rate, freq, invariant for LG4M and LG4X.
-    num_mat = len([m for m in model_matrices if m not in ["LG4M","LG4X"]])
-    num_models = num_mat*len(model_rates)*len(model_freqs)*len(model_invariant) + 2
+    num_models = len(model_matrices)*len(model_rates)*len(model_freqs)*len(model_invariant)
 
     print(f"\nTrying {num_models} combinations of matrix and model parameters.\n",flush=True)
     sys.stdout.flush()
@@ -141,11 +140,6 @@ def find_best_model(df,
             for freq in model_freqs:
                 for invariant in model_invariant:
 
-                    # Check for incompatible matrix/freq/rate combos
-                    if matrix in ["LG4M","LG4X"]:
-                        if rate != "" or freq != "" or invariant != "":
-                            continue
-
                     # Build model string (for example: LG+G8+FC+IO)
                     model = [matrix,rate,freq,invariant]
                     model = [m for m in model if m != ""]
@@ -154,6 +148,12 @@ def find_best_model(df,
                     # Print model number we're trying
                     print(f"{model} ({model_counter}/{num_models})",flush=True)
                     model_counter += 1
+
+                    # Check for incompatible matrix/freq/rate combos
+                    if matrix in ["LG4M","LG4X"]:
+                        if rate != "" or freq != "" or invariant != "":
+                            print(f"skpping incompatible model combination {model}",flush=True)
+                            continue
 
                     # Optimize branch lengths etc. on the existing tree
                     run_raxml(algorithm="--evaluate",
