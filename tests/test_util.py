@@ -219,17 +219,3 @@ def test_create_nicknames(test_dataframes):
     aliases = {"froggy":"Hylobates"}
     out_df = util.create_nicknames(test_df,source_column="species",aliases=aliases)
     assert out_df["nickname"].iloc[0] == "froggy"
-
-
-
-
-def test_get_ott_id(test_dataframes):
-
-    df = test_dataframes["good-df"]
-    out_df = util.get_ott_id(df)
-    assert out_df is not df
-
-    tmp_df = df.drop(columns="ott")
-    out_df = util.get_ott_id(df)
-    assert np.array_equal(out_df.loc[:,"ott"],
-                          df.loc[:,"ott"])

@@ -10,18 +10,39 @@ import numpy as np
 import re, copy
 
 def get_ott_id(df,
-               context_name="All life",
-               strip_regex=["MRCA of taxa in",
-                            "_species in domain .*?_",
-                            "\(species in domain .*?\)"]):
+               phylo_context="All life"):
     """
     Return a copy of df with an ott column holding open tree of life
     names for each species.
 
     df: dataframe that has an ott column with Open Tree of Life taxon ids
-    context_name: limit search to specific groups ("Animals" etc.)
-    strip_regex: regular expressions that will be found and replaced with ""
-                 in taxon names coming off open tree of life.
+    phylo_context: string. used to limit species seach for looking up species
+                   ids on open tree of life.  To get latest strings recognized
+                   by the database, use the following code:
+
+                   ```
+                   from opentree import OT
+                   print(OT.tnrs_contexts().response_dict)
+                   ```
+
+                   As of 2021-08-16, the following are recognized. You can use
+                   either the keys or values in this dictionary.
+
+                   {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
+                                'Amphibians','Vertebrates','Arthropods',
+                                'Molluscs','Nematodes','Platyhelminthes',
+                                'Annelids','Cnidarians','Arachnids','Insects'],
+                    'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
+                    'LIFE': ['All life'],
+                    'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
+                                 'Amoebozoa','Centrohelida','Haptophyta',
+                                 'Apusozoa','Diatoms','Ciliates','Forams'],
+                    'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
+                               'Vascular plants','Club mosses','Ferns',
+                               'Seed plants','Flowering plants','Monocots',
+                               'Eudicots','Rosids','Asterids','Asterales',
+                               'Asteraceae','Aster','Symphyotrichum',
+                               'Campanulaceae','Lobelia']}
 
     Returns copy of df with added ott and orig_species column.  ott column
     holds ott index for the species. orig_species holds what used to be
@@ -29,20 +50,20 @@ def get_ott_id(df,
     species name used by Open Tree of Life.
     """
 
-    # Make sure the context_name can be recognized by the by OT
+    # Make sure this is a topiary dataframe
+    df = topiary.util.check_topiary_dataframe(df)
+
+    # Make sure the phylo_context can be recognized by the by OT
     allowed_context = OT.tnrs_contexts().response_dict
     all_allowed = []
     for k in allowed_context:
         all_allowed.extend(allowed_context[k])
-    if context_name not in all_allowed:
-        err = f"\n\ncontext_name '{context_name}' not recognized. Should be one of:\n\n"
+    if phylo_context not in all_allowed:
+        err = f"\n\nphylo_context '{phylo_context}' not recognized. Should be one of:\n\n"
         for a in all_allowed:
             err += f"    {a}\n"
         err += "\n\n"
         raise ValueError(err)
-
-    # Compile regex
-    strip_regex = [re.compile(p) for p in strip_regex]
 
     # Make copy of df and copy current species to original species
     local_df = df.copy()
@@ -54,7 +75,7 @@ def get_ott_id(df,
 
     # Do fuzzy match for species names
     w = OT.tnrs_match(species_list,
-                      context_name=context_name,
+                      context_name=phylo_context,
                       do_approximate_matching=True)
 
     # Go through hits
@@ -88,14 +109,9 @@ def get_ott_id(df,
 
             matched_name = hit["matched_name"]
             otl_name = hit["taxon"]["unique_name"]
-            for s in strip_regex:
-                otl_name = s.sub("",otl_name)
-                otl_name = otl_name.strip()
-
             ott_id = hit["taxon"]["ott_id"]
 
             results[matched_name] = (ott_id,otl_name)
-
 
 
     # Record non-hits
@@ -205,7 +221,7 @@ def get_ott_id(df,
         ```
         df.loc[df.species == "Apteryx mantelli mantelli","species"] = "Apteryx australis mantelli"
         df.loc[df.species == "Apteryx australis mantelli","keep"] = True
-        df = topiary.get_ott_id(df,context_name="Animals")
+        df = topiary.get_ott_id(df,phylo_context="Animals")
         ```
         \n""")
 

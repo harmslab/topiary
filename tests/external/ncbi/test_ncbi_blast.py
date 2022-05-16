@@ -1,6 +1,6 @@
 
 import pytest
-from topiary.ncbi import ncbi_blast
+from topiary.external.ncbi import ncbi_blast
 
 import numpy as np
 

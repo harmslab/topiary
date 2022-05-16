@@ -7,7 +7,6 @@ utility functions for the topiary package
 """
 
 from . import _private
-from . import opentree
 
 import ete3
 from ete3 import Tree
@@ -603,44 +602,3 @@ def create_nicknames(df,
     # column order so nickname is early and thus in a user-friendly place
 
     return check_topiary_dataframe(df)
-
-def get_ott_id(df,phylo_context="All life"):
-    """
-    Get open taxonomy of life ids for all species in data frame.
-
-    phylo_context: string. used to limit species seach for looking up species
-                   ids on open tree of life.  To get latest strings recognized
-                   by the database, use the following code:
-
-                   ```
-                   from opentree import OT
-                   print(OT.tnrs_contexts().response_dict)
-                   ```
-
-                   As of 2021-08-16, the following are recognized. You can use
-                   either the keys or values in this dictionary.
-
-                   {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
-                                'Amphibians','Vertebrates','Arthropods',
-                                'Molluscs','Nematodes','Platyhelminthes',
-                                'Annelids','Cnidarians','Arachnids','Insects'],
-                    'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
-                    'LIFE': ['All life'],
-                    'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
-                                 'Amoebozoa','Centrohelida','Haptophyta',
-                                 'Apusozoa','Diatoms','Ciliates','Forams'],
-                    'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
-                               'Vascular plants','Club mosses','Ferns',
-                               'Seed plants','Flowering plants','Monocots',
-                               'Eudicots','Rosids','Asterids','Asterales',
-                               'Asteraceae','Aster','Symphyotrichum',
-                               'Campanulaceae','Lobelia']}
-    """
-
-    # Make sure this is a topiary dataframe
-    df = check_topiary_dataframe(df)
-
-    # Get ott id using open try of life
-    df = opentree.get_ott_id(df,context_name=phylo_context)
-
-    return df

@@ -1,17 +1,24 @@
 
-from .ncbi import reverse_blast
-from .io import ncbi_blast_xml_to_df, read_fasta_into, write_fasta, write_phy
-from .io import write_dataframe, read_dataframe
-from .redundancy import remove_redundancy
-from .opentree import get_ott_id, get_species_tree
-from .muscle import run_muscle
-from .util import get_ott_id, create_nicknames
-
-from . import ncbi
+# Submodules
 from . import util
-from . import raxml
-from . import reconcile
 from . import draw
+from .external import ncbi
+from .external import generax
+from .external import opentree
+from .external import muscle
+
+# Core functions for pipeline
+from .redundancy import remove_redundancy
+from .util import create_nicknames
+from .external import reverse_blast
+from .external import find_best_model, generate_ml_tree, generate_ancestors
+from .external import reconcile
+
+# Input/output functions
+from .io import ncbi_blast_xml_to_df
+from .io import write_dataframe, read_dataframe
+from .io import read_fasta_into, write_fasta
+
 
 def check_for_notebook():
     """
