@@ -7,8 +7,9 @@ __date__ = "2021-07-22"
 
 import topiary
 
-from ._raxml import create_new_dir, copy_input_file, prep_calc
 from ._raxml import run_raxml, RAXML_BINARY
+from topiary.external.interface import create_new_dir, copy_input_file, prep_calc
+
 
 import pastml.acr
 import ete3

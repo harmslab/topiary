@@ -7,7 +7,8 @@ __date__ = "2021-07-22"
 
 import topiary
 
-from ._raxml import prep_calc, run_raxml, RAXML_BINARY, gen_seed
+from ._raxml import RAXML_BINARY, run_raxml
+from topiary.external.interface import prep_calc, gen_seed
 
 import pandas as pd
 import numpy as np

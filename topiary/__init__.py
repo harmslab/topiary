@@ -10,14 +10,16 @@ from .external import muscle
 # Core functions for pipeline
 from .redundancy import remove_redundancy
 from .util import create_nicknames
+from .external import get_ott_id, get_species_tree
 from .external import reverse_blast
+from .external import run_muscle
 from .external import find_best_model, generate_ml_tree, generate_ancestors
 from .external import reconcile
 
 # Input/output functions
 from .io import ncbi_blast_xml_to_df
 from .io import write_dataframe, read_dataframe
-from .io import read_fasta_into, write_fasta
+from .io import read_fasta_into, write_fasta, write_phy
 
 
 def check_for_notebook():
