@@ -2,10 +2,12 @@
 # Submodules
 from . import util
 from . import draw
-from .external import ncbi
+
 from .external import generax
-from .external import opentree
+from .external import ncbi
 from .external import muscle
+from .external import opentree
+from .external import raxml
 
 # Core functions for pipeline
 from .redundancy import remove_redundancy

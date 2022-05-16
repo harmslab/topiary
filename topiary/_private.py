@@ -1,8 +1,5 @@
 
-import pandas as pd
-import numpy as np
-
-import re, sys, os, string, random, pickle, io, urllib, http
+import string, random
 
 required_columns = ["species","name","sequence"]
 reserved_columns = required_columns[:]
@@ -30,22 +27,3 @@ def generate_uid(number=1):
         return out[0]
 
     return out
-
-def to_pretty(row):
-    """
-    Given a pandas Series, create pretty output.
-    """
-
-    try:
-        pretty = f"{row.uid}|{row.nickname}|{row.species}"
-    except AttributeError:
-        try:
-            pretty = f"{row.uid}|{row.species}"
-        except AttributeError:
-            err = "\n\nrow does not have all required attributes:"
-            err += " (uid, species)\n"
-            raise ValueError(err)
-
-    pretty = re.sub("[,:;\"\'\(\)\.]","-",pretty)
-
-    return pretty
