@@ -90,6 +90,54 @@ def copy_input_file(input_file,
 
     return file_alone
 
+def _load_previous_dir(previous_dir):
+    """
+    Load the df, tree, and model from a previous run directory.
+
+    previous_dir: output directory from previous run
+
+    returns: dictionary with df, tree_file, and model keys (if each element found)
+    """
+
+    previous = {}
+
+    # Make sure previous_dir is a string.
+    if type(previous_dir) is not str:
+        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
+        raise ValueError(err)
+
+    out_dir = os.path.join(previous_dir,"output")
+    if not os.path.isdir(out_dir):
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "should be a previous topiary run directory that contains an\n"
+        err += "'output' directory.\n"
+        raise ValueError(err)
+
+    # Try to grab dataframe
+    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
+    if os.path.exists(df_file):
+        previous["df"] = topiary.read_dataframe(df_file)
+
+
+    # Try to grab the tree file
+    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
+    if os.path.exists(tree_file):
+        previous["tree_file"] = tree_file
+
+
+    # Try to grab the model
+    model_file = os.path.abspath(os.path.join(out_dir,"model.txt"))
+    if os.path.exists(model_file):
+
+        f = open(model_file,'r')
+        model = f.read().strip()
+        f.close()
+
+        previous["model"] = model
+
+    return previous
+
+
 def prep_calc(previous_dir=None,
               output=None,
               df=None,
@@ -117,49 +165,9 @@ def prep_calc(previous_dir=None,
 
     # -------------------------------------------------------------------------
     # Load in information from the previous calculation
-
     previous = {}
-    bad_previous = False
     if previous_dir is not None:
-
-        # Make sure previous_dir is a string.
-        if type(previous_dir) is not str:
-            err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
-            raise ValueError(err)
-
-        out_dir = os.path.join(previous_dir,"output")
-        if not os.path.isdir(out_dir):
-            err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-            err += "should be a previous topiary run directory that contains an\n"
-            err += "'output' directory.\n"
-            raise ValueError(err)
-
-        # Try to grab dataframe
-        df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
-        if os.path.exists(df_file):
-            previous["df"] = topiary.read_dataframe(df_file)
-        else:
-            df_file = None
-
-        # Try to grab the tree file
-        tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
-        if os.path.exists(tree_file):
-            previous["tree_file"] = tree_file
-        else:
-            tree_file = None
-
-        # Try to grab the model
-        model_file = os.path.abspath(os.path.join(out_dir,"model.txt"))
-        if os.path.exists(model_file):
-
-            f = open(model_file,'r')
-            previous_model = f.read().strip()
-            f.close()
-
-            previous["model"] = previous_model
-
-        else:
-            model_file = None
+        previous = _load_previous_dir(previous_dir)
 
     # -------------------------------------------------------------------------
     # Create output directory
@@ -363,7 +371,8 @@ def run_raxml(algorithm=None,
     # seed argument is overloaded. Interpret based on type
     if seed is not None:
         if type(seed) is bool:
-            cmd.extend(["--seed",gen_seed()])
+            if seed:
+                cmd.extend(["--seed",gen_seed()])
         elif type(seed) is int:
             cmd.extend(["--seed",f"{seed:d}"])
         elif type(seed) is str:
@@ -389,7 +398,7 @@ def run_raxml(algorithm=None,
     full_cmd = " ".join(cmd)
     print(f"Running '{full_cmd}'",flush=True)
 
-    # Launch raxml as a multiprocessing process dumpint its output to a
+    # Launch raxml as a multiprocessing process dumping its output to a
     # multiprocessing queue.
     queue = mp.Queue()
     main_process = mp.Process(target=_subproc_wrapper,
