@@ -1,27 +1,53 @@
+__description__ = \
+"""
+Reconcile a gene tree with a species tree using generax.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-05-16"
 
 import topiary
 from topiary.external.interface import prep_calc
 
-from . import _generax
+from ._generax import setup_generax, run_generax, GENERAX_BINARY
 
 import numpy as np
 
 import os, glob, shutil
 
 def reconcile(previous_dir=None,
-              output=None,
               df=None,
               model=None,
               tree_file=None,
               allow_horizontal_transfer=False,
-              generax_binary="generax"):
+              output=None,
+              overwrite=False,
+              generax_binary=GENERAX_BINARY):
+    """
+    Reoncile the gene tree to the species tree using generax.
 
+    previous_dir: directory containing previous calculation. prep_calc will
+                  grab the the csv, model, and tree from the previous run.
+    df: topiary data frame or csv written out from topiary df
+    model: model (e.g. LG+G8).
+    tree_file: tree_file in newick format.
+    allow_horizontal_transfer: whether to allow horizontal transfer during
+                               reconcilation. If True, use the UndatedDTL model.
+                               If False, use the UndatedDL model.
+    output: output directory. If not specified, create an output directory with
+            form "generax_reconcilation_randomletters"
+    overwrite: whether or not to overwrite existing output (default False)
+    threads: number of threads to use XXX
+    generax_binary: what generax binary to use
+    """
 
+    # Prepare for the calculation, loading in previous calculation and
+    # combining with arguments as passed in.
     result = prep_calc(previous_dir=previous_dir,
-                       output=output,
                        df=df,
                        model=model,
                        tree_file=model,
+                       output=output,
+                       overwrite=overwrite,
                        output_base="generax_reconcilation")
 
     df = result["df"]
@@ -31,11 +57,18 @@ def reconcile(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
 
-    _generax.setup_generax(df,tree_file,model,"working")
+    required = [df,model,tree_file]
+    for r in required:
+        if r is None:
+            err = "\nA dataframe, model, and tree are required for this "
+            err += "calculation.\n\n"
+            raise ValueError(err)
 
-    _generax.run_generax(run_directory="working",
-                         allow_horizontal_transfer=allow_horizontal_transfer,
-                         generax_binary=generax_binary)
+    setup_generax(df,tree_file,model,"working")
+
+    run_generax(run_directory="working",
+                allow_horizontal_transfer=allow_horizontal_transfer,
+                generax_binary=generax_binary)
 
     outdir = "output"
     os.mkdir(outdir)
@@ -54,6 +87,8 @@ def reconcile(previous_dir=None,
     # Copy reconcilation information
     shutil.copytree(os.path.join("working","result","reconciliations"),
                     os.path.join("output","reconcilations"))
+
+    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 
     # Leave working directory
     os.chdir(starting_dir)

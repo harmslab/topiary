@@ -12,6 +12,8 @@ import topiary
 from topiary.external import interface
 
 import pandas as pd
+import multiprocessing as mp
+import os
 
 def run_raxml(algorithm=None,
               alignment_file=None,
@@ -19,7 +21,7 @@ def run_raxml(algorithm=None,
               model=None,
               dir_name=None,
               seed=None,
-              threads=1,
+              threads=-1,
               raxml_binary=RAXML_BINARY,
               log_to_stdout=True,
               other_args=[]):
@@ -34,7 +36,8 @@ def run_raxml(algorithm=None,
     dir_name: If specified, this will be the name of the working directory.
     seed: true/false, int, or str. If true, pass a randomly generated seed to
           raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads)
+    threads: number of threads to use (passed via --threads). if -1, use all
+             available.
     raxml_binary: raxml binary to use
     log_to_stdout: capture log and write to std out.
     other_args: list of arguments to pass to raxml
@@ -47,12 +50,12 @@ def run_raxml(algorithm=None,
     if alignment_file is not None:
         alignment_file = interface.copy_input_file(alignment_file,
                                                    dir_name,
-                                                   file_name="alignment",
+                                                   file_name="alignment.phy",
                                                    make_input_dir=False)
     if tree_file is not None:
         tree_file = interface.copy_input_file(tree_file,
                                               dir_name,
-                                              file_name="tree",
+                                              file_name="tree.newick",
                                               make_input_dir=False)
 
     # Build a command list
@@ -90,6 +93,16 @@ def run_raxml(algorithm=None,
             err = "seed must be True/False, int, or string representation of int\n"
             raise ValueError(err)
 
+    # Figure out number of threads to use
+    if threads < 0:
+        try:
+            threads = mp.cpu_count()
+        except NotImplementedError:
+            threads = os.cpu_count()
+            if threads is None:
+                print("Could not determine number of cpus. Using single thread.\n")
+                threads = 1
+
     cmd.extend(["--threads",f"{threads:d}"])
 
     # Put on any custom args
@@ -99,7 +112,7 @@ def run_raxml(algorithm=None,
     # If logging to standard out, get log file name
     log_file = None
     if log_to_stdout:
-        log_file = "alignment.raxml.log"
+        log_file = "alignment.phy.raxml.log"
 
     # Run job
     interface.launch(cmd,dir_name,log_file)

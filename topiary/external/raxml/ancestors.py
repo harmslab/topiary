@@ -649,14 +649,15 @@ def _parse_raxml_anc_output(df,
 
 
 def generate_ancestors(previous_dir=None,
-                       output=None,
                        df=None,
                        model=None,
                        tree_file=None,
                        tree_file_with_supports=None,
-                       threads=1,
-                       raxml_binary=RAXML_BINARY,
-                       alt_cutoff=0.25):
+                       alt_cutoff=0.25,
+                       output=None,
+                       overwrite=False,
+                       threads=-1,
+                       raxml_binary=RAXML_BINARY):
     """
     Generate ancestors and various summary outputs.
 
@@ -664,20 +665,25 @@ def generate_ancestors(previous_dir=None,
     model: model (e.g. LG+G8).
     tree_file: tree file to use for reconstruction.
     output: name out output directory.
-    threads: number of threads to use
-    raxml_binary: what raxml binary to use
     alt_cutoff: cutoff to use for altAll
+    output: output directory. If not specified, create an output directory with
+            form "generate_ancestors_randomletters"
+    overwrite: whether or not to overwrite existing output (default False)
+
+    threads: number of threads to use. if -1, use all avaialable
+    raxml_binary: what raxml binary to use
 
     creates fasta file and csv file with ancestral sequences, set of ancestor
     plots, and a tree with ancestral names and supports
     """
 
     result = prep_calc(previous_dir=previous_dir,
-                       output=output,
                        df=df,
                        model=model,
                        tree_file=tree_file,
                        other_files=[tree_file_with_supports],
+                       output=output,
+                       overwrite=overwrite,
                        output_base="generate_ancestors")
 
     df = result["df"]
@@ -699,9 +705,9 @@ def generate_ancestors(previous_dir=None,
               raxml_binary=raxml_binary)
 
     anc_prob_file = os.path.join("working_inference",
-                                 "alignment.raxml.ancestralProbs")
+                                 "alignment.phy.raxml.ancestralProbs")
     tree_file_with_labels = os.path.join("working_inference",
-                                         "alignment.raxml.ancestralTree")
+                                         "alignment.phy.raxml.ancestralTree")
 
     # Parse output and make something human-readable
     _parse_raxml_anc_output(df,

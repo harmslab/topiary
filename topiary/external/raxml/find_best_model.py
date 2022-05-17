@@ -81,7 +81,8 @@ def find_best_model(df,
                     model_freqs=["","FC","FO"],
                     model_invariant=["","IO","IC"],
                     output=None,
-                    threads=1,
+                    overwrite=False,
+                    threads=-1,
                     raxml_binary=RAXML_BINARY):
     """
     Find the best phylogentic model to use for tree and ancestor reconstruction
@@ -93,15 +94,18 @@ def find_best_model(df,
     model_matrices: list of model matrices to check
     model_rates: ways to treat model rates
     model_freqs: ways to treat model freqs.
-    output: directory for output. it none, will generate random name
-    threads: number of threads to use
+    output: output directory. If not specified, create an output directory with
+            form "find_best_model_randomletters"
+    overwrite: whether or not to overwrite existing output (default False)
+    threads: number of threads to use. if -1 use all available
     raxml_binary: raxml binary to use
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
-    result = prep_calc(output=output,
-                       df=df,
+    result = prep_calc(df=df,
                        tree_file=tree_file,
+                       output=output,
+                       overwrite=overwrite,
                        output_base="find_best_model")
 
     df = result["df"]
@@ -120,7 +124,7 @@ def find_best_model(df,
                                  threads=threads,
                                  raxml_binary=raxml_binary)
         tree_file = os.path.join("working",
-                                 "alignment.raxml.startTree")
+                                 "alignment.phy.raxml.startTree")
 
     # Dictionary to hold stats for each model
     out = {"model":[]}
@@ -170,7 +174,7 @@ def find_best_model(df,
                     os.chdir("tmp")
 
                     # Get results from the info file
-                    result = _parse_raxml_info_for_aic("alignment.raxml.log")
+                    result = _parse_raxml_info_for_aic("alignment.phy.raxml.log")
                     out["model"].append(model)
                     for r in result:
                         try:

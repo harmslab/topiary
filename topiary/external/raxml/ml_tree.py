@@ -13,29 +13,28 @@ from topiary.external.interface import prep_calc
 import os, shutil, glob
 
 def generate_ml_tree(previous_dir=None,
-                     output=None,
                      df=None,
                      model=None,
                      tree_file=None,
-                     threads=1,
+                     output=None,
+                     overwrite=False,
+                     threads=-1,
                      raxml_binary=RAXML_BINARY,
-                     bootstrap=True):
+                     bootstrap=False):
     """
     Generate maximum likelihood tree from an alignment given a substitution
     model.
 
-
     previous_dir: directory containing previous calculation. prep_calc will
                   grab the the csv, model, and tree from the previous run.
-    output: output directory. If not specified, create an output directory with
-            form "generate_ml_tree_randomletters"
-
     df: topiary data frame or csv written out from topiary df
     model: model (e.g. LG+G8).
     tree_file: tree_file in newick format. If not specified, a parsimony tree
                will be generated. used as starting point.
-
-    threads: number of threads to use
+    output: output directory. If not specified, create an output directory with
+            form "generate_ml_tree_randomletters"
+    overwrite: whether or not to overwrite existing output (default False)
+    threads: number of threads to use. if -1 use all available
     raxml_binary: what raxml binary to use
     bootstrap: whether or not to do bootstrap replicates
     """
@@ -44,10 +43,11 @@ def generate_ml_tree(previous_dir=None,
 
 
     result = prep_calc(previous_dir=previous_dir,
-                       output=output,
                        df=df,
                        model=model,
                        tree_file=tree_file,
+                       output=output,
+                       overwrite=overwrite,
                        output_base="generate_ml_tree")
 
     df = result["df"]
@@ -61,10 +61,13 @@ def generate_ml_tree(previous_dir=None,
 
     # If we're doing bootstrapping
     if bootstrap:
+        algorithm = "--all"
         other_args.extend(["--bs-trees","autoMRE","--bs-write-msa"])
+    else:
+        algorithm = "--search"
 
     # Run raxml to create tree
-    run_raxml(algorithm="--all",
+    run_raxml(algorithm=algorithm,
               alignment_file=alignment_file,
               tree_file=tree_file,
               model=model,
@@ -78,8 +81,12 @@ def generate_ml_tree(previous_dir=None,
     os.mkdir(outdir)
 
     # Write out a pretty version of the tree
-    shutil.copy(os.path.join("working","alignment.raxml.support"),
-                os.path.join(outdir,"tree.newick"))
+    if bootstrap:
+        shutil.copy(os.path.join("working","alignment.phy.raxml.support"),
+                    os.path.join(outdir,"tree.newick"))
+    else:
+        shutil.copy(os.path.join("working","alignment.phy.raxml.bestTree"),
+                    os.path.join(outdir,"tree.newick"))
 
     # Write model to a file
     f = open(os.path.join(outdir,"model.txt"),"w")
@@ -92,11 +99,11 @@ def generate_ml_tree(previous_dir=None,
     if bootstrap:
         bs_out = os.path.join(outdir,"bootstrap_replicates")
         os.mkdir(bs_out)
-        bsmsa = glob.glob(os.path.join("working","alignment.raxml.bootstrapMSA.*.phy"))
+        bsmsa = glob.glob(os.path.join("working","alignment.phy.raxml.bootstrapMSA.*.phy"))
         for b in bsmsa:
             number = int(b.split(".")[-2])
             shutil.copy(b,os.path.join(bs_out,f"bsmsa_{number:04d}.phy"))
-        shutil.copy(os.path.join("working","alignment.raxml.bootstraps"),
+        shutil.copy(os.path.join("working","alignment.phy.raxml.bootstraps"),
                     os.path.join(outdir,"bootstrap_replicates","bootstraps.newick"))
 
     print(f"\nWrote results to {os.path.abspath(outdir)}\n")
