@@ -24,7 +24,6 @@ def reconcile(previous_dir=None,
                        tree_file=model,
                        output_base="generax_reconcilation")
 
-
     df = result["df"]
     csv_file = result["csv_file"]
     model = result["model"]
@@ -32,46 +31,29 @@ def reconcile(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
 
-    # Load gene tree
-    gene_tree = topiary.util.load_tree(tree_file)
+    _generax.setup_generax(df,tree_file,model,"working")
 
-    # Create generax data structures
-    gene_tree, species_tree, link_dict = _generax._create_generax_input(df,gene_tree)
-
-    # Write out generax input
-    _generax._write_generax_input(df,gene_tree,species_tree,link_dict,model)
-
-    _generax.run_generax(".",
+    _generax.run_generax(run_directory="working",
                          allow_horizontal_transfer=allow_horizontal_transfer,
                          generax_binary=generax_binary)
 
+    outdir = "output"
+    os.mkdir(outdir)
 
-    # outdir = "output"
-    # os.mkdir(outdir)
-    #
-    # # Write out a pretty version of the tree
-    # shutil.copy(os.path.join("working","alignment.raxml.support"),
-    #             os.path.join(outdir,"tree.newick"))
-    #
-    # # Write model to a file
-    # f = open(os.path.join(outdir,"model.txt"),"w")
-    # f.write(f"{model}\n")
-    # f.close()
-    #
-    # topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
-    #
-    # # Copy bootstrap results to the output directory
-    # if bootstrap:
-    #     bs_out = os.path.join(outdir,"bootstrap_replicates")
-    #     os.mkdir(bs_out)
-    #     bsmsa = glob.glob(os.path.join("working","alignment.raxml.bootstrapMSA.*.phy"))
-    #     for b in bsmsa:
-    #         number = int(b.split(".")[-2])
-    #         shutil.copy(b,os.path.join(bs_out,f"bsmsa_{number:04d}.phy"))
-    #     shutil.copy(os.path.join("working","alignment.raxml.bootstraps"),
-    #                 os.path.join(outdir,"bootstrap_replicates","bootstraps.newick"))
-    #
-    # print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
+                os.path.join("output","tree.newick"))
+
+    # Write model to a file
+    f = open(os.path.join(outdir,"model.txt"),"w")
+    f.write(f"{model}\n")
+    f.close()
+
+    # Write dataframe
+    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
+
+    # Copy reconcilation information
+    shutil.copytree(os.path.join("working","result","reconciliations"),
+                    os.path.join("output","reconcilations"))
 
     # Leave working directory
     os.chdir(starting_dir)
