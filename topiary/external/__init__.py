@@ -1,4 +1,10 @@
-
+__description__ = \
+"""
+Interfaces to external programs such as raxml, generax, muscle, ncbi, and
+opentree.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-05-17"
 
 from . import generax
 from . import muscle

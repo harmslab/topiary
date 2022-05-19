@@ -110,3 +110,32 @@ def generate_ml_tree(previous_dir=None,
 
     # Leave working directory
     os.chdir(starting_dir)
+
+    try:
+
+        df.nickname
+        tip_columns = ["species","nickname"]
+        local_df = None
+
+    except AttributeError:
+
+        local_df = df.copy()
+        trunc_name = []
+        for i in range(len(local_df)):
+            if len(local_df["name"].iloc[i]) > 10:
+                trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
+            else:
+                trunc_name.append(f"{local_df['name'].iloc[i]}")
+
+        local_df["trunc_name"] = trunc_name
+        tip_columns = ["species","trunc_name"]
+
+    ret = topiary.draw.ml_tree(ml_dir=output,
+                               df=local_df,
+                               output=os.path.join(output,
+                                                   "output",
+                                                   "summary-tree.pdf"),
+                               tip_columns=tip_columns)
+
+    if topiary._in_notebook:
+        return ret

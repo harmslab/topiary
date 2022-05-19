@@ -1,3 +1,9 @@
+__description__ = \
+"""
+Generic interface for wrapping external programs.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-05-17"
 
 import topiary
 
@@ -65,68 +71,22 @@ def copy_input_file(input_file,
     returns name of copied file
     """
 
-
     if file_name is None:
         file_name = os.path.split(input_file)[-1]
     file_alone = os.path.split(file_name)[-1]
 
-    # If we are putting this into an input subdirectory
+    # If we are putting this into an input subdirectory...
     if make_input_dir:
         input_dir = os.path.join(dir_name,"input")
         if not os.path.exists(input_dir):
             os.mkdir(input_dir)
         file_alone = os.path.join("input",file_alone)
 
-    # Copy in file, potentially converting from to uid
+    # Copy in file
     out_file = os.path.join(dir_name,file_alone)
     shutil.copy(input_file,out_file)
 
     return file_alone
-
-def _load_previous_dir(previous_dir):
-    """
-    Load the df, tree, and model from a previous run directory.
-
-    previous_dir: output directory from previous run
-
-    returns: dictionary with df, tree_file, and model keys (if each element found)
-    """
-
-    previous = {}
-
-    # Make sure previous_dir is a string.
-    if type(previous_dir) is not str:
-        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
-        raise ValueError(err)
-
-    out_dir = os.path.join(previous_dir,"output")
-    if not os.path.isdir(out_dir):
-        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-        err += "should be a previous topiary run directory that contains an\n"
-        err += "'output' directory.\n"
-        raise ValueError(err)
-
-    # Try to grab dataframe
-    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
-    if os.path.exists(df_file):
-        previous["df"] = topiary.read_dataframe(df_file)
-
-    # Try to grab the tree file
-    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
-    if os.path.exists(tree_file):
-        previous["tree_file"] = tree_file
-
-    # Try to grab the model
-    model_file = os.path.abspath(os.path.join(out_dir,"model.txt"))
-    if os.path.exists(model_file):
-
-        f = open(model_file,'r')
-        model = f.read().strip()
-        f.close()
-
-        previous["model"] = model
-
-    return previous
 
 
 def prep_calc(previous_dir=None,
@@ -158,7 +118,7 @@ def prep_calc(previous_dir=None,
     # Load in information from the previous calculation
     previous = {}
     if previous_dir is not None:
-        previous = _load_previous_dir(previous_dir)
+        previous = topiary.io.read_previous_run_dir(previous_dir)
 
     # -------------------------------------------------------------------------
     # Create output directory
@@ -270,6 +230,7 @@ def prep_calc(previous_dir=None,
            "alignment_file":alignment_file,
            "previous_dir":previous_dir,
            "starting_dir":starting_dir,
+           "output":output,
            "other_files":final_files}
 
     return out
@@ -330,6 +291,19 @@ def _follow_log_generator(f,queue):
                 break
 
 def launch(cmd,run_directory,log_file=None):
+    """
+    Launch an external command in a specific directory. Runs command on its own
+    thread, allowing python to capture output from a file as standard output.
+
+    cmd: subprocess style command list (i.e. ["ls","-al"])
+    run_directory: directory in which to run the command. changes into that
+                   directory, then returns out when process completes
+    log_file: log file where command output will be stored. if specified, the
+              output of the log file is captured and written to standard output
+              (equivalent to `tail -f log_file`).
+
+    returns None. Throws RuntimeError if the command terminates unexpectedly.
+    """
 
     # Go into working directory
     cwd = os.getcwd()
@@ -349,7 +323,7 @@ def launch(cmd,run_directory,log_file=None):
     # If following a log
     if log_file is not None:
 
-        # If queue is not empty, job has finished and put its return value
+        # If queue is not empty, the job has finished and put its return value
         # into the queue
         while queue.empty():
 

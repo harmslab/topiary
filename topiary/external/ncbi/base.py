@@ -24,6 +24,37 @@ from tqdm.auto import tqdm
 import re, sys, os, string, random, pickle, io, urllib, http, subprocess
 import multiprocessing as mp
 
+def _grab_line_meta_data(line):
+    """
+    Look for meta data we care about from the line.  This includes:
+
+        + structure
+        + low_quality
+        + precursor
+        + predicted
+        + isoform
+        + hypothetical
+        + partial
+
+    Return a dictionary with each of those keyed to a bool for whether
+    or not the line has this.
+    """
+
+    meta_patterns = {"structure":"crystal structure",
+                     "low_quality":"low.quality",
+                     "predicted":"predicted",
+                     "precursor":"precursor",
+                     "isoform":"isoform",
+                     "hypothetical":"hypothetical",
+                     "partial":"partial"}
+
+    out = dict([(p,None) for p in meta_patterns])
+    for m in meta_patterns:
+        mp = re.compile(meta_patterns[m],re.IGNORECASE)
+        out[m] = bool(mp.search(line))
+
+    return out
+
 def read_blast_xml(blast_record):
     """
     Read BLAST XML format and return as a pandas data frame.
@@ -81,7 +112,7 @@ def read_blast_xml(blast_record):
         out_df.append(pd.DataFrame(data))
 
     out_df = pd.concat(out_df)
-    
+
     return out_df
 
 def parse_ncbi_line(line,accession=None):
@@ -158,7 +189,7 @@ def parse_ncbi_line(line,accession=None):
     out["line"] = line
 
     # Grab meta stuff (predicted, isoform, etc.)
-    meta = util.grab_line_meta_data(line)
+    meta = _grab_line_meta_data(line)
     for m in meta:
         out[m] = meta[m]
 

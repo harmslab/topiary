@@ -12,27 +12,6 @@ import re
 # Test __init__
 # ---------------------------------------------------------------------------- #
 
-def test_create_pipeline_dict():
-
-    pipe_dict = topiary.util.create_pipeline_dict()
-
-    key_list = ["name","species","sequence","uid","keep"]
-
-    assert set(pipe_dict.keys()) == set(key_list)
-
-def test_grab_line_meta_data(ncbi_lines,ncbi_lines_parsed):
-
-    for i, line in enumerate(ncbi_lines):
-        line_dict = topiary.util.grab_line_meta_data(line)
-
-        out = []
-        for k in ncbi_lines_parsed[i]:
-            try:
-                out.append(line_dict[k] == ncbi_lines_parsed[i][k])
-            except KeyError:
-                pass
-
-        assert sum(out) == len(ncbi_lines_parsed[i])
 
 def test_check_topiary_dataframe(test_dataframes):
     """

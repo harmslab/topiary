@@ -8,7 +8,8 @@ __date__ = "2021-07-22"
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary.external.interface import create_new_dir, copy_input_file, prep_calc
+from topiary.external.interface import create_new_dir, copy_input_file
+from topiary.external.interface import prep_calc
 
 import pastml.acr
 import ete3
@@ -134,6 +135,7 @@ def _get_ancestral_gaps(alignment_file,tree_file):
                     state = True
             else:
                 state = None
+
 
             gap_anc_dict[node.name].append(state)
 
@@ -289,6 +291,8 @@ def _plot_ancestor_data(df_anc,
     fig.savefig(f"{anc_name}.pdf",bbox_inches="tight")
 
 
+
+
 def _make_ancestor_summary_trees(df,
                                  avg_pp_dict,
                                  tree_file_with_labels,
@@ -300,7 +304,7 @@ def _make_ancestor_summary_trees(df,
     avg_pp_dict: dictionary mapping ancestor names to avg ancestor posterior
                  probability
     tree_file_with_labels: output from RAxML that has nodes labeled by their
-                           ancestor identity. Should also have branche lengths.
+                           ancestor identity. Should also have branch lengths.
     tree_file_with_supports: tree file with supports (optional)
 
     Creates three or four newick files:
@@ -317,7 +321,6 @@ def _make_ancestor_summary_trees(df,
     # Create output trees
     t_out_label = Tree(tree_file_with_labels,format=1)
     t_out_pp = Tree(tree_file_with_labels,format=1)
-    t_out_all = Tree(tree_file_with_labels,format=1)
 
     # Main iterator (over main labeled tree)
     input_label_iterator = t_labeled.traverse("preorder")
@@ -325,7 +328,6 @@ def _make_ancestor_summary_trees(df,
     # These sub iterators will get populated with final tree info
     label_iterator = t_out_label.traverse("preorder")
     pp_iterator = t_out_pp.traverse("preorder")
-    all_iterator = t_out_all.traverse("preorder")
 
     if tree_file_with_supports is not None:
         t_out_supports = Tree(tree_file_with_supports,format=0)
@@ -337,7 +339,6 @@ def _make_ancestor_summary_trees(df,
         # Update sub itorators
         pp_node = next(pp_iterator)
         label_node = next(label_iterator)
-        all_node = next(all_iterator)
 
         if tree_file_with_supports is not None:
             support_node = next(support_iterator)
@@ -366,30 +367,16 @@ def _make_ancestor_summary_trees(df,
             continue
 
         anc = input_label_node.name
-        try:
-            anc_name = f"anc{int(anc):04d}"
-        except ValueError:
-            anc_name = f"anc{anc}"
+        anc_name = re.sub("Node","anc",anc)
 
         label_node.name = anc_name
         pp_node.support = avg_pp_dict[anc_name]
 
-        combo = [f"{anc_name}",
-                 f"{pp_node.support:.2f}"]
-
-        # If support specified
-        if tree_file_with_supports is not None:
-            combo.append(f"{support_node.support:.0f}")
-
-        all_node.name = "|".join(combo)
-
-
     t_out_pp.write(format=2,format_root_node=True,outfile="ancestors_pp.newick")
     t_out_label.write(format=3,format_root_node=True,outfile="ancestors_label.newick")
-    t_out_all.write(format=3,format_root_node=True,outfile="ancestors_all.newick")
 
     if tree_file_with_supports is not None:
-        t_out_all.write(format=3,format_root_node=True,outfile="ancestors_support.newick")
+        t_out_supports.write(format=3,format_root_node=True,outfile="ancestors_support.newick")
 
 
 def _parse_raxml_anc_output(df,
@@ -486,12 +473,7 @@ def _parse_raxml_anc_output(df,
                   "site_type":[],"entropy":[]}
 
         anc = anc_list[i]
-        gap_list = gap_anc_dict[anc]
-
-        try:
-            anc_name = f"anc{int(anc):04d}"
-        except ValueError:
-            anc_name = f"anc{anc}"
+        anc_name = re.sub("Node","anc",anc)
 
         # Get ml and next best seq and posterior probability. Entropy holds
         # the shannon entropy for all posterior probabilities across the
@@ -528,7 +510,7 @@ def _parse_raxml_anc_output(df,
             if gap_anc_dict[anc][j] == True:
                 anc_ml_pp[-1] = 1.0
                 anc_ml_seq[-1] = "-"
-                anc_alt_pp[-1] = 1.0
+                anc_alt_pp[-1] = 0.0
                 anc_alt_seq[-1] = "-"
 
         # Convert lists read into numpy arrays
@@ -549,6 +531,7 @@ def _parse_raxml_anc_output(df,
         for_df["anc"] = [anc_name for _ in range(len(anc_all_pp[i]))]
         for_df["site"] = [j for j in range(len(anc_all_pp[i]))]
         for_df["gap"] = gap_anc_dict[anc]
+
         for_df["ml_state"] = list(ml_seq)
         for_df["ml_pp"] = list(ml_pp)
         for_df["alt_state"] = list(alt_seq)
@@ -693,6 +676,7 @@ def generate_ancestors(previous_dir=None,
     alignment_file = result["alignment_file"]
     tree_file_with_supports = result["other_files"][0]
     starting_dir = result["starting_dir"]
+    output = result["output"]
 
     # Do marginal reconstruction on the tree
     run_raxml(algorithm="--ancestral",
@@ -741,3 +725,33 @@ def generate_ancestors(previous_dir=None,
 
     # Leave working directory
     os.chdir(starting_dir)
+
+
+    try:
+
+        df.nickname
+        tip_columns = ["species","nickname"]
+        local_df = None
+
+    except AttributeError:
+
+        local_df = df.copy()
+        trunc_name = []
+        for i in range(len(local_df)):
+            if len(local_df["name"].iloc[i]) > 10:
+                trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
+            else:
+                trunc_name.append(f"{local_df['name'].iloc[i]}")
+
+        local_df["trunc_name"] = trunc_name
+        tip_columns = ["species","trunc_name"]
+
+    ret = topiary.draw.ancestor_tree(ancestor_dir=output,
+                                     df=local_df,
+                                     output=os.path.join(output,
+                                                         "output",
+                                                         "summary-tree.pdf"),
+                                    tip_columns=tip_columns)
+
+    if topiary._in_notebook:
+        return ret

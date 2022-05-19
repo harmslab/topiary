@@ -29,7 +29,7 @@ def setup_generax(df,gene_tree,model,out_dir):
     # Create generax data structures
 
     # Load gene tree
-    gene_tree = topiary.util.load_tree(gene_tree)
+    gene_tree = topiary.io.read_tree(gene_tree)
 
     # Arbitrarily resolve any polytomies in gene tree
     gene_tree.resolve_polytomy()
