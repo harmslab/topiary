@@ -101,12 +101,14 @@ def ancestor_tree(run_dir,
         # If this is not a leaf
         if not n.is_leaf():
 
-            rgb = cm.hex(float(m.name))
+            if cm is not None:
 
-            # Draw circles
-            node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
-            node_circle.margin_right=-circle_radius
-            n.add_face(node_circle,0,position="branch-right")
+                rgb = cm.hex(float(m.name))
+
+                # Draw circles
+                node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
+                node_circle.margin_right=-circle_radius
+                n.add_face(node_circle,0,position="branch-right")
 
             # Ancestor labels
             anc_label = ete3.TextFace(text=re.sub("anc","a",n.name),fsize=fontsize)

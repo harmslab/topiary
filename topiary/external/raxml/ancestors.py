@@ -291,8 +291,6 @@ def _plot_ancestor_data(df_anc,
     fig.savefig(f"{anc_name}.pdf",bbox_inches="tight")
 
 
-
-
 def _make_ancestor_summary_trees(df,
                                  avg_pp_dict,
                                  tree_file_with_labels,
