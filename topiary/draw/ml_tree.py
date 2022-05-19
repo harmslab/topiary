@@ -6,6 +6,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-18"
 
 import topiary
+from topiary.external.interface import read_previous_run_dir
 from .base import load_trees, create_name_dict, setup_generic_tree_format, final_render
 
 import ete3
@@ -53,7 +54,7 @@ def ml_tree(run_dir,
     """
 
     # Load data from previous run
-    prev_run = topiary.io.read_previous_run_dir(run_dir)
+    prev_run = read_previous_run_dir(run_dir)
 
     # Load the tree and relevant information from the run_dir output
     # directory.

@@ -6,10 +6,10 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-19"
 
 import topiary
+from .base import setup_generic_tree_format, final_render
 
 import ete3
 
-from .base import setup_generic_tree_format, final_render
 
 def species_tree(species_tree,
                  output_file=None,

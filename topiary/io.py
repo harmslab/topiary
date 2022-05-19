@@ -447,57 +447,6 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     return util.check_topiary_dataframe(new_df)
 
 
-def read_previous_run_dir(previous_dir):
-    """
-    Load the df, tree, and model from a previous run directory.
-
-    previous_dir: output directory from previous run
-
-    returns: dictionary with df, tree_file, and model keys (if each element found)
-    """
-
-    previous = {}
-
-    # Make sure previous_dir is a string.
-    if type(previous_dir) is not str:
-        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
-        raise ValueError(err)
-
-    # Look for output directory
-    out_dir = os.path.join(previous_dir,"output")
-    if not os.path.isdir(out_dir):
-        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-        err += "should be a previous topiary run directory that contains an\n"
-        err += "'output' directory.\n"
-        raise ValueError(err)
-
-    # Grab the run parameters
-    try:
-        f = open(os.path.abspath(os.path.join(out_dir,"run_parameters.json")),'r')
-        run_parameters = json.load(f)
-        f.close()
-    except FileNotFoundError:
-        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-        err += "directory should contain a file output/run_parameters.json.\n"
-        err += "This file was not found.\n\n"
-        raise ValueError(err)
-
-    # copy in previous run parameters
-    for k in run_parameters:
-        previous[k] = run_parameters[k]
-
-    # Try to grab dataframe
-    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
-    if os.path.exists(df_file):
-        previous["df"] = read_dataframe(df_file)
-
-    # Try to grab the tree file
-    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
-    if os.path.exists(tree_file):
-        previous["tree_file"] = tree_file
-
-    return previous
-
 def read_tree(tree,fmt=None):
     """
     Load a tree into an ete3 tree data structure.

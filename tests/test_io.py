@@ -45,32 +45,3 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
     # Make sure raises file not found if a file is not passed
     with pytest.raises(FileNotFoundError):
         io.read_dataframe("not_really_a_file.txt")
-
-def test_write_dataframe():
-    pass
-
-
-
-
-# def test_ncbi_blast_xml_to_df():
-#
-#     pass
-#     #xml_files,
-#     # aliases=None,
-#     #phylo_context="All life"
-#
-# def test_write_fasta():
-#     pass
-#     #df,out_file,seq_column="sequence",seq_name="pretty",
-#     #write_only_keepers=True,empty_char="X-?",clean_sequence=False)
-#
-# def test_write_phy():
-#     pass
-#     #df,out_file,seq_column="sequence",
-#     #          write_only_keepers=True,
-#     #          empty_char="X-?",
-#     #          clean_sequence=False):
-#
-# def test_read_fasta():
-#     pass
-#     #df,fasta_file,load_into_column="alignment",empty_char="X-?",unkeep_missing=True):

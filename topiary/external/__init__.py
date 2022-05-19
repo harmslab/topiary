@@ -11,6 +11,7 @@ from . import muscle
 from . import ncbi
 from . import opentree
 from . import raxml
+from . import interface
 
 from .opentree import get_ott_id, get_species_tree
 from .muscle import run_muscle

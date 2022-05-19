@@ -6,6 +6,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-19"
 
 import topiary
+from topiary.external.interface import read_previous_run_dir
 
 import os, re
 
@@ -54,7 +55,7 @@ def ancestor_tree(run_dir,
     """
 
     # Load data from previous run
-    prev_run = topiary.io.read_previous_run_dir(run_dir)
+    prev_run = read_previous_run_dir(run_dir)
 
     # Load the tree and relevant information from the ml_run_dir output
     # directory.

@@ -76,6 +76,21 @@ def test_dataframes():
 
     return df_dict
 
+@pytest.fixture(scope="module")
+def run_directories():
+    """
+    Dictionary holding paths pointing to previous run directories.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","run-directories"))
+    run_dirs = os.listdir(base_dir)
+
+    out_dict = {}
+    for k in run_dirs:
+        out_dict[k] = os.path.join(base_dir,k)
+
+    return out_dict
 
 def get_public_param_defaults(public_function,private_function):
     """

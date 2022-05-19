@@ -118,7 +118,7 @@ def prep_calc(previous_dir=None,
     # Load in information from the previous calculation
     previous = {}
     if previous_dir is not None:
-        previous = topiary.io.read_previous_run_dir(previous_dir)
+        previous = read_previous_run_dir(previous_dir)
 
     # -------------------------------------------------------------------------
     # Create output directory
@@ -359,6 +359,21 @@ def launch(cmd,run_directory,log_file=None):
     os.chdir(cwd)
 
 def write_run_information(outdir,df,calc_type,model,cmd):
+    """
+    Write information from the run in a standard way.
+
+    Parameters
+    ----------
+        outdir: output directory (i.e. ml-run/output)
+        df: dataframe to write to dataframe.csv
+        calc_type: calculation type (string)
+        model: model (string)
+        cmd: command invoked to raxml or generax
+
+    Return
+    ------
+        None
+    """
 
     # Dataframe
     topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
@@ -371,3 +386,64 @@ def write_run_information(outdir,df,calc_type,model,cmd):
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)
     f.close()
+
+
+def read_previous_run_dir(previous_dir):
+    """
+    Load the df, tree, and run_parameters from a previous run directory.
+
+    Parameters
+    ----------
+        previous_dir: directory of previous run (top level; meaning, ml-tree
+                      not ml-tree/output)
+
+    Return
+    ------
+        dictionary with df, tree_file, and parameters
+    """
+
+    previous = {}
+
+    # Make sure previous_dir is a string.
+    if type(previous_dir) is not str:
+        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
+        raise ValueError(err)
+
+    # Look for output directory
+    out_dir = os.path.join(previous_dir,"output")
+    if not os.path.isdir(out_dir):
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "should be a previous topiary run directory that contains an\n"
+        err += "'output' directory.\n"
+        raise ValueError(err)
+
+    # Grab the run parameters
+    try:
+        f = open(os.path.abspath(os.path.join(out_dir,"run_parameters.json")),'r')
+        run_parameters = json.load(f)
+        f.close()
+    except FileNotFoundError:
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "directory should contain a file output/run_parameters.json.\n"
+        err += "This file was not found.\n\n"
+        raise ValueError(err)
+
+    # copy in previous run parameters
+    for k in run_parameters:
+        previous[k] = run_parameters[k]
+
+    # Try to grab dataframe
+    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
+    if os.path.exists(df_file):
+        previous["df"] = topiary.read_dataframe(df_file)
+    else:
+        err = f"\nCould not read previous directory '{previous_dir}'. Does not\n"
+        err += "contain the file output/dataframe.csv"
+        raise ValueError(err)
+
+    # Try to grab the tree file
+    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
+    if os.path.exists(tree_file):
+        previous["tree_file"] = tree_file
+
+    return previous

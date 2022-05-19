@@ -7,6 +7,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-19"
 
 import topiary
+from topiary.external.interface import read_previous_run_dir
 import inspect
 
 def tree(run_dir,
@@ -63,7 +64,7 @@ def tree(run_dir,
         None or rendered output if in notebook
     """
 
-    prev_run = topiary.io.read_previous_run_dir(run_dir)
+    prev_run = read_previous_run_dir(run_dir)
     calc_type = prev_run["calc_type"]
 
     if calc_type == "ml_tree":
