@@ -40,7 +40,7 @@ def dataframe_good_files():
 @pytest.fixture(scope="module")
 def reverse_blast_hit_dfs():
     """
-    Load saved hit_dfs output. 
+    Load saved hit_dfs output.
     """
 
     def _load(prefix):
@@ -75,6 +75,7 @@ def test_dataframes():
         df_dict[key] = pd.read_csv(g)
 
     return df_dict
+
 
 def get_public_param_defaults(public_function,private_function):
     """

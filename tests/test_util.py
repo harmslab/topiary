@@ -8,11 +8,6 @@ import numpy as np
 
 import re
 
-# ---------------------------------------------------------------------------- #
-# Test __init__
-# ---------------------------------------------------------------------------- #
-
-
 def test_check_topiary_dataframe(test_dataframes):
     """
     Test check for topiary dataframe.
@@ -80,6 +75,25 @@ def test_check_topiary_dataframe(test_dataframes):
     for k in bad_ott_keys:
         with pytest.raises(ValueError):
             df = util.check_topiary_dataframe(test_dataframes[k])
+
+    # Check alignment
+    df = util.check_topiary_dataframe(test_dataframes["good-df_with-good-alignment"])
+    df["alignment"]
+
+    # Send in some bad alignments
+    bad_align_keys = ["bad-alignment-length1","bad-alignment-length2"]
+    for k in bad_ott_keys:
+        with pytest.raises(ValueError):
+            df = util.check_topiary_dataframe(test_dataframes[k])
+
+    # Check for gap-only column deletion
+    input_df = test_dataframes["good-df_with-gap-only-col-alignment"]
+    checked_df = util.check_topiary_dataframe(input_df)
+    assert input_df["alignment"].iloc[0] == "MLPFLFF---"
+    assert checked_df["alignment"].iloc[0] == "MLPFLFF--"
+    assert input_df["alignment"].iloc[-1] == "MLPFLFF-TL"
+    assert checked_df["alignment"].iloc[-1] == "MLPFLFFTL"
+
 
 def test_create_nicknames(test_dataframes):
 

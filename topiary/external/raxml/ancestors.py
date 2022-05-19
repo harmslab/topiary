@@ -9,7 +9,7 @@ import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
 from topiary.external.interface import create_new_dir, copy_input_file
-from topiary.external.interface import prep_calc
+from topiary.external.interface import prep_calc, write_run_information
 
 import pastml.acr
 import ete3
@@ -679,14 +679,14 @@ def generate_ancestors(previous_dir=None,
     output = result["output"]
 
     # Do marginal reconstruction on the tree
-    run_raxml(algorithm="--ancestral",
-              alignment_file=alignment_file,
-              tree_file=tree_file,
-              model=model,
-              seed=True,
-              dir_name="working_inference",
-              threads=threads,
-              raxml_binary=raxml_binary)
+    cmd = run_raxml(algorithm="--ancestral",
+                    alignment_file=alignment_file,
+                    tree_file=tree_file,
+                    model=model,
+                    seed=True,
+                    dir_name="working_inference",
+                    threads=threads,
+                    raxml_binary=raxml_binary)
 
     anc_prob_file = os.path.join("working_inference",
                                  "alignment.phy.raxml.ancestralProbs")
@@ -707,12 +707,13 @@ def generate_ancestors(previous_dir=None,
 
     # tree file
     shutil.copy(tree_file,os.path.join(outdir,"tree.newick"))
-    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
 
-    # Write model to a file
-    f = open(os.path.join(outdir,"model.txt"),"w")
-    f.write(f"{model}\n")
-    f.close()
+    # Write run information
+    write_run_information(outdir=outdir,
+                          df=df,
+                          calc_type="ancestors",
+                          model=model,
+                          cmd=cmd)
 
     # Copy ancestor files into an ancestors directory
     files_to_grab = glob.glob(os.path.join("working_analysis","*.*"))
@@ -726,32 +727,10 @@ def generate_ancestors(previous_dir=None,
     # Leave working directory
     os.chdir(starting_dir)
 
-
-    try:
-
-        df.nickname
-        tip_columns = ["species","nickname"]
-        local_df = None
-
-    except AttributeError:
-
-        local_df = df.copy()
-        trunc_name = []
-        for i in range(len(local_df)):
-            if len(local_df["name"].iloc[i]) > 10:
-                trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
-            else:
-                trunc_name.append(f"{local_df['name'].iloc[i]}")
-
-        local_df["trunc_name"] = trunc_name
-        tip_columns = ["species","trunc_name"]
-
-    ret = topiary.draw.ancestor_tree(ancestor_dir=output,
-                                     df=local_df,
-                                     output=os.path.join(output,
-                                                         "output",
-                                                         "summary-tree.pdf"),
-                                    tip_columns=tip_columns)
-
+    # Create a plot of the tree
+    ret = topiary.draw.ancestor_tree(run_dir=output,
+                                     output_file=os.path.join(output,
+                                                              "output",
+                                                              "summary-tree.pdf"))
     if topiary._in_notebook:
         return ret

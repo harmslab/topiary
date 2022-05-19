@@ -168,7 +168,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
 
     if total_calcs > 0:
-        
+
         print("Removing redundant sequences within species.",flush=True)
 
         with tqdm(total=total_calcs) as pbar:

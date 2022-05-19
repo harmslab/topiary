@@ -2,6 +2,7 @@
 # Submodules
 from . import util
 from . import draw
+from . import _private
 
 from .external import generax
 from .external import ncbi
@@ -23,6 +24,7 @@ from .io import ncbi_blast_xml_to_df
 from .io import write_dataframe, read_dataframe
 from .io import read_fasta_into, write_fasta, write_phy
 
+from .__version__ import __version__
 
 def check_for_notebook():
     """

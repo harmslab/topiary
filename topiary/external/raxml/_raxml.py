@@ -116,3 +116,5 @@ def run_raxml(algorithm=None,
 
     # Run job
     interface.launch(cmd,dir_name,log_file)
+
+    return " ".join(cmd)

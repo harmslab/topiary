@@ -8,7 +8,7 @@ __date__ = "2021-07-22"
 import topiary
 
 from ._raxml import RAXML_BINARY, run_raxml
-from topiary.external.interface import prep_calc, gen_seed
+from topiary.external.interface import prep_calc, gen_seed, write_run_information
 
 import pandas as pd
 import numpy as np
@@ -186,11 +186,7 @@ def find_best_model(df,
                     os.chdir("..")
                     shutil.rmtree("tmp")
 
-    # All output goes into the output directory
-    outdir = "output"
-    os.mkdir(outdir)
-
-    # Create a csv file sorted best to worst aicc
+    # Create a dataframe sorted best to worst aicc
     final_df = pd.DataFrame(out)
 
     min_aic = np.min(final_df.AICc)
@@ -198,17 +194,20 @@ def find_best_model(df,
     final_df["p"] = final_df["p"]/np.sum(final_df["p"])
     indexer = np.argsort(final_df.p)[::-1]
     final_df = final_df.iloc[indexer,:]
+
+    # All output goes into the output directory
+    outdir = "output"
+    os.mkdir(outdir)
+
+    # Write run information
+    write_run_information(outdir=outdir,
+                          df=df,
+                          calc_type="find_best_model",
+                          model=final_df.model.iloc[0],
+                          cmd=None)
+
+    # Write dataframe comparing models
     final_df.to_csv(os.path.join(outdir,"model-comparison.csv"))
-
-    # Get best model
-    best_model = final_df.model.iloc[0]
-
-    # Write model to a file
-    f = open(os.path.join(outdir,"model.txt"),"w")
-    f.write(f"{best_model}\n")
-    f.close()
-
-    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
 
     # Print best model to stdout
     print("\nTop 10 models:\n")

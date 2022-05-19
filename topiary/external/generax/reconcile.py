@@ -6,7 +6,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-16"
 
 import topiary
-from topiary.external.interface import prep_calc
+from topiary.external.interface import prep_calc, write_run_information
 
 from ._generax import setup_generax, run_generax, GENERAX_BINARY
 
@@ -64,25 +64,28 @@ def reconcile(previous_dir=None,
             err += "calculation.\n\n"
             raise ValueError(err)
 
+    # Set up generax directory
     setup_generax(df,tree_file,model,"working")
 
-    run_generax(run_directory="working",
-                allow_horizontal_transfer=allow_horizontal_transfer,
-                generax_binary=generax_binary)
+    # Actually run generax
+    cmd = run_generax(run_directory="working",
+                      allow_horizontal_transfer=allow_horizontal_transfer,
+                      generax_binary=generax_binary)
 
+    # Make output directory to hold final outputs
     outdir = "output"
     os.mkdir(outdir)
 
+    # Copy in tree.newick
     shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
                 os.path.join("output","tree.newick"))
 
-    # Write model to a file
-    f = open(os.path.join(outdir,"model.txt"),"w")
-    f.write(f"{model}\n")
-    f.close()
-
-    # Write dataframe
-    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
+    # Write run information
+    write_run_information(outdir=outdir,
+                          df=df,
+                          calc_type="reconciliation",
+                          model=model,
+                          cmd=cmd)
 
     # Copy reconcilation information
     shutil.copytree(os.path.join("working","result","reconciliations"),
@@ -93,31 +96,10 @@ def reconcile(previous_dir=None,
     # Leave working directory
     os.chdir(starting_dir)
 
-    try:
-
-        df.nickname
-        tip_columns = ["species","nickname"]
-        local_df = None
-
-    except AttributeError:
-
-        local_df = df.copy()
-        trunc_name = []
-        for i in range(len(local_df)):
-            if len(local_df["name"].iloc[i]) > 10:
-                trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
-            else:
-                trunc_name.append(f"{local_df['name'].iloc[i]}")
-
-        local_df["trunc_name"] = trunc_name
-        tip_columns = ["species","trunc_name"]
-
-    ret = topiary.draw.reconciliation_tree(reconcilation_dir=output,
-                                           df=local_df,
-                                           output=os.path.join(output,
-                                                               "output",
-                                                               "summary-tree.pdf"),
-                                    tip_columns=tip_columns)
-
+    # Write out a summary tree.
+    ret = topiary.draw.reconciliation_tree(run_dir=output,
+                                           output_file=os.path.join(output,
+                                                                    "output",
+                                                                    "summary-tree.pdf"))
     if topiary._in_notebook:
         return ret

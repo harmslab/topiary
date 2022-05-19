@@ -13,8 +13,6 @@ import numpy as np
 
 import re, sys, os, string, random, pickle, io, urllib, http, copy
 
-
-
 def check_topiary_dataframe(df):
     """
     Check to make sure topiary dataframe is sane. Edits dataframe, returning a

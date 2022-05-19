@@ -9,7 +9,7 @@ import topiary
 
 import pandas as pd
 
-import subprocess, os, sys, time, random, string, shutil, copy
+import subprocess, os, sys, time, random, string, shutil, copy, json
 import multiprocessing as mp
 
 def gen_seed():
@@ -357,3 +357,17 @@ def launch(cmd,run_directory,log_file=None):
 
     # Leave working directory
     os.chdir(cwd)
+
+def write_run_information(outdir,df,calc_type,model,cmd):
+
+    # Dataframe
+    topiary.write_dataframe(df,os.path.join(outdir,"dataframe.csv"))
+
+    # Run parameters
+    out_dict = {"calc_type":calc_type,
+                "model":model,
+                "cmd":cmd,
+                "version":topiary.__version__}
+    f = open(os.path.join(outdir,"run_parameters.json"),"w")
+    json.dump(out_dict,f)
+    f.close()

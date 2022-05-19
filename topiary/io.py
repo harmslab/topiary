@@ -22,7 +22,7 @@ import dendropy as dp
 
 from tqdm.auto import tqdm
 
-import re, string, random, io, copy, os
+import re, string, random, io, copy, os, json
 
 def read_dataframe(input,remove_extra_index=True):
     """
@@ -463,12 +463,28 @@ def read_previous_run_dir(previous_dir):
         err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
         raise ValueError(err)
 
+    # Look for output directory
     out_dir = os.path.join(previous_dir,"output")
     if not os.path.isdir(out_dir):
         err = f"\nCould not read previous directory '{previous_dir}'. This\n"
         err += "should be a previous topiary run directory that contains an\n"
         err += "'output' directory.\n"
         raise ValueError(err)
+
+    # Grab the run parameters
+    try:
+        f = open(os.path.abspath(os.path.join(out_dir,"run_parameters.json")),'r')
+        run_parameters = json.load(f)
+        f.close()
+    except FileNotFoundError:
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "directory should contain a file output/run_parameters.json.\n"
+        err += "This file was not found.\n\n"
+        raise ValueError(err)
+
+    # copy in previous run parameters
+    for k in run_parameters:
+        previous[k] = run_parameters[k]
 
     # Try to grab dataframe
     df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
@@ -479,16 +495,6 @@ def read_previous_run_dir(previous_dir):
     tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
     if os.path.exists(tree_file):
         previous["tree_file"] = tree_file
-
-    # Try to grab the model
-    model_file = os.path.abspath(os.path.join(out_dir,"model.txt"))
-    if os.path.exists(model_file):
-
-        f = open(model_file,'r')
-        model = f.read().strip()
-        f.close()
-
-        previous["model"] = model
 
     return previous
 

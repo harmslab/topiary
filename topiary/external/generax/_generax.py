@@ -210,3 +210,5 @@ def run_generax(run_directory,
 
     # Launch run
     interface.launch(cmd,run_directory,log_file)
+
+    return " ".join(cmd)
