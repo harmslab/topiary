@@ -5,6 +5,8 @@ __description__ = \
 Remove redundancy for datasets in a semi-intelligent way.
 """
 
+from topiary import util
+
 import pandas as pd
 import numpy as np
 
@@ -134,7 +136,10 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     key_species = dict([(k,None) for k in key_species])
 
     # This will hold output
+    df = util.check_topiary_dataframe(df)
     new_df = df.copy()
+
+    starting_keep_number = np.sum(new_df.keep)
 
     # If not more than one seq, don't do anything
     if len(df) < 2:
@@ -153,7 +158,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     for i in range(len(new_df)):
         quality_scores.append(_get_quality_scores(new_df.iloc[i,:],key_species))
 
-    print("Removing redundant sequences within species.")
+
     unique_species = np.unique(new_df.species)
 
     total_calcs = 0
@@ -161,45 +166,102 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
         a = np.sum(new_df.species == s)
         total_calcs += a*(a - 1)//2
 
-    with tqdm(total=total_calcs) as pbar:
 
-        for s in unique_species:
+    if total_calcs > 0:
 
-            # species indexes are iloc row indexes corresponding to species of
-            # interest.
-            species_mask = new_df.species == s
-            species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
-            num_this_species = np.sum(species_mask)
-            for x in range(num_this_species):
+        print("Removing redundant sequences within species.",flush=True)
 
-                # Get species index (i). If it's already set to keep = False,
-                # don't compare to other sequences.
-                i = df.index[species_rows[x]]
+        with tqdm(total=total_calcs) as pbar:
+
+            for s in unique_species:
+
+                # species indexes are iloc row indexes corresponding to species of
+                # interest.
+                species_mask = new_df.species == s
+                species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
+                num_this_species = np.sum(species_mask)
+                for x in range(num_this_species):
+
+                    # Get species index (i). If it's already set to keep = False,
+                    # don't compare to other sequences.
+                    i = df.index[species_rows[x]]
+                    if not new_df.loc[i,"keep"]:
+                        continue
+
+                    # Get sequence and quality score for A
+                    A_seq = new_df.loc[i,"sequence"]
+                    A_qual = quality_scores[species_rows[x]]
+
+                    # Loop over other sequences in this species
+                    for y in range(x+1,num_this_species):
+
+                        # Get species index (j). If it's already set to keep = False,
+                        # don't compare to other sequences.
+                        j = df.index[species_rows[y]]
+                        if not new_df.loc[j,"keep"]:
+                            continue
+
+                        # Get sequence and quality score for B
+                        B_seq = new_df.loc[j,"sequence"]
+                        B_qual = quality_scores[species_rows[y]]
+
+                        # Decide which sequence to keep (or both). Discard sequences
+                        # even if they are from key species--removing redundancy within
+                        # a given species.
+                        A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
+                                                       discard_key=True)
+
+                        # Update keep for each sequence
+                        new_df.loc[i,"keep"] = A_bool
+                        new_df.loc[j,"keep"] = B_bool
+
+                        # If we got rid of A, break out of this loop.  Do not need to
+                        # compare to A any more.
+                        if not A_bool:
+                            break
+
+                pbar.update(num_this_species*(num_this_species - 1)//2)
+
+
+    N = len(new_df)
+    total_calcs = N*(N-1)//2
+
+    if total_calcs > 0:
+        print("Removing redundant sequences, all-on-all.",flush=True)
+
+        with tqdm(total=total_calcs) as pbar:
+
+            counter = 1
+            for x in range(len(new_df)):
+
+                i = new_df.index[x]
+
+                # If we've already decided not to keep i, don't even look at it
                 if not new_df.loc[i,"keep"]:
+                    pbar.update(N - counter)
+                    counter += 1
                     continue
 
-                # Get sequence and quality score for A
+                # Get sequence of sequence and quality scores for i
                 A_seq = new_df.loc[i,"sequence"]
-                A_qual = quality_scores[species_rows[x]]
+                A_qual = quality_scores[x]
 
-                # Loop over other sequences in this species
-                for y in range(x+1,num_this_species):
+                for y in range(i+1,len(new_df)):
 
-                    # Get species index (j). If it's already set to keep = False,
-                    # don't compare to other sequences.
-                    j = df.index[species_rows[y]]
+                    j = new_df.index[y]
+
+                    # If we've already decided not to keep j, don't even look at it
                     if not new_df.loc[j,"keep"]:
                         continue
 
-                    # Get sequence and quality score for B
+                    # Get sequence of sequence and quality scores for j
                     B_seq = new_df.loc[j,"sequence"]
-                    B_qual = quality_scores[species_rows[y]]
+                    B_qual = quality_scores[y]
 
-                    # Decide which sequence to keep (or both). Discard sequences
-                    # even if they are from key species--removing redundancy within
-                    # a given species.
+                    # Decide which sequence to keep (or both). Do not discard any
+                    # sequence from a key species.
                     A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
-                                                   discard_key=True)
+                                                   discard_key=False)
 
                     # Update keep for each sequence
                     new_df.loc[i,"keep"] = A_bool
@@ -210,58 +272,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                     if not A_bool:
                         break
 
-            pbar.update(num_this_species*(num_this_species - 1)//2)
-
-    print("Removing redundant sequences, all-on-all.")
-
-    N = len(new_df)
-    total_calcs = N*(N-1)//2
-    with tqdm(total=total_calcs) as pbar:
-
-        counter = 1
-        for x in range(len(new_df)):
-
-            i = new_df.index[x]
-
-            # If we've already decided not to keep i, don't even look at it
-            if not new_df.loc[i,"keep"]:
                 pbar.update(N - counter)
                 counter += 1
-                continue
 
-            # Get sequence of sequence and quality scores for i
-            A_seq = new_df.loc[i,"sequence"]
-            A_qual = quality_scores[x]
-
-            for y in range(i+1,len(new_df)):
-
-                j = new_df.index[y]
-
-                # If we've already decided not to keep j, don't even look at it
-                if not new_df.loc[j,"keep"]:
-                    continue
-
-                # Get sequence of sequence and quality scores for j
-                B_seq = new_df.loc[j,"sequence"]
-                B_qual = quality_scores[y]
-
-                # Decide which sequence to keep (or both). Do not discard any
-                # sequence from a key species.
-                A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
-                                               discard_key=False)
-
-                # Update keep for each sequence
-                new_df.loc[i,"keep"] = A_bool
-                new_df.loc[j,"keep"] = B_bool
-
-                # If we got rid of A, break out of this loop.  Do not need to
-                # compare to A any more.
-                if not A_bool:
-                    break
-
-            pbar.update(N - counter)
-            counter += 1
-
-    print("Done.")
+    final_keep_number = np.sum(new_df.keep)
+    print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
+    print("Done.",flush=True)
 
     return new_df

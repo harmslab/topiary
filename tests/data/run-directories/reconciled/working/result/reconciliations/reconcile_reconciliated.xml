@@ -1,0 +1,304 @@
+<recPhylo 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.recg.org ./recGeneTreeXML.xsd"
+	xmlns="http://www.recg.org">
+<spTree>
+<phylogeny>
+<clade>
+		<name>node_8</name>
+	<clade>
+			<name>node_0</name>
+		<clade>
+				<name>node_1</name>
+			<clade>
+					<name>node_2</name>
+				<clade>
+						<name>node_3</name>
+					<clade>
+							<name>node_4</name>
+						<clade>
+								<name>ott542509</name>
+						</clade>
+						<clade>
+								<name>ott770315</name>
+						</clade>
+					</clade>
+					<clade>
+							<name>node_5</name>
+						<clade>
+								<name>ott490109</name>
+						</clade>
+						<clade>
+								<name>ott490099</name>
+						</clade>
+					</clade>
+				</clade>
+				<clade>
+						<name>ott541936</name>
+				</clade>
+			</clade>
+			<clade>
+					<name>node_6</name>
+				<clade>
+						<name>ott948469</name>
+				</clade>
+				<clade>
+						<name>ott122362</name>
+				</clade>
+			</clade>
+		</clade>
+		<clade>
+				<name>ott153563</name>
+		</clade>
+	</clade>
+	<clade>
+			<name>node_7</name>
+		<clade>
+				<name>ott465096</name>
+		</clade>
+		<clade>
+				<name>ott283388</name>
+		</clade>
+	</clade>
+</clade>
+</phylogeny>
+</spTree>
+<recGeneTree>
+<phylogeny rooted="true">
+<clade>
+	<name>NULL</name>
+	<eventsRec>
+		<duplication speciesLocation="node_8"/>
+	</eventsRec>
+	<clade>
+		<name>NULL</name>
+		<eventsRec>
+			<speciation speciesLocation="node_8"/>
+		</eventsRec>
+		<clade>
+			<name>NULL</name>
+			<eventsRec>
+				<speciation speciesLocation="node_7"/>
+			</eventsRec>
+			<clade>
+				<name>tClBClpquC</name>
+				<eventsRec>
+					<leaf speciesLocation="ott283388"/>
+				</eventsRec>
+			</clade>
+			<clade>
+				<name>VtZaTYEnFe</name>
+				<eventsRec>
+					<leaf speciesLocation="ott465096"/>
+				</eventsRec>
+			</clade>
+		</clade>
+		<clade>
+			<name>NULL</name>
+			<eventsRec>
+				<speciation speciesLocation="node_0"/>
+			</eventsRec>
+			<clade>
+				<name>NULL</name>
+				<eventsRec>
+					<speciation speciesLocation="node_1"/>
+				</eventsRec>
+				<clade>
+					<name>NULL</name>
+					<eventsRec>
+						<speciation speciesLocation="node_6"/>
+					</eventsRec>
+					<clade>
+						<name>cpKjgWljCS</name>
+						<eventsRec>
+							<leaf speciesLocation="ott122362"/>
+						</eventsRec>
+					</clade>
+					<clade>
+						<name>bgOclSvfNA</name>
+						<eventsRec>
+							<leaf speciesLocation="ott948469"/>
+						</eventsRec>
+					</clade>
+				</clade>
+				<clade>
+					<name>NULL</name>
+					<eventsRec>
+						<speciation speciesLocation="node_2"/>
+					</eventsRec>
+					<clade>
+						<name>NULL</name>
+						<eventsRec>
+							<speciation speciesLocation="node_3"/>
+						</eventsRec>
+						<clade>
+							<name>NULL</name>
+							<eventsRec>
+								<speciation speciesLocation="node_4"/>
+							</eventsRec>
+							<clade>
+								<name>veblSKlGtW</name>
+								<eventsRec>
+									<leaf speciesLocation="ott542509"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>SXbiWnlgEq</name>
+								<eventsRec>
+									<leaf speciesLocation="ott770315"/>
+								</eventsRec>
+							</clade>
+						</clade>
+						<clade>
+							<name>lWQJVlVScl</name>
+							<eventsRec>
+								<speciation speciesLocation="node_5"/>
+							</eventsRec>
+								<clade>
+								<name>loss</name>
+								<eventsRec>
+									<loss speciesLocation="ott490109"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>lWQJVlVScl</name>
+								<eventsRec>
+									<leaf speciesLocation="ott490099"/>
+								</eventsRec>
+							</clade>
+						</clade>
+					</clade>
+					<clade>
+						<name>qafwezjvGS</name>
+						<eventsRec>
+							<leaf speciesLocation="ott541936"/>
+						</eventsRec>
+					</clade>
+				</clade>
+			</clade>
+			<clade>
+				<name>fsNUEfGmzC</name>
+				<eventsRec>
+					<leaf speciesLocation="ott153563"/>
+				</eventsRec>
+			</clade>
+		</clade>
+	</clade>
+	<clade>
+		<name>NULL</name>
+		<eventsRec>
+			<speciation speciesLocation="node_8"/>
+		</eventsRec>
+		<clade>
+			<name>NULL</name>
+			<eventsRec>
+				<speciation speciesLocation="node_0"/>
+			</eventsRec>
+			<clade>
+				<name>xBmLPZxBzO</name>
+				<eventsRec>
+					<leaf speciesLocation="ott153563"/>
+				</eventsRec>
+			</clade>
+			<clade>
+				<name>NULL</name>
+				<eventsRec>
+					<speciation speciesLocation="node_1"/>
+				</eventsRec>
+				<clade>
+					<name>NULL</name>
+					<eventsRec>
+						<speciation speciesLocation="node_6"/>
+					</eventsRec>
+					<clade>
+						<name>BCWYIbpxUc</name>
+						<eventsRec>
+							<leaf speciesLocation="ott122362"/>
+						</eventsRec>
+					</clade>
+					<clade>
+						<name>drFOsIvycv</name>
+						<eventsRec>
+							<leaf speciesLocation="ott948469"/>
+						</eventsRec>
+					</clade>
+				</clade>
+				<clade>
+					<name>NULL</name>
+					<eventsRec>
+						<speciation speciesLocation="node_2"/>
+					</eventsRec>
+					<clade>
+						<name>NULL</name>
+						<eventsRec>
+							<speciation speciesLocation="node_3"/>
+						</eventsRec>
+						<clade>
+							<name>uZIzuVovYv</name>
+							<eventsRec>
+								<speciation speciesLocation="node_5"/>
+							</eventsRec>
+								<clade>
+								<name>loss</name>
+								<eventsRec>
+									<loss speciesLocation="ott490099"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>uZIzuVovYv</name>
+								<eventsRec>
+									<leaf speciesLocation="ott490109"/>
+								</eventsRec>
+							</clade>
+						</clade>
+						<clade>
+							<name>GCEcdkqXTl</name>
+							<eventsRec>
+								<speciation speciesLocation="node_4"/>
+							</eventsRec>
+								<clade>
+								<name>loss</name>
+								<eventsRec>
+									<loss speciesLocation="ott542509"/>
+								</eventsRec>
+							</clade>
+							<clade>
+								<name>GCEcdkqXTl</name>
+								<eventsRec>
+									<leaf speciesLocation="ott770315"/>
+								</eventsRec>
+							</clade>
+						</clade>
+					</clade>
+					<clade>
+						<name>qgBlQRJwWT</name>
+						<eventsRec>
+							<leaf speciesLocation="ott541936"/>
+						</eventsRec>
+					</clade>
+				</clade>
+			</clade>
+		</clade>
+		<clade>
+			<name>NULL</name>
+			<eventsRec>
+				<speciation speciesLocation="node_7"/>
+			</eventsRec>
+			<clade>
+				<name>HElqyHfqgD</name>
+				<eventsRec>
+					<leaf speciesLocation="ott465096"/>
+				</eventsRec>
+			</clade>
+			<clade>
+				<name>OkrYzcMCfx</name>
+				<eventsRec>
+					<leaf speciesLocation="ott283388"/>
+				</eventsRec>
+			</clade>
+		</clade>
+	</clade>
+</clade>
+</phylogeny>
+</recGeneTree>
+</recPhylo>

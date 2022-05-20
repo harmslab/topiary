@@ -6,7 +6,6 @@ import pandas as pd
 
 import warnings, os
 
-
 def test_read_dataframe(dataframe_good_files,test_dataframes):
     """
     Test read dataframe function.
@@ -19,7 +18,7 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
         # Print f in case parsing dies... so we know which file causes failure.
         print(f)
 
-        # Read file and make sure it does not throuw warning.
+        # Read file and make sure it does not throw warning.
         with warnings.catch_warnings():
             warnings.simplefilter("error")
 
@@ -47,31 +46,45 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
     with pytest.raises(FileNotFoundError):
         io.read_dataframe("not_really_a_file.txt")
 
-def test_write_dataframe():
-    pass
+def test_write_dataframe(test_dataframes,tmpdir):
 
+    df = test_dataframes["good-df"]
 
+    bad_df = [pd.DataFrame,pd.DataFrame({"test":[1]}),None,1,"string",str]
+    for b in bad_df:
+        with pytest.raises(ValueError):
+            io.write_dataframe(b,"output_file.csv")
 
+    bad_out_file = [pd.DataFrame,pd.DataFrame({"test":[1]}),None,1,str]
+    for b in bad_out_file:
+        with pytest.raises(ValueError):
+            io.write_dataframe(df,b)
 
-# def test_ncbi_blast_xml_to_df():
-#
-#     pass
-#     #xml_files,
-#     # aliases=None,
-#     #phylo_context="All life"
-#
-# def test_write_fasta():
-#     pass
-#     #df,out_file,seq_column="sequence",seq_name="pretty",
-#     #write_only_keepers=True,empty_char="X-?",clean_sequence=False)
-#
-# def test_write_phy():
-#     pass
-#     #df,out_file,seq_column="sequence",
-#     #          write_only_keepers=True,
-#     #          empty_char="X-?",
-#     #          clean_sequence=False):
-#
-# def test_read_fasta():
-#     pass
-#     #df,fasta_file,load_into_column="alignment",empty_char="X-?",unkeep_missing=True):
+    def _check_written_out(df,out,sep):
+        assert os.path.isfile(out)
+        with open(out) as f:
+            for line in f:
+                assert len(line.split(sep)) == len(df.columns)
+
+    out = os.path.join(tmpdir,"stupid.csv")
+    f = open(out,"w")
+    f.write("stuff")
+    f.close()
+    with pytest.raises(FileExistsError):
+        io.write_dataframe(df,out_file=out)
+
+    io.write_dataframe(df,out_file=out,overwrite=True)
+    _check_written_out(df,out,",")
+
+    # Write out as csv with non-standard extension
+    out = os.path.join(tmpdir,"some_file.txt")
+    io.write_dataframe(df,out_file=out)
+    _check_written_out(df,out,",")
+
+    out = os.path.join(tmpdir,"some_file.tsv")
+    io.write_dataframe(df,out_file=out)
+    _check_written_out(df,out,"\t")
+
+    out = os.path.join(tmpdir,"some_file.xlsx")
+    io.write_dataframe(df,out_file=out)
+    assert os.path.exists(out)

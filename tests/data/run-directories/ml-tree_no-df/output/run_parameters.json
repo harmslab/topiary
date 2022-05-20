@@ -1,0 +1,1 @@
+{"calc_type": "ml_tree", "model": "JTT", "cmd": "raxml-ng --all --msa alignment.phy --model JTT --seed 1896400468 --threads 10 --bs-trees autoMRE --bs-write-msa", "version": "0.0.1"}
