@@ -92,6 +92,23 @@ def run_directories():
 
     return out_dict
 
+@pytest.fixture(scope="module")
+def programs():
+    """
+    Dictionary holding paths pointing to previous run directories.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","programs"))
+    progs = os.listdir(base_dir)
+
+    out_dict = {}
+    for k in progs:
+        out_dict[k] = os.path.join(base_dir,k)
+
+    return out_dict
+
+
 def get_public_param_defaults(public_function,private_function):
     """
     Get the defaults for a public function in the API that then passes

@@ -7,11 +7,34 @@ import pandas as pd
 
 import warnings, os
 
-def test_launch(tmpdir):
+def test_launch(tmpdir,programs):
     """
     Test the launcher.
     """
 
+    # This test basically makes sure the code runs. Hard to test the
+    # multithreading bits. Also, because this is an internal function, it does
+    # not do argument checking, etc.
+
+    out_dir = os.path.join(os.path.abspath(tmpdir),"run-test-dir")
+    os.mkdir(out_dir)
+
+    prg = programs["write_to_file_over_time.py"]
+    cmd = [prg,"output.txt","--num_steps","2"]
+    interface.launch(cmd,out_dir)
+
+    f = open(os.path.join(out_dir,"output.txt"))
+    lines = f.readlines()
+    f.close()
+
+    assert len(lines) == 2
+    assert len(lines[0].split(";")) == 3
+    assert len(lines[1].split(";")) == 3
+
+def write_run_information():
+    """
+    XXX: INCOMPLETE TEST.
+    """
     pass
 
 def test_read_previous_run_dir(run_directories):
