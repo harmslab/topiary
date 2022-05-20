@@ -711,7 +711,8 @@ def generate_ancestors(previous_dir=None,
                           df=df,
                           calc_type="ancestors",
                           model=model,
-                          cmd=cmd)
+                          cmd=cmd,
+                          outgroup=result["outgroup"])
 
     # Copy ancestor files into an ancestors directory
     files_to_grab = glob.glob(os.path.join("working_analysis","*.*"))

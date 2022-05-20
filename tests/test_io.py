@@ -45,3 +45,46 @@ def test_read_dataframe(dataframe_good_files,test_dataframes):
     # Make sure raises file not found if a file is not passed
     with pytest.raises(FileNotFoundError):
         io.read_dataframe("not_really_a_file.txt")
+
+def test_write_dataframe(test_dataframes,tmpdir):
+
+    df = test_dataframes["good-df"]
+
+    bad_df = [pd.DataFrame,pd.DataFrame({"test":[1]}),None,1,"string",str]
+    for b in bad_df:
+        with pytest.raises(ValueError):
+            io.write_dataframe(b,"output_file.csv")
+
+    bad_out_file = [pd.DataFrame,pd.DataFrame({"test":[1]}),None,1,str]
+    for b in bad_out_file:
+        with pytest.raises(ValueError):
+            io.write_dataframe(df,b)
+
+    def _check_written_out(df,out,sep):
+        assert os.path.isfile(out)
+        with open(out) as f:
+            for line in f:
+                assert len(line.split(sep)) == len(df.columns)
+
+    out = os.path.join(tmpdir,"stupid.csv")
+    f = open(out,"w")
+    f.write("stuff")
+    f.close()
+    with pytest.raises(FileExistsError):
+        io.write_dataframe(df,out_file=out)
+
+    io.write_dataframe(df,out_file=out,overwrite=True)
+    _check_written_out(df,out,",")
+
+    # Write out as csv with non-standard extension
+    out = os.path.join(tmpdir,"some_file.txt")
+    io.write_dataframe(df,out_file=out)
+    _check_written_out(df,out,",")
+
+    out = os.path.join(tmpdir,"some_file.tsv")
+    io.write_dataframe(df,out_file=out)
+    _check_written_out(df,out,"\t")
+
+    out = os.path.join(tmpdir,"some_file.xlsx")
+    io.write_dataframe(df,out_file=out)
+    assert os.path.exists(out)

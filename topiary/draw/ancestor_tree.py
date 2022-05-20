@@ -63,7 +63,8 @@ def ancestor_tree(run_dir,
                         tree_base_path=os.path.join("output","ancestors"),
                         tree_names=["ancestors_label.newick",
                                     "ancestors_pp.newick"],
-                        tree_fmt=[1,1])
+                        tree_fmt=[1,1],
+                        outgroup=prev_run["outgroup"])
 
     # If df not specified, get from the previous run
     if df is None:
@@ -103,12 +104,16 @@ def ancestor_tree(run_dir,
 
             if cm is not None:
 
-                rgb = cm.hex(float(m.name))
+                try:
+                    v = float(m.name)
+                    rgb = cm.hex(v)
 
-                # Draw circles
-                node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
-                node_circle.margin_right=-circle_radius
-                n.add_face(node_circle,0,position="branch-right")
+                    # Draw circles
+                    node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
+                    node_circle.margin_right=-circle_radius
+                    n.add_face(node_circle,0,position="branch-right")
+                except ValueError:
+                    pass
 
             # Ancestor labels
             anc_label = ete3.TextFace(text=re.sub("anc","a",n.name),fsize=fontsize)

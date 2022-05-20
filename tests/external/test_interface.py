@@ -7,6 +7,13 @@ import pandas as pd
 
 import warnings, os
 
+def test_launch(tmpdir):
+    """
+    Test the launcher.
+    """
+
+    pass
+
 def test_read_previous_run_dir(run_directories):
 
     bad_inputs = [1,None,{"test":1},(),[]]

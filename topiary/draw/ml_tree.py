@@ -61,7 +61,8 @@ def ml_tree(run_dir,
     T = load_trees(prev_run_dir=run_dir,
                    tree_base_path="output",
                    tree_names=["tree.newick"],
-                   tree_fmt=[0])
+                   tree_fmt=[0],
+                   outgroup=prev_run["outgroup"])
 
     # If df not specified, get from the previous run
     if df is None:

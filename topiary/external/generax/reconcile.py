@@ -10,6 +10,7 @@ from topiary.external.interface import prep_calc, write_run_information
 
 from ._generax import setup_generax, run_generax, GENERAX_BINARY
 
+import ete3
 import numpy as np
 
 import os, glob, shutil
@@ -36,7 +37,6 @@ def reconcile(previous_dir=None,
     output: output directory. If not specified, create an output directory with
             form "generax_reconcilation_randomletters"
     overwrite: whether or not to overwrite existing output (default False)
-    threads: number of threads to use XXX
     generax_binary: what generax binary to use
     """
 
@@ -80,12 +80,21 @@ def reconcile(previous_dir=None,
     shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
                 os.path.join("output","tree.newick"))
 
+
+    # Get outgroups (e.g. leaves descending from each half after root)
+    reconcile_file = os.path.join("working","result","reconciliations","reconcile_events.newick")
+    reconcile_tree = ete3.Tree(reconcile_file,format=1)
+    root = reconcile_tree.get_tree_root()
+    root_children = root.get_children()
+    outgroup = [[n.name for n in r.get_leaves()] for r in root_children]
+
     # Write run information
     write_run_information(outdir=outdir,
                           df=df,
                           calc_type="reconciliation",
                           model=model,
-                          cmd=cmd)
+                          cmd=cmd,
+                          outgroup=outgroup)
 
     # Copy reconcilation information
     shutil.copytree(os.path.join("working","result","reconciliations"),

@@ -116,6 +116,7 @@ def prep_calc(previous_dir=None,
 
     # -------------------------------------------------------------------------
     # Load in information from the previous calculation
+
     previous = {}
     if previous_dir is not None:
         previous = read_previous_run_dir(previous_dir)
@@ -223,15 +224,21 @@ def prep_calc(previous_dir=None,
     df_file = os.path.join("input","dataframe.csv")
     topiary.write_dataframe(df,out_file=df_file)
 
-    out = {"df":df,
-           "csv_file":csv_file,
-           "tree_file":tree_file,
-           "model":model,
-           "alignment_file":alignment_file,
-           "previous_dir":previous_dir,
-           "starting_dir":starting_dir,
-           "output":output,
-           "other_files":final_files}
+    # Populate output with data pulled from previous run
+    out = {}
+    for k in previous:
+        out[k] = previous[k]
+
+    # Override with results of function parsing above.
+    out["df"] = df
+    out["csv_file"] = csv_file
+    out["tree_file"] = tree_file
+    out["model"] = model
+    out["alignment_file"] = alignment_file
+    out["previous_dir"] = previous_dir
+    out["starting_dir"] = starting_dir
+    out["output"] = output
+    out["other_files"] = final_files
 
     return out
 
@@ -358,7 +365,7 @@ def launch(cmd,run_directory,log_file=None):
     # Leave working directory
     os.chdir(cwd)
 
-def write_run_information(outdir,df,calc_type,model,cmd):
+def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
     """
     Write information from the run in a standard way.
 
@@ -369,6 +376,7 @@ def write_run_information(outdir,df,calc_type,model,cmd):
         calc_type: calculation type (string)
         model: model (string)
         cmd: command invoked to raxml or generax
+        outgroup: length 2 list with two sets of outgroups
 
     Return
     ------
@@ -382,7 +390,9 @@ def write_run_information(outdir,df,calc_type,model,cmd):
     out_dict = {"calc_type":calc_type,
                 "model":model,
                 "cmd":cmd,
-                "version":topiary.__version__}
+                "version":topiary.__version__,
+                "outgroup":outgroup}
+
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)
     f.close()

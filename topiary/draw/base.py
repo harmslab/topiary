@@ -162,7 +162,8 @@ class ColorMap:
 def load_trees(prev_run_dir,
                tree_base_path,
                tree_names,
-               tree_fmt=None):
+               tree_fmt=None,
+               outgroup=None):
     """
     Load trees and tree formatting information from a previous run directory.
 
@@ -203,7 +204,22 @@ def load_trees(prev_run_dir,
             err = f"\nCould not find tree file '{tree_path}'\n\n"
             raise FileNotFoundError(err)
 
-        T_list.append(topiary.io.read_tree(tree_path,fmt=tree_fmt[i]))
+        # read tree
+        T = topiary.io.read_tree(tree_path,fmt=tree_fmt[i])
+
+        # If outgroup specified
+        if outgroup is not None:
+
+            # Root tree. We have to try with both the left and right
+            # descendants of the previous root.
+            try:
+                common_anc = T.get_common_ancestor(outgroup[0])
+                T.set_outgroup(common_anc)
+            except ete3.coretype.tree.TreeError:
+                common_anc = T.get_common_ancestor(outgroup[1])
+                T.set_outgroup(common_anc)
+
+        T_list.append(T)
 
     if len(T_list) == 1:
         return T_list[0]
