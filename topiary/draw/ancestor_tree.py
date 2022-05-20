@@ -8,7 +8,7 @@ __date__ = "2022-05-19"
 import topiary
 from topiary.external.interface import read_previous_run_dir
 
-import os, re
+import os, re, copy
 
 from .base import load_trees, create_name_dict, setup_generic_tree_format, final_render
 import ete3
@@ -59,12 +59,12 @@ def ancestor_tree(run_dir,
 
     # Load the tree and relevant information from the ml_run_dir output
     # directory.
-    T1, T2 = load_trees(prev_run_dir=run_dir,
-                        tree_base_path=os.path.join("output","ancestors"),
-                        tree_names=["ancestors_label.newick",
-                                    "ancestors_pp.newick"],
-                        tree_fmt=[1,1],
-                        outgroup=prev_run["outgroup"])
+    T_label, T_pp = load_trees(prev_run_dir=run_dir,
+                               tree_base_path=os.path.join("output","ancestors"),
+                               tree_names=["ancestors_label.newick",
+                                           "ancestors_pp.newick"],
+                               tree_fmt=[1,1],
+                               outgroup=prev_run["outgroup"])
 
     # If df not specified, get from the previous run
     if df is None:
@@ -77,7 +77,7 @@ def ancestor_tree(run_dir,
 
     # Set up formats (color map for main nodes, tree format (ts) and generic
     # node format (ns)).
-    cm, ts, ns = setup_generic_tree_format(num_leaves=len(T1.get_leaves()),
+    cm, ts, ns = setup_generic_tree_format(num_leaves=len(T_label.get_leaves()),
                                            value_range=value_range,
                                            R=R,G=G,B=B,
                                            width=width,
@@ -87,36 +87,65 @@ def ancestor_tree(run_dir,
 
     circle_radius = circle_radius*width
 
-    # Traverse T1 and T2 simultaneously
-    T1_traversed = list(T1.traverse())
-    T2_traversed = list(T2.traverse())
-    for i in range(len(T1_traversed)):
+    # Grab the root from these trees. If the root as a posterior probability,
+    # the annotation shifted when we rooted the tree. Grab the annotation and
+    # put it on the inappropriately empty node that should have this annoation
+    label_root = T_label.get_tree_root()
+    pp_root = T_pp.get_tree_root()
+    if pp_root.name != "":
+        offset_root = (copy.deepcopy(label_root.name),copy.deepcopy(pp_root.name))
+    else:
+        offset_root = None
+
+    # Traverse posterior probability and label trees simultaneously
+    T_label_traversed = list(T_label.traverse())
+    T_pp_traversed = list(T_pp.traverse())
+    for i in range(len(T_label_traversed)):
 
         # Get T1 and T2 nodes (n and m)
-        n = T1_traversed[i]
-        m = T2_traversed[i]
+        n = T_label_traversed[i]
+        m = T_pp_traversed[i]
 
         # Set base style on node of T1
         n.set_style(ns)
 
+        # Do not draw anything for root on ancestral reconstruction tree
+        if n.is_root():
+            continue
+
         # If this is not a leaf
         if not n.is_leaf():
+
+            anc_name = n.name
+            pp = m.name
+
+            # If posterior probability is not defined for a node that is *not*
+            # the root...
+            if pp == "":
+
+                # If the root was mislabeled above, stick the label on this node
+                if offset_root is not None:
+                    print("here")
+                    anc_name = offset_root[0]
+                    pp = offset_root[1]
+                    offset_root = None
 
             if cm is not None:
 
                 try:
-                    v = float(m.name)
+                    v = float(pp)
                     rgb = cm.hex(v)
 
                     # Draw circles
                     node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
                     node_circle.margin_right=-circle_radius
                     n.add_face(node_circle,0,position="branch-right")
+
                 except ValueError:
                     pass
 
             # Ancestor labels
-            anc_label = ete3.TextFace(text=re.sub("anc","a",n.name),fsize=fontsize)
+            anc_label = ete3.TextFace(text=re.sub("anc","a",anc_name),fsize=fontsize)
             anc_label.inner_background.color = "white"
             anc_label.margin_right = 5
             anc_label.margin_top = 0
@@ -135,4 +164,4 @@ def ancestor_tree(run_dir,
             n.add_face(txt,0,position="branch-right")
 
 
-    return final_render(T1,ts,output_file,"ancestor-tree.pdf")
+    return final_render(T_label,ts,output_file,"ancestor-tree.pdf")
