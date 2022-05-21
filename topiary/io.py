@@ -22,7 +22,7 @@ import dendropy as dp
 
 from tqdm.auto import tqdm
 
-import re, string, random, io, copy, os, json
+import re, string, random, io, copy, os, json, glob
 
 def read_dataframe(input,remove_extra_index=True):
     """
@@ -455,23 +455,53 @@ def read_tree(tree,fmt=None):
 
     return t
 
-def ncbi_blast_xml_to_df(xml_files):
+def ncbi_blast_xml_to_df(xml_input):
     """
     Take a list of blast xml files and load in all sequences as a single
     topiary data frame. Parse meta data in an intelligent way, download
     sequences via entrez, and find unique taxonomic identifiers on the open
     tree of life.
 
-    xml_files: blast xml files to load. if a string, treat as a single xml file.
-               if a list, treat as a list of xml files.
+    xml_input: blast xml files to load. This can have a few formats:
+        1. single xml file
+        2. list of xml files
+        3. directory (grabs all files matching .xml in that directory)
 
-    returns a pandas data frame
+    returns a topiary data frame
     """
 
-    # If only one xml file is specified, convert it to a list (of one) xml
-    # file
-    if type(xml_files) is str:
-        xml_files = [xml_files]
+    if type(xml_input) is str:
+
+        # Looks like a file; treat as one
+        if os.path.isfile(xml_input):
+            xml_files = [xml_input]
+        else:
+            if os.path.isdir(xml_input):
+                xml_files = glob.glob(os.path.join(xml_input,"*.xml"))
+                xml_files.sort()
+
+                if len(xml_files) == 0:
+                    err = f"\nCould not parse xml_input. Tried to read xml_input\n"
+                    err += f"'{xml_input}' as a file, then as a directory with .xml\n"
+                    err += "files. No xml files found. Should be an xml file,\n"
+                    err += "list of xml files, or directory containing .xml files.\n\n"
+                    raise ValueError(err)
+
+    else:
+        xml_files = []
+        if hasattr(xml_input,"__iter__") and type(xml_input) is not type:
+            for x in xml_input:
+                if os.path.isfile(x):
+                    xml_files.append(x)
+                else:
+                    missing_files.append(x)
+                    err = f"\nxml file '{x}' not found\n"
+                    raise ValueError(err)
+        else:
+            err = f"\nCould not parse xml_input '{xml_input}'. Should be an xml\n"
+            err += "file, list of xml files, or directory containing .xml files.\n\n"
+            raise ValueError(err)
+
 
     # List to hold all hits and accession numbers to download
     all_hits = []

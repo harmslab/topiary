@@ -286,6 +286,7 @@ def check_topiary_dataframe(df):
 
         # Grab non-null alignment lines
         align_mask = np.logical_not(pd.isnull(df.alignment))
+        align_mask = np.logical_and(align_mask,df.keep)
 
         # Create matrix holding alignment, rows are sequences, columns are columns
         align_matrix = []
@@ -524,3 +525,4 @@ def create_nicknames(df,
     # column order so nickname is early and thus in a user-friendly place
 
     return check_topiary_dataframe(df)
+    

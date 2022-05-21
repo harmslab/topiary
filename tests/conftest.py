@@ -84,27 +84,43 @@ def run_directories():
 
     dir = os.path.dirname(os.path.realpath(__file__))
     base_dir = os.path.abspath(os.path.join(dir,"data","run-directories"))
-    run_dirs = os.listdir(base_dir)
+    files = os.listdir(base_dir)
 
     out_dict = {}
-    for k in run_dirs:
-        out_dict[k] = os.path.join(base_dir,k)
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
 
     return out_dict
 
 @pytest.fixture(scope="module")
 def programs():
     """
-    Dictionary holding paths pointing to previous run directories.
+    Dictionary holding paths pointing to programs to run.
     """
 
     dir = os.path.dirname(os.path.realpath(__file__))
     base_dir = os.path.abspath(os.path.join(dir,"data","programs"))
-    progs = os.listdir(base_dir)
+    files = os.listdir(base_dir)
 
     out_dict = {}
-    for k in progs:
-        out_dict[k] = os.path.join(base_dir,k)
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def xml():
+    """
+    Dictionary holding paths pointing to ncbi style xml files.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml"))
+    files = os.listdir(base_dir)
+
+    out_dict = {}
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
 
     return out_dict
 
