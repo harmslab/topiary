@@ -129,6 +129,107 @@ def write_dataframe(df,out_file,overwrite=False):
         df.to_excel(out_file,index=False)
 
 
+def _validate_seq_writer(df,
+                         out_file,
+                         seq_column,
+                         label_columns,
+                         write_only_keepers,
+                         empty_char,
+                         clean_sequence,
+                         overwrite):
+    """
+    Generic function for validating arguments used to validate sequences written
+    out to files (such as fasta or phy).
+
+    For argument parameter meanings, see write_fasta and write_phy.
+    """
+
+    df = topiary.util.check_topiary_dataframe(df)
+
+    # Validate output file
+    if type(out_file) is not str:
+        err = f"\n\nout_file '{out_file}' should be a string.\n"
+        raise ValueError(err)
+
+    # Make sure seq column is sane
+    try:
+        if type(seq_column) is dict:
+            raise TypeError
+        df.loc[:,seq_column]
+    except (KeyError,TypeError):
+        err = f"seq_column '{seq_column}' not found\n."
+        raise ValueError(err)
+
+    # Make sure label columns are sane
+    if hasattr(label_columns,"__iter__") and type(label_columns) is not type:
+        if type(label_columns) is str:
+            label_columns = [label_columns]
+    else:
+        err = "\nlabel_columns should be a list of column names in the\n"
+        err += "dataframe.\n\n"
+        raise ValueError(err)
+
+    # Make sure the label columns are in the dataframe
+    for c in label_columns:
+        try:
+            df[c]
+        except (KeyError,TypeError):
+            err = f"label_column '{c}' not recognized."
+            err += "Should be a a column name in the dataframe.\n"
+            raise ValueError(err)
+
+    # Make sure label columns has uid in the first position
+    try:
+        label_columns.remove("uid")
+    except ValueError:
+        pass
+    label_columns.insert(0,"uid")
+
+    # Validate write_only_keepers argument
+    try:
+        bool(int(write_only_keepers))
+    except (TypeError,ValueError):
+        err = f"\nwrite_only_keepers '{write_only_keepers}' not recognized.\n"
+        err += "Should be True or False.\n\n"
+        raise ValueError(err)
+
+    # Validate empty_char argument
+    if empty_char is None:
+        empty_char = []
+    else:
+        if type(empty_char) is not str:
+            err = f"\nempty_char '{empty_char}' not recognized. This should be\n"
+            err += "a string of characters\n\n"
+            raise ValueError(err)
+
+        empty_char = list(empty_char)
+
+    # Validate clean_sequence argument
+    try:
+        bool(int(clean_sequence))
+    except (TypeError,ValueError):
+        err = f"\nclean_sequence '{clean_sequence}' not recognized. Should be\n"
+        err += "True or False.\n\n"
+        raise ValueError(err)
+
+    # Validate overwrite argument
+    try:
+        bool(int(overwrite))
+    except (TypeError,ValueError):
+        err = f"\noverwrite '{overwrite}' not recognized. Should be\n"
+        err += "True or False.\n\n"
+        raise ValueError(err)
+
+    # Check for file existance if overwrite = False
+    if os.path.isfile(out_file):
+        if not overwrite:
+            err = f"\nout_file '{out_file}' already exists. To overwrite, set\n"
+            err += "overwrite = True.\n\n"
+            raise FileExistsError(err)
+
+    return df, label_columns, empty_char
+
+
 def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False,
                 overwrite=False):
@@ -143,7 +244,7 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         label_columns: list of columns to use for the label
         write_only_keepers: whether or not to write only seq with keep = True
         empty_char: empty char. if the sequence is only empty char, do not write
-                    out.
+                    out. To disable check, set empty_char=None.
         clean_sequence: replace any non-aa characters with "-"
         overwrite: whether or not to overwrite an existing file
 
@@ -152,35 +253,14 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         None. Writes to out_file
     """
 
-    df = topiary.util.check_topiary_dataframe(df)
-
-    # Validate output file
-    if type(out_file) is not str:
-        err = f"\n\nout_file '{out_file}' should be a string.\n"
-        raise ValueError(err)
-
-    # Make sure label columns are  sane
-    for c in label_columns:
-        try:
-            df[c]
-        except KeyError:
-            err = f"label_column '{c}' not recognized."
-            err += "Should be a a column name in the dataframe.\n"
-            raise ValueError(err)
-
-    # Make sure label columns has uid in the first position
-    try:
-        label_columns.remove("uid")
-    except ValueError:
-        pass
-    label_columns.insert(0,"uid")
-
-    # Make sure seq column is sane
-    try:
-        df[seq_column]
-    except KeyError:
-        err = f"seq_column '{seq_column}' not found\n."
-        raise ValueError(err)
+    df, label_columns, empty_char = _validate_seq_writer(df,
+                                                         out_file,
+                                                         seq_column,
+                                                         label_columns,
+                                                         write_only_keepers,
+                                                         empty_char,
+                                                         clean_sequence,
+                                                         overwrite)
 
     # Construct fasta output
     out = []
@@ -194,11 +274,11 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         # Create label for header
         h = []
         for c in label_columns:
-            h.append(row[c])
+            h.append(f"{row[c]}")
         h = "|".join(h)
 
         seq = row[seq_column]
-        is_empty = len([s for s in seq if s not in list(empty_char)]) == 0
+        is_empty = len([s for s in seq if s not in empty_char]) == 0
         if seq == "" or seq is None or is_empty:
             continue
 
@@ -208,18 +288,25 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
 
         out.append(f">{h}\n{seq}\n")
 
+    if len(out) == 0:
+        err = "\nNo sequences written out. Check your settings and the dataframe.\n\n"
+        raise RuntimeError(err)
+
     # Write output
     f = open(out_file,"w")
     f.write("".join(out))
     f.close()
 
-
-def write_phy(df,out_file,seq_column="sequence",
+def write_phy(df,
+              out_file,
+              seq_column="alignment",
               write_only_keepers=True,
               empty_char="X-?",
-              clean_sequence=False):
+              clean_sequence=False,
+              overwrite=False):
     """
-    Write out a .phy file using uid as keys.
+    Write out a .phy file using uid as keys. NOTE: all sequences must have
+    the same length.
 
     Parameters
     ----------
@@ -230,18 +317,23 @@ def write_phy(df,out_file,seq_column="sequence",
         empty_char: empty char. if the sequence is only empty char, do not write
                     out.
         clean_sequence: replace any non-aa characters with "-"
+        overwrite: whether or not to overwrite an existing file
 
     Return
     ------
         None. Writes to out_file
     """
 
-    # Make sure seq column is sane
-    try:
-        df[seq_column]
-    except KeyError:
-        err = f"seq_column '{seq_column}' not found\n."
-        raise ValueError(err)
+    label_columns = ["uid"]
+
+    df, label_columns, empty_char = _validate_seq_writer(df,
+                                                         out_file,
+                                                         seq_column,
+                                                         label_columns,
+                                                         write_only_keepers,
+                                                         empty_char,
+                                                         clean_sequence,
+                                                         overwrite)
 
     if write_only_keepers:
         num_to_write = np.sum(df.keep)
@@ -251,25 +343,33 @@ def write_phy(df,out_file,seq_column="sequence",
     all_lengths = []
     for i in range(len(df)):
         try:
+            # If this is not being kept, don't record
+            if write_only_keepers and np.logical_not(df.keep.iloc[i]):
+                raise TypeError
+
+            # If sequence is length 0 (or some other wacky non-len compatible
+            # input) don't record.
             l = len(df[seq_column].iloc[i])
             if l == 0:
                 raise TypeError
+
+            # Record length
             all_lengths.append(l)
         except TypeError:
             if not df.keep.iloc[i] and write_only_keepers:
                 pass
             else:
-                err = "\n\nRow does not have sequence\n\n"
+                err = "\nRow does not have sequence\n\n"
                 err += f"...{df.iloc[i]}\n"
                 raise ValueError(err)
 
     all_lengths = set(all_lengths)
     if len(all_lengths) == 0:
-        err = "\n\nno sequences found\n"
+        err = "\nno sequences found\n\n"
         raise ValueError(err)
 
     if len(all_lengths) != 1:
-        err = "\n\nnot all rows have the same alignment length\n\n"
+        err = "\nnot all rows have the same sequence length\n\n"
         raise ValueError(err)
 
     # Finally, get length of alignment
@@ -286,7 +386,7 @@ def write_phy(df,out_file,seq_column="sequence",
 
         h = row["uid"]
         seq = row[seq_column]
-        is_empty = len([s for s in seq if s not in list(empty_char)]) == 0
+        is_empty = len([s for s in seq if s not in empty_char]) == 0
         if seq == "" or seq is None or is_empty:
             num_to_write -= 1
             continue
@@ -296,6 +396,11 @@ def write_phy(df,out_file,seq_column="sequence",
             seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
 
         out.append(f"{h}\n{seq}\n")
+
+    if len(out) == 0:
+        err = "\nNo sequences written out. Check your settings and the dataframe.\n\n"
+        raise RuntimeError(err)
+
 
     out.insert(0,f"{num_to_write}  {ali_length}\n\n")
 
@@ -494,7 +599,6 @@ def ncbi_blast_xml_to_df(xml_input):
                 if os.path.isfile(x):
                     xml_files.append(x)
                 else:
-                    missing_files.append(x)
                     err = f"\nxml file '{x}' not found\n"
                     raise ValueError(err)
         else:
@@ -604,3 +708,25 @@ def ncbi_blast_xml_to_df(xml_input):
     df = util.check_topiary_dataframe(df)
 
     return df
+
+
+def fasta_to_df(fasta_input):
+
+    # TRY NCBI, TRY UNIPROT,
+    # Look for OS= OR
+
+    # Try to parse with uniprot
+    # Try to parse with ncbi
+
+    # UNIPROT
+    #>db|UniqueIdentifier|EntryName ProteinName OS=OrganismName OX=OrganismIdentifier \
+    #   [GN=GeneName ]PE=ProteinExistence SV=SequenceVersion
+    # cols = line[1:].split("|")
+    # db = cols[0]
+    # accession = col1[1]
+    # entry = col[1]
+    # pattern = re.compile("..=")
+    # for field in pattern.split(entry):
+    #     print(field)
+
+    pass

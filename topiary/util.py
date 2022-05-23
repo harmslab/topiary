@@ -288,42 +288,45 @@ def check_topiary_dataframe(df):
         align_mask = np.logical_not(pd.isnull(df.alignment))
         align_mask = np.logical_and(align_mask,df.keep)
 
-        # Create matrix holding alignment, rows are sequences, columns are columns
-        align_matrix = []
-        for row in df.alignment[align_mask]:
-            align_matrix.append(list(row))
+        # Make sure alignment column has at least one kept row
+        if len(align_mask) > 0 and np.sum(align_mask) > 0:
 
-        # Make sure all alignment rows are the same length
-        unique_row_length = set([len(row) for row in align_matrix])
-        if len(unique_row_length) != 1:
-            err = "\nAll sequences in the 'alignment' column must have the\n"
-            err += "same length\n\n"
-            raise ValueError(err)
+            # Create matrix holding alignment, rows are sequences, columns are columns
+            align_matrix = []
+            for row in df.alignment[align_mask]:
+                align_matrix.append(list(row))
 
-        # Convert to a matrix
-        align_matrix = np.array(align_matrix)
+            # Make sure all alignment rows are the same length
+            unique_row_length = set([len(row) for row in align_matrix])
+            if len(unique_row_length) != 1:
+                err = "\nAll sequences in the 'alignment' column must have the\n"
+                err += "same length\n\n"
+                raise ValueError(err)
 
-        # Create mask for good columns -- columns with more than just "-"
-        good_column_mask = []
-        for i in range(align_matrix.shape[1]):
-            u = np.unique(align_matrix[:,i])
-            if len(u) == 1 and u[0] == "-":
-                good_column_mask.append(False)
-            else:
-                good_column_mask.append(True)
+            # Convert to a matrix
+            align_matrix = np.array(align_matrix)
 
-        good_column_mask = np.array(good_column_mask,dtype=bool)
+            # Create mask for good columns -- columns with more than just "-"
+            good_column_mask = []
+            for i in range(align_matrix.shape[1]):
+                u = np.unique(align_matrix[:,i])
+                if len(u) == 1 and u[0] == "-":
+                    good_column_mask.append(False)
+                else:
+                    good_column_mask.append(True)
 
-        # Whack out columns that are only "-"
-        align_matrix = align_matrix[:,good_column_mask]
+            good_column_mask = np.array(good_column_mask,dtype=bool)
 
-        # Convert alignment matrix back to an array of strings
-        new_align = []
-        for i in range(align_matrix.shape[0]):
-            new_align.append("".join(align_matrix[i,:]))
+            # Whack out columns that are only "-"
+            align_matrix = align_matrix[:,good_column_mask]
 
-        # Store in dataframe
-        df.loc[align_mask,"alignment"] = new_align
+            # Convert alignment matrix back to an array of strings
+            new_align = []
+            for i in range(align_matrix.shape[0]):
+                new_align.append("".join(align_matrix[i,:]))
+
+            # Store in dataframe
+            df.loc[align_mask,"alignment"] = new_align
 
     # -------------------------------------------------------------------------
     # Make sure columns have order nickname, keep, species, name, sequence
@@ -525,4 +528,3 @@ def create_nicknames(df,
     # column order so nickname is early and thus in a user-friendly place
 
     return check_topiary_dataframe(df)
-    
