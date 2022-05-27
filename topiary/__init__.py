@@ -3,6 +3,7 @@
 from . import util
 from . import draw
 from . import _private
+from . import _arg_processors
 
 from .external import generax
 from .external import ncbi
@@ -11,7 +12,7 @@ from .external import opentree
 from .external import raxml
 
 # Core functions for pipeline
-from .redundancy import remove_redundancy
+from .quality import remove_redundancy, clean_alignment
 from .util import create_nicknames
 from .external import get_ott_id, get_species_tree
 from .external import reverse_blast

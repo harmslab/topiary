@@ -5,7 +5,7 @@ __description__ = \
 Reverse blast sequence datasets.
 """
 
-from topiary import util
+from topiary import _arg_processors
 
 from .local_blast import local_blast
 from .ncbi_blast import ncbi_blast
@@ -42,7 +42,8 @@ def _prepare_for_blast(df,
         err = "\nignorecase must be True or False\n\n"
         raise ValueError(err)
 
-    patterns = util._compile_paralog_patterns(paralog_patterns,ignorecase=ignorecase)
+    patterns = _arg_processors.process_paralog_patterns(paralog_patterns,
+                                                        ignorecase=ignorecase)
     if len(patterns) == 0:
         err = "\nparalog_patterns must have at least one entry\n"
         raise ValueError(err)
@@ -86,7 +87,7 @@ def _prepare_for_blast(df,
         raise ValueError(err)
 
     # Make sure dataframe is a topiary dataframe
-    df = util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
 
     # Create list of all sequences in dataframe
     sequence_list = []
@@ -353,13 +354,14 @@ def reverse_blast(df,
     """
     Take sequences from a topiary dataframe and do a reverse blast analysis
     against an NCBI or local blast database. Looks in blast hits for the
-    regular expressions defined in call_dict to call paralog for each sequence
-    in df. Returns a copy of the input topiary dataframe with five new columns:
+    regular expressions defined in paralog_patterns to call paralog for each
+    sequence in df. Returns a copy of the input topiary dataframe with five new
+    columns:
 
         reverse_found_paralog: True/False, whether a paralog was found
         reverse_hit: string, description for paralog hit (if found) or best hit
                      (if no match found)
-        reverse_paralog: string or None. name of paralog from call_dict
+        reverse_paralog: string or None. name of paralog from paralog_patterns
         reverse_prob_match: float. probability that this is the correct paralog
                             call based on relative evalues of all paralog hits
         reverse_del_best: float. how much worse paralog call is than the best

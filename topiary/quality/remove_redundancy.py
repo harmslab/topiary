@@ -1,11 +1,11 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 __description__ = \
 """
 Remove redundancy for datasets in a semi-intelligent way.
 """
+__author__ = "Michael J. Harms"
+__date__ = "2021-04-08"
 
-from topiary import util
+from topiary import _arg_processors
 
 import pandas as pd
 import numpy as np
@@ -136,8 +136,12 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     key_species = dict([(k,None) for k in key_species])
 
     # This will hold output
-    df = util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
     new_df = df.copy()
+
+    cutoff = _arg_processors.process_float(cutoff,"cutoff")
+    
+
 
     starting_keep_number = np.sum(new_df.keep)
 

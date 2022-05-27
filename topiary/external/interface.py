@@ -146,7 +146,7 @@ def prep_calc(previous_dir=None,
 
         # Read dataframe
         if type(df) is pd.DataFrame:
-            df = topiary.util.check_topiary_dataframe(df)
+            df = topiary._arg_processors.process_topiary_dataframe(df)
 
         # Read csv
         elif type(df) is str:

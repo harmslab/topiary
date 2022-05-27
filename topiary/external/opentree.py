@@ -1,4 +1,5 @@
 import topiary
+from topiary import _arg_processors
 
 from opentree import OT, taxonomy_helpers
 import dendropy as dp
@@ -51,7 +52,7 @@ def get_ott_id(df,
     """
 
     # Make sure this is a topiary dataframe
-    df = topiary.util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
 
     # Make sure the phylo_context can be recognized by the by OT
     allowed_context = OT.tnrs_contexts().response_dict
@@ -272,7 +273,7 @@ def get_species_tree(df):
     """
 
     # Make sure this is a clean topiary dataframe
-    df = topiary.util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
 
     # Only get keep = True
     df = df.loc[df.keep,:].copy()

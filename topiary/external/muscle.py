@@ -6,6 +6,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2022-05-02"
 
 import topiary
+from topiary import _arg_processors
 import pandas as pd
 import subprocess, sys, os, random, string
 
@@ -68,7 +69,7 @@ def run_muscle(input,
     elif type(input) is pd.DataFrame:
 
         # Check the dataframe
-        df = topiary.util.check_topiary_dataframe(input)
+        df = _arg_processors.process_topiary_dataframe(input)
 
         # Create temporary input file
         tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])

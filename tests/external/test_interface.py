@@ -86,4 +86,4 @@ def test_read_previous_run_dir(run_directories):
         except KeyError:
             pass
         # This will throw an error if the dataframe read is bad
-        topiary.util.check_topiary_dataframe(out["df"])
+        topiary._arg_processors.process_topiary_dataframe(out["df"])

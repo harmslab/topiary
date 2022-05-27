@@ -6,10 +6,10 @@ Input/output functions for topiary.
 """
 
 import topiary
+from topiary import _arg_processors, _private
+
 
 from . import ncbi
-from . import util
-from . import _private
 from . import opentree
 
 import pandas as pd
@@ -79,7 +79,7 @@ def read_dataframe(input,remove_extra_index=True):
                     df = df.drop(columns=[df.columns[0]])
 
     # Validate the dataframe
-    df = util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
 
     return df
 
@@ -101,7 +101,7 @@ def write_dataframe(df,out_file,overwrite=False):
     """
 
     # Validate dataframe before writing out
-    df = topiary.util.check_topiary_dataframe(df)
+    df = topiary._arg_processors.process_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
@@ -144,7 +144,7 @@ def _validate_seq_writer(df,
     For argument parameter meanings, see write_fasta and write_phy.
     """
 
-    df = topiary.util.check_topiary_dataframe(df)
+    df = topiary._arg_processors.process_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
@@ -422,7 +422,7 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     """
 
     # Create data frame and make sure it has the column in which to load
-    new_df = util.check_topiary_dataframe(df)
+    new_df = _arg_processors.process_topiary_dataframe(df)
     try:
         new_df[load_into_column]
     except KeyError:
@@ -476,7 +476,7 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
                 new_df.loc[i,load_into_column] = pd.NA
 
     # Return dataframe with final sanity check to make sure uid stayed unique
-    return util.check_topiary_dataframe(new_df)
+    return _arg_processors.process_topiary_dataframe(new_df)
 
 def read_tree(tree,fmt=None):
     """
@@ -705,7 +705,7 @@ def ncbi_blast_xml_to_df(xml_input):
         out["keep"].append(True)
 
     df = pd.DataFrame(out)
-    df = util.check_topiary_dataframe(df)
+    df = _arg_processors.process_topiary_dataframe(df)
 
     return df
 

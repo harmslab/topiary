@@ -5,6 +5,10 @@ required_columns = ["species","name","sequence"]
 reserved_columns = required_columns[:]
 reserved_columns.extend(["uid","ott","alignment"])
 
+# Data going into a newick tree can't have any of these symbols. We also reserve
+# the '#' character for comments.
+reserved_characters = ["(",")",";","#",":",",","'","\""]
+
 def generate_uid(number=1):
     """
     Generate a unique uid. This will be a 10 character random combination of
