@@ -94,81 +94,152 @@ def test_check_topiary_dataframe(test_dataframes):
     assert input_df["alignment"].iloc[-1] == "MLPFLFF-TL"
     assert checked_df["alignment"].iloc[-1] == "MLPFLFFTL"
 
+def test__compile_paralog_patterns():
+
+    # Send in bad paralog_patterns data types (should be dict)
+    bad_inputs = [1,-1,1.5,False,pd.DataFrame]
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            patterns = util._compile_paralog_patterns(paralog_patterns=b)
+
+    # Send bad paralog_patterns keys (should be bad)
+    bad_inputs = [(1,2),-1,False]
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            patterns = util._compile_paralog_patterns(paralog_patterns=b)
+
+    # Send bad paralog_patterns values
+    bad_inputs = [(1,2),-1,False]
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            patterns = util._compile_paralog_patterns(paralog_patterns=b)
+
+    # Various paralog_patterns calls hould work
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":"this"})
+    assert len(patterns) == 1
+    assert patterns[0][0].search("string matches this") is not None
+    assert patterns[0][0].search("string does not match") is None
+    assert patterns[0][1] == "test"
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":["this","other"]})
+    assert len(patterns) == 1
+    assert patterns[0][0].search("string matches this") is not None
+    assert patterns[0][0].search("string matches other") is not None
+    assert patterns[0][0].search("string does not match") is None
+    assert patterns[0][1] == "test"
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":("this","other")})
+    assert len(patterns) == 1
+    assert patterns[0][0].search("string matches this") is not None
+    assert patterns[0][0].search("string matches other") is not None
+    assert patterns[0][0].search("string does not match") is None
+    assert patterns[0][1] == "test"
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":(re.compile("this"),"other")})
+    assert len(patterns) == 1
+    assert patterns[0][0].search("string matches this") is not None
+    assert patterns[0][0].search("string matches other") is not None
+    assert patterns[0][0].search("string does not match") is None
+    assert patterns[0][1] == "test"
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":"this",
+                                                                "thing":"other"})
+    assert len(patterns) == 2
+    assert patterns[0][0].search("string matches this") is not None
+    assert patterns[0][0].search("string matches other") is None
+    assert patterns[0][1] == "test"
+    assert patterns[1][0].search("string matches other") is not None
+    assert patterns[1][0].search("string does not match") is None
+    assert patterns[1][1] == "thing"
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":"this"})
+    assert patterns[0][0].flags == re.compile("a",flags=re.IGNORECASE).flags
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":"this"},
+                                              ignorecase=True)
+    assert patterns[0][0].flags == re.compile("a",flags=re.IGNORECASE).flags
+
+    patterns = util._compile_paralog_patterns(paralog_patterns={"test":"this"},
+                                              ignorecase=False)
+    assert patterns[0][0].flags == re.compile("a").flags
+
 
 def test_create_nicknames(test_dataframes):
 
     df = test_dataframes["good-df"]
 
     # Make sure it runs on a copy
-    out_df = util.create_nicknames(df,aliases={})
+    out_df = util.create_nicknames(df,paralog_patterns={})
     assert out_df is not df
 
     # Check source column check
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={},source_column="not_a_column")
+        out_df = util.create_nicknames(df,paralog_patterns={},source_column="not_a_column")
 
     # Check trying to overwrite reserved column
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={},output_column="ott")
+        out_df = util.create_nicknames(df,paralog_patterns={},output_column="ott")
 
     # Check trying to overwrite reserved column -- should still throw error
     # even if we try to force overwrite
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={},output_column="ott",overwrite_output=True)
+        out_df = util.create_nicknames(df,paralog_patterns={},output_column="ott",overwrite_output=True)
 
     # Throw error to avoid overwrite
     with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={},output_column="isoform")
+        out_df = util.create_nicknames(df,paralog_patterns={},output_column="isoform")
 
     # Force overwrite
-    out_df = util.create_nicknames(df,aliases={},output_column="isoform",overwrite_output=True)
+    out_df = util.create_nicknames(df,paralog_patterns={},output_column="isoform",overwrite_output=True)
 
-    # Send in bad alias separator (should be string)
+    # Send in bad paralog_patterns separator (should be string)
     bad_inputs = [1,-1,1.5,False,pd.DataFrame]
     for b in bad_inputs:
         with pytest.raises(ValueError):
-            out_df = util.create_nicknames(df,aliases={},separator=b)
+            out_df = util.create_nicknames(df,paralog_patterns={},separator=b)
 
     # Should work without error
-    out_df = util.create_nicknames(df,aliases={},separator="a string")
+    out_df = util.create_nicknames(df,paralog_patterns={},separator="a string")
 
     # Send in bad unassigned  (should be string)
     bad_inputs = [1,-1,1.5,False,pd.DataFrame]
     for b in bad_inputs:
         with pytest.raises(ValueError):
-            out_df = util.create_nicknames(df,aliases={},unassigned_name=b)
+            out_df = util.create_nicknames(df,paralog_patterns={},unassigned_name=b)
 
     # Should work without error
-    out_df = util.create_nicknames(df,aliases={},unassigned_name="a string")
+    out_df = util.create_nicknames(df,paralog_patterns={},unassigned_name="a string")
 
-    # Send in bad alias data types (should be dict)
+    # Send in bad paralog_patterns data types (should be dict)
     bad_inputs = [1,-1,1.5,False,pd.DataFrame]
     for b in bad_inputs:
         with pytest.raises(ValueError):
-            out_df = util.create_nicknames(df,aliases=b)
+            out_df = util.create_nicknames(df,paralog_patterns=b)
 
-    # Send bad aliases keys (should be bad)
+    # Send bad paralog_patterns keys (should be bad)
     bad_inputs = [(1,2),-1,False]
-    with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={b:"test"})
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            out_df = util.create_nicknames(df,paralog_patterns={b:"test"})
 
-    # Send bad aliases values
+    # Send bad paralog_patterns values
     bad_inputs = [(1,2),-1,False]
-    with pytest.raises(ValueError):
-        out_df = util.create_nicknames(df,aliases={"test":["this",b]})
+    for b in bad_inputs:
+        with pytest.raises(ValueError):
+            out_df = util.create_nicknames(df,paralog_patterns={"test":["this",b]})
 
-    # Various alias calls hould work
-    out_df = util.create_nicknames(df,aliases={"test":"this"})
-    out_df = util.create_nicknames(df,aliases={"test":["this","this"]})
-    out_df = util.create_nicknames(df,aliases={"test":("this","this")})
-    out_df = util.create_nicknames(df,aliases={"test":(re.compile("this"),"this")})
+    # Various paralog_patterns calls hould work
+    out_df = util.create_nicknames(df,paralog_patterns={"test":"this"})
+    out_df = util.create_nicknames(df,paralog_patterns={"test":["this","this"]})
+    out_df = util.create_nicknames(df,paralog_patterns={"test":("this","this")})
+    out_df = util.create_nicknames(df,paralog_patterns={"test":(re.compile("this"),"this")})
 
     # Check to make nicknaming is doing what we expect
     test_df = df.copy()
     test_df.loc[:,"name"] = ["rocking","out","in","the","usa"]
-    aliases = {"fixed":("rock","out"),
-               "junk":("the",re.compile("usa"))}
-    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
+    paralog_patterns = {"fixed":("rock","out"),
+                        "junk":("the",re.compile("usa"))}
+    out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),
                           np.array(["fixed","fixed","unassigned","junk","junk"]))
@@ -177,9 +248,9 @@ def test_create_nicknames(test_dataframes):
     # interesting regular expressions
     test_df = df.copy()
     test_df.loc[:,"name"] = ["|rocking","rock","\in","the","usa"]
-    aliases = {"fixed":("|rock","out"),
-               "junk":("the",re.compile("us."))}
-    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
+    paralog_patterns = {"fixed":("|rock","out"),
+                        "junk":("the",re.compile("us."))}
+    out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),
                           np.array(["fixed","unassigned","unassigned","junk","junk"]))
@@ -188,9 +259,9 @@ def test_create_nicknames(test_dataframes):
     # defaults to True)
     test_df = df.copy()
     test_df.loc[:,"name"] = ["rocking","OUT","in","the","usa"]
-    aliases = {"fixed":("rock","out"),
-               "junk":("the","usa")}
-    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases)
+    paralog_patterns = {"fixed":("rock","out"),
+                        "junk":("the","usa")}
+    out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),
                           np.array(["fixed","fixed","unassigned","junk","junk"]))
@@ -199,9 +270,9 @@ def test_create_nicknames(test_dataframes):
     # because ignorecase is False
     test_df = df.copy()
     test_df.loc[:,"name"] = ["rocking","OUT","in","the","usa"]
-    aliases = {"fixed":("rock","out"),
-               "junk":("the","usa")}
-    out_df = util.create_nicknames(test_df,output_column="test1",aliases=aliases,
+    paralog_patterns = {"fixed":("rock","out"),
+                        "junk":("the","usa")}
+    out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns,
                                    ignorecase=False)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),
@@ -209,6 +280,6 @@ def test_create_nicknames(test_dataframes):
 
     # Make sure we can control the source column
     test_df = df.copy()
-    aliases = {"froggy":"Hylobates"}
-    out_df = util.create_nicknames(test_df,source_column="species",aliases=aliases)
+    paralog_patterns = {"froggy":"Hylobates"}
+    out_df = util.create_nicknames(test_df,source_column="species",paralog_patterns=paralog_patterns)
     assert out_df["nickname"].iloc[0] == "froggy"

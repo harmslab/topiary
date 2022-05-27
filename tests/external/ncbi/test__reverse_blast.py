@@ -14,31 +14,31 @@ def test__prepare_for_blast(test_dataframes):
                                                _rb._prepare_for_blast)
 
     df = test_dataframes["good-df"]
-    call_dict = {"LY96":["lymphocyte antigen 96","esop1"],
-                 "LY86":re.compile("lymphocyte antigen 86")}
+    paralog_patterns = {"LY96":["lymphocyte antigen 96","esop1"],
+                        "LY86":re.compile("lymphocyte antigen 86")}
 
     kwargs = copy.deepcopy(default_kwargs)
 
     # Should fail, no blast db specified
     with pytest.raises(ValueError):
-        out = _rb._prepare_for_blast(df,call_dict,**kwargs)
+        out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should work (one blast db specified)
     kwargs["local_rev_blast_db"] = "local"
-    out = _rb._prepare_for_blast(df,call_dict,**kwargs)
+    out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should fail (two blast db specified)
     kwargs["ncbi_rev_blast_db"] = "nr"
     with pytest.raises(ValueError):
-        out = _rb._prepare_for_blast(df,call_dict,**kwargs)
+        out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should work (one blast db specified)
     kwargs["local_rev_blast_db"] = None
-    out = _rb._prepare_for_blast(df,call_dict,**kwargs)
+    out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Now hack default kwargs so it should run without modification
     default_kwargs["df"] = df.copy()
-    default_kwargs["call_dict"] = copy.deepcopy(call_dict)
+    default_kwargs["paralog_patterns"] = copy.deepcopy(paralog_patterns)
     default_kwargs["local_rev_blast_db"] = "local"
 
     # Now start tests for each argument
@@ -62,31 +62,31 @@ def test__prepare_for_blast(test_dataframes):
             out = _rb._prepare_for_blast(**kwargs)
 
     # ------------------------------------------------------------------------
-    # call_dict
+    # paralog_patterns
 
     kwargs = copy.deepcopy(default_kwargs)
     out = _rb._prepare_for_blast(**kwargs)
 
     # Make sure it's compiling regular expressions as expected
     patterns = out[2]
-    expected_re = [("|".join([re.escape(x) for x in call_dict["LY96"]]),"LY96"),
-                   (call_dict["LY86"].pattern,"LY86")]
+    expected_re = [("|".join([re.escape(x) for x in paralog_patterns["LY96"]]),"LY96"),
+                   (paralog_patterns["LY86"].pattern,"LY86")]
     for i, p in enumerate(patterns):
         assert p[0].pattern == expected_re[i][0]
         assert p[1] == expected_re[i][1]
 
-    # Dump call_dict so we can jam in different ones
-    kwargs.pop("call_dict")
+    # Dump paralog_patterns so we can jam in different ones
+    kwargs.pop("paralog_patterns")
 
     # Send in same pattern four equivalent ways and make sure it
     # ends up the same
-    out = _rb._prepare_for_blast(call_dict={"stupid":"1"},**kwargs)
+    out = _rb._prepare_for_blast(paralog_patterns={"stupid":"1"},**kwargs)
     patterns1 = out[2]
-    out = _rb._prepare_for_blast(call_dict={"stupid":["1"]},**kwargs)
+    out = _rb._prepare_for_blast(paralog_patterns={"stupid":["1"]},**kwargs)
     patterns2 = out[2]
-    out = _rb._prepare_for_blast(call_dict={"stupid":re.compile("1")},**kwargs)
+    out = _rb._prepare_for_blast(paralog_patterns={"stupid":re.compile("1")},**kwargs)
     patterns3 = out[2]
-    out = _rb._prepare_for_blast(call_dict={"stupid":[re.compile("1")]},**kwargs)
+    out = _rb._prepare_for_blast(paralog_patterns={"stupid":[re.compile("1")]},**kwargs)
     patterns4 = out[2]
 
     pattern_list = [patterns1,patterns2,patterns3,patterns4]
@@ -97,35 +97,36 @@ def test__prepare_for_blast(test_dataframes):
             assert pattern_list[i][0][1] == pattern_list[j][0][1]
             assert pattern_list[i][0][0].pattern == pattern_list[j][0][0].pattern
 
-    # Send in all sorts of combinations of good call_dicts and make sure
+    # Send in all sorts of combinations of good paralog_patterns and make sure
     # it doesn't choke
-    good_call_dicts = [{},
-                       {"stupid":[]},
-                       {"stupid":[],"is":[]},
-                       {"stupid":"a","is":[]},
-                       {"stupid":"a","is":"b"},
-                       {"stupid":["a"],"is":"b"},
-                       {"stupid":["a"],"is":["b"]},
-                       {"stupid":("a",),"is":("b","c")},
-                       {"stupid":re.compile("a"),"is":"b"},
-                       {"stupid":re.compile("a"),"is":re.compile("b")},
-                       {"stupid":[re.compile("a")],"is":[re.compile("b")]}]
-    for g in good_call_dicts:
-        out = _rb._prepare_for_blast(call_dict=g,**kwargs)
+    good_paralog_patterns = [{"stupid":"a","is":"b"},
+                             {"stupid":["a"],"is":"b"},
+                             {"stupid":["a"],"is":["b"]},
+                             {"stupid":("a",),"is":("b","c")},
+                             {"stupid":re.compile("a"),"is":"b"},
+                             {"stupid":re.compile("a"),"is":re.compile("b")},
+                             {"stupid":[re.compile("a")],"is":[re.compile("b")]}]
+    for g in good_paralog_patterns:
+        out = _rb._prepare_for_blast(paralog_patterns=g,**kwargs)
 
     # Stupid things to pass in
-    bad_call_dicts = [None,[],dict,pd.DataFrame({"test":[1,2,3]}),1,0,-1]
-    for b in bad_call_dicts:
+    bad_paralog_patterns = [{},
+                      {"stupid":[]},
+                      {"stupid":[],"is":[]},
+                      {"stupid":"a","is":[]},
+                      None,[],dict,pd.DataFrame({"test":[1,2,3]}),1,0,-1]
+    for b in bad_paralog_patterns:
+        print(f"passing {b} to _prepare_for_reverse_blast")
         with pytest.raises(ValueError):
-            out = _rb._prepare_for_blast(call_dict=b,**kwargs)
+            out = _rb._prepare_for_blast(paralog_patterns=b,**kwargs)
 
     # Slightly mangled things to pass in
-    bad_call_dicts = [{1:["pattern"]},
-                      {("1","2"):["pattern"]},
-                      {"1":1}]
-    for b in bad_call_dicts:
+    bad_paralog_patterns = [{1:["pattern"]},
+                            {("1","2"):["pattern"]},
+                            {"1":1}]
+    for b in bad_paralog_patterns:
         with pytest.raises(ValueError):
-            out = _rb._prepare_for_blast(call_dict=b,**kwargs)
+            out = _rb._prepare_for_blast(paralog_patterns=b,**kwargs)
 
     # ------------------------------------------------------------------------
     # local_rev_blast_db and ncbi_rev_blast_db already tested above
@@ -260,12 +261,12 @@ def test__make_reverse_blast_calls(test_dataframes,reverse_blast_hit_dfs):
                                             _rb._prepare_for_blast)
 
     df = test_dataframes["good-df"]
-    call_dict = {"LY96":["lymphocyte antigen 96","esop1"],
-                 "LY86":re.compile("lymphocyte antigen 86")}
+    paralog_patterns = {"LY96":["lymphocyte antigen 96","esop1"],
+                        "LY86":re.compile("lymphocyte antigen 86")}
 
     # Should work (one blast db specified, doesn't actually change output)
     prep_kwargs["local_rev_blast_db"] = "local"
-    prep_out = _rb._prepare_for_blast(df,call_dict,**prep_kwargs)
+    prep_out = _rb._prepare_for_blast(df,paralog_patterns,**prep_kwargs)
 
     # Okay, output from _prepare_for_blast
     df, sequence_list, patterns, max_del_best, min_call_prob = prep_out

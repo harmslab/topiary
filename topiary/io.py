@@ -284,7 +284,7 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
 
         # Replace non-aa characters with '-'
         if clean_sequence:
-            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWY-]","-",seq)
 
         out.append(f">{h}\n{seq}\n")
 
@@ -393,7 +393,7 @@ def write_phy(df,
 
         # Replace non-aa characters with '-'
         if clean_sequence:
-            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWYZ-]","-",seq)
+            seq = re.sub("[^ACDEFGHIKLMNPQRSTVWY-]","-",seq)
 
         out.append(f"{h}\n{seq}\n")
 

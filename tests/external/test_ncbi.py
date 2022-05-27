@@ -16,7 +16,7 @@
 #     #
 #
 # def test_parse_ncbi_line():
-#     #line,accession=None,aliases=None):
+#     #line,accession=None,paralog_patterns=None):
 #     pass
 #
 # def test__entrez_download_thread():
