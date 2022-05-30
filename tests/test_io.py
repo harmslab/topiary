@@ -212,6 +212,7 @@ def test_write_fasta(test_dataframes,tmpdir):
 
     to_clean_df = df.copy()
     to_clean_df.loc[:,"sequence"] = "STUPIDX?STUPID"
+    to_clean_df.loc[:,"length"] = len("STUPIDX?STUPID")
     io.write_fasta(to_clean_df,out_file=out_file,clean_sequence=True)
     f = open(out_file)
     lines = f.readlines()

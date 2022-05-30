@@ -91,3 +91,9 @@ def test_check_topiary_dataframe(test_dataframes):
     assert checked_df["alignment"].iloc[0] == "MLPFLFF--"
     assert input_df["alignment"].iloc[-1] == "MLPFLFF-TL"
     assert checked_df["alignment"].iloc[-1] == "MLPFLFFTL"
+
+    # Check length column bit
+    good_df = test_dataframes["good-df"].copy()
+    hacked_df = good_df.drop(columns=["length"])
+    df = process_topiary_dataframe(hacked_df)
+    assert np.array_equal(good_df["length"],df["length"])
