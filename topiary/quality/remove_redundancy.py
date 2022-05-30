@@ -22,6 +22,18 @@ _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
                      "length"]
 _LENGTH_COLUMN = -1
 
+class DummyTqdm():
+    def __init__(self):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, type, value, traceback):
+        pass
+
+    def update(self,value):
+        pass
+
+
 def _get_quality_scores(row,key_species={}):
     """
     Get stats in order of importance (see remove_redundancy doc string).
@@ -117,7 +129,7 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
             return False, True
 
 
-def remove_redundancy(df,cutoff=0.95,key_species=[]):
+def remove_redundancy(df,cutoff=0.95,key_species=[],status_bar=True):
     """
     De-duplicate sequences according to cutoff and semi-intelligent heuristic
     criteria.
@@ -152,6 +164,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                                                "key_species",
                                                required_value_type=str,
                                                is_not_type=[str,dict])
+    status_bar = _arg_processors.process_bool(status_bar,"status_bar")
 
     # Encode key species as a dictionary for fast look up
     key_species = dict([(k,None) for k in key_species])
@@ -207,7 +220,13 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
         print("Removing redundant sequences within species.",flush=True)
 
-        with tqdm(total=total_calcs) as pbar:
+        # If a status bar is requested, make one. Otherwise, use dummy version
+        if status_bar:
+            status = tqdm(total=total_calcs)
+        else:
+            status = DummyTqdm()
+
+        with status as pbar:
 
             for s in unique_species:
 
@@ -263,9 +282,16 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     total_calcs = N*(N-1)//2
 
     if total_calcs > 0:
+
         print("Removing redundant sequences, all-on-all.",flush=True)
 
-        with tqdm(total=total_calcs) as pbar:
+        # If a status bar is requested, make one. Otherwise, use dummy version
+        if status_bar:
+            status = tqdm(total=total_calcs)
+        else:
+            status = DummyTqdm()
+
+        with status as pbar:
 
             counter = 1
             for x in range(len(df)):
@@ -317,21 +343,126 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
     return df
 
-def find_cutoff(df,min_cutoff=0.85,target_number=500,sample_size=100):
+def find_cutoff(df,
+                min_cutoff=0.85,
+                max_cutoff=0.99,
+                try_n_values=5,
+                target_number=500,
+                sample_size=100,
+                key_species=[]):
+    """
+    Find an identity cutoff that yields approximately target_number sequences.
 
-    pass
+    Parameters
+    ----------
+        min_cutoff: minimum identity cutoff to use
+        max_cutoff: maximum identity cutoff to use
+        try_n_values: try this many different cutoffs between min and max cutoff
+        target_number: find a cutoff that gets approximately this number of
+                       sequences
+        sample_size: grab this number of sequences from the dataframe to find
+                     the cutoff
+        key_species: key species to pass to remove_redundancy
 
-    # # Make sure sample size is sane
-    # if sample_size > len(df.index):
-    #     sample_size = len(df.index)
-    #
-    # # Create reduced dataframe to play with
-    # to_take = np.random.choice(df.index,sample_size,replace=False)
-    # small_df = df.loc[to_take,:]
-    #
-    # intermediate = (0.99 - min_cutoff)/2 + min_cutoff
-    # cutoff_list = [min_cutoff,intermediate,0.99]
-    # for c in cutoff_list:
-    #     lower_df = remove_redundancy(small_df,cutoff=min_cutoff)
-    #     fx_kept = np.sum(lower_df.keep)/np.sum(small_df.keep)
-    #    predicted_keep = fx_kept*np.sum(df.keep)
+    Return
+    ------
+        cutoff (float) that yields approximately target_number sequences from df
+    """
+
+    df = _arg_processors.process_topiary_dataframe(df)
+    min_cutoff = _arg_processors.process_float(min_cutoff,
+                                               "min_cutoff",
+                                               minimum_allowed=0,
+                                               maximum_allowed=1)
+    max_cutoff = _arg_processors.process_float(max_cutoff,
+                                               "max_cutoff",
+                                               minimum_allowed=0,
+                                               maximum_allowed=1)
+    try_n_values = _arg_processors.process_int(try_n_values,
+                                               "try_n_values",
+                                               minimum_allowed=2)
+    target_number = _arg_processors.process_int(target_number,
+                                                "target_number",
+                                                minimum_allowed=1)
+    sample_size = _arg_processors.process_int(sample_size,
+                                              "sample_size",
+                                              minimum_allowed=1)
+    key_species = _arg_processors.process_iter(key_species,
+                                               "key_species",
+                                               required_value_type=str,
+                                               is_not_type=[str,dict])
+
+    # Deal with cutoffs
+    if min_cutoff > max_cutoff:
+        err = "\nmin_cutoff must be less than or equal to max_cutoff\n\n"
+        raise ValueError(err)
+
+    # If min_cutoff and max_cutoff are the same, just return it
+    if min_cutoff == max_cutoff:
+        return min_cutoff
+    else:
+        step = (max_cutoff - min_cutoff)/(try_n_values - 1)
+        cutoffs = np.array([min_cutoff + step*i for i in range(try_n_values)])
+
+    # Make sure sample size is sane
+    if sample_size > len(df.index):
+        sample_size = len(df.index)
+
+    # Create reduced dataframe to play with
+    to_take = np.random.choice(df.index,sample_size,replace=False)
+    small_df = df.loc[to_take,:]
+
+    predicted_keep = []
+    with tqdm(total=len(cutoffs)) as pbar:
+        for c in cutoffs:
+            lower_df = remove_redundancy(small_df,
+                                         cutoff=c,
+                                         key_species=key_species,
+                                         status_bar=False)
+            fx_kept = np.sum(lower_df.keep)/np.sum(small_df.keep)
+            predicted_keep.append(fx_kept*np.sum(df.keep))
+
+            pbar.update(1)
+
+    predicted_keep = np.array(predicted_keep)
+
+    # If target_number is smaller than what we got with min cutoff, return min
+    # cutoff. That's as low as we can go.
+    if predicted_keep[0] >= target_number:
+        return min_cutoff
+
+    # If our target number is bigger than our predicted number with the max
+    # cutoff, return the maxium cutoff
+    if predicted_keep[-1] <= target_number:
+        return max_cutoff
+
+    # Get the predicted_keep indexe just less than the target
+    try:
+        bottom = np.where(predicted_keep < target_number)[0][-1]
+    except IndexError:
+        bottom = None
+
+    # Get the predicted_keep index just more than the target
+    try:
+        top = np.where(predicted_keep >= target_number)[0][0]
+    except IndexError:
+        top = None
+
+    # Note: top and bottom should never be None at the same time because we
+    # first validated that we were not entirely above the target number above.
+
+    # If we failed to find bottom, just return top
+    if bottom is None:
+        return cutoffs[top]
+
+    # If we failed to find top, just return bottom
+    if top is None:
+        return cutoffs[bottom]
+
+    # Interpolate between the values just above and below the top to get cutoff
+    rise = (cutoffs[top] - cutoffs[bottom])
+    run = (predicted_keep[top] - predicted_keep[bottom])
+    slope = rise/run
+    intercept = cutoffs[top] - slope*predicted_keep[top]
+
+    return target_number*slope + intercept

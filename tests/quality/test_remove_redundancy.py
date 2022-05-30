@@ -2,7 +2,7 @@
 import pytest
 
 import topiary
-from topiary.quality import remove_redundancy
+from topiary.quality import remove_redundancy, find_cutoff
 from topiary.quality.remove_redundancy import _get_quality_scores, _compare_seqs
 from topiary.quality.remove_redundancy import _EXPECTED_COLUMNS, _LENGTH_COLUMN
 
@@ -130,6 +130,17 @@ def test_remove_redundancy(test_dataframes):
         print(f"trying good key species {g}")
         remove_redundancy(df=df,key_species=g)
 
+    bad_status_bar = [None,"test",int,float,{"test":1}]
+    for b in bad_status_bar:
+        print(f"trying bad status_bar {b}")
+        with pytest.raises(ValueError):
+            remove_redundancy(df=df,status_bar=b)
+
+    good_status_bar = [True,False,0,1]
+    for g in good_status_bar:
+        print(f"trying good status_bar {g}")
+        remove_redundancy(df=df,status_bar=g)
+
 
     # -------------------------------------------------------------------------
     # Make sure dropping is happening a sane way that depends on cutoff and
@@ -207,3 +218,65 @@ def test_remove_redundancy(test_dataframes):
     # Cut basically all -- only one should survive
     out_df = remove_redundancy(df=df,cutoff=0.50)
     assert np.sum(out_df.keep) == 1
+
+def test_find_cutoff(test_dataframes):
+
+    df = test_dataframes["good-df"].copy()
+
+    # Should work
+    find_cutoff(df=df)
+
+    # -------------------------------------------------------------------------
+    # Test argument parsing
+
+    bad_df = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_df:
+        with pytest.raises(ValueError):
+            find_cutoff(df=b)
+
+    # Bad min_cutoff
+    bad_cutoff = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_cutoff:
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,min_cutoff=b)
+
+    # Bad max_cutoffs
+    bad_cutoff = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_cutoff:
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,max_cutoff=b)
+
+    # Throw error because max smaller than min
+    with pytest.raises(ValueError):
+        find_cutoff(df=df,min_cutoff=0.9,max_cutoff=0.1)
+
+    # Bad try_n_values
+    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_value:
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,try_n_values=b)
+
+    # Bad target_number
+    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_value:
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,target_number=b)
+
+    # Bad sample_size
+    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
+    for b in bad_value:
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,sample_size=b)
+
+    # Bad key species
+    bad_key_species = [None,-1,1.1,"test",int,float,{"test":1}]
+    for b in bad_key_species:
+        print(f"trying bad key species {b}")
+        with pytest.raises(ValueError):
+            find_cutoff(df=df,key_species=b)
+
+    # Make sure cutoffs work
+    df = test_dataframes["good-df"].copy()
+    for i in range(5):
+        cutoff = find_cutoff(df,min_cutoff=0.5,max_cutoff=1.0,target_number=(i+1))
+        new_df = remove_redundancy(df,cutoff=cutoff)
