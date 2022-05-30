@@ -16,6 +16,12 @@ from tqdm.auto import tqdm
 
 import re
 
+# Columns to check in order
+_EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
+                     "precursor","hypothetical","isoform","diff_from_median",
+                     "length"]
+_LENGTH_COLUMN = -1
+
 def _get_quality_scores(row,key_species={}):
     """
     Get stats in order of importance (see remove_redundancy doc string).
@@ -27,21 +33,24 @@ def _get_quality_scores(row,key_species={}):
     returns float array for the sequence
     """
 
+    # See if this is a key species
     try:
         key_species[row.species]
-        key_species_score = 0.0
+        values = [0]
     except KeyError:
-        key_species_score = 1.0
+        values = [1]
 
-    return np.array([key_species_score,
-                     row.structure,
-                     row.diff_from_median,
-                     row.low_quality,
-                     row.partial,
-                     row.precursor,
-                     row.hypothetical,
-                     row.isoform,
-                     1/row.length],dtype=np.float)
+    # Add values for expected columns
+    expected = list(row[_EXPECTED_COLUMNS])
+
+    # Flip length column
+    expected[_LENGTH_COLUMN] = 1/expected[_LENGTH_COLUMN]
+
+    # Combine key species call with expected columns
+    values.extend(expected)
+
+    return np.array(values,dtype=float)
+
 
 def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
     """
@@ -68,7 +77,7 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
 
     # Get a normalized score: matches/len(shortest)
     score = pairwise2.align.globalxx(A_seq,B_seq,score_only=True)
-    norm = score/min((len(A_seq),len(B_seq)))
+    norm = score/np.min((len(A_seq),len(B_seq)))
 
     # If sequence similarity is less than the cutoff, keep both
     if norm <= cutoff:
@@ -80,7 +89,7 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
         # If we are not discarding key sequences and both sequences are
         # from key species, automatically keep both.
         if not discard_key:
-            if A_qual[0] == 1 and B_qual[0] == 1:
+            if A_qual[0] == 0 and B_qual[0] == 0:
                 return True, True
 
         # Compare two vectors. Identify first element that differs.
@@ -133,41 +142,64 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
     key_species: list of key species to prefer.
     """
 
+    # Process arguments
+    df = _arg_processors.process_topiary_dataframe(df)
+    cutoff = _arg_processors.process_float(cutoff,
+                                           "cutoff",
+                                           minimum_allowed=0,
+                                           maximum_allowed=1)
+    key_species = _arg_processors.process_iter(key_species,
+                                               "key_species",
+                                               required_value_type=str,
+                                               is_not_type=[str,dict])
+
+    # Encode key species as a dictionary for fast look up
     key_species = dict([(k,None) for k in key_species])
 
-    # This will hold output
-    df = _arg_processors.process_topiary_dataframe(df)
-    new_df = df.copy()
-
-    cutoff = _arg_processors.process_float(cutoff,"cutoff")
-    
-
-
-    starting_keep_number = np.sum(new_df.keep)
+    starting_keep_number = np.sum(df.keep)
 
     # If not more than one seq, don't do anything
     if len(df) < 2:
-        return new_df
+        return df
+
+    # Make sure the dataframe has the columns needed for this comparison. If
+    # the dataframe
+    for e in _EXPECTED_COLUMNS:
+
+        try:
+            v = df[e]
+            v*1.0
+
+        # Column doesn't exist -- record as False
+        except KeyError:
+            df[e] = False
+
+        # Column exists but can't be interpreted as float. Throw error.
+        except TypeError:
+            err = "\nThe remove_redundancy function expects a dataframe with \n"
+            err += f"column '{e}' that can be interpreted as a number. This\n"
+            err += f"column exists but has datatype '{df.loc[:,e].dtype}'.\n"
+            err += "To fix, please rename this column and re-run this function.\n\n"
+            raise ValueError(err)
 
     # Figure out how different each sequence is from the median length.  We
     # want to favor sequences that are closer to the median length than
     # otherwise.
     lengths = df.loc[df.keep,"length"]
-    counts, lengths = np.histogram(lengths,bins=np.int(np.round(2*np.sqrt(len(lengths)),0)))
+    counts, lengths = np.histogram(lengths,bins=int(np.round(2*np.sqrt(len(lengths)),0)))
     median_length = lengths[np.argmax(counts)]
-    new_df["diff_from_median"] = np.abs(new_df.length - median_length)
+    df["diff_from_median"] = np.abs(df.length - median_length)
 
     # Get quality scores for each sequence
     quality_scores = []
-    for i in range(len(new_df)):
-        quality_scores.append(_get_quality_scores(new_df.iloc[i,:],key_species))
+    for i in range(len(df)):
+        quality_scores.append(_get_quality_scores(df.iloc[i,:],key_species))
 
-
-    unique_species = np.unique(new_df.species)
+    unique_species = np.unique(df.species)
 
     total_calcs = 0
     for s in unique_species:
-        a = np.sum(new_df.species == s)
+        a = np.sum(df.species == s)
         total_calcs += a*(a - 1)//2
 
 
@@ -181,7 +213,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
 
                 # species indexes are iloc row indexes corresponding to species of
                 # interest.
-                species_mask = new_df.species == s
+                species_mask = df.species == s
                 species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
                 num_this_species = np.sum(species_mask)
                 for x in range(num_this_species):
@@ -189,11 +221,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                     # Get species index (i). If it's already set to keep = False,
                     # don't compare to other sequences.
                     i = df.index[species_rows[x]]
-                    if not new_df.loc[i,"keep"]:
+                    if not df.loc[i,"keep"]:
                         continue
 
                     # Get sequence and quality score for A
-                    A_seq = new_df.loc[i,"sequence"]
+                    A_seq = df.loc[i,"sequence"]
                     A_qual = quality_scores[species_rows[x]]
 
                     # Loop over other sequences in this species
@@ -202,11 +234,11 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                         # Get species index (j). If it's already set to keep = False,
                         # don't compare to other sequences.
                         j = df.index[species_rows[y]]
-                        if not new_df.loc[j,"keep"]:
+                        if not df.loc[j,"keep"]:
                             continue
 
                         # Get sequence and quality score for B
-                        B_seq = new_df.loc[j,"sequence"]
+                        B_seq = df.loc[j,"sequence"]
                         B_qual = quality_scores[species_rows[y]]
 
                         # Decide which sequence to keep (or both). Discard sequences
@@ -216,8 +248,8 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                                                        discard_key=True)
 
                         # Update keep for each sequence
-                        new_df.loc[i,"keep"] = A_bool
-                        new_df.loc[j,"keep"] = B_bool
+                        df.loc[i,"keep"] = A_bool
+                        df.loc[j,"keep"] = B_bool
 
                         # If we got rid of A, break out of this loop.  Do not need to
                         # compare to A any more.
@@ -227,7 +259,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                 pbar.update(num_this_species*(num_this_species - 1)//2)
 
 
-    N = len(new_df)
+    N = len(df)
     total_calcs = N*(N-1)//2
 
     if total_calcs > 0:
@@ -236,30 +268,30 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
         with tqdm(total=total_calcs) as pbar:
 
             counter = 1
-            for x in range(len(new_df)):
+            for x in range(len(df)):
 
-                i = new_df.index[x]
+                i = df.index[x]
 
                 # If we've already decided not to keep i, don't even look at it
-                if not new_df.loc[i,"keep"]:
+                if not df.loc[i,"keep"]:
                     pbar.update(N - counter)
                     counter += 1
                     continue
 
                 # Get sequence of sequence and quality scores for i
-                A_seq = new_df.loc[i,"sequence"]
+                A_seq = df.loc[i,"sequence"]
                 A_qual = quality_scores[x]
 
-                for y in range(i+1,len(new_df)):
+                for y in range(i+1,len(df)):
 
-                    j = new_df.index[y]
+                    j = df.index[y]
 
                     # If we've already decided not to keep j, don't even look at it
-                    if not new_df.loc[j,"keep"]:
+                    if not df.loc[j,"keep"]:
                         continue
 
                     # Get sequence of sequence and quality scores for j
-                    B_seq = new_df.loc[j,"sequence"]
+                    B_seq = df.loc[j,"sequence"]
                     B_qual = quality_scores[y]
 
                     # Decide which sequence to keep (or both). Do not discard any
@@ -268,8 +300,8 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                                                    discard_key=False)
 
                     # Update keep for each sequence
-                    new_df.loc[i,"keep"] = A_bool
-                    new_df.loc[j,"keep"] = B_bool
+                    df.loc[i,"keep"] = A_bool
+                    df.loc[j,"keep"] = B_bool
 
                     # If we got rid of A, break out of this loop.  Do not need to
                     # compare to A any more.
@@ -279,8 +311,27 @@ def remove_redundancy(df,cutoff=0.95,key_species=[]):
                 pbar.update(N - counter)
                 counter += 1
 
-    final_keep_number = np.sum(new_df.keep)
+    final_keep_number = np.sum(df.keep)
     print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
     print("Done.",flush=True)
 
-    return new_df
+    return df
+
+def find_cutoff(df,min_cutoff=0.85,target_number=500,sample_size=100):
+
+    pass
+
+    # # Make sure sample size is sane
+    # if sample_size > len(df.index):
+    #     sample_size = len(df.index)
+    #
+    # # Create reduced dataframe to play with
+    # to_take = np.random.choice(df.index,sample_size,replace=False)
+    # small_df = df.loc[to_take,:]
+    #
+    # intermediate = (0.99 - min_cutoff)/2 + min_cutoff
+    # cutoff_list = [min_cutoff,intermediate,0.99]
+    # for c in cutoff_list:
+    #     lower_df = remove_redundancy(small_df,cutoff=min_cutoff)
+    #     fx_kept = np.sum(lower_df.keep)/np.sum(small_df.keep)
+    #    predicted_keep = fx_kept*np.sum(df.keep)

@@ -17,7 +17,8 @@ def process_topiary_dataframe(df):
     Check to make sure topiary dataframe is sane. Edits dataframe, returning a
     copy.
 
-    + Checks for required columns 'species', 'name', and 'sequence'
+    + Checks for required columns 'species', 'name', and 'sequence'. Casts these
+      entries as strings and does not allow them to be None/NaN/pd.NA.
     + Deletes duplicated rows.
     + Deletes empty rows.
 
@@ -38,6 +39,8 @@ def process_topiary_dataframe(df):
     + 'ott': If present, makes sure it has the format ottINTEGER.
     + 'alignment': if present, makes sure that all columns are the same width,
                    and removes any gaps-only columns.
+    + 'length': if present, makes sure length of each row corresponds to length
+                of each sequence. If not present, creates
 
     + Enforces following column order:
         + nickname (if present)
@@ -52,15 +55,6 @@ def process_topiary_dataframe(df):
     if type(df) is not pd.DataFrame:
         err = "\ndf must be a pandas dataframe.\n\n"
         raise ValueError(err)
-
-    # Make sure the dataframe has all required columns
-    for c in _private.required_columns:
-
-        try:
-            df[c]
-        except KeyError:
-            err = f"\n\nA topiary dataframe must have a {c} column.\n\n"
-            raise ValueError(err)
 
     # Drop duplicates
     df = df.drop_duplicates(ignore_index=True)
@@ -109,6 +103,35 @@ def process_topiary_dataframe(df):
 
     # Drop rows that are all empty
     df = df.loc[df.index[final_mask],:]
+
+    # -------------------------------------------------------------------------
+    # Process required columns. Enforce them as non-null and castable to string
+
+    for c in _private.required_columns:
+
+        try:
+            df[c]
+        except KeyError:
+            err = f"\n\nA topiary dataframe must have a {c} column.\n\n"
+            raise ValueError(err)
+
+        # Do a pass trying to infer the datatype of c. (Important in case we
+        # dropped empty rows)
+        df.loc[:,c] = df.loc[:,c].infer_objects()
+        casted = []
+        for v in df.loc[:,c]:
+            if pd.isna(v) or pd.isnull(v) or v is None or not v or v == "":
+                err = f"\nMissing value in required column '{c}'.\n\n"
+                raise ValueError(err)
+
+            try:
+                casted.append(str(v))
+            except (TypeError,ValueError):
+                err = f"\nColumn '{c}' must have only strings.\n\n"
+                raise ValueError(err)
+
+        df.loc[:,c] = casted
+
 
     # -------------------------------------------------------------------------
     # Process keep column
@@ -326,6 +349,29 @@ def process_topiary_dataframe(df):
 
             # Store in dataframe
             df.loc[align_mask,"alignment"] = new_align
+
+    # -------------------------------------------------------------------------
+    # Process length column
+
+    # Try to extract length column
+    try:
+        length = df.loc[:,"length"]
+    except KeyError:
+        print(df["sequence"])
+        # No column: create one and set the length
+        df["length"] = [len(s) for s in df["sequence"]]
+
+    # Validate length column
+    try:
+        df.loc[:,"length"]*1.0
+        expected_lengths = [len(s) for s in df["sequence"]]
+        if not np.array_equal(df.loc[:,"length"],expected_lengths):
+            raise ValueError
+
+    except (ValueError,TypeError):
+        err = "\n'length' column must be numeric, storing the length of the\n"
+        err = "sequence in the 'sequence' column.\n\n"
+        raise ValueError(err)
 
     # -------------------------------------------------------------------------
     # Make sure columns have order nickname, keep, species, name, sequence

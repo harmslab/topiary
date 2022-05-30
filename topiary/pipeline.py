@@ -1,5 +1,6 @@
 
 import topiary
+from topiary import _arg_processors
 import pandas as pd
 import numpy as np
 
@@ -84,7 +85,7 @@ def rockit(input,
 
     # Now remove redundancy.
     df = topiary.remove_redundancy(df,cutoff=redundancy_cutoff)
-    
+
     # If a reverse blast database got passed in, do reerse blast.
     if local_rev_blast_db is not None or ncbi_rev_blast_db is not None:
 

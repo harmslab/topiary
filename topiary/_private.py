@@ -3,7 +3,7 @@ import string, random
 
 required_columns = ["species","name","sequence"]
 reserved_columns = required_columns[:]
-reserved_columns.extend(["uid","ott","alignment"])
+reserved_columns.extend(["uid","ott","alignment","length"])
 
 # Data going into a newick tree can't have any of these symbols. We also reserve
 # the '#' character for comments.

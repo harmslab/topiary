@@ -191,6 +191,8 @@ def process_iter(value,
     """
     Process an iteratble and do error checking.
 
+    NOTE: This function does *not* check required_value_type for numpy arrays.
+
     Parameters
     ----------
         value: input value to check/process
@@ -229,11 +231,16 @@ def process_iter(value,
 
     # If reuqested, make sure the values are of the right type
     if required_value_type is not None:
+
+        # Skip check for iterable with no values
         if len(value) > 0:
-            types = list(set([type(v) for v in value]))
-            if len(types) != 1 or types[0] is not required_value_type:
-                err = err_base + f"all entries must have type {required_value_type}\n"
-                raise ValueError(err)
+
+            # Only do check iterables that are not numpy arrays
+            if type(value) is not np.ndarray:
+                types = list(set([type(v) for v in value]))
+                if len(types) != 1 or types[0] is not required_value_type:
+                    err = err_base + f"all entries must have type {required_value_type}\n"
+                    raise ValueError(err)
 
     # If requested, make sure the iterable has appropriate dimensions
     try:
