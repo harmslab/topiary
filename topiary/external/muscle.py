@@ -12,6 +12,7 @@ import subprocess, sys, os, random, string
 
 def run_muscle(input,
                output_fasta=None,
+               super5=False,
                muscle_cmd_args=[],
                muscle_binary="muscle"):
     """
@@ -22,6 +23,7 @@ def run_muscle(input,
     input: input to align (fasta file or topiary df)
     output_fasta: output fasta file to store alignment. Optional if the input
                   is a dataframe; reqiured if the input is a fasta file.
+    super5: bool. User the 'super5' mode of muscle 5
     muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
                      specifies "-align" and "-output" (or -in/-out for old
                      version of the command line), but leaves rest as default.
@@ -59,7 +61,7 @@ def run_muscle(input,
             raise ValueError(err)
 
         # Do the alignment.
-        _run_muscle(input,output_fasta,muscle_cmd_args,muscle_binary)
+        _run_muscle(input,output_fasta,super5,muscle_cmd_args,muscle_binary)
 
         print(f"\nSuccess. Alignment written to '{output_fasta}'.",flush=True)
 
@@ -83,7 +85,7 @@ def run_muscle(input,
             temporary_output = True
 
         # Do the alignment
-        _run_muscle(input_fasta,output_fasta,muscle_cmd_args,muscle_binary)
+        _run_muscle(input_fasta,output_fasta,super5,muscle_cmd_args,muscle_binary)
 
         # Read alignment back into the dataframe
         df = topiary.read_fasta_into(df,output_fasta)
@@ -113,6 +115,7 @@ def run_muscle(input,
 
 def _run_muscle(input_fasta,
                 output_fasta,
+                super5=False,
                 muscle_cmd_args=[],
                 muscle_binary="muscle"):
     """
@@ -122,6 +125,7 @@ def _run_muscle(input_fasta,
     ----------
     input_fasta: input fasta file to align
     output_fasta: output fasta file to store alignment
+    super5: bool. User the 'super5' mode of muscle 5
     muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
                      specifies "-align" and "-output" (or -in/-out for old
                      version of the command line), but leaves rest as default.
@@ -152,8 +156,11 @@ def _run_muscle(input_fasta,
     ret_version = subprocess.run([muscle_binary,"--version"])
     if ret_version.returncode == 0:
         cmd = [muscle_binary,"-align",input_fasta,"-output",output_fasta]
+        if super5:
+            cmd[1] = "-super5"
     else:
         cmd = [muscle_binary,"-in",input_fasta,"-out",output_fasta]
+
 
     cmd.extend(muscle_cmd_args)
 

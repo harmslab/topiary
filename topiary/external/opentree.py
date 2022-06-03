@@ -10,61 +10,87 @@ import numpy as np
 
 import re, copy
 
-def get_ott_id(df,
-               phylo_context="All life"):
+def is_allowed_phylo_context(phylo_context):
     """
-    Return a copy of df with an ott column holding open tree of life
-    names for each species.
+    See if a phylo_context is recognizable in opentree database.
 
-    df: dataframe that has an ott column with Open Tree of Life taxon ids
-    phylo_context: string. used to limit species seach for looking up species
-                   ids on open tree of life.  To get latest strings recognized
-                   by the database, use the following code:
+    Parameters
+    ----------
+        phylo_context: string holding phylognetic context
 
-                   ```
-                   from opentree import OT
-                   print(OT.tnrs_contexts().response_dict)
-                   ```
-
-                   As of 2021-08-16, the following are recognized. You can use
-                   either the keys or values in this dictionary.
-
-                   {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
-                                'Amphibians','Vertebrates','Arthropods',
-                                'Molluscs','Nematodes','Platyhelminthes',
-                                'Annelids','Cnidarians','Arachnids','Insects'],
-                    'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
-                    'LIFE': ['All life'],
-                    'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
-                                 'Amoebozoa','Centrohelida','Haptophyta',
-                                 'Apusozoa','Diatoms','Ciliates','Forams'],
-                    'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
-                               'Vascular plants','Club mosses','Ferns',
-                               'Seed plants','Flowering plants','Monocots',
-                               'Eudicots','Rosids','Asterids','Asterales',
-                               'Asteraceae','Aster','Symphyotrichum',
-                               'Campanulaceae','Lobelia']}
-
-    Returns copy of df with added ott and orig_species column.  ott column
-    holds ott index for the species. orig_species holds what used to be
-    in the species column. The species column is replaced by the uniuqe
-    species name used by Open Tree of Life.
+    Return
+    ------
+        phylo_context, validated as a string
     """
 
-    # Make sure this is a topiary dataframe
-    df = _arg_processors.process_topiary_dataframe(df)
+    phylo_context = str(phylo_context)
 
     # Make sure the phylo_context can be recognized by the by OT
     allowed_context = OT.tnrs_contexts().response_dict
     all_allowed = []
     for k in allowed_context:
         all_allowed.extend(allowed_context[k])
+
     if phylo_context not in all_allowed:
         err = f"\n\nphylo_context '{phylo_context}' not recognized. Should be one of:\n\n"
         for a in all_allowed:
             err += f"    {a}\n"
         err += "\n\n"
         raise ValueError(err)
+
+    return phylo_context
+
+def get_ott_id(df,
+               phylo_context="All life"):
+    """
+    Return a copy of df with an ott column holding open tree of life
+    names for each species.
+
+    Parameters
+    ----------
+        df: dataframe that has an ott column with Open Tree of Life taxon ids
+
+        phylo_context: string. used to limit species seach for looking up species
+                       ids on open tree of life.  To get latest strings recognized
+                       by the database, use the following code:
+
+                       ```
+                       from opentree import OT
+                       print(OT.tnrs_contexts().response_dict)
+                       ```
+
+                       As of 2021-08-16, the following are recognized. You can use
+                       either the keys or values in this dictionary.
+
+                       {'ANIMALS': ['Animals','Birds','Tetrapods','Mammals',
+                                    'Amphibians','Vertebrates','Arthropods',
+                                    'Molluscs','Nematodes','Platyhelminthes',
+                                    'Annelids','Cnidarians','Arachnids','Insects'],
+                        'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
+                        'LIFE': ['All life'],
+                        'MICROBES': ['Bacteria','SAR group','Archaea','Excavata',
+                                     'Amoebozoa','Centrohelida','Haptophyta',
+                                     'Apusozoa','Diatoms','Ciliates','Forams'],
+                        'PLANTS': ['Land plants','Hornworts','Mosses','Liverworts',
+                                   'Vascular plants','Club mosses','Ferns',
+                                   'Seed plants','Flowering plants','Monocots',
+                                   'Eudicots','Rosids','Asterids','Asterales',
+                                   'Asteraceae','Aster','Symphyotrichum',
+                                   'Campanulaceae','Lobelia']}
+
+    Return
+    ------
+        Copy of df with added ott and orig_species column.  ott column
+        holds ott index for the species. orig_species holds what used to be
+        in the species column. The species column is replaced by the uniuqe
+        species name used by Open Tree of Life.
+    """
+
+    # Make sure this is a topiary dataframe
+    df = _arg_processors.process_topiary_dataframe(df)
+
+    # Make sure the phylo_context is recognizable by OTT
+    phylo_context = is_allowed_phylo_context(phylo_context)
 
     # Make copy of df and copy current species to original species
     local_df = df.copy()

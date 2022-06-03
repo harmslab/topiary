@@ -91,10 +91,13 @@ def _prepare_for_blast(df,
 
     # Create list of all sequences in dataframe
     sequence_list = []
-    for i in range(len(df)):
+    for idx in df.index:
+
+        # Do not reverse blast sequences where we already have keep == False
+        if not df.loc[idx,"keep"]:
+            continue
 
         # Get sequence
-        idx = df.index[i]
         s = df.loc[idx,"sequence"]
 
         # Try to get start/end (only blasts subset of sequences). If start and
@@ -204,7 +207,7 @@ def _make_reverse_blast_calls(df,
                "reverse_prob_match":[],
                "reverse_del_best":[]}
 
-    for blah, hits in enumerate(hit_dfs):
+    for _, hits in enumerate(hit_dfs):
 
         # No reverse blast hits at all for this sequence
         if len(hits) == 0:
@@ -295,11 +298,12 @@ def _make_reverse_blast_calls(df,
                 else:
                     reverse_del_best = -np.inf
                     w = "WARNING:\n"
-                    w += "\n\nBLAST returned an e-value = 0.0 for the top hit:\n\n"
+                    w += "BLAST returned an e-value = 0.0 for the top hit:\n\n"
                     w += f"  {hits['hit_def'].iloc[0]}\n\n"
                     w += "This hit does not match any of the patterns in paralog_patterns.\n"
                     w += "The best hit that matches something in paralog_patterns has\n"
                     w += f"an e-value of {reverse_e_value} and matches '{reverse_paralog}'.\n"
+                    w += "These values cannot be quantitatively compared.\n"
                     w += "Topiary will set reverse_found_paralog to 'False' for\n"
                     w += "this sequence.\n"
                     print(w)
@@ -328,11 +332,33 @@ def _make_reverse_blast_calls(df,
         results["reverse_prob_match"].append(reverse_prob_match)
         results["reverse_del_best"].append(reverse_del_best)
 
+    # Only load results for values with keep == True
     for k in results:
-        df[k] = results[k]
+
+        # If reverse_found_paralog, set to False by default. Overwritten with
+        # Trues below
+        if k == "reverse_found_paralog":
+            df[k] = False
+
+        # Otherwise, set to a missing value.
+        else:
+            df[k] = pd.NA
+
+        # Now set keep with the results from this column
+        df.loc[df.keep,k] = results[k]
+
+    num_keep_at_start = np.sum(df.keep)
 
     # Update keep with reverse_found_paralog
-    df["keep"] = np.logical_and(df["keep"],df["reverse_found_paralog"])
+    df.loc[:,"keep"] = np.logical_and(df["keep"],df["reverse_found_paralog"])
+
+    # Write out some summary statistics
+    print(f"{np.sum(df.keep)} of {num_keep_at_start} sequences passed reverse blast.\n")
+    print("Found the following numbers of paralogs:")
+    for p in patterns:
+        num_of_p = np.sum(df.reverse_paralog == p[1])
+        print(f"    {p[1]}: {num_of_p}")
+    print("",flush=True)
 
     return df
 
@@ -454,6 +480,7 @@ def reverse_blast(df,
                              min_call_prob,
                              use_start_end)
     df, sequence_list, patterns, max_del_best, min_call_prob = out
+
 
     # Run BLAST on sequence list, returning list of dataframes -- one for each
     # seqeunce in sequence_list

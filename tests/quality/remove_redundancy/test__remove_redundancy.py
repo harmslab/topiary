@@ -3,8 +3,8 @@ import pytest
 
 import topiary
 from topiary.quality import remove_redundancy, find_cutoff
-from topiary.quality.remove_redundancy import _get_quality_scores, _compare_seqs
-from topiary.quality.remove_redundancy import _EXPECTED_COLUMNS, _LENGTH_COLUMN
+from topiary.quality.remove_redundancy._remove_redundancy import _get_quality_scores, _reduce_redundancy_thread_manager
+from topiary.quality.remove_redundancy._remove_redundancy import _EXPECTED_COLUMNS, _LENGTH_COLUMN
 
 import numpy as np
 import pandas as pd
@@ -36,65 +36,79 @@ def test__get_quality_scores(test_dataframes):
 
         assert np.array_equal(scores[1:],values_from_df)
 
-def test__compare_seqs(test_dataframes):
 
-    A_seq = "TEST"
-    B_seq = "TAST"
+def test__reduce_redundancy_thread_manager():
 
-    # Identical quals
-    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
+    sequence_array = np.array(["STARE" for _ in range(4)])
+    quality_array = np.array([np.zeros(3,dtype=int) for _ in range(4)])
+    keep_array = np.ones(4,dtype=bool)
+    cutoff = 0.9
+    discard_key = True
 
-    # Neither are key sequences
-    A_qual[0] = 1
-    B_qual[0] = 1
+    num_threads, all_args = _reduce_redundancy_thread_manager(sequence_array=sequence_array,
+                                                              quality_array=quality_array,
+                                                              keep_array=keep_array,
+                                                              cutoff=cutoff,
+                                                              discard_key=discard_key,
+                                                              num_threads=1)
 
-    # Keep both; below cutoff
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.9)
-    assert a1 is True
-    assert a2 is True
+    assert num_threads == 1
+    assert np.array_equal(all_args[0][0],(0,4))
+    assert np.array_equal(all_args[0][1],(0,4))
 
-    # Keep A arbitrarily
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
-    assert a1 is True
-    assert a2 is False
+    out = []
+    for a in all_args:
+        i_block = a[0]
+        j_block = a[1]
+        for i in range(i_block[0],i_block[1]):
+            for j in range(j_block[0],j_block[1]):
+                if i >= j:
+                    continue
+                out.append((i,j))
 
-    # Now make A_qual score worse than B, so keep B
-    A_qual[1] = 1
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
-    assert a1 is False
-    assert a2 is True
+    out.sort()
+    assert np.array_equal(out,((0,1),(0,2),(0,3),(1,2),(1,3),(2,3)))
 
-    # Not set up qual scores so neither are key_species, B has earlier better
-    # score than A
-    A_qual = np.ones(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.ones(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    A_qual[-1] = 0
-    B_qual[-2] = 0
 
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
-    assert a1 is False
-    assert a2 is True
+    # Not worth chopping up problem for this small of an array -- should set
+    # number of threads to 1.
+    num_threads, all_args = _reduce_redundancy_thread_manager(sequence_array=sequence_array,
+                                                              quality_array=quality_array,
+                                                              keep_array=keep_array,
+                                                              cutoff=cutoff,
+                                                              discard_key=discard_key,
+                                                              num_threads=2)
 
-    # both key species, A worse than B
-    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    A_qual[1] = 1
+    assert num_threads == 1
+    assert np.array_equal(all_args[0][0],(0,4))
+    assert np.array_equal(all_args[0][1],(0,4))
 
-    # implicit discard_key flag
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
-    assert a1 is True
-    assert a2 is True
 
-    # Explicit discard_key flag
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5,discard_key=False)
-    assert a1 is True
-    assert a2 is True
+    # assert np.array_equal(all_args[0][0],(0,2))
+    # assert np.array_equal(all_args[0][1],(0,2))
+    # assert np.array_equal(all_args[1][0],(0,2))
+    # assert np.array_equal(all_args[1][1],(2,4))
+    # assert np.array_equal(all_args[2][0],(2,4))
+    # assert np.array_equal(all_args[2][1],(2,4))
 
-    # Check discard_key flag
-    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5,discard_key=True)
-    assert a1 is False
-    assert a2 is True
+    # sequence_array = np.array(["STARE" for _ in range(5)])
+    # num_threads, all_args = _reduce_redundancy_thread_manager(sequence_array=sequence_array,
+    #                                                           quality_array=quality_array,
+    #                                                           keep_array=keep_array,
+    #                                                           cutoff=cutoff,
+    #                                                           discard_key=discard_key,
+    #                                                           num_threads=20)
+    #
+    # assert num_threads == 1
+    # print(all_args)
+    # assert False
+    # assert np.array_equal(all_args[0][0],(0,2))
+    # assert np.array_equal(all_args[0][1],(0,2))
+    # assert np.array_equal(all_args[1][0],(0,2))
+    # assert np.array_equal(all_args[1][1],(2,4))
+    # assert np.array_equal(all_args[2][0],(2,4))
+    # assert np.array_equal(all_args[2][1],(2,4))
+
 
 def test_remove_redundancy(test_dataframes):
 
@@ -130,16 +144,16 @@ def test_remove_redundancy(test_dataframes):
         print(f"trying good key species {g}")
         remove_redundancy(df=df,key_species=g)
 
-    bad_status_bar = [None,"test",int,float,{"test":1}]
-    for b in bad_status_bar:
-        print(f"trying bad status_bar {b}")
+    bad_silent = [None,"test",int,float,{"test":1}]
+    for b in bad_silent:
+        print(f"trying bad silent {b}")
         with pytest.raises(ValueError):
-            remove_redundancy(df=df,status_bar=b)
+            remove_redundancy(df=df,silent=b)
 
-    good_status_bar = [True,False,0,1]
-    for g in good_status_bar:
-        print(f"trying good status_bar {g}")
-        remove_redundancy(df=df,status_bar=g)
+    good_silent = [True,False,0,1]
+    for g in good_silent:
+        print(f"trying good silent {g}")
+        remove_redundancy(df=df,silent=g)
 
 
     # -------------------------------------------------------------------------
@@ -155,7 +169,7 @@ def test_remove_redundancy(test_dataframes):
 
     # Cut some
     out_df = remove_redundancy(df=df,cutoff=0.96)
-    assert np.sum(out_df.keep) <= np.sum(df.keep)
+    assert np.sum(out_df.keep) < np.sum(df.keep)
 
     # Cut basically all -- only one shoudl survive
     out_df = remove_redundancy(df=df,cutoff=0.50)
@@ -216,7 +230,7 @@ def test_remove_redundancy(test_dataframes):
     assert np.sum(out_df.keep) <= len(df.sequence)
 
     # Cut basically all -- only one should survive
-    out_df = remove_redundancy(df=df,cutoff=0.50)
+    out_df = remove_redundancy(df=df,cutoff=0.2)
     assert np.sum(out_df.keep) == 1
 
 def test_find_cutoff(test_dataframes):

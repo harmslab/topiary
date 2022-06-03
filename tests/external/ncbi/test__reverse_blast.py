@@ -251,6 +251,14 @@ def test__prepare_for_blast(test_dataframes):
     with pytest.raises(ValueError):
         out = _rb._prepare_for_blast(use_start_end=True,**kwargs)
 
+    # Check for appropriate keep behavior. Should drop one sequence for reverse
+    # blast because keep == False
+    kwargs = copy.deepcopy(default_kwargs)
+    hack_df = kwargs["df"].copy()
+    hack_df.loc[0,"keep"] = False
+    kwargs["df"] = hack_df
+    out = _rb._prepare_for_blast(**kwargs)
+    assert len(out[1])  == 4
 
 def test__make_reverse_blast_calls(test_dataframes,reverse_blast_hit_dfs):
 

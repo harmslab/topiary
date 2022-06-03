@@ -10,7 +10,7 @@ Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
 from tqdm.auto import tqdm
 
-import os, urllib, http
+import os, urllib, http, time
 import multiprocessing as mp
 
 def _entrez_download_thread(args):
@@ -21,13 +21,15 @@ def _entrez_download_thread(args):
     ids: string with comma-separated list of ids to download
     num_tries_allowed: how many attempts should be made to actually do
                        a given query
+    wait_time_between_requests: how many seconds to wait between failed requests.
     queue: multiprocessing queue in which to store results
     """
 
     index = args[0]
     ids = args[1]
     num_tries_allowed = args[2]
-    queue = args[3]
+    wait_time_between_requests = args[3]
+    queue = args[4]
 
     # While we haven't run out of tries...
     tries = 0
@@ -49,6 +51,7 @@ def _entrez_download_thread(args):
         # If out is None, try again. If not, break out of loop--success!
         if out is None:
             tries += 1
+            time.sleep(wait_time_between_requests)
             continue
         else:
             break
@@ -61,7 +64,7 @@ def _entrez_download_thread(args):
     # Record out and initial index in the output queue.
     queue.put((index,out))
 
-def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1):
+def entrez_download(to_download,block_size=50,num_tries_allowed=10,wait_time_between_requests=1,num_threads=-1):
     """
     Download sequences off of entrez, catching errors. This is done in a
     multi-threaded fashion, allowing multiple requests to NCBI at the same
@@ -71,6 +74,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
     block_size: download in chunks this size
     num_tries_allowed: number of times to try before giving up and throwing
                        an error.
+    wait_time_between_requests: how many seconds to wait between failed requests.
     num_threads: number of threads to use. if -1, use all available.
     """
 
@@ -89,7 +93,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
     num_blocks = len(to_download) // block_size
     if len(to_download) % block_size > 0:
         num_blocks += 1
-    print(f"Downloading {num_blocks} blocks of <={block_size} sequences... ")
+    print(f"Downloading {num_blocks} blocks of ~{block_size} sequences... ")
 
     # queue will hold results from each download batch.
     queue = mp.Manager().Queue()
@@ -101,7 +105,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=5,num_threads=-1
         all_args = []
         for i in range(0,len(to_download),block_size):
             ids = ",".join(to_download[i:(i+block_size)])
-            all_args.append((i,ids,num_tries_allowed,queue))
+            all_args.append((i,ids,num_tries_allowed,wait_time_between_requests,queue))
 
         # Black magic. pool.imap() runs a function on elements in iterable,
         # filling threads as each job finishes. (Calls _entrez_download_thread

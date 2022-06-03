@@ -584,13 +584,15 @@ def ncbi_blast_xml_to_df(xml_input):
             if os.path.isdir(xml_input):
                 xml_files = glob.glob(os.path.join(xml_input,"*.xml"))
                 xml_files.sort()
+            else:
+                xml_files = []
 
-                if len(xml_files) == 0:
-                    err = f"\nCould not parse xml_input. Tried to read xml_input\n"
-                    err += f"'{xml_input}' as a file, then as a directory with .xml\n"
-                    err += "files. No xml files found. Should be an xml file,\n"
-                    err += "list of xml files, or directory containing .xml files.\n\n"
-                    raise ValueError(err)
+        if len(xml_files) == 0:
+            err = f"\nCould not parse xml_input. Tried to read xml_input\n"
+            err += f"'{xml_input}' as a file, then as a directory with .xml\n"
+            err += "files. No xml files found. xml_input should be an xml file,\n"
+            err += "list of xml files, or directory containing .xml files.\n\n"
+            raise ValueError(err)
 
     else:
         xml_files = []

@@ -9,6 +9,7 @@ from . base import read_blast_xml
 
 import Bio.Blast.Applications as apps
 
+import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -19,11 +20,11 @@ def _blast_thread(args):
     """
     Run reverse blast on a thread. Should only be called via _blast_thread_manager.
 
-    takes args which are interpreted as (sequence_list,i,blast_kwargs,
+    takes args which are interpreted as (sequence_list,index,blast_kwargs,
                                          blast_function,keep_tmp,queue)
 
     sequence_list: list of sequences as strings
-    i: sequence to grab
+    index: sequence to grab
     blast_kwargs: keyword arguments to pass to blast call
     blast_function: blast function to call
     keep_tmp: whether or not to keep temporary files
@@ -34,7 +35,7 @@ def _blast_thread(args):
 
     # parse args
     sequence_list = args[0]
-    i = args[1]
+    index = args[1]
     blast_function = args[2]
     blast_kwargs = args[3]
     keep_tmp = args[4]
@@ -46,7 +47,8 @@ def _blast_thread(args):
     out_file = "topiary-tmp_{}_blast-out.xml".format(tmp_file_root)
 
     f = open(input_file,'w')
-    f.write("".join(f">sequence{i}\n{sequence_list[i]}"))
+    for i in range(index[0],index[1]):
+        f.write("".join(f">sequence{i}\n{sequence_list[i]}\n"))
     f.close()
 
     blast_kwargs = copy.deepcopy(blast_kwargs)
@@ -58,8 +60,6 @@ def _blast_thread(args):
     # Parse output
     try:
         out_df = read_blast_xml(out_file)
-        # if len(out_df) == 1:
-        #     out_df = out_df.iloc[0]
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
@@ -71,14 +71,15 @@ def _blast_thread(args):
         os.remove(out_file)
 
     # update queue
-    queue.put((i,out_df))
+    queue.put((index[0],out_df))
 
 
 def _blast_thread_manager(sequence_list,
                           blast_function,
                           blast_kwargs,
                           keep_tmp=False,
-                          num_threads=-1):
+                          num_threads=-1,
+                          block_size=20):
     """
     Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
     by local_blast.
@@ -88,39 +89,69 @@ def _blast_thread_manager(sequence_list,
     blast_kwargs: keyword arguments to pass to blast call
     keep_tmp: whether or not to keep temporary files
     num_threads: number of threads to use. if -1, use all available.
+    block_size: break into block_size sequence chunks
 
     Returns a list of dataframes with blast results ordered by the input
     sequence list.
     """
 
-    print("Performing blast...")
-    sys.stdout.flush()
+    # Try to figure out how many cores are available
+    try:
+        num_machine_threads = mp.cpu_count()
+    except NotImplementedError:
+        num_machine_threads = os.cpu_count()
 
-    # Figure out number of threads to use
-    if num_threads < 0:
-        try:
-            num_threads = mp.cpu_count()
-        except NotImplementedError:
-            num_threads = os.cpu_count()
-            if num_threads is None:
-                print("Could not determine number of cpus. Using single thread.\n")
-                num_threads = 1
+    # If we can't figure it out, revert to 1
+    if num_machine_threads is None:
+        print("Could not determine number of cpus. Using single thread.\n")
+        num_machine_threads = 1
+
+    # Determine number of threads useful for this problem. It's not worth
+    # chopping up a super small set of comparisons
+    max_useful_threads = len(sequence_list)//block_size
+    if max_useful_threads < 1:
+        max_useful_threads = 1
+    if max_useful_threads > num_machine_threads:
+        max_useful_threads = num_machine_threads
+
+    # Set number of threads
+    if num_threads == -1 or num_threads > max_useful_threads:
+        num_threads = max_useful_threads
 
     # queue will hold results from each run.
     queue = mp.Manager().Queue()
-    with mp.Pool(num_threads) as pool:
 
-        # This is a bit obscure. Build a list of args to pass to the pool. Each
-        # tuple of args matches the args in _reverse_blast_thread.
-        # all_args has all len(df) reverse blast runs we want to do.
-        all_args = []
-        for i in range(len(sequence_list)):
-            all_args.append((sequence_list,
-                             i,
-                             blast_function,
-                             blast_kwargs,
-                             keep_tmp,
-                             queue))
+    # Break sequences up into blocks
+    num_sequences = len(sequence_list)
+    windows = [block_size for _ in range(num_sequences//block_size)]
+    remainder = num_sequences % block_size
+    if remainder/block_size > 0.5:
+        windows.append(remainder)
+    else:
+        counter = 0
+        while remainder > 0:
+            windows[counter] += 1
+            remainder -= 1
+
+    windows.insert(0,0)
+    windows = np.cumsum(windows)
+
+    # Blocks will allow us to tile over whole sequence
+    all_args = []
+    for i in range(len(windows)-1):
+
+        i_block = (windows[i],windows[i+1])
+
+        all_args.append((sequence_list,
+                         i_block,
+                         blast_function,
+                         blast_kwargs,
+                         keep_tmp,
+                         queue))
+
+    print(f"Performing blast on {len(windows)-1} blocks of ~{block_size} sequences.",flush=True)
+
+    with mp.Pool(num_threads) as pool:
 
         # Black magic. pool.imap() runs a function on elements in iterable,
         # filling threads as each job finishes. (Calls _blast_thread
@@ -138,10 +169,24 @@ def _blast_thread_manager(sequence_list,
     results.sort()
     hits = [r[1] for r in results]
 
-    print("Success.")
-    sys.stdout.flush()
+    # Break big dataframe into a list of dataframes, one for each query sequence
+    out_df = []
+    for h in hits:
+        queries = np.unique(h["query"])
+        for q in queries:
+            this_df = h.loc[h["query"] == q,:]
 
-    return hits
+            # No hits, return empty dataframe
+            if len(this_df) == 1 and pd.isna(this_df["accession"].iloc[0]):
+                out_df.append(pd.DataFrame())
+
+            # Record hits
+            else:
+                out_df.append(this_df)
+
+    print("Done blasting.",flush=True)
+
+    return out_df
 
 def local_blast(sequence,
                 db,

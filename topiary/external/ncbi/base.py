@@ -75,7 +75,6 @@ def read_blast_xml(blast_record):
             blast_record.append(r)
         f.close()
 
-
     out_df = []
     for record in blast_record:
 
@@ -106,6 +105,20 @@ def read_blast_xml(blast_record):
             data['subject_end'].append(s.hsps[0].sbjct_end)
             data['query_start'].append(s.hsps[0].query_start)
             data['query_end'].append(s.hsps[0].query_end)
+            data['query'].append(record.query)
+
+        if len(record.alignments) == 0:
+            data['accession'].append(pd.NA)
+            data['hit_def'].append(pd.NA)
+            data['hit_id'].append(pd.NA)
+            data['title'].append(pd.NA)
+            data['length'].append(pd.NA)
+            data['e_value'].append(pd.NA)
+            data['sequence'].append(pd.NA)
+            data['subject_start'].append(pd.NA)
+            data['subject_end'].append(pd.NA)
+            data['query_start'].append(pd.NA)
+            data['query_end'].append(pd.NA)
             data['query'].append(record.query)
 
         # Port to DataFrame.

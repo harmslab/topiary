@@ -12,6 +12,7 @@ from Bio.Blast import NCBIXML, NCBIWWW
 Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
 import numpy as np
+import pandas as pd
 
 import sys, urllib, http, copy
 
@@ -376,7 +377,16 @@ def ncbi_blast(sequence,
         query_order = [(q[5:],q) for q in queries]
         query_order.sort()
         for q in query_order:
-            out_df.append(ncbi_df[ncbi_df["query"] == q[1]])
+
+            this_df = ncbi_df.loc[ncbi_df["query"] == q[1],:]
+
+            # No hits, return empty dataframe
+            if len(this_df) == 1 and pd.isna(this_df["accession"].iloc[0]):
+                out_df.append(pd.DataFrame())
+
+            # Record hits
+            else:
+                out_df.append(this_df)
 
     print("Done blasting.")
     sys.stdout.flush()

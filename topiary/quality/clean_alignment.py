@@ -119,81 +119,111 @@ def _drop_gaps_only(seqs):
 
 def _find_too_many_sparse(seqs,
                           cumulative_keep,
+                          force_keep,
                           sparse_column_cutoff,
                           maximum_sparse_allowed):
+    """
+    Filter out sequences where over maximum_sparse_allowed of sequence is in
+    sparse columns.
+    """
 
-    # Filter out sequences where over maximum_sparse_allowed of sequence is in
-    # sparse columns
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
     non_gap_sparse = np.logical_and(seqs != 20,sparse_columns)
-    seq_score = np.sum(non_gap_sparse,1)/seqs.shape[1]
+    seq_score = np.sum(non_gap_sparse,axis=1)/seqs.shape[1]
 
     keep_mask = seq_score <= maximum_sparse_allowed
+    keep_mask = np.logical_or(keep_mask,force_keep)
+    force_keep = force_keep[keep_mask]
     cumulative_keep = cumulative_keep[keep_mask]
     seqs = seqs[keep_mask]
     seqs = _drop_gaps_only(seqs)
 
-    return seqs, cumulative_keep
+    return seqs, cumulative_keep, force_keep
 
 def _find_too_few_dense(seqs,
                         cumulative_keep,
+                        force_keep,
                         sparse_column_cutoff,
                         minimum_dense_required):
+    """
+    Filter out sequences that have a non gap in less than minimum_dense_required
+    fraction of the dense columns.
+    """
 
-    # Filter out sequences where over maximum_sparse_allowed of sequence is in
-    # sparse columns
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
     dense_columns = np.logical_not(sparse_columns)
-    seq_score = np.sum(dense_columns,1)/seqs.shape[1]
+    gap_dense = np.logical_and(seqs != 20,dense_columns)
+    seq_score = np.sum(gap_dense,axis=1)/np.sum(dense_columns)
 
     keep_mask = seq_score >= minimum_dense_required
+    keep_mask = np.logical_or(keep_mask,force_keep)
+    force_keep = force_keep[keep_mask]
     cumulative_keep = cumulative_keep[keep_mask]
     seqs = seqs[keep_mask]
     seqs = _drop_gaps_only(seqs)
 
-    return seqs, cumulative_keep
+    return seqs, cumulative_keep, force_keep
 
 def _find_long_insertions(seqs,
                           cumulative_keep,
+                          force_keep,
                           sparse_column_cutoff,
                           long_insertion_length,
                           long_insertion_fx_cutoff):
+    """
+    Filter out sequences that are part of long stretches of sparse sequences.
+    Any sequence with long_insertion_fx_cutoff of the sparse columns not
+    gapped will be removed.
+    """
 
-    sparse_columns = _get_sparse_columns(seqs,_get_sparse_columns)
+    sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
     dense_columns = np.logical_not(sparse_columns)
     num_dense_columns = np.sum(dense_columns)
 
     run_lengths, start_positions, values = _rle(dense_columns)
 
-    blah = []
-    keep_mask = np.ones(len(seqs),dtype=bool)
+    keep_mask = np.ones(seqs.shape[0],dtype=bool)
     for i in range(len(run_lengths)):
+
+        # If the this is a run of sparse columns
         if values[i] == False:
-            if run_lengths[i] > long_insertion_length:
+
+            # If the run length is less than the long_insertion_length stop
+            # considering it
+            if run_lengths[i] < long_insertion_length:
                 continue
 
+            # Grab indexes for start and stop of sparse column run
             s = start_positions[i]
             e = s + run_lengths[i]
 
+            # Go through every sequence
             for j in range(len(seqs)):
+
+                # If we haven't already tossed this sequence...
                 if keep_mask[j]:
+                    # Calculate the fraction of non-gap characters for this
+                    # sequence in the sparse region. If this is greater than
+                    # long_insertion_fx_cutoff, toss the sequence
                     fx_in_sparse = np.sum(seqs[j,s:e] != 20)/run_lengths[i]
-                    blah.append(fx_in_sparse)
                     if fx_in_sparse >= long_insertion_fx_cutoff:
                         keep_mask[j] = False
 
+    keep_mask = np.logical_or(keep_mask,force_keep)
+    force_keep = force_keep[keep_mask]
     cumulative_keep = cumulative_keep[keep_mask]
     seqs = seqs[keep_mask]
     seqs = _drop_gaps_only(seqs)
 
-    return seqs, cumulative_keep
+    return seqs, cumulative_keep, force_keep
 
 def clean_alignment(df,
                     alignment_column="alignment",
-                    sparse_column_cutoff=0.9,
+                    key_species=[],
+                    sparse_column_cutoff=0.5,
                     maximum_sparse_allowed=0.025,
                     minimum_dense_required=0.90,
-                    long_insertion_length=5,
+                    long_insertion_length=8,
                     long_insertion_fx_cutoff=0.8):
     """
 
@@ -201,6 +231,8 @@ def clean_alignment(df,
     ----------
         df: topiary dataframe with alignment.
         alignment_column: column in dataframe to look for the alignment
+        key_species: list of species whose sequences will be preserved,
+                     regardless of their alignment quality.
         sparse_column_cutoff: a column is called sparse if it has
                               > sparse_column_cutoff gaps
         maximum_sparse_allowed: only keep sequences where less than
@@ -232,6 +264,9 @@ def clean_alignment(df,
         err = f"\ndataframe does not have alignment_column '{alignment_column}'\n\n"
         raise ValueError(err)
 
+
+    key_species = _arg_processors.process_iter(key_species)
+
     # Check numerical arguments
 
     sparse_column_cutoff = _arg_processors.process_float(sparse_column_cutoff,
@@ -253,42 +288,57 @@ def clean_alignment(df,
                                                              minimum_allowed=0,
                                                              maximum_allowed=1)
 
-    # Convert alignment into array of integers
+    # Convert alignment into array of integers, only considering sequences we
+    # were keeping already
     seqs = []
-    for seq in df.loc[:,alignment_column]:
-        this_seq = re.sub(f"[^{AA}]","-",seq)
+    force_keep = []
+    for i in df.index:
+        if not df.loc[i,"keep"]:
+            continue
+        this_seq = re.sub(f"[^{AA}]","-",df.loc[i,alignment_column])
         seqs.append([AA_TO_INT[c] for c in list(this_seq)])
-    seqs = np.array(seqs)
 
-    # Will hold indexes to keep after filtering
-    cumulative_keep = np.array(df.index)
+        # If the sequence is from a key species, set force_keep to True for that
+        # sequence
+        if df.loc[i,"species"] in key_species:
+            force_keep.append(True)
+        else:
+            force_keep.append(False)
 
-    # Only consider sequences we are already keeping anyway
-    seqs = seqs[df.keep]
-    cumulative_keep = cumulative_keep[df.keep]
+    seqs = np.array(seqs,dtype=int)
+    force_keep = np.array(force_keep,dtype=bool)
+
+    # Will hold indexes to keep after filtering, getting rid of those with
+    # keep = False from the start
+    cumulative_keep = df.index[df.keep]
 
     # Remove sequences with long runs of non-gap characters in low-quality
     # regions. (Basically, sequences with long, unique insertions)
-    seqs, cumulative_keep = _find_too_many_sparse(seqs,
-                                                  cumulative_keep,
-                                                  sparse_column_cutoff,
-                                                  maximum_sparse_allowed)
+    seqs, cumulative_keep, force_keep = _find_too_many_sparse(seqs,
+                                                              cumulative_keep,
+                                                              force_keep,
+                                                              sparse_column_cutoff,
+                                                              maximum_sparse_allowed)
 
     # Remove sequences with that do not cover enough of the dense columns
     # (basically, partial sequences)
-    seqs, cumulative_keep = _find_too_few_dense(seqs,
-                                                cumulative_keep,
-                                                sparse_column_cutoff,
-                                                minimum_dense_required)
+    seqs, cumulative_keep, force_keep = _find_too_few_dense(seqs,
+                                                            cumulative_keep,
+                                                            force_keep,
+                                                            sparse_column_cutoff,
+                                                            minimum_dense_required)
 
 
     # Remove sequences that have long stretches of sequence in runs of sparse
     # columns
-    seqs, cumulative_keep = _find_long_insertions(seqs,
-                                                  cumulative_keep,
-                                                  sparse_column_cutoff,
-                                                  long_insertion_length,
-                                                  long_insertion_fx_cutoff)
+    seqs, cumulative_keep, force_keep = _find_long_insertions(seqs,
+                                                              cumulative_keep,
+                                                              force_keep,
+                                                              sparse_column_cutoff,
+                                                              long_insertion_length,
+                                                              long_insertion_fx_cutoff)
+
+
 
     # Construct final set of sequences as strings
     final_seqs = []
@@ -296,10 +346,10 @@ def clean_alignment(df,
         final_seqs.append("".join([INT_TO_AA[s] for s in seqs[i,:]]))
 
     # Construct final dataframe with cleaned up alignment
-    df = df.loc[:,"keep"] = False
-    df = df.loc[cumulative_keep,"keep"] = True
-    df = df.loc[cumulative_keep,alignment_column] = final_seqs
+    df.loc[:,"keep"] = False
+    df.loc[cumulative_keep,"keep"] = True
+    df.loc[cumulative_keep,alignment_column] = final_seqs
     no_keep = np.array(list(set(df.index).difference(set(cumulative_keep))))
-    df = df.loc[no_keep,alignment_column] = pd.NA
+    df.loc[no_keep,alignment_column] = pd.NA
 
     return df

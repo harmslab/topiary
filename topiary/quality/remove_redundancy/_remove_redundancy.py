@@ -5,16 +5,17 @@ Remove redundancy for datasets in a semi-intelligent way.
 __author__ = "Michael J. Harms"
 __date__ = "2021-04-08"
 
+import topiary
 from topiary import _arg_processors
+
+from ._check_block_redundancy_python import check_block_redundancy
 
 import pandas as pd
 import numpy as np
-
-from Bio import pairwise2
-
 from tqdm.auto import tqdm
 
-import re
+import os
+import multiprocessing as mp
 
 # Columns to check in order
 _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
@@ -23,7 +24,13 @@ _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
 _LENGTH_COLUMN = -1
 
 class DummyTqdm():
-    def __init__(self):
+    """
+    Fake tqdm progress bar so we don't have to show a status bar if we don't
+    want to. Can be substituted wherever we would use tqdm (i.e.
+    tqdm(range(10)) --> DummyTqdm(range(10)).
+    """
+
+    def __init__(self,*args,**kwargs):
         pass
     def __enter__(self):
         return self
@@ -33,6 +40,18 @@ class DummyTqdm():
     def update(self,value):
         pass
 
+class FakeLock():
+    """
+    Fake multiprocessing.Lock instance.
+    """
+    def __init__(self):
+        pass
+
+    def acquire(self):
+        pass
+
+    def release(self):
+        pass
 
 def _get_quality_scores(row,key_species={}):
     """
@@ -63,73 +82,123 @@ def _get_quality_scores(row,key_species={}):
 
     return np.array(values,dtype=float)
 
-
-def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
+def _reduce_redundancy_thread_manager(sequence_array,
+                                      quality_array,
+                                      keep_array,
+                                      cutoff,
+                                      discard_key,
+                                      num_threads=-1,
+                                      progress_bar=True):
     """
-    Compare sequence A and B based on alignment. If the sequences are
-    similar within cutoff, compare A_stats and B_stats and take the sequence
-    with the lower score. Scores have left-right priority.  Will select
-    sequence with the first element with a lower score. If sequences are
-    similar within cutoff and have equal scores, choose A.
+    Break sequence_array into a rational number of blocks given the number of
+    threads and then run check_block_redundancy on the sequence array on
+    multiple threads. Updates keep_array in place.
 
-    A_seq: sequence A
-    B_seq: sequence B
-    A_qual: quality scores for A
-    B_qual: quality scores for B
-    cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
-    discard_key: whether or not to discard key species, regardless of their
-                 qualities.
+    Parameters
+    ----------
+        sequence_array: array holding sequences to compare.
+        quality_array: array holding vectors of quality scores, one vector for
+                       each sequence
+        keep_array: array holding whether or not to keep each sequence. boolean.
+                    This array is updated and is the primary output of this
+                    function.
+        cutoff: float cutoff between 0 and 1 indicating the fractional similarity
+                between two sequences above which they are considered redundant.
+        discard_key: if discard_key is False, a redundant sequence will be tossed
+                     even if it is from a key species
+        num_threads: number of threads to use. if -1 use all available
+        progress_bar: whether or not to show a progress bar
 
-    returns bool, bool
-
-    True, True: keep both
-    True, False: keep A
-    False, True: keep B
+    Return
+    ------
+        num_threads and all_args. This is for testing/debugging purposes.
+        Usually ignored. Updates keep_array in place -- this is the main output.
     """
 
-    # Get a normalized score: matches/len(shortest)
-    score = pairwise2.align.globalxx(A_seq,B_seq,score_only=True)
-    norm = score/np.min((len(A_seq),len(B_seq)))
 
-    # If sequence similarity is less than the cutoff, keep both
-    if norm <= cutoff:
-        return True, True
+    # Try to figure out how many cores are available
+    try:
+        num_machine_threads = mp.cpu_count()
+    except NotImplementedError:
+        num_machine_threads = os.cpu_count()
 
-    # If sequence similarity is greater than the cutoff, select one.
-    else:
+    # If we can't figure it out, revert to 1
+    if num_machine_threads is None:
+        print("Could not determine number of cpus. Using single thread.\n")
+        num_machine_threads = 1
 
-        # If we are not discarding key sequences and both sequences are
-        # from key species, automatically keep both.
-        if not discard_key:
-            if A_qual[0] == 0 and B_qual[0] == 0:
-                return True, True
+    # Determine number of threads useful for this problem. It's not worth
+    # chopping up a super small set of comparisons
+    max_useful_threads = len(sequence_array)//50
+    if max_useful_threads < 1:
+        max_useful_threads = 1
+    if max_useful_threads > num_machine_threads:
+        max_useful_threads = num_machine_threads
 
-        # Compare two vectors. Identify first element that differs.
+    # Set number of threads
+    if num_threads == -1 or num_threads > max_useful_threads:
+        num_threads = max_useful_threads
 
-        # Return
-        #   True, False if A is smaller
-        #   False, True if B is smaller
-        #   True, False if equal
+    # If only using one thread, don't waste overhead of making pool
+    if num_threads == 1:
+        block = (0,len(sequence_array))
+        args = (block,block,
+                sequence_array,quality_array,keep_array,
+                cutoff,discard_key,FakeLock())
+        check_block_redundancy(args)
+        return 1, (args,)
 
-        comp = np.zeros(A_qual.shape[0],dtype=np.int8)
-        comp[B_qual > A_qual] = 1
-        comp[B_qual < A_qual] = -1
-        diffs = np.nonzero(comp)[0]
 
-        # No difference, keep A arbitrarily
-        if diffs.shape[0] == 0:
-            return True, False
+    num_blocks = (num_threads**2 - num_threads)//2 + num_threads
+    block_size = len(sequence_array)//num_threads
 
-        # B > A at first difference, keep A
-        elif comp[diffs[0]] > 0:
-            return True, False
+    print(f"Calculating redundancy for {num_blocks} blocks of ~{block_size} x {block_size} sequences.",flush=True)
 
-        # B < A at first difference, keep B
+    # Lock allowing threads to safely update keep_array
+    manager = mp.Manager()
+    lock =  manager.Lock()
+    with mp.Pool(num_threads) as pool:
+
+        # Calculate window sizes to cover whole L x L array, where L is number
+        # of sequences
+        windows = np.zeros(num_threads,dtype=int)
+        windows[:] = len(sequence_array)//num_threads
+
+        # This call spreads remainder of L/num_threads evenly across first
+        # remainder windows
+        windows[:(len(sequence_array) % num_threads)] += 1
+
+        # Blocks will allow us to tile over whole redundancy matrix
+        all_args = []
+        for i in range(num_threads):
+            for j in range(i,num_threads):
+
+                i_block = (np.sum(windows[:i]),np.sum(windows[:i+1]))
+                j_block = (np.sum(windows[:j]),np.sum(windows[:j+1]))
+
+                all_args.append((i_block,
+                                 j_block,
+                                 sequence_array,
+                                 quality_array,
+                                 keep_array,
+                                 cutoff,
+                                 discard_key,
+                                 lock))
+
+        # Black magic. pool.imap() runs a function on elements in iterable,
+        # filling threads as each job finishes. (Calls check_block_redundancy
+        # on every args tuple in all_args). tqdm gives us a status bar.
+        # By wrapping pool.imap iterator in tqdm, we get a status bar that
+        # updates as each thread finishes.
+        if progress_bar:
+            list(tqdm(pool.imap(check_block_redundancy,all_args),total=len(all_args)))
         else:
-            return False, True
+            pool.imap(check_block_redundancy,all_args)
+
+    return num_threads, all_args
 
 
-def remove_redundancy(df,cutoff=0.95,key_species=[],status_bar=True):
+def remove_redundancy(df,cutoff=0.95,key_species=[],silent=False,only_in_species=False,num_threads=-1):
     """
     De-duplicate sequences according to cutoff and semi-intelligent heuristic
     criteria.
@@ -164,7 +233,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[],status_bar=True):
                                                "key_species",
                                                required_value_type=str,
                                                is_not_type=[str,dict])
-    status_bar = _arg_processors.process_bool(status_bar,"status_bar")
+    silent = _arg_processors.process_bool(silent,"silent")
 
     # Encode key species as a dictionary for fast look up
     key_species = dict([(k,None) for k in key_species])
@@ -204,151 +273,89 @@ def remove_redundancy(df,cutoff=0.95,key_species=[],status_bar=True):
     df["diff_from_median"] = np.abs(df.length - median_length)
 
     # Get quality scores for each sequence
-    quality_scores = []
+    all_quality_array = []
     for i in range(len(df)):
-        quality_scores.append(_get_quality_scores(df.iloc[i,:],key_species))
+        all_quality_array.append(_get_quality_scores(df.iloc[i,:],key_species))
+    all_quality_array = np.array(all_quality_array)
 
     unique_species = np.unique(df.species)
 
-    total_calcs = 0
-    for s in unique_species:
-        a = np.sum(df.species == s)
-        total_calcs += a*(a - 1)//2
+    if not silent:
+        P = tqdm
+        print("Removing redundancy within species.",flush=True)
+    else:
+        P = DummyTqdm
+
+    with P(total=np.sum(df.keep)) as pbar:
+
+        for i, s in enumerate(unique_species):
+
+            species_mask = np.logical_and(df.keep,df.species == s)
+            if np.sum(species_mask) < 2:
+                pbar.update(np.sum(species_mask))
+                continue
 
 
-    if total_calcs > 0:
+            # List of all sequences with keep = True as integers
+            sequence_array = np.array(df.loc[species_mask,"sequence"])
+            quality_array = all_quality_array[species_mask]
+            keep_array = np.ones(len(sequence_array),dtype=bool)
 
-        print("Removing redundant sequences within species.",flush=True)
+            _reduce_redundancy_thread_manager(sequence_array=sequence_array,
+                                              quality_array=quality_array,
+                                              keep_array=keep_array,
+                                              cutoff=cutoff,
+                                              discard_key=True,
+                                              num_threads=num_threads,
+                                              progress_bar=False)
 
-        # If a status bar is requested, make one. Otherwise, use dummy version
-        if status_bar:
-            status = tqdm(total=total_calcs)
-        else:
-            status = DummyTqdm()
+            # Update keep in dataframe
+            df.loc[species_mask,"keep"] = keep_array
 
-        with status as pbar:
-
-            for s in unique_species:
-
-                # species indexes are iloc row indexes corresponding to species of
-                # interest.
-                species_mask = df.species == s
-                species_rows = np.arange(species_mask.shape[0],dtype=np.uint)[species_mask]
-                num_this_species = np.sum(species_mask)
-                for x in range(num_this_species):
-
-                    # Get species index (i). If it's already set to keep = False,
-                    # don't compare to other sequences.
-                    i = df.index[species_rows[x]]
-                    if not df.loc[i,"keep"]:
-                        continue
-
-                    # Get sequence and quality score for A
-                    A_seq = df.loc[i,"sequence"]
-                    A_qual = quality_scores[species_rows[x]]
-
-                    # Loop over other sequences in this species
-                    for y in range(x+1,num_this_species):
-
-                        # Get species index (j). If it's already set to keep = False,
-                        # don't compare to other sequences.
-                        j = df.index[species_rows[y]]
-                        if not df.loc[j,"keep"]:
-                            continue
-
-                        # Get sequence and quality score for B
-                        B_seq = df.loc[j,"sequence"]
-                        B_qual = quality_scores[species_rows[y]]
-
-                        # Decide which sequence to keep (or both). Discard sequences
-                        # even if they are from key species--removing redundancy within
-                        # a given species.
-                        A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
-                                                       discard_key=True)
-
-                        # Update keep for each sequence
-                        df.loc[i,"keep"] = A_bool
-                        df.loc[j,"keep"] = B_bool
-
-                        # If we got rid of A, break out of this loop.  Do not need to
-                        # compare to A any more.
-                        if not A_bool:
-                            break
-
-                pbar.update(num_this_species*(num_this_species - 1)//2)
+            pbar.update(np.sum(species_mask))
 
 
-    N = len(df)
-    total_calcs = N*(N-1)//2
+    if only_in_species:
+        if not silent:
+            final_keep_number = np.sum(df.keep)
+            print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
+            print("Done.",flush=True)
 
-    if total_calcs > 0:
+        return df
 
-        print("Removing redundant sequences, all-on-all.",flush=True)
 
-        # If a status bar is requested, make one. Otherwise, use dummy version
-        if status_bar:
-            status = tqdm(total=total_calcs)
-        else:
-            status = DummyTqdm()
+    sequence_array = np.array(df.loc[df.keep,"sequence"])
+    quality_array = all_quality_array[df.keep]
+    keep_array = np.ones(len(sequence_array),dtype=bool)
 
-        with status as pbar:
+    progress_bar = not silent
+    if not silent:
+        print("Removing redundancy in all-on-all comparison.",flush=True)
 
-            counter = 1
-            for x in range(len(df)):
+    _reduce_redundancy_thread_manager(sequence_array=sequence_array,
+                                      quality_array=quality_array,
+                                      keep_array=keep_array,
+                                      cutoff=cutoff,
+                                      discard_key=False,
+                                      num_threads=num_threads,
+                                      progress_bar=progress_bar)
 
-                i = df.index[x]
+    # Update keep array
+    df.loc[df.keep,"keep"] = keep_array
 
-                # If we've already decided not to keep i, don't even look at it
-                if not df.loc[i,"keep"]:
-                    pbar.update(N - counter)
-                    counter += 1
-                    continue
-
-                # Get sequence of sequence and quality scores for i
-                A_seq = df.loc[i,"sequence"]
-                A_qual = quality_scores[x]
-
-                for y in range(i+1,len(df)):
-
-                    j = df.index[y]
-
-                    # If we've already decided not to keep j, don't even look at it
-                    if not df.loc[j,"keep"]:
-                        continue
-
-                    # Get sequence of sequence and quality scores for j
-                    B_seq = df.loc[j,"sequence"]
-                    B_qual = quality_scores[y]
-
-                    # Decide which sequence to keep (or both). Do not discard any
-                    # sequence from a key species.
-                    A_bool, B_bool = _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,
-                                                   discard_key=False)
-
-                    # Update keep for each sequence
-                    df.loc[i,"keep"] = A_bool
-                    df.loc[j,"keep"] = B_bool
-
-                    # If we got rid of A, break out of this loop.  Do not need to
-                    # compare to A any more.
-                    if not A_bool:
-                        break
-
-                pbar.update(N - counter)
-                counter += 1
-
-    final_keep_number = np.sum(df.keep)
-    print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
-    print("Done.",flush=True)
+    if not silent:
+        final_keep_number = np.sum(df.keep)
+        print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
+        print("Done.",flush=True)
 
     return df
 
 def find_cutoff(df,
                 min_cutoff=0.85,
-                max_cutoff=0.99,
-                try_n_values=5,
+                max_cutoff=1.00,
+                try_n_values=8,
                 target_number=500,
-                sample_size=100,
+                sample_size=200,
                 key_species=[]):
     """
     Find an identity cutoff that yields approximately target_number sequences.
@@ -418,7 +425,7 @@ def find_cutoff(df,
             lower_df = remove_redundancy(small_df,
                                          cutoff=c,
                                          key_species=key_species,
-                                         status_bar=False)
+                                         silent=True)
             fx_kept = np.sum(lower_df.keep)/np.sum(small_df.keep)
             predicted_keep.append(fx_kept*np.sum(df.keep))
 
