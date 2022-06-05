@@ -5,7 +5,7 @@ from . import draw
 from . import pipeline
 from . import _private
 from . import _arg_processors
-
+from . import pipeline
 
 from .external import generax
 from .external import ncbi
