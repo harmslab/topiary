@@ -186,6 +186,7 @@ def rockit(xml_input,
            local_rev_blast_db=None,
            ncbi_rev_blast_taxid="9606",
            phylo_context="All life",
+           clean_alignment=True,
            overwrite=False):
     """
 
@@ -224,6 +225,9 @@ def rockit(xml_input,
 
                             from opentree import OT
                             print(OT.tnrs_contexts().response_dict)
+
+        clean_alignment: whether or not to try to clean up the alignment to
+                         remove sparse/gappy sequences.
 
         overwrite: overwrite outputs. True or False. On command line, use
                     --overwrite.
@@ -365,19 +369,22 @@ def rockit(xml_input,
                                       out_file_string="lower-redundancy",
                                       human_string="Lowering sequence redundancy.")
 
-    # Align sequences
-    df, step_counter = _run_and_print(function=topiary.run_muscle,
-                                      kwargs={"input":df},
-                                      step_counter=step_counter,
-                                      out_file_string="first-pass-alignment",
-                                      human_string="Doing initial alignment.")
+
 
     # Clean alignment
-    df, step_counter = _run_and_print(function=topiary.quality.clean_alignment,
-                                      kwargs={"df":df,"key_species":key_species},
-                                      step_counter=step_counter,
-                                      out_file_string="cleaned-up-alignment",
-                                      human_string="Removing difficult-to-align sequences.")
+    if clean_alignment:
+
+        df, step_counter = _run_and_print(function=topiary.run_muscle,
+                                          kwargs={"input":df},
+                                          step_counter=step_counter,
+                                          out_file_string="first-pass-alignment",
+                                          human_string="Doing initial alignment.")
+
+        df, step_counter = _run_and_print(function=topiary.quality.clean_alignment,
+                                          kwargs={"df":df,"key_species":key_species},
+                                          step_counter=step_counter,
+                                          out_file_string="cleaned-up-alignment",
+                                          human_string="Removing difficult-to-align sequences.")
 
     # Align final set of high quality sequences
     df, step_counter = _run_and_print(function=topiary.run_muscle,

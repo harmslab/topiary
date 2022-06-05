@@ -148,3 +148,14 @@ def get_public_param_defaults(public_function,private_function):
             kwargs[p] = public_param[p].default
 
     return kwargs
+
+@pytest.fixture(scope="module")
+def xml_to_anc_output():
+    """
+    Directory holding an example run.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml-to-anc-output"))
+
+    return base_dir

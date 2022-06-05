@@ -125,7 +125,6 @@ def ancestor_tree(run_dir,
 
                 # If the root was mislabeled above, stick the label on this node
                 if offset_root is not None:
-                    print("here")
                     anc_name = offset_root[0]
                     pp = offset_root[1]
                     offset_root = None

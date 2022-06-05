@@ -51,12 +51,12 @@ def run_raxml(algorithm=None,
         alignment_file = interface.copy_input_file(alignment_file,
                                                    dir_name,
                                                    file_name="alignment.phy",
-                                                   make_input_dir=False)
+                                                   put_in_input_dir=False)
     if tree_file is not None:
         tree_file = interface.copy_input_file(tree_file,
                                               dir_name,
                                               file_name="tree.newick",
-                                              make_input_dir=False)
+                                              put_in_input_dir=False)
 
     # Build a command list
     cmd = [raxml_binary]

@@ -15,6 +15,9 @@ import multiprocessing as mp
 def gen_seed():
     """
     Generate a random string of 10 integers and return as a string.
+
+    Return
+        10-digit integer as a string
     """
 
     return "".join([f"{random.choice(range(10)):d}" for _ in range(10)])
@@ -23,10 +26,14 @@ def create_new_dir(dir_name=None,overwrite=False):
     """
     Create a new directory.
 
-    dir_name: if specified, name the directory this
-    overwrite: overwrite existing directory
+    Parameters
+    ----------
+        dir_name: if specified, name the directory this
+        overwrite: overwrite existing directory
 
-    returns name of created directory
+    Return
+    ------
+        name of created directory
     """
 
     # if dir_name is not specified, build it in a stereotyped fashion
@@ -48,35 +55,45 @@ def create_new_dir(dir_name=None,overwrite=False):
     # Make directory
     os.mkdir(dir_name)
 
-    return dir_name
+    return os.path.abspath(dir_name)
 
 def copy_input_file(input_file,
                     dir_name,
                     file_name=None,
-                    make_input_dir=True,
-                    df=None):
+                    put_in_input_dir=True):
     """
-    copy an input file into a directory in a stereotyped way.
+    Copy an input file into a directory in a stereotyped way.
 
-    If make_input_dir is specified, copy input_file into dir_name/input,
-    creating input if necessary.  If make_input_dir is not specified,
+    If put_in_input_dir is specified, copy input_file into dir_name/input,
+    creating input if necessary.  If put_in_input_dir is not specified,
     copy in the file as dir_name/{input_file}.
 
-    input_file: file to copy in
-    dir_name: copy into dir_name
-    file_name: what to call file in new directory. If None, use same name.
-    make_input_dir: (bool) make input directory input or not.
-    df: topiary data frame
+    Parameters
+    ----------
+        input_file: file to copy in
+        dir_name: copy into dir_name
+        file_name: what to call file in new directory. If None, use same name.
+        put_in_input_dir: (bool) copy into directory input or not.
 
-    returns name of copied file
+    Return
+    ------
+        name of copied file
     """
+
+    if not os.path.isfile(input_file):
+        err = f"input_file {input_file} does not exist\n"
+        raise FileNotFoundError(err)
+
+    if not os.path.isdir(dir_name):
+        err = f"dir_name {dir_name} is not a directory\n"
+        raise FileNotFoundError(err)
 
     if file_name is None:
         file_name = os.path.split(input_file)[-1]
     file_alone = os.path.split(file_name)[-1]
 
     # If we are putting this into an input subdirectory...
-    if make_input_dir:
+    if put_in_input_dir:
         input_dir = os.path.join(dir_name,"input")
         if not os.path.exists(input_dir):
             os.mkdir(input_dir)
@@ -86,7 +103,72 @@ def copy_input_file(input_file,
     out_file = os.path.join(dir_name,file_alone)
     shutil.copy(input_file,out_file)
 
-    return file_alone
+    return os.path.abspath(out_file)
+
+def read_previous_run_dir(previous_dir):
+    """
+    Load the df, tree, and run_parameters from a previous run directory.
+
+    Parameters
+    ----------
+        previous_dir: directory of previous run (top level; meaning, ml-tree
+                      not ml-tree/output)
+
+    Return
+    ------
+        dictionary with df, tree_file, and parameters
+    """
+
+    previous = {}
+
+    # Make sure previous_dir is a string.
+    if type(previous_dir) is not str:
+        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
+        raise ValueError(err)
+
+    # Look for output directory
+    out_dir = os.path.join(previous_dir,"output")
+    if not os.path.isdir(out_dir):
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "should be a previous topiary run directory that contains an\n"
+        err += "'output' directory.\n"
+        raise FileNotFoundError(err)
+
+    # Grab the run parameters
+    try:
+        f = open(os.path.abspath(os.path.join(out_dir,"run_parameters.json")),'r')
+        run_parameters = json.load(f)
+        f.close()
+    except FileNotFoundError as e:
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "directory should contain a file output/run_parameters.json.\n"
+        err += "This file was not found.\n\n"
+        raise FileNotFoundError(err) from e
+    except json.JSONDecodeError as e:
+        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
+        err += "directory should contain a file output/run_parameters.json.\n"
+        err += "This file exists but could not be read!\n\n"
+        raise ValueError(err) from e
+
+    # copy in previous run parameters
+    for k in run_parameters:
+        previous[k] = run_parameters[k]
+
+    # Try to grab dataframe
+    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
+    if os.path.exists(df_file):
+        previous["df"] = topiary.read_dataframe(df_file)
+    else:
+        err = f"\nCould not read previous directory '{previous_dir}'. Does not\n"
+        err += "contain the file output/dataframe.csv"
+        raise FileNotFoundError(err)
+
+    # Try to grab the tree file
+    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
+    if os.path.exists(tree_file):
+        previous["tree_file"] = tree_file
+
+    return previous
 
 
 def prep_calc(previous_dir=None,
@@ -124,11 +206,7 @@ def prep_calc(previous_dir=None,
     # -------------------------------------------------------------------------
     # Create output directory
 
-    if output is None:
-        rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
-        output = f"{output_base}_{rand}"
-
-    dir_name = create_new_dir(dir_name=output,overwrite=overwrite)
+    output = create_new_dir(dir_name=output,overwrite=overwrite)
 
     # -------------------------------------------------------------------------
     # df (dataframe)
@@ -152,26 +230,16 @@ def prep_calc(previous_dir=None,
         elif type(df) is str:
             csv_file = copy.deepcopy(df)
             df = topiary.read_dataframe(csv_file)
-            csv_file = copy_input_file(csv_file,dir_name,make_input_dir=True)
-
         else:
             err = "df must be a pandas data frame or csv file that can be read as\n"
             err += "a pandas data frame\n"
             raise ValueError(err)
 
-    # -------------------------------------------------------------------------
-    # Tree file
-
-    # If passed tree_file is None, try to grab previous
-    if tree_file is None:
-        try:
-            tree_file = previous["tree_file"]
-        except KeyError:
-            pass
-
-    # Copy in tree file
-    if tree_file is not None:
-        tree_file = copy_input_file(tree_file,dir_name,make_input_dir=True)
+    if df is None:
+        err = "A dataframe must be specified, either explicitly via the df \n"
+        err += "argument or implicitly by having dataframe.csv already present\n"
+        err += "in prev_dir.\n"
+        raise ValueError(err)
 
     # -------------------------------------------------------------------------
     # Model
@@ -189,7 +257,21 @@ def prep_calc(previous_dir=None,
             raise ValueError(err)
 
     # -------------------------------------------------------------------------
-    # Copy remaining files into input directory
+    # Tree file
+
+    # If passed tree_file is None, try to grab previous
+    if tree_file is None:
+        try:
+            tree_file = previous["tree_file"]
+        except KeyError:
+            pass
+
+    # Copy in tree file
+    if tree_file is not None:
+        tree_file = copy_input_file(tree_file,output,put_in_input_dir=True)
+
+    # -------------------------------------------------------------------------
+    # Copy remaining files into output/input directory
 
     final_files = []
     for f in other_files:
@@ -197,13 +279,12 @@ def prep_calc(previous_dir=None,
             final_files.append(None)
         else:
             final_files.append(copy_input_file(f,
-                                               dir_name,
-                                               make_input_dir=True,
-                                               df=df))
+                                               output,
+                                               put_in_input_dir=True))
 
     # Move into the output directory
     starting_dir = os.getcwd()
-    os.chdir(dir_name)
+    os.chdir(output)
 
     # Make sure we actually generated the input directory at some point in the
     # steps above
@@ -211,15 +292,9 @@ def prep_calc(previous_dir=None,
         os.mkdir("input")
 
     # Write the alignment to the input directory
-    alignment_file = os.path.join("input","alignment.phy")
+    alignment_file = os.path.abspath(os.path.join("input","alignment.phy"))
     topiary.write_phy(df,out_file=alignment_file,seq_column="alignment",
                       write_only_keepers=True,clean_sequence=True)
-
-    # write model to input directory
-    if model is not None:
-        f = open(os.path.join("input","model.txt"),"w")
-        f.write(f"{model}\n")
-        f.close()
 
     df_file = os.path.join("input","dataframe.csv")
     topiary.write_dataframe(df,out_file=df_file)
@@ -375,7 +450,7 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
         df: dataframe to write to dataframe.csv
         calc_type: calculation type (string)
         model: model (string)
-        cmd: command invoked to raxml or generax
+        cmd: command invoked to raxml or generax (string)
         outgroup: length 2 list with two sets of outgroups
 
     Return
@@ -396,64 +471,3 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)
     f.close()
-
-
-def read_previous_run_dir(previous_dir):
-    """
-    Load the df, tree, and run_parameters from a previous run directory.
-
-    Parameters
-    ----------
-        previous_dir: directory of previous run (top level; meaning, ml-tree
-                      not ml-tree/output)
-
-    Return
-    ------
-        dictionary with df, tree_file, and parameters
-    """
-
-    previous = {}
-
-    # Make sure previous_dir is a string.
-    if type(previous_dir) is not str:
-        err = f"\nprevious_dir '{previous_dir}' not recognized. Should be a string.\n"
-        raise ValueError(err)
-
-    # Look for output directory
-    out_dir = os.path.join(previous_dir,"output")
-    if not os.path.isdir(out_dir):
-        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-        err += "should be a previous topiary run directory that contains an\n"
-        err += "'output' directory.\n"
-        raise ValueError(err)
-
-    # Grab the run parameters
-    try:
-        f = open(os.path.abspath(os.path.join(out_dir,"run_parameters.json")),'r')
-        run_parameters = json.load(f)
-        f.close()
-    except FileNotFoundError:
-        err = f"\nCould not read previous directory '{previous_dir}'. This\n"
-        err += "directory should contain a file output/run_parameters.json.\n"
-        err += "This file was not found.\n\n"
-        raise ValueError(err)
-
-    # copy in previous run parameters
-    for k in run_parameters:
-        previous[k] = run_parameters[k]
-
-    # Try to grab dataframe
-    df_file = os.path.abspath(os.path.join(out_dir,"dataframe.csv"))
-    if os.path.exists(df_file):
-        previous["df"] = topiary.read_dataframe(df_file)
-    else:
-        err = f"\nCould not read previous directory '{previous_dir}'. Does not\n"
-        err += "contain the file output/dataframe.csv"
-        raise ValueError(err)
-
-    # Try to grab the tree file
-    tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
-    if os.path.exists(tree_file):
-        previous["tree_file"] = tree_file
-
-    return previous
