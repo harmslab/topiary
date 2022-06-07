@@ -107,7 +107,7 @@ def read_ncbi_taxid(ncbi_rev_blast_taxid):
     # round down. If someone used a taxid like 960.6 (extra .) it would be
     # interpreted as 960, which is very much the wrong taxid
     if np.issubdtype(type(ncbi_rev_blast_taxid),np.integer):
-        taxid = [f"{ncbi_rev_blast_taxid}"]
+        ncbi_rev_blast_taxid = [f"{ncbi_rev_blast_taxid}"]
 
     # This wacky line sees if the taxid is iterable, but not a type *class*.
     # Catches weird edge case where user passes in str or int as a taxid

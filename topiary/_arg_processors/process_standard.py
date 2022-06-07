@@ -23,7 +23,17 @@ def process_bool(value,variable_name=None):
     """
 
     try:
+
+        # See if this is an iterable
+        if hasattr(value,"__iter__"):
+            raise ValueError
+
+        if value != 0:
+            if not np.isclose(round(value,0)/value,1):
+                raise ValueError
+
         value = bool(int(value))
+
     except (TypeError,ValueError):
 
         if variable_name is not None:
@@ -61,6 +71,11 @@ def process_float(value,
     """
 
     try:
+
+        # See if this is an iterable
+        if hasattr(value,"__iter__"):
+            raise ValueError
+
         value = float(value)
 
         if np.isnan(value):
@@ -128,7 +143,12 @@ def process_int(value,
         validated value
     """
 
+
     try:
+
+        # See if this is an iterable
+        if hasattr(value,"__iter__"):
+            raise ValueError
 
         # If this is a float to int cast, make sure it does not have decimal
         floored = np.floor(value)

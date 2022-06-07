@@ -5,6 +5,9 @@ __description__ = \
 Functions for downloading sequences off entrez in a multithreaded fashion.
 """
 
+import topiary
+from topiary import _arg_processors
+
 from Bio import Entrez
 Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
@@ -64,19 +67,49 @@ def _entrez_download_thread(args):
     # Record out and initial index in the output queue.
     queue.put((index,out))
 
-def entrez_download(to_download,block_size=50,num_tries_allowed=10,wait_time_between_requests=1,num_threads=-1):
+def entrez_download(to_download,
+                    block_size=50,
+                    num_tries_allowed=10,
+                    wait_time_between_requests=1,
+                    num_threads=-1):
     """
     Download sequences off of entrez, catching errors. This is done in a
     multi-threaded fashion, allowing multiple requests to NCBI at the same
     time.
 
-    to_download: list of ids to download
-    block_size: download in chunks this size
-    num_tries_allowed: number of times to try before giving up and throwing
-                       an error.
-    wait_time_between_requests: how many seconds to wait between failed requests.
-    num_threads: number of threads to use. if -1, use all available.
+    Parameters
+    ----------
+        to_download: list of ids to download
+        block_size: download in chunks this size
+        num_tries_allowed: number of times to try before giving up and throwing
+                           an error.
+        wait_time_between_requests: how many seconds to wait between failed
+                                    requests.
+        num_threads: number of threads to use. if -1, use all available.
+
+    Return
+    ------
+        fasta file holding all downloaded sequences.
     """
+
+    block_size = _arg_processors.process_int(block_size,
+                                             "block_size",
+                                             minimum_allowed=1)
+    num_tries_allowed = _arg_processors.process_int(num_tries_allowed,
+                                                    "num_tries_allowed",
+                                                    minimum_allowed=1)
+    wait_time_between_requests = _arg_processors.process_float(wait_time_between_requests,
+                                                    "wait_time_between_requests",
+                                                    minimum_allowed=0,
+                                                    minimum_inclusive=True)
+    num_threads = _arg_processors.process_int(num_threads,
+                                              "num_threads",
+                                              minimum_allowed=-1)
+    if num_threads == 0:
+        err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
+        err += "or any integer > 0.\n\n"
+        raise ValueError(err)
+
 
     # Figure out number of threads to use
     if num_threads < 0:
@@ -85,7 +118,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=10,wait_time_bet
         except NotImplementedError:
             num_threads = os.cpu_count()
             if num_threads is None:
-                print("Could not determine number of cpus. Using single thread.\n")
+                print("Could not determine number of cpus. Using single thread.\n",flush=True)
                 num_threads = 1
 
 
@@ -93,7 +126,7 @@ def entrez_download(to_download,block_size=50,num_tries_allowed=10,wait_time_bet
     num_blocks = len(to_download) // block_size
     if len(to_download) % block_size > 0:
         num_blocks += 1
-    print(f"Downloading {num_blocks} blocks of ~{block_size} sequences... ")
+    print(f"Downloading {num_blocks} blocks of ~{block_size} sequences... ",flush=True)
 
     # queue will hold results from each download batch.
     queue = mp.Manager().Queue()

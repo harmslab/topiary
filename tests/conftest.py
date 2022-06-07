@@ -159,3 +159,39 @@ def xml_to_anc_output():
     base_dir = os.path.abspath(os.path.join(dir,"data","xml-to-anc-output"))
 
     return base_dir
+
+@pytest.fixture(scope="module")
+def ncbi_blast_server_output():
+    """
+    These csv files are output from topiary.external.ncbi._ncbi_blast._thread_manager
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","ncbi-blast-server-output"))
+
+    files = glob.glob(os.path.join(base_dir,"*.csv"))
+    files.sort()
+
+    all_hits = []
+    for f in files:
+        all_hits.append(pd.read_csv(f))
+
+    return all_hits
+
+@pytest.fixture(scope="module")
+def local_blast_output():
+    """
+    These csv files are output from topiary.external.ncbi._blast_blast._thread_manager
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","local-blast-output"))
+
+    files = glob.glob(os.path.join(base_dir,"*.csv"))
+    files.sort()
+
+    all_hits = []
+    for f in files:
+        all_hits.append(pd.read_csv(f))
+
+    return all_hits

@@ -5,11 +5,9 @@ __description__ = \
 Reverse blast sequence datasets.
 """
 
+import topiary
 from topiary import _arg_processors
-
-from .local_blast import local_blast
-from .ncbi_blast import ncbi_blast
-from .base import parse_ncbi_line
+from topiary.external.ncbi import ncbi_blast, local_blast, parse_ncbi_line
 
 import pandas as pd
 import numpy as np
@@ -479,6 +477,7 @@ def reverse_blast(df,
                              max_del_best,
                              min_call_prob,
                              use_start_end)
+
     df, sequence_list, patterns, max_del_best, min_call_prob = out
 
 
