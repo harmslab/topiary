@@ -11,19 +11,23 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
     sequence with the first element with a lower score. If sequences are
     similar within cutoff and have equal scores, choose A.
 
-    A_seq: sequence A
-    B_seq: sequence B
-    A_qual: quality scores for A
-    B_qual: quality scores for B
-    cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
-    discard_key: whether or not to discard key species, regardless of their
-                 qualities.
+    Parameters
+    ----------
+        A_seq: sequence A
+        B_seq: sequence B
+        A_qual: quality scores for A
+        B_qual: quality scores for B
+        cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
+        discard_key: whether or not to discard key species, regardless of their
+                     qualities.
 
-    returns bool, bool
+    Return
+    ------
+        bool, bool
 
-    True, True: keep both
-    True, False: keep A
-    False, True: keep B
+        True, True: keep both
+        True, False: keep A
+        False, True: keep B
     """
 
     # Get a normalized score: matches/len(shortest)
@@ -94,7 +98,7 @@ def check_block_redundancy(args):
 
     Return
     ------
-    None. Updates keep_array in place.
+        None. Updates keep_array in place.
     """
 
     i_block = args[0]

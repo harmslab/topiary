@@ -19,6 +19,14 @@ def _parse_raxml_info_for_aic(info_file):
     """
     Open a log file from a tree evaluation run and get log likelihood,
     number of fit parameters, and various AIC scores.
+
+    Parameters
+    ----------
+        info_file: raxml info file
+
+    Return
+    ------
+        dictionary holding likelihood, number of free parameters, and aic score(s)
     """
 
     # Open the file and read lines
@@ -54,10 +62,16 @@ def _generate_parsimony_tree(alignment_file,
     """
     Generate a parsimony tree from an alignment.
 
-    alignment_file: alignment file in .phy format
-    dir_name: name to give directory
-    threads: number of threads to use
-    raxml_binary: raxml binary to use
+    Parameters
+    ----------
+        alignment_file: alignment file in .phy format
+        dir_name: name to give directory
+        threads: number of threads to use
+        raxml_binary: raxml binary to use
+
+    Return
+    ------
+        None
     """
 
     run_raxml(algorithm="--start",
@@ -88,17 +102,23 @@ def find_best_model(df,
     Find the best phylogentic model to use for tree and ancestor reconstruction
     given an alignment and (possibly) a tree.
 
-    df: topiary data frame or csv written out from topiary df
-    tree_file: tree file in newick format. If not specified, parsimony tree
-               is generated and used
-    model_matrices: list of model matrices to check
-    model_rates: ways to treat model rates
-    model_freqs: ways to treat model freqs.
-    output: output directory. If not specified, create an output directory with
-            form "find_best_model_randomletters"
-    overwrite: whether or not to overwrite existing output (default False)
-    threads: number of threads to use. if -1 use all available
-    raxml_binary: raxml binary to use
+    Parameters
+    ----------
+        df: topiary data frame or csv written out from topiary df
+        tree_file: tree file in newick format. If not specified, parsimony tree
+                   is generated and used
+        model_matrices: list of model matrices to check
+        model_rates: ways to treat model rates
+        model_freqs: ways to treat model freqs.
+        output: output directory. If not specified, create an output directory with
+                form "find_best_model_randomletters"
+        overwrite: whether or not to overwrite existing output (default False)
+        threads: number of threads to use. if -1 use all available
+        raxml_binary: raxml binary to use
+
+    Return
+    ------
+        None
     """
 
     # Copy files in, write out alignment, move into working directory, etc.

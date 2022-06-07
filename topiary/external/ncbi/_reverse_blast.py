@@ -26,6 +26,36 @@ def _prepare_for_blast(df,
     Check sanity of input parameters and compile patterns. Return a validated
     topiary dataframe, list of sequences, compiled set of patterns to search,
     and sanitized parameters.
+
+    Parameters
+    ----------
+        df: topiary dataframe. Will pull sequences from df.sequences. If there are
+            'start' and 'stop' columns in the dataframe, only blast sequences
+            between start/top (for example: start = 5, stop = 20 would blast
+            sequence[5:20]. To turn this off, set use_start_end = False.
+        paralog_patterns: dictionary with paralogs as values and lists of patterns
+                          to look for as values.
+        local_rev_blast_db: local database against which to blast
+        ncbi_rev_blast_db: database on ncbi against which to blast
+        ignorecase: whether to ignore letter case when searching blast (default True).
+        max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
+                      allows for paralog call. This means the matched reverse blast
+                      hit does not have to be the best hit, but must be within this
+                      e-value difference of the best hit. A higher number means a
+                      less stringent cutoff. A value of 0 would require the matched
+                      hit be the best hit.
+        min_call_prob: hits from all paralogs that yield a regular expression match
+                       are weighted by their relative e-values. Each paralog is
+                       assigned a relative probability. This cutoff is the minimum
+                       probability the best paralog match must have to result in a
+                       paralog call. Value should be between 0 and 1 (not inclusive),
+                       where min_call_prob --> 1 increases the stringency.
+        use_start_end: boolean. whether or not to use start/stop columns in
+                        dataframe (if present) to slice subset of sequence to blast.
+
+    Return
+    ------
+        df, sequence_list, patterns, max_del_best, min_call_prob
     """
 
     # Check type of df
@@ -135,11 +165,30 @@ def _run_blast(sequence_list,
                hitlist_size,
                e_value_cutoff,
                gapcosts,
-               local_num_threads,
+               num_threads,
                **kwargs):
     """
     Run blast on sequence_sequence list, returning a list of dataframes -- one
     df of hits for each sequence in sequence_list.
+
+    Parameters
+    ----------
+        sequence_list: list of sequences to use as blast queries.
+        local_rev_blast_db: local database against which to blast
+        ncbi_rev_blast_db: database on ncbi against which to blast
+        ncbi_taxid: limit search to species specified by taxid for an ncbi search.
+        e_value_cutoff: minimum allowable e value for a hit
+        gapcosts: gap costs (must be length 2 tuple of ints)
+        num_threads: number of threads to use for blast search. if -1,
+                           use all available.
+        kwargs: extra keyword arguments are passed directly to biopython
+                NcbiblastXXXCommandline (for local blast) or qblast (for remote
+                blast). These take precedence over anything specified above
+                (hitlist_size, for example).
+
+    Return
+    ------
+        list of dataframes with blast hits, one for each sequence in sequence_list
     """
 
     # NCBI blast
@@ -179,7 +228,7 @@ def _run_blast(sequence_list,
                               hitlist_size=hitlist_size,
                               e_value_cutoff=e_value_cutoff,
                               gapcosts=gapcosts,
-                              num_threads=local_num_threads,
+                              num_threads=num_threads,
                               **kwargs)
 
     return hit_dfs
@@ -193,6 +242,31 @@ def _make_reverse_blast_calls(df,
                               ncbi_rev_blast_db):
     """
     Make paralog calls given blast output and list of patterns.
+
+    Parameters
+    ----------
+        df: topiary dataframe with query sequences
+        hit_dfs: list of dataframes returned by blast
+        patterns: dictionary with paralogs as values and lists of patterns
+                  to look for as values.
+        max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
+                      allows for paralog call. This means the matched reverse blast
+                      hit does not have to be the best hit, but must be within this
+                      e-value difference of the best hit. A higher number means a
+                      less stringent cutoff. A value of 0 would require the matched
+                      hit be the best hit.
+        min_call_prob: hits from all paralogs that yield a regular expression match
+                       are weighted by their relative e-values. Each paralog is
+                       assigned a relative probability. This cutoff is the minimum
+                       probability the best paralog match must have to result in a
+                       paralog call. Value should be between 0 and 1 (not inclusive),
+                       where min_call_prob --> 1 increases the stringency.
+        ncbi_rev_blast_db: database used for ncbi blast. (Used to determine if
+                           this should be parsed as ncbi vs. local blast inputs)
+
+    Return
+    ------
+        dataframe with reverse blast calls
     """
 
     # hit_dfs is a list of dataframes, each of which has the blast hits for
@@ -373,7 +447,7 @@ def reverse_blast(df,
                   hitlist_size=50,
                   e_value_cutoff=0.01,
                   gapcosts=(11,1),
-                  local_num_threads=-1,
+                  num_threads=-1,
                   **kwargs):
     """
     Take sequences from a topiary dataframe and do a reverse blast analysis
@@ -394,80 +468,84 @@ def reverse_blast(df,
     Parameters
     ----------
 
-    df: topiary dataframe. Will pull sequences from df.sequences. If there are
-        'start' and 'stop' columns in the dataframe, only blast sequences
-        between start/top (for example: start = 5, stop = 20 would blast
-        sequence[5:20]. To turn this off, set use_start_end = False.
+        df: topiary dataframe. Will pull sequences from df.sequences. If there are
+            'start' and 'stop' columns in the dataframe, only blast sequences
+            between start/top (for example: start = 5, stop = 20 would blast
+            sequence[5:20]. To turn this off, set use_start_end = False.
 
-    paralog_patterns: dictionary with paralogs as values and lists of patterns
-                      to look for as values. Keys must be strings. Values may be
-                      strings or compiled re.Pattern instances.
+        paralog_patterns: dictionary with paralogs as values and lists of patterns
+                          to look for as values. Keys must be strings. Values may be
+                          strings or compiled re.Pattern instances.
 
-                      example:
-                      {"LY96":["lymphocyte antigen 96","MD-2"],
-                       "LY86":["lymphocyte antigen 86","MD-1"]}
+                          example:
+                          {"LY96":["lymphocyte antigen 96","MD-2"],
+                           "LY86":["lymphocyte antigen 86","MD-1"]}
 
-                      This would mean hits with 'lymphocyte antigen 96' or 'MD-2'
-                      will map to LY96; hits with 'lymphocyte antigen 86' or 'MD-1'
-                      will map to LY86.
+                          This would mean hits with 'lymphocyte antigen 96' or 'MD-2'
+                          will map to LY96; hits with 'lymphocyte antigen 86' or 'MD-1'
+                          will map to LY86.
 
-                      NOTE: string patterns are interpreted literally. The pattern
-                      "[A-Z]" would be escaped to look for "\[A\-Z\]". If you want to
-                      use regular expressions in your patterns, pass them in as
-                      compiled regular expressions: pattern = re.compile("[A-Z]")
+                          NOTE: string patterns are interpreted literally. The pattern
+                          "[A-Z]" would be escaped to look for "\[A\-Z\]". If you want to
+                          use regular expressions in your patterns, pass them in as
+                          compiled regular expressions: pattern = re.compile("[A-Z]")
 
-    local_rev_blast_db: local database against which to blast (incompatible with
-                    ncbi_rev_blast_db)
+        local_rev_blast_db: local database against which to blast (incompatible with
+                        ncbi_rev_blast_db)
 
-    ncbi_rev_blast_db: database on ncbi against which to blast (incompatible
-                       with local_rev_blast_db)
+        ncbi_rev_blast_db: database on ncbi against which to blast (incompatible
+                           with local_rev_blast_db)
 
-    ncbi_taxid: limit search to species specified by taxid for an ncbi search.
-                We recommend setting this to well-annotated genomes like
-                human (9606), mouse (10090), chicken (9031), and zebrafish (7955).
-                This can either be a single value or a list of values.
+        ncbi_taxid: limit search to species specified by taxid for an ncbi search.
+                    We recommend setting this to well-annotated genomes like
+                    human (9606), mouse (10090), chicken (9031), and zebrafish (7955).
+                    This can either be a single value or a list of values.
 
-    ignorecase: whether to ignore letter case when searching blast (default True).
-                NOTE: if you pass in compiled regular expressions, the flags
-                (such as re.IGNORECASE) on the *last* pattern for each paralog
-                will be used for all patterns.
+        ignorecase: whether to ignore letter case when searching blast (default True).
+                    NOTE: if you pass in compiled regular expressions, the flags
+                    (such as re.IGNORECASE) on the *last* pattern for each paralog
+                    will be used for all patterns.
 
-    max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                  allows for paralog call. This means the matched reverse blast
-                  hit does not have to be the best hit, but must be within this
-                  e-value difference of the best hit. A higher number means a
-                  less stringent cutoff. A value of 0 would require the matched
-                  hit be the best hit.
+        max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
+                      allows for paralog call. This means the matched reverse blast
+                      hit does not have to be the best hit, but must be within this
+                      e-value difference of the best hit. A higher number means a
+                      less stringent cutoff. A value of 0 would require the matched
+                      hit be the best hit.
 
-    min_call_prob: hits from all paralogs that yield a regular expression match
-                   are weighted by their relative e-values. Each paralog is
-                   assigned a relative probability. This cutoff is the minimum
-                   probability the best paralog match must have to result in a
-                   paralog call. Value should be between 0 and 1 (not inclusive),
-                   where min_call_prob --> 1 increases the stringency.
+        min_call_prob: hits from all paralogs that yield a regular expression match
+                       are weighted by their relative e-values. Each paralog is
+                       assigned a relative probability. This cutoff is the minimum
+                       probability the best paralog match must have to result in a
+                       paralog call. Value should be between 0 and 1 (not inclusive),
+                       where min_call_prob --> 1 increases the stringency.
 
-    use_start_end: boolean. whether or not to use start/stop columns in
-                    dataframe (if present) to slice subset of sequence to blast.
+        use_start_end: boolean. whether or not to use start/stop columns in
+                        dataframe (if present) to slice subset of sequence to blast.
 
-    histlist_size: number of hits to look at for reverse blast.
+        histlist_size: number of hits to look at for reverse blast.
 
-    e_value_cutoff: minimum allowable e value for a hit
+        e_value_cutoff: minimum allowable e value for a hit
 
-    gapcosts: gap costs (must be length 2 tuple of ints)
+        gapcosts: gap costs (must be length 2 tuple of ints)
 
-    local_num_threads: number of threads to use for a local blast search. if -1,
-                       use all available.
+        num_threads: number of threads to use for a local blast search. if -1,
+                           use all available.
 
-    kwargs: extra keyword arguments are passed directly to biopython
-            NcbiblastXXXCommandline (for local blast) or qblast (for remote
-            blast). These take precedence over anything specified above
-            (hitlist_size, for example).
+        kwargs: extra keyword arguments are passed directly to biopython
+                NcbiblastXXXCommandline (for local blast) or qblast (for remote
+                blast). These take precedence over anything specified above
+                (hitlist_size, for example).
+
+    Return
+    ------
+        copy of input dataframe with new reverse blast columns
     """
 
     # Check sanity of input parameters and return a validated topiary dataframe,
     # list of sequences, and compiled set of patterns to search. Note: the
     # values of ncbi_rev_blast_db, local_rev_blast_db, ncbi_taxid, hitlist_size,
-    # gapcosts, local_num_threads, and kwargs are checked by the blast functions
+    # gapcosts, num_threads, and kwargs are checked by the blast functions
     # themselves.
     out = _prepare_for_blast(df,
                              paralog_patterns,
@@ -490,7 +568,7 @@ def reverse_blast(df,
                          hitlist_size,
                          e_value_cutoff,
                          gapcosts,
-                         local_num_threads,
+                         num_threads,
                          **kwargs)
 
     # Make paralog calls given blast output and list of patterns

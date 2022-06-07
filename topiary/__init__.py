@@ -1,3 +1,10 @@
+__description__ = \
+"""
+Initialize topiary, exposing API. 
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-06-07"
+
 
 # Submodules
 from . import util
@@ -32,8 +39,11 @@ from .__version__ import __version__
 def check_for_notebook():
     """
     Check whether the code is being executed in a notebook or standard
-    standard python interpreter. Returns string for jupyter or IPython,
-    None for something not recognized.
+    standard python interpreter.
+
+    Return
+    ------
+        string for jupyter or IPython, None for something not recognized.
     """
 
     try:

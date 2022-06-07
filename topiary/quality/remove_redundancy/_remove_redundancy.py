@@ -55,13 +55,18 @@ class FakeLock():
 
 def _get_quality_scores(row,key_species={}):
     """
-    Get stats in order of importance (see remove_redundancy doc string).
+    Get stats in order of importance for a specific sequence. (see
+    remove_redundancy doc string).
 
-    row: row from dataframe built by topiary
-    key_species: dictionary of key species to prefer to others. only uses
-                 keys for fast look up and ignores values
+    Parameters
+    ----------
+        row: row from dataframe built by topiary
+        key_species: dictionary of key species to prefer to others. only uses
+                     keys for fast look up and ignores values
 
-    returns float array for the sequence
+    Return
+    ------
+        float array for the sequence
     """
 
     # See if this is a key species
@@ -201,12 +206,8 @@ def _reduce_redundancy_thread_manager(sequence_array,
 def remove_redundancy(df,cutoff=0.95,key_species=[],silent=False,only_in_species=False,num_threads=-1):
     """
     De-duplicate sequences according to cutoff and semi-intelligent heuristic
-    criteria.
-
-    Returns a copy of df in which "keep" is set to False for duplicates.
-
-    This intelligently chooses between the two sequences. It favors sequences
-    according to specific criteria (in this order of importance):
+    criteria. It favors sequences according to specific criteria (in this order
+    of importance):
 
         1. whether sequence is from a key species
         2. whether it's annotated as structure
@@ -218,9 +219,19 @@ def remove_redundancy(df,cutoff=0.95,key_species=[],silent=False,only_in_species
         8. whether it's annotated as isoform
         9. sequence length (preferring longer)
 
-    df: data frame with sequences.
-    cutoff: %identity cutoff for combining removing sequences (0-1)
-    key_species: list of key species to prefer.
+    Parameters
+    ----------
+        df: data frame with sequences.
+        cutoff: %identity cutoff for combining removing sequences (0-1)
+        key_species: list of key species to prefer.
+        silent: bool, whether to print output and use status bars
+        only_in_species: only reduce redundancy within species, not by comparing
+                         sequences between species
+        num_threads: number of threads to use. if -1 (default) use all available
+
+    Return
+    ------
+        Copy of df in which "keep" is set to False for duplicates.
     """
 
     # Process arguments

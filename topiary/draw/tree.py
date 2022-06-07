@@ -25,8 +25,7 @@ def tree(run_dir,
     Draw tree output from an ML tree calculation, gene/species tree
     reconcilation, or ancestral sequence reconstruction. Plot type is determined
     based on the type of calculation passed in as run_dir.
-
-
+    
     Parameters
     ----------
         run_dir: directory containing an ML tree run

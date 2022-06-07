@@ -39,6 +39,14 @@ def _grab_line_meta_data(line):
 
     Return a dictionary with each of those keyed to a bool for whether
     or not the line has this.
+
+    Parameters
+    ----------
+        line: line from an NCBI record of some sort
+
+    Return
+    ------
+        dictionary with true or false for different patterns in line
     """
 
     meta_patterns = {"structure":"crystal structure",
@@ -147,9 +155,14 @@ def read_blast_xml(blast_record):
     """
     Read BLAST XML format and return as a pandas data frame.
 
-    blast_record: either biopython Blast record or string pointing to blast xml file
+    Parameters
+    ----------
+        blast_record: either biopython Blast record or string pointing to blast
+                      xml file
 
-    returns: list of dataframes, one for each query in blast_record
+    Return
+    ------
+        list of dataframes, one for each query in blast_record
     """
 
     # If argument is a string, treat as xml file
@@ -221,20 +234,26 @@ def parse_ncbi_line(line,accession=None):
     Parse an ncbi line of the sort seen in the BLAST title field or on each
     line of a fasta file.
 
-    accession: extract entry from line that matches acccession.  Ignores version
-               (e.g. "1" in XXXXXXXXX.1).  If None, parse first entry on line.
+    Parameters
+    ----------
+        line: line from an NCBI record
+        accession: extract entry from line that matches acccession.  Ignores
+                   version (e.g. "1" in XXXXXXXXX.1).  If None, parse first
+                   entry on line.
 
-    Returns a dictionary with following keys:
-        raw_line -> unprocessed line (input)
-        line -> processed line (remove multiple titles)
-        name -> protein name
-        structure -> whether or not this is a structure (bool)
-        low_quality -> whether or not this is low quality (bool)
-        predicted -> whether or not this is predicted (bool)
-        precursor -> whether or not this is a precursor (bool)
-        isoform -> whether or not this is an isoform (bool)
-        hypothetical -> whether or not this is hypothetical (bool)
-        partial -> whether or not this is a partial sequence (bool)
+    Return
+    ------
+        dictionary with following keys:
+            raw_line: unprocessed line (input)
+            line: processed line (remove multiple titles)
+            name: protein name
+            structure: whether or not this is a structure (bool)
+            low_quality: whether or not this is low quality (bool)
+            predicted: whether or not this is predicted (bool)
+            precursor: whether or not this is a precursor (bool)
+            isoform: whether or not this is an isoform (bool)
+            hypothetical: whether or not this is hypothetical (bool)
+            partial: whether or not this is a partial sequence (bool)
     """
 
     out = {"raw_line":line}

@@ -55,7 +55,7 @@ def _rle(input_array):
 
     Return
     ------
-        run_lengths, start_positions, values
+        run lengths, run start_positions, run values
 
     This is a cleaned up version of a solution posted here:
     https://stackoverflow.com/questions/1066758/find-length-of-sequences-of-identical-values-in-a-numpy-array-run-length-encodi
@@ -98,7 +98,7 @@ def _drop_gaps_only(seqs):
 
     Return
     ------
-        Copy of array with gaps-only columns removed.
+        Copy of seqs array with gaps-only columns removed.
     """
 
     # Create True/False mask for columns with more than just "-"
@@ -125,6 +125,21 @@ def _find_too_many_sparse(seqs,
     """
     Filter out sequences where over maximum_sparse_allowed of sequence is in
     sparse columns.
+
+    Parameters
+    ----------
+        seqs: array of sequences
+        cumulative_keep: array of indexes to be passed on for further analyses
+        force_keep: array of bool forcing specific columns to be kept
+        sparse_column_cutoff: a column is called sparse if it has
+                              > sparse_column_cutoff gaps
+        maximum_sparse_allowed: only keep sequences where less than
+                                maximum_sparse_allowed of the sequence (fraction)
+                                is a sparse column. Between 0 and 1.
+
+    Return
+    ------
+        kept sequences, updated cumulative_keep, updated force_keep
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
@@ -148,6 +163,21 @@ def _find_too_few_dense(seqs,
     """
     Filter out sequences that have a non gap in less than minimum_dense_required
     fraction of the dense columns.
+
+    Parameters
+    ----------
+        seqs: array of sequences
+        cumulative_keep: array of indexes to be passed on for further analyses
+        force_keep: array of bool forcing specific columns to be kept
+        sparse_column_cutoff: a column is called sparse if it has
+                              > sparse_column_cutoff gaps
+        minimum_dense_required: only keep sequences that have sequence covering
+                                >= than minimum_dense_required of the
+                                dense columns. Between 0 and 1.
+
+    Return
+    ------
+        kept sequences, updated cumulative_keep, updated force_keep
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
@@ -174,6 +204,24 @@ def _find_long_insertions(seqs,
     Filter out sequences that are part of long stretches of sparse sequences.
     Any sequence with long_insertion_fx_cutoff of the sparse columns not
     gapped will be removed.
+
+    Parameters
+    ----------
+        seqs: array of sequences
+        cumulative_keep: array of indexes to be passed on for further analyses
+        force_keep: array of bool forcing specific columns to be kept
+        sparse_column_cutoff: a column is called sparse if it has
+                              > sparse_column_cutoff gaps
+        long_insertion_length: look at sequences that participate in an insertion
+                               with >= than long_insertion_length contiguous
+                               sparse columns.
+        long_insertion_fx_cutoff: remove sequences that have sequence covering
+                                  >= than long_insertion_fx_cutof of the
+                                  insertion. Between 0 and 1. Default: 0.8.
+
+    Return
+    ------
+        kept sequences, updated cumulative_keep, updated force_keep
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)

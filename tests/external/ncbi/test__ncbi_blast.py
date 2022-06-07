@@ -22,26 +22,26 @@ def test__prepare_blast(test_dataframes):
     default_kwargs = copy.deepcopy(default_kwargs)
     default_kwargs["sequence"] = df.sequence
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**default_kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**default_kwargs)
 
     # Should be a list of length 1 holding a single dictionary
     assert type(sequence_list) is list
     assert len(sequence_list) == 5
-    assert type(qblast_kwargs) is dict
+    assert type(blast_kwargs) is dict
     assert return_singleton == False
 
     # Make sure it got the sequences right
     assert np.array_equal(sequence_list,df.sequence)
 
     # Make sure the rest of the arguments were done properly
-    assert qblast_kwargs["database"] == "nr"
-    assert qblast_kwargs["hitlist_size"] == '50'
-    assert qblast_kwargs["program"] == "blastp"
-    assert qblast_kwargs["expect"] == '0.01'
-    assert qblast_kwargs["gapcosts"] == '11 1'
-    assert qblast_kwargs["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
+    assert blast_kwargs["database"] == "nr"
+    assert blast_kwargs["hitlist_size"] == '50'
+    assert blast_kwargs["program"] == "blastp"
+    assert blast_kwargs["expect"] == '0.01'
+    assert blast_kwargs["gapcosts"] == '11 1'
+    assert blast_kwargs["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
     with pytest.raises(KeyError):
-        qblast_kwargs["entrez_query"]
+        blast_kwargs["entrez_query"]
 
     # -------------------------------------------------------------------------
     # test sequence bits
@@ -49,19 +49,19 @@ def test__prepare_blast(test_dataframes):
     kwargs = copy.deepcopy(default_kwargs)
 
     kwargs["sequence"] = "test"
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
     assert len(sequence_list) == 1
     assert sequence_list[0] == "test"
     assert return_singleton == True
 
     kwargs["sequence"] = ["test"]
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
     assert len(sequence_list) == 1
     assert sequence_list[0] == "test"
     assert return_singleton == False
 
     kwargs["sequence"] = ["test","this"]
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
     assert len(sequence_list) == 2
     assert sequence_list[0] == "test"
     assert sequence_list[1] == "this"
@@ -74,11 +74,11 @@ def test__prepare_blast(test_dataframes):
 
         kwargs["sequence"] = b
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
         kwargs["sequence"] = [b]
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # test db
@@ -86,19 +86,19 @@ def test__prepare_blast(test_dataframes):
     kwargs = copy.deepcopy(default_kwargs)
 
     kwargs["sequence"] = df.sequence
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["database"] == "nr"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["database"] == "nr"
 
     kwargs["db"] = "not_really_db"
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["database"] == "not_really_db"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["database"] == "not_really_db"
 
     bad_db = [1,False,1.0,-1,None,str,"",{}]
     for b in bad_db:
         print("passing bad db:",b)
         kwargs["db"] = b
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # taxid
@@ -106,25 +106,25 @@ def test__prepare_blast(test_dataframes):
     kwargs = copy.deepcopy(default_kwargs)
 
     kwargs["taxid"] = 9606
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["entrez_query"] == "txid9606[ORGN]"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["entrez_query"] == "txid9606[ORGN]"
 
     kwargs["taxid"] = "9606"
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["entrez_query"] == "txid9606[ORGN]"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["entrez_query"] == "txid9606[ORGN]"
 
     kwargs["taxid"] = (9606,1234)
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["entrez_query"] == "txid9606[ORGN] or txid1234[ORGN]"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["entrez_query"] == "txid9606[ORGN] or txid1234[ORGN]"
 
     kwargs["taxid"] = ["9606","1234"]
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["entrez_query"] == "txid9606[ORGN] or txid1234[ORGN]"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["entrez_query"] == "txid9606[ORGN] or txid1234[ORGN]"
 
     kwargs["taxid"] = None
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
     with pytest.raises(KeyError):
-        qblast_kwargs["entrez_query"]
+        blast_kwargs["entrez_query"]
 
     bad_taxid = [1.15,str,int,[None,None]]
     for b in bad_taxid:
@@ -132,49 +132,49 @@ def test__prepare_blast(test_dataframes):
         kwargs["taxid"] = b
         with pytest.raises(ValueError):
             print("passing bad taxid:",b)
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
         kwargs["taxid"] = [9606,b]
         with pytest.raises(ValueError):
             print("passing bad taxid:",[9606,b])
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # blast_program
 
     kwargs = copy.deepcopy(default_kwargs)
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["program"] == "blastp"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["program"] == "blastp"
 
     kwargs["blast_program"] = "not_really_pg"
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["program"] == "not_really_pg"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["program"] == "not_really_pg"
 
     bad_pg = [1,False,1.0,-1,None,str,"",{}]
     for b in bad_pg:
         print("passing bad blast_program:",b)
         kwargs["blast_program"] = b
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # histlist_size
 
     kwargs = copy.deepcopy(default_kwargs)
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["hitlist_size"] == '50'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["hitlist_size"] == '50'
 
     kwargs["hitlist_size"] = 100
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["hitlist_size"] == '100'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["hitlist_size"] == '100'
 
     bad_int = [0,False,[],-1,None,str,"",{},int]
     for b in bad_int:
         print("passing bad hitlist_size:",b)
         kwargs["hitlist_size"] = b
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
 
 
@@ -183,12 +183,12 @@ def test__prepare_blast(test_dataframes):
 
     kwargs = copy.deepcopy(default_kwargs)
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["expect"] == '0.01'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["expect"] == '0.01'
 
     kwargs["e_value_cutoff"] = 0.001
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["expect"] == '0.001'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["expect"] == '0.001'
 
     bad_float = [-1,[],None,str,"",{},int]
     for b in bad_float:
@@ -196,51 +196,51 @@ def test__prepare_blast(test_dataframes):
         kwargs["e_value_cutoff"] = b
         print("passing bad e_value_cutoff:",b)
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # gapcosts
 
     kwargs = copy.deepcopy(default_kwargs)
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["gapcosts"] == '11 1'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["gapcosts"] == '11 1'
 
     kwargs["gapcosts"] = [10,1]
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["gapcosts"] == '10 1'
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["gapcosts"] == '10 1'
 
     bad_gap = [-1,[],[1,2,3],[-1,1],[1,-1],["test","this"],None,str,"",{},int]
     for b in bad_gap:
         kwargs["gapcosts"] = b
         print("passing bad gapcosts:",b)
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # url_base
     kwargs = copy.deepcopy(default_kwargs)
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
 
     kwargs["url_base"] = "not_really_pg"
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["url_base"] == "not_really_pg"
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["url_base"] == "not_really_pg"
 
     bad_pg = [1,False,1.0,-1,None,str,"",{}]
     for b in bad_pg:
         print("passing bad url_base:",b)
         kwargs["url_base"] = b
         with pytest.raises(ValueError):
-            sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
+            sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
 
     # -------------------------------------------------------------------------
     # Extra kwargs
     kwargs = copy.deepcopy(default_kwargs)
     kwargs["kwargs"] = {"extra_kwarg":7}
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**kwargs)
-    assert qblast_kwargs["extra_kwarg"] == 7
+    sequence_list, blast_kwargs, return_singleton = _pfb(**kwargs)
+    assert blast_kwargs["extra_kwarg"] == 7
 
 def test__construct_args(test_dataframes):
 
@@ -250,12 +250,12 @@ def test__construct_args(test_dataframes):
     df = test_dataframes["good-df"].copy()
     pfb_kwargs["sequence"] = df.sequence
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**pfb_kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**pfb_kwargs)
 
     # Run in configuration where we will have one query per core (5 threads,
     # 5 cores, 5 input sequences, long max_query_length)
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
@@ -290,7 +290,7 @@ def test__construct_args(test_dataframes):
 
     sequence_list = ["test"]
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
@@ -303,7 +303,7 @@ def test__construct_args(test_dataframes):
     # Machine as two core, auto detect cores. Should have two args
     sequence_list = ["test","this"]
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
@@ -317,7 +317,7 @@ def test__construct_args(test_dataframes):
     # Machine as one core, auto detect cores. Should have one arg
     sequence_list = ["test","this"]
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
@@ -331,7 +331,7 @@ def test__construct_args(test_dataframes):
     # Machine as one core. Pass in 2. Should have one arg, one thread
     sequence_list = ["test","this"]
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=2,
@@ -347,7 +347,7 @@ def test__construct_args(test_dataframes):
     # thread
     sequence_list = [25*"test",25*"this"]
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=150,
                                 num_tries_allowed=5,
                                 num_threads=-1,
@@ -361,14 +361,14 @@ def test__construct_args(test_dataframes):
     # max_query_length
     # making sure sequence bits are processed correctly when it's included
 
-    sequence_list, qblast_kwargs, return_singleton = _pfb(**pfb_kwargs)
+    sequence_list, blast_kwargs, return_singleton = _pfb(**pfb_kwargs)
 
     bad_int = [0,False,[],-1,None,str,"",{},int]
     for b in bad_int:
         print("passing bad max_query_length:",b)
         with pytest.raises(ValueError):
             all_args, num_threads = _ca(sequence_list,
-                                        qblast_kwargs=qblast_kwargs,
+                                        blast_kwargs=blast_kwargs,
                                         max_query_length=b,
                                         num_tries_allowed=5,
                                         num_threads=-1,
@@ -382,7 +382,7 @@ def test__construct_args(test_dataframes):
     expected_length = np.sum(lens) + len(lens)*len(">countX\n\n") - 1
 
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
@@ -399,7 +399,7 @@ def test__construct_args(test_dataframes):
     long_indiv_sequence = np.max([len(s) for s in df.sequence])
     with pytest.raises(ValueError):
         all_args, num_threads = _ca(sequence_list,
-                                    qblast_kwargs=qblast_kwargs,
+                                    blast_kwargs=blast_kwargs,
                                     max_query_length=long_indiv_sequence//2,
                                     num_tries_allowed=5,
                                     num_threads=1,
@@ -407,7 +407,7 @@ def test__construct_args(test_dataframes):
 
     # Make sure splitting looks reasonable -- each sequence on own
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=180,
                                 num_tries_allowed=5,
                                 num_threads=1,
@@ -423,7 +423,7 @@ def test__construct_args(test_dataframes):
 
     # Make sure splitting looks reasonable -- 2, 2, 1
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=340,
                                 num_tries_allowed=5,
                                 num_threads=1,
@@ -440,7 +440,7 @@ def test__construct_args(test_dataframes):
 
     # Make sure splitting looks reasonable -- 3, 2
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=510,
                                 num_tries_allowed=5,
                                 num_threads=1,
@@ -458,7 +458,7 @@ def test__construct_args(test_dataframes):
 
     # Make sure splitting looks reasonable -- 1
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
@@ -470,7 +470,7 @@ def test__construct_args(test_dataframes):
     # num_tries_allowed.
 
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=1,
@@ -483,7 +483,7 @@ def test__construct_args(test_dataframes):
         print("passing bad num_tries_allowed:",b)
         with pytest.raises(ValueError):
                 all_args, num_threads = _ca(sequence_list,
-                                            qblast_kwargs=qblast_kwargs,
+                                            blast_kwargs=blast_kwargs,
                                             max_query_length=10000,
                                             num_tries_allowed=b,
                                             num_threads=1,
@@ -493,7 +493,7 @@ def test__construct_args(test_dataframes):
     # num_threads.
 
     all_args, num_threads = _ca(sequence_list,
-                                qblast_kwargs=qblast_kwargs,
+                                blast_kwargs=blast_kwargs,
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=3,
@@ -506,7 +506,7 @@ def test__construct_args(test_dataframes):
         print("passing bad num_threads:",b)
         with pytest.raises(ValueError):
                 all_args, num_threads = _ca(sequence_list,
-                                            qblast_kwargs=qblast_kwargs,
+                                            blast_kwargs=blast_kwargs,
                                             max_query_length=10000,
                                             num_tries_allowed=5,
                                             num_threads=b,

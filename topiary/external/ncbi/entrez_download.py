@@ -20,12 +20,18 @@ def _entrez_download_thread(args):
     """
     Download ids from the NCBI. args is interpreted as:
 
-    index: number of request, used for sorting results after multithreading
-    ids: string with comma-separated list of ids to download
-    num_tries_allowed: how many attempts should be made to actually do
-                       a given query
-    wait_time_between_requests: how many seconds to wait between failed requests.
-    queue: multiprocessing queue in which to store results
+    Parameters
+    ----------
+        args: list of arguments controlling entrez query. Expanded to:
+            index: number of request, used for sorting results after multithreading
+            ids: string with comma-separated list of ids to download
+            num_tries_allowed: how many attempts should be made to actually do
+                               a given query
+            wait_time_between_requests: how many seconds to wait between failed requests.
+            queue: multiprocessing queue in which to store results
+    Return
+    ------
+        None
     """
 
     index = args[0]

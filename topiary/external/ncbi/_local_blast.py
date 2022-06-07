@@ -1,9 +1,9 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 __description__ = \
 """
-BLAST against a local database.
+Run BLAST against a local database.
 """
+__author__ = "Michael J. Harms"
+__date__ = "2021-04-08"
 
 import topiary
 from topiary.external.ncbi import read_blast_xml
@@ -120,12 +120,18 @@ def _construct_args(sequence_list,
     """
     Construct a list of arguments to pass to each thread in the pool.
 
-    sequence_list: list of sequences as strings
-    blast_function: blast function to use
-    blast_kwargs: keyword arguments to pass to blast call
-    keep_tmp: whether or not to keep temporary files
-    num_threads: number of threads to use. if -1, use all available.
-    block_size: break into block_size sequence chunks
+    Parameters
+    ----------
+        sequence_list: list of sequences as strings
+        blast_function: blast function to use
+        blast_kwargs: keyword arguments to pass to blast call
+        keep_tmp: whether or not to keep temporary files
+        num_threads: number of threads to use. if -1, use all available.
+        block_size: break into block_size sequence chunks
+
+    Return
+    ------
+        list of args to pass for each calculation, number of threads
     """
 
     # Validate inputs that have not yet been validated.
@@ -211,9 +217,14 @@ def _thread_manager(all_args,num_threads):
     Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
     by local_blast.
 
+    Parameters
+    ----------
+        all_args: list of args to pass for each calculatio
+        nm_threads: number of threads to use
 
-    Returns a list of dataframes with blast results ordered by the input
-    sequence list.
+    Return
+    ------
+        list of dataframes with blast results
     """
 
     print(f"Performing {len(all_args)} blast queries on {num_threads} threads.",
@@ -247,18 +258,22 @@ def _thread_manager(all_args,num_threads):
 def _thread(args):
     """
     Run reverse blast on a thread. Should only be called via _thread_manager.
+    Puts resulting hits as a pandas dataframe into the queue
 
-    takes args which are interpreted as (sequence_list,index,blast_kwargs,
-                                         blast_function,keep_tmp,queue)
+    Parameters
+    ----------
+        args. list that is expanded as follows:
 
-    sequence_list: list of sequences as strings
-    index: sequence to grab
-    blast_kwargs: keyword arguments to pass to blast call
-    blast_function: blast function to call
-    keep_tmp: whether or not to keep temporary files
-    queue: multiprocessing queue for storing results
+        sequence_list: list of sequences as strings
+        index: sequence to grab
+        blast_kwargs: keyword arguments to pass to blast call
+        blast_function: blast function to call
+        keep_tmp: whether or not to keep temporary files
+        queue: multiprocessing queue for storing results
 
-    puts resulting hit as a pandas dataframe into the queue
+    Return
+    ------
+        None
     """
 
     # parse args
@@ -400,9 +415,6 @@ def local_blast(sequence,
 
     # Run multi-threaded local blast
     hits = _thread_manager(all_args,num_threads)
-
-    for i, h in enumerate(hits):
-        h.to_csv(f"local-blast-hits-{i}.csv")
 
     # Combine hits into dataframes, one for each query
     out_df = _combine_hits(hits,return_singleton)

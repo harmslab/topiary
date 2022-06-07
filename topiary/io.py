@@ -26,8 +26,8 @@ import re, string, random, io, copy, os, json, glob
 
 def read_dataframe(input,remove_extra_index=True):
     """
-    Read a spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is not one
-    of these, attempts to parse text as a spreadsheet using
+    Read a topiary spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is
+    not one of these, attempts to parse text as a spreadsheet using
     pandas.read_csv(sep=None).
 
     Parameters
@@ -413,12 +413,16 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     """
     Load sequences from a fasta file into a topiary dataframe
 
-    df: topiary data frame
-    fasta_file: a fasta file with headers formatted like >uid|other stuff
-    load_into_column: what column in the dataframe to load the sequences into
-    unkeep_missing: set sequences not loading into keep = False
+    Parameters
+    ----------
+        df: topiary data frame
+        fasta_file: a fasta file with headers formatted like >uid|other stuff
+        load_into_column: what column in the dataframe to load the sequences into
+        unkeep_missing: set sequences not loading into keep = False
 
-    returns: topiary dataframe with sequences now in load_into_column
+    Return
+    ------
+        topiary dataframe with sequences now in load_into_column
     """
 
     # Create data frame and make sure it has the column in which to load
@@ -482,34 +486,39 @@ def read_tree(tree,fmt=None):
     """
     Load a tree into an ete3 tree data structure.
 
-    tree: some sort of tree. can be an ete3.Tree (returns self), a dendropy
-          Tree (converts to newick and drops root), a newick file or a newick
-          string.
-    fmt: format for reading tree from newick.  0-9 or 100. See ete3 documentation
-         for how these are read (http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#reading-and-writing-newick-trees).
-         As of ETE3.1.1, these numbers mean:
+    Parameters
+    ----------
+        tree: some sort of tree. can be an ete3.Tree (returns self), a dendropy
+              Tree (converts to newick and drops root), a newick file or a
+              newick string.
+        fmt: format for reading tree from newick.  0-9 or 100. See ete3
+             documentation for how these are read
+             (http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#reading-and-writing-newick-trees).
+             As of ETE3.1.1, these numbers mean:
 
 
-         |        ======  ==============================================
-         |        FORMAT  DESCRIPTION
-         |        ======  ==============================================
-         |        0        flexible with support values
-         |        1        flexible with internal node names
-         |        2        all branches + leaf names + internal supports
-         |        3        all branches + all names
-         |        4        leaf branches + leaf names
-         |        5        internal and leaf branches + leaf names
-         |        6        internal branches + leaf names
-         |        7        leaf branches + all names
-         |        8        all names
-         |        9        leaf names
-         |        100      topology only
-         |        ======  ==============================================
+             |        ======  ==============================================
+             |        FORMAT  DESCRIPTION
+             |        ======  ==============================================
+             |        0        flexible with support values
+             |        1        flexible with internal node names
+             |        2        all branches + leaf names + internal supports
+             |        3        all branches + all names
+             |        4        leaf branches + leaf names
+             |        5        internal and leaf branches + leaf names
+             |        6        internal branches + leaf names
+             |        7        leaf branches + all names
+             |        8        all names
+             |        9        leaf names
+             |        100      topology only
+             |        ======  ==============================================
 
-         if fmt is None, try to parse without a format descriptor, then these
-         formats in numerical order.
+             if fmt is None, try to parse without a format descriptor, then these
+             formats in numerical order.
 
-    Returns an ete3 tree object.
+    Return
+    ------
+        an ete3 tree object.
     """
 
     # Already an ete3 tree.
@@ -567,12 +576,16 @@ def ncbi_blast_xml_to_df(xml_input):
     sequences via entrez, and find unique taxonomic identifiers on the open
     tree of life.
 
-    xml_input: blast xml files to load. This can have a few formats:
-        1. single xml file
-        2. list of xml files
-        3. directory (grabs all files matching .xml in that directory)
+    Parameters
+    ----------
+        xml_input: blast xml files to load. This can have a few formats:
+            1. single xml file
+            2. list of xml files
+            3. directory (grabs all files matching .xml in that directory)
 
-    returns a topiary data frame
+    Return
+    ------
+        a topiary data frame
     """
 
     if type(xml_input) is str:

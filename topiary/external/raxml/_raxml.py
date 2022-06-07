@@ -29,18 +29,24 @@ def run_raxml(algorithm=None,
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
 
-    algorithm: algorithm to run (--all, --ancestral, etc.)
-    alignment_file: alignment file in .phy format (passed via --msa)
-    tree_file: tree file in .newick format (passed via --tree)
-    model: model in format recognized by --model
-    dir_name: If specified, this will be the name of the working directory.
-    seed: true/false, int, or str. If true, pass a randomly generated seed to
-          raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads). if -1, use all
-             available.
-    raxml_binary: raxml binary to use
-    log_to_stdout: capture log and write to std out.
-    other_args: list of arguments to pass to raxml
+    Parameters
+    ----------
+        algorithm: algorithm to run (--all, --ancestral, etc.)
+        alignment_file: alignment file in .phy format (passed via --msa)
+        tree_file: tree file in .newick format (passed via --tree)
+        model: model in format recognized by --model
+        dir_name: If specified, this will be the name of the working directory.
+        seed: true/false, int, or str. If true, pass a randomly generated seed to
+              raxml. If int or str, use that as the seed. (passed via --seed)
+        threads: number of threads to use (passed via --threads). if -1, use all
+                 available.
+        raxml_binary: raxml binary to use
+        log_to_stdout: capture log and write to std out.
+        other_args: list of arguments to pass to raxml
+
+    Return
+    ------
+        string representation of command passed to raxml-ng
     """
 
     # Create directory in which to do calculation

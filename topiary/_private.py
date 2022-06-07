@@ -1,3 +1,9 @@
+__description__ = \
+"""
+Private utility functions that are not publicly exposed in the API.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-06-07"
 
 import string, random
 
@@ -14,8 +20,14 @@ def generate_uid(number=1):
     Generate a unique uid. This will be a 10 character random combination of
     ascii letters.
 
-    number: number of uid to generate. if 1, return a single uid. if > 1,
-            return a list of uid.
+    Parameters
+    ----------
+        number: number of uid to generate. if 1, return a single uid. if > 1,
+                return a list of uid.
+
+    Return
+    ------
+        uid or list of uid
     """
 
     if number < 1:
@@ -38,6 +50,10 @@ def create_pipeline_dict():
     This can be populated by a loop through sequences, followed by
     pandas.DataFrame(this_dictionary) to create a pandas data frame of
     the sort expected by the functions used in this module.
+
+    Return
+    ------
+        dictionary with stereotyped keys
     """
 
     # Column names for output dictionary

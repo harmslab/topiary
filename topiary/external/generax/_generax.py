@@ -18,11 +18,19 @@ import multiprocessing as mp
 
 def setup_generax(df,gene_tree,model,out_dir):
     """
-    df: topiary data frame
-    gene_tree: gene_tree with uid as taxon names. can be ete3 tree, dendropy
-               tree, or newick file.
-    model: phylogenetic model to use (should match model used to generate gene_tree)
-    out_dir: output directory
+    Setup a generax run directory.
+
+    Parameters
+    ----------
+        df: topiary data frame
+        gene_tree: gene_tree with uid as taxon names. can be ete3 tree, dendropy
+                   tree, or newick file.
+        model: phylogenetic model to use (should match model used to generate gene_tree)
+        out_dir: output directory
+
+    Return
+    ------
+        None
     """
 
     # -------------------------------------------------------------------------
@@ -130,17 +138,22 @@ def run_generax(run_directory,
     Run generax. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
 
-    algorithm: algorithm to run (--all, --ancestral, etc.)
-    alignment_file: alignment file in .phy format (passed via --msa)
-    tree_file: tree file in .newick format (passed via --tree)
-    model: model in format recognized by --model
-    dir_name: If specified, this will be the name of the working directory.
-    seed: true/false, int, or str. If true, pass a randomly generated seed to
-          raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads)
-    raxml_binary: raxml binary to use
-    log_to_stdout: capture log and write to std out.
-    other_args: list of arguments to pass to raxml
+    Parameters
+    ----------
+        run_directory: directory in which to do calculation
+        allow_horizontal_transfer: whether or not to allow horizontal gene
+                                   transfer. This corresponds to the UndatedDTL
+                                   (horizontal) vs UndatedDL (no horizontal)
+                                   models
+        seed: true/false, int, or str. If true, pass a randomly generated seed to
+              raxml. If int or str, use that as the seed. (passed via --seed)
+        generax_binary: generax binary to use
+        log_to_stdout: capture log and write to std out.
+        other_args: list of arguments to pass to generax
+
+    Return
+    ------
+        string representation of command passed to generax
     """
 
     cmd = ["generax"]

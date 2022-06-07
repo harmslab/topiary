@@ -292,10 +292,14 @@ def get_species_tree(df):
     """
     Return an ete3 cladogram of species in tree.
 
-    df: dataframe that has an ott column with Open Tree of Life taxon ids
+    Parameters
+    ----------
+        df: dataframe that has an ott column with Open Tree of Life taxon ids
 
-    Returns an ete3 tree with branch lengths of 1, supports of 1, and only
-    tip labels. Note: any polytomies are arbirarily resolved.
+    Return
+    ------
+        An ete3 tree with branch lengths of 1, supports of 1, and only
+        tip labels. Note: any polytomies are arbirarily resolved.
     """
 
     # Make sure this is a clean topiary dataframe

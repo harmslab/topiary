@@ -1,10 +1,9 @@
-
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 __description__ = \
 """
-utility functions for the topiary package
+Public utility functions for the topiary package.
 """
+__author__ = "Michael J. Harms"
+__date__ = "2021-04-08"
 
 from topiary import _private, _arg_processors
 

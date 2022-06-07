@@ -1,9 +1,9 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-23"
 __description__ = \
 """
-BLAST against an NCBI database.
+Run BLAST against a remote NCBI database.
 """
+__author__ = "Michael J. Harms"
+__date__ = "2021-04-23"
 
 import topiary
 from topiary.external.ncbi import read_blast_xml
@@ -55,7 +55,7 @@ def _prepare_for_blast(sequence,
 
     Return
     ------
-        sequence_list, qblast_kwargs, return_singleton
+        sequence_list, blast_kwargs, return_singleton
     """
 
     # Deal with standard input
@@ -157,25 +157,25 @@ def _prepare_for_blast(sequence,
     # Construct qblast keywords
 
     # keyword arguments to pass to qblast *besides* sequence
-    qblast_kwargs = {"program":blast_program,
-                     "database":db,
-                     "hitlist_size":f"{hitlist_size}",
-                     "expect":f"{e_value_cutoff}",
-                     "gapcosts":f"{gapcosts[0]} {gapcosts[1]}",
-                     "url_base":url_base}
+    blast_kwargs = {"program":blast_program,
+                    "database":db,
+                    "hitlist_size":f"{hitlist_size}",
+                    "expect":f"{e_value_cutoff}",
+                    "gapcosts":f"{gapcosts[0]} {gapcosts[1]}",
+                    "url_base":url_base}
 
     # Construct taxid entrez_query
     if len(taxid_out) > 0:
-        qblast_kwargs["entrez_query"] = " or ".join(taxid_out)
+        blast_kwargs["entrez_query"] = " or ".join(taxid_out)
 
     # Capture the rest of kwargs, overwriting anything automatically made
     for k in kwargs:
-        qblast_kwargs[k] = kwargs[k]
+        blast_kwargs[k] = kwargs[k]
 
-    return sequence_list, qblast_kwargs, return_singleton
+    return sequence_list, blast_kwargs, return_singleton
 
 def _construct_args(sequence_list,
-                    qblast_kwargs,
+                    blast_kwargs,
                     max_query_length,
                     num_tries_allowed,
                     num_threads=-1,
@@ -186,7 +186,18 @@ def _construct_args(sequence_list,
 
     Parameters
     ----------
+        sequence_list: list of sequences as strings
+        blast_kwargs: keyword arguments to pass to blast call
+        max_query_length: maximum string length accepted by the server. if the
+                          query is too long, this function will break it into
+                          multiple requests, each sent to ncbi.
+        num_tries_allowed: try num_tries_allowed times in case of timeout
+        num_threads: number of threads to use (locally). if -1 use all available.
         test_num_cores: send in a hacked number of cores for testing purposes
+
+    Return
+    ------
+        list of args to pass for each calculation, number of threads
     """
 
     # Validate inputs that have not yet been validated.
@@ -289,7 +300,7 @@ def _construct_args(sequence_list,
 
     all_args = []
     for i, seq in enumerate(final_sequences):
-        query = copy.deepcopy(qblast_kwargs)
+        query = copy.deepcopy(blast_kwargs)
         query["sequence"] = seq
         all_args.append([query,i,num_tries_allowed])
 
@@ -358,7 +369,7 @@ def _thread(args):
 
     Parameters
     ----------
-        args. a tuple of arguments expanded as detailed above.
+        args. a list of arguments expanded as detailed above.
 
     Return
     ------
@@ -402,7 +413,6 @@ def _thread(args):
 
     # Parse output
     out_df = read_blast_xml(out)
-    out_df.to_csv(f"ncbi-blast-results_{counter}.csv")
 
     queue.put((counter,out_df))
 
@@ -514,12 +524,12 @@ def ncbi_blast(sequence,
                               kwargs=kwargs)
 
     sequence_list = prep[0]
-    qblast_kwargs = prep[1]
+    blast_kwargs = prep[1]
     return_singleton = prep[2]
 
     # Get arguments to pass to each thread
     all_args, num_threads = _construct_args(sequence_list=sequence_list,
-                                            qblast_kwargs=qblast_kwargs,
+                                            blast_kwargs=blast_kwargs,
                                             max_query_length=max_query_length,
                                             num_threads=num_threads,
                                             num_tries_allowed=num_tries_allowed)

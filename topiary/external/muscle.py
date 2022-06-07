@@ -20,24 +20,24 @@ def run_muscle(input,
 
     Parameters
     ----------
-    input: input to align (fasta file or topiary df)
-    output_fasta: output fasta file to store alignment. Optional if the input
-                  is a dataframe; reqiured if the input is a fasta file.
-    super5: bool. User the 'super5' mode of muscle 5
-    muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
-                     specifies "-align" and "-output" (or -in/-out for old
-                     version of the command line), but leaves rest as default.
-                     Format should be something like ['-replicates',20,...].
-                     Arguments are not checked by this function, but passed
-                     directly to muscle.
-    muscle_binary: location of muscle binary (default assumes 'muscle'
-                   command is in the PATH).
+        input: input to align (fasta file or topiary df)
+        output_fasta: output fasta file to store alignment. Optional if the input
+                      is a dataframe; reqiured if the input is a fasta file.
+        super5: bool. User the 'super5' mode of muscle 5
+        muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
+                         specifies "-align" and "-output" (or -in/-out for old
+                         version of the command line), but leaves rest as default.
+                         Format should be something like ['-replicates',20,...].
+                         Arguments are not checked by this function, but passed
+                         directly to muscle.
+        muscle_binary: location of muscle binary (default assumes 'muscle'
+                       command is in the PATH).
 
     Return
     ------
-    If input is a topiary dataframe, return a copy of the dataframe with the
-    aligned sequences loaded into the alignment column. Otherwise, write to the
-    output_fasta file and return None from the function.
+        If input is a topiary dataframe, return a copy of the dataframe with the
+        aligned sequences loaded into the alignment column. Otherwise, write to the
+        output_fasta file and return None from the function.
     """
 
     # If output_fasta is defined, make sure it's a string
@@ -123,21 +123,21 @@ def _run_muscle(input_fasta,
 
     Parameters
     ----------
-    input_fasta: input fasta file to align
-    output_fasta: output fasta file to store alignment
-    super5: bool. User the 'super5' mode of muscle 5
-    muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
-                     specifies "-align" and "-output" (or -in/-out for old
-                     version of the command line), but leaves rest as default.
-                     Format should be something like ['-replicates',20,...].
-                     Arguments are not checked by this function, but passed
-                     directly to muscle.
-    muscle_binary: location of muscle binary (default assumes 'muscle'
-                   command is in the PATH).
+        input_fasta: input fasta file to align
+        output_fasta: output fasta file to store alignment
+        super5: bool. User the 'super5' mode of muscle 5
+        muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
+                         specifies "-align" and "-output" (or -in/-out for old
+                         version of the command line), but leaves rest as default.
+                         Format should be something like ['-replicates',20,...].
+                         Arguments are not checked by this function, but passed
+                         directly to muscle.
+        muscle_binary: location of muscle binary (default assumes 'muscle'
+                       command is in the PATH).
 
     Return
     ------
-    None
+        None
     """
 
 

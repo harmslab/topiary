@@ -17,6 +17,7 @@ def gen_seed():
     Generate a random string of 10 integers and return as a string.
 
     Return
+    ------
         10-digit integer as a string
     """
 
@@ -183,17 +184,24 @@ def prep_calc(previous_dir=None,
     Prepare a calculation, organizing input files and creating an output
     directory.
 
-    previous_dir: directory containing previous calculation. prep_calc will
-                  grab the the csv, model, and tree from the previous run.
-    These arguments will override anything pulled out from the previous_dir.
-    df: topiary data frame or .csv file written out from a topiary data frame
-    model: phylogenetic model as string (e.g. JTT, LG+G8)
-    tree_file: newick tree file
-    other_files: other files besides the df and tree that are needed
-    output: output directory. If not specified, create an output directory with
-            form "{output_base}_randomletters"
-    overwrite: whether or not to overwrite existing (default is False)
-    output_base: base to assign the directory if no output is specified.
+    Parameters
+    ----------
+        previous_dir: directory containing previous calculation. prep_calc will
+                      grab the the csv, model, and tree from the previous run.
+        These arguments will override anything pulled out from the previous_dir.
+        df: topiary data frame or .csv file written out from a topiary data frame
+        model: phylogenetic model as string (e.g. JTT, LG+G8)
+        tree_file: newick tree file
+        other_files: other files besides the df and tree that are needed
+        output: output directory. If not specified, create an output directory with
+                form "{output_base}_randomletters"
+        overwrite: whether or not to overwrite existing (default is False)
+        output_base: base to assign the directory if no output is specified.
+
+    Return
+    ------
+        dictionary containing information about the prepared calculation
+        (things like filenames, etc.)
     """
 
     # -------------------------------------------------------------------------
@@ -321,9 +329,15 @@ def _subproc_wrapper(cmd,stdout,queue):
     """
     Wrap the subprocess.run call to allow multithreading.
 
-    args: args to pass to subprocess.run
-    kwargs: kwargs to pass to subprocess.run
-    queue: multiprocessing queue to catch return value
+    Parameters
+    ----------
+        args: args to pass to subprocess.run
+        kwargs: kwargs to pass to subprocess.run
+        queue: multiprocessing queue to catch return value
+
+    Return
+    ------
+        None
     """
 
     ret = subprocess.run(cmd,stdout=stdout)
@@ -336,8 +350,14 @@ def _follow_log_generator(f,queue):
     log file being spit out by an external program whose return will be put
     into the queue.
 
-    f: open file object
-    queue: multiprocessing.Queue object
+    Parameters
+    ----------
+        f: open file object
+        queue: multiprocessing.Queue object
+
+    Return
+    ------
+        None
     """
 
     # start infinite loop
@@ -377,14 +397,18 @@ def launch(cmd,run_directory,log_file=None):
     Launch an external command in a specific directory. Runs command on its own
     thread, allowing python to capture output from a file as standard output.
 
-    cmd: subprocess style command list (i.e. ["ls","-al"])
-    run_directory: directory in which to run the command. changes into that
-                   directory, then returns out when process completes
-    log_file: log file where command output will be stored. if specified, the
-              output of the log file is captured and written to standard output
-              (equivalent to `tail -f log_file`).
+    Parameters
+    ----------
+        cmd: subprocess style command list (i.e. ["ls","-al"])
+        run_directory: directory in which to run the command. changes into that
+                       directory, then returns out when process completes
+        log_file: log file where command output will be stored. if specified, the
+                  output of the log file is captured and written to standard output
+                  (equivalent to `tail -f log_file`).
 
-    returns None. Throws RuntimeError if the command terminates unexpectedly.
+    Return
+    ------
+        None. Throws RuntimeError if the command terminates unexpectedly.
     """
 
     # Go into working directory

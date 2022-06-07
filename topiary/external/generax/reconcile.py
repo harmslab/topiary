@@ -26,18 +26,24 @@ def reconcile(previous_dir=None,
     """
     Reoncile the gene tree to the species tree using generax.
 
-    previous_dir: directory containing previous calculation. prep_calc will
-                  grab the the csv, model, and tree from the previous run.
-    df: topiary data frame or csv written out from topiary df
-    model: model (e.g. LG+G8).
-    tree_file: tree_file in newick format.
-    allow_horizontal_transfer: whether to allow horizontal transfer during
-                               reconcilation. If True, use the UndatedDTL model.
-                               If False, use the UndatedDL model.
-    output: output directory. If not specified, create an output directory with
-            form "generax_reconcilation_randomletters"
-    overwrite: whether or not to overwrite existing output (default False)
-    generax_binary: what generax binary to use
+    Parameters
+    ----------
+        previous_dir: directory containing previous calculation. prep_calc will
+                      grab the the csv, model, and tree from the previous run.
+        df: topiary data frame or csv written out from topiary df
+        model: model (e.g. LG+G8).
+        tree_file: tree_file in newick format.
+        allow_horizontal_transfer: whether to allow horizontal transfer during
+                                   reconcilation. If True, use the UndatedDTL model.
+                                   If False, use the UndatedDL model.
+        output: output directory. If not specified, create an output directory with
+                form "generax_reconcilation_randomletters"
+        overwrite: whether or not to overwrite existing output (default False)
+        generax_binary: what generax binary to use
+
+    Return
+    ------
+        None or, if in jupyter notebook, ete3.render result for reconciled tree
     """
 
     # Prepare for the calculation, loading in previous calculation and

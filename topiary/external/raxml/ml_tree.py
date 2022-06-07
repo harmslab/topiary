@@ -25,18 +25,24 @@ def generate_ml_tree(previous_dir=None,
     Generate maximum likelihood tree from an alignment given a substitution
     model.
 
-    previous_dir: directory containing previous calculation. prep_calc will
-                  grab the the csv, model, and tree from the previous run.
-    df: topiary data frame or csv written out from topiary df
-    model: model (e.g. LG+G8).
-    tree_file: tree_file in newick format. If not specified, a parsimony tree
-               will be generated. used as starting point.
-    output: output directory. If not specified, create an output directory with
-            form "generate_ml_tree_randomletters"
-    overwrite: whether or not to overwrite existing output (default False)
-    threads: number of threads to use. if -1 use all available
-    raxml_binary: what raxml binary to use
-    bootstrap: whether or not to do bootstrap replicates
+    Parameters
+    ----------
+        previous_dir: directory containing previous calculation. prep_calc will
+                      grab the the csv, model, and tree from the previous run.
+        df: topiary data frame or csv written out from topiary df
+        model: model (e.g. LG+G8).
+        tree_file: tree_file in newick format. If not specified, a parsimony tree
+                   will be generated. used as starting point.
+        output: output directory. If not specified, create an output directory with
+                form "generate_ml_tree_randomletters"
+        overwrite: whether or not to overwrite existing output (default False)
+        threads: number of threads to use. if -1 use all available
+        raxml_binary: what raxml binary to use
+        bootstrap: whether or not to do bootstrap replicates
+
+    Return
+    ------
+        None or, if running in notebook, ete3.render output for tree
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
