@@ -140,7 +140,7 @@ def entrez_download(to_download,
 
         # This is a bit obscure. Build a list of args to pass to the pool. Each
         # tuple of args matches the args in _entrez_download_thread.
-        # all_args has all len(df) reverse blast runs we want to do.
+        # all_args has all len(df) recip blast runs we want to do.
         all_args = []
         for i in range(0,len(to_download),block_size):
             ids = ",".join(to_download[i:(i+block_size)])

@@ -2,7 +2,7 @@ __author__ = "Michael J. Harms"
 __date__ = "2021-04-08"
 __description__ = \
 """
-Reverse blast sequence datasets.
+recip blast sequence datasets.
 """
 
 import topiary
@@ -16,8 +16,8 @@ import re, sys, copy
 
 def _prepare_for_blast(df,
                        paralog_patterns,
-                       local_rev_blast_db,
-                       ncbi_rev_blast_db,
+                       local_blast_db,
+                       ncbi_blast_db,
                        ignorecase,
                        max_del_best,
                        min_call_prob,
@@ -35,11 +35,11 @@ def _prepare_for_blast(df,
             sequence[5:20]. To turn this off, set use_start_end = False.
         paralog_patterns: dictionary with paralogs as values and lists of patterns
                           to look for as values.
-        local_rev_blast_db: local database against which to blast
-        ncbi_rev_blast_db: database on ncbi against which to blast
+        local_blast_db: local database against which to blast
+        ncbi_blast_db: database on ncbi against which to blast
         ignorecase: whether to ignore letter case when searching blast (default True).
         max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                      allows for paralog call. This means the matched reverse blast
+                      allows for paralog call. This means the matched recip blast
                       hit does not have to be the best hit, but must be within this
                       e-value difference of the best hit. A higher number means a
                       less stringent cutoff. A value of 0 would require the matched
@@ -77,13 +77,13 @@ def _prepare_for_blast(df,
         raise ValueError(err)
 
     # Validate blast database arguments
-    if ncbi_rev_blast_db is None and local_rev_blast_db is None:
-        err = "\nPlease specificy either ncbi_rev_blast_db OR local_rev_blast_db\n\n"
+    if ncbi_blast_db is None and local_blast_db is None:
+        err = "\nPlease specificy either ncbi_blast_db OR local_blast_db\n\n"
         raise ValueError(err)
 
-    if ncbi_rev_blast_db is not None and local_rev_blast_db is not None:
-        err = "\nPlease specificy either ncbi_rev_blast_db OR\n"
-        err += "local_rev_blast_db, but not both.\n\n"
+    if ncbi_blast_db is not None and local_blast_db is not None:
+        err = "\nPlease specificy either ncbi_blast_db OR\n"
+        err += "local_blast_db, but not both.\n\n"
         raise ValueError(err)
 
     # Check max_del_best
@@ -121,7 +121,7 @@ def _prepare_for_blast(df,
     sequence_list = []
     for idx in df.index:
 
-        # Do not reverse blast sequences where we already have keep == False
+        # Do not recip blast sequences where we already have keep == False
         if not df.loc[idx,"keep"]:
             continue
 
@@ -159,8 +159,8 @@ def _prepare_for_blast(df,
 
 
 def _run_blast(sequence_list,
-               local_rev_blast_db,
-               ncbi_rev_blast_db,
+               local_blast_db,
+               ncbi_blast_db,
                ncbi_taxid,
                hitlist_size,
                e_value_cutoff,
@@ -174,8 +174,8 @@ def _run_blast(sequence_list,
     Parameters
     ----------
         sequence_list: list of sequences to use as blast queries.
-        local_rev_blast_db: local database against which to blast
-        ncbi_rev_blast_db: database on ncbi against which to blast
+        local_blast_db: local database against which to blast
+        ncbi_blast_db: database on ncbi against which to blast
         ncbi_taxid: limit search to species specified by taxid for an ncbi search.
         e_value_cutoff: minimum allowable e value for a hit
         gapcosts: gap costs (must be length 2 tuple of ints)
@@ -192,7 +192,7 @@ def _run_blast(sequence_list,
     """
 
     # NCBI blast
-    if ncbi_rev_blast_db:
+    if ncbi_blast_db:
 
         try:
             taxid = kwargs.pop("taxid")
@@ -207,12 +207,12 @@ def _run_blast(sequence_list,
 
         # Warn that NCBI blasting can be slow
         w = "\nBlasting against the NCBI database can be slow/unstable. Consider\n"
-        w += "creating a local BLAST database for your reverse BLAST needs.\n"
+        w += "creating a local BLAST database for your recip BLAST needs.\n"
         print(w)
         sys.stdout.flush()
 
         hit_dfs = ncbi_blast(sequence_list,
-                             db=ncbi_rev_blast_db,
+                             db=ncbi_blast_db,
                              taxid=ncbi_taxid,
                              blast_program="blastp",
                              hitlist_size=hitlist_size,
@@ -223,7 +223,7 @@ def _run_blast(sequence_list,
     # Local blast
     else:
         hit_dfs = local_blast(sequence_list,
-                              db=local_rev_blast_db,
+                              db=local_blast_db,
                               blast_program="blastp",
                               hitlist_size=hitlist_size,
                               e_value_cutoff=e_value_cutoff,
@@ -234,12 +234,12 @@ def _run_blast(sequence_list,
     return hit_dfs
 
 
-def _make_reverse_blast_calls(df,
+def _make_recip_blast_calls(df,
                               hit_dfs,
                               patterns,
                               max_del_best,
                               min_call_prob,
-                              ncbi_rev_blast_db):
+                              ncbi_blast_db):
     """
     Make paralog calls given blast output and list of patterns.
 
@@ -250,7 +250,7 @@ def _make_reverse_blast_calls(df,
         patterns: dictionary with paralogs as values and lists of patterns
                   to look for as values.
         max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                      allows for paralog call. This means the matched reverse blast
+                      allows for paralog call. This means the matched recip blast
                       hit does not have to be the best hit, but must be within this
                       e-value difference of the best hit. A higher number means a
                       less stringent cutoff. A value of 0 would require the matched
@@ -261,33 +261,33 @@ def _make_reverse_blast_calls(df,
                        probability the best paralog match must have to result in a
                        paralog call. Value should be between 0 and 1 (not inclusive),
                        where min_call_prob --> 1 increases the stringency.
-        ncbi_rev_blast_db: database used for ncbi blast. (Used to determine if
+        ncbi_blast_db: database used for ncbi blast. (Used to determine if
                            this should be parsed as ncbi vs. local blast inputs)
 
     Return
     ------
-        dataframe with reverse blast calls
+        dataframe with recip blast calls
     """
 
     # hit_dfs is a list of dataframes, each of which has the blast hits for
     # each sequence in the input topiary dataframe.
 
     # Go through hits from each sequence
-    results = {"reverse_found_paralog":[],
-               "reverse_hit":[],
-               "reverse_paralog":[],
-               "reverse_prob_match":[],
-               "reverse_del_best":[]}
+    results = {"recip_found_paralog":[],
+               "recip_hit":[],
+               "recip_paralog":[],
+               "recip_prob_match":[],
+               "recip_del_best":[]}
 
     for _, hits in enumerate(hit_dfs):
 
-        # No reverse blast hits at all for this sequence
+        # No recip blast hits at all for this sequence
         if len(hits) == 0:
-            results["reverse_found_paralog"].append(False)
-            results["reverse_hit"].append(pd.NA)
-            results["reverse_paralog"].append(pd.NA)
-            results["reverse_prob_match"].append(np.nan)
-            results["reverse_del_best"].append(np.nan)
+            results["recip_found_paralog"].append(False)
+            results["recip_hit"].append(pd.NA)
+            results["recip_paralog"].append(pd.NA)
+            results["recip_prob_match"].append(np.nan)
+            results["recip_del_best"].append(np.nan)
             continue
 
         # Get e value of top hit
@@ -312,7 +312,7 @@ def _make_reverse_blast_calls(df,
 
                     # If this was an NCBI blast, try to parse the NCBI line,
                     # pulling apart multi-titles
-                    if ncbi_rev_blast_db:
+                    if ncbi_blast_db:
                         hd = parse_ncbi_line(row["title"],row["accession"])
                         if hd is not None:
                             this_def = hd["name"]
@@ -329,7 +329,7 @@ def _make_reverse_blast_calls(df,
 
 
         # If we got at least one hit that matched
-        reverse_found_paralog = False
+        recip_found_paralog = False
         if len(paralogs) > 0:
 
             # calculate posterior probability
@@ -352,64 +352,64 @@ def _make_reverse_blast_calls(df,
             # Get the match hit definition, paralog call, match probability
             # (relative to other possible paralogs), and difference in e value
             # relative to the best overall hit.
-            reverse_hit = hit_defs[match_idx]
-            reverse_paralog = paralogs[match_idx]
-            reverse_prob_match = match_pp
-            reverse_e_value = e_values[match_idx]
+            recip_hit = hit_defs[match_idx]
+            recip_paralog = paralogs[match_idx]
+            recip_prob_match = match_pp
+            recip_e_value = e_values[match_idx]
 
             # If the top hit has e-value of zero...
             if top_e_value == 0:
 
-                # If the reverse blast hit matches this, the difference in those
+                # If the recip blast hit matches this, the difference in those
                 # e-values is zero
-                if reverse_e_value == 0:
-                    reverse_del_best = 0
+                if recip_e_value == 0:
+                    recip_del_best = 0
 
-                # If the reverse blast hit does *not* match the top, the
+                # If the recip blast hit does *not* match the top, the
                 # difference in those e-values is
                 else:
-                    reverse_del_best = -np.inf
+                    recip_del_best = -np.inf
                     w = "WARNING:\n"
                     w += "BLAST returned an e-value = 0.0 for the top hit:\n\n"
                     w += f"  {hits['hit_def'].iloc[0]}\n\n"
                     w += "This hit does not match any of the patterns in paralog_patterns.\n"
                     w += "The best hit that matches something in paralog_patterns has\n"
-                    w += f"an e-value of {reverse_e_value} and matches '{reverse_paralog}'.\n"
+                    w += f"an e-value of {recip_e_value} and matches '{recip_paralog}'.\n"
                     w += "These values cannot be quantitatively compared.\n"
-                    w += "Topiary will set reverse_found_paralog to 'False' for\n"
+                    w += "Topiary will set recip_found_paralog to 'False' for\n"
                     w += "this sequence.\n"
                     print(w)
 
-            # If we get here, neither top_e_value or reverse_e_value are zero.
-            # (if reverse_e_value was zero, it would be top_e_value and thus be
+            # If we get here, neither top_e_value or recip_e_value are zero.
+            # (if recip_e_value was zero, it would be top_e_value and thus be
             # caught above.)
             else:
-                reverse_del_best = np.log10(top_e_value) - np.log10(reverse_e_value)
+                recip_del_best = np.log10(top_e_value) - np.log10(recip_e_value)
 
             # Decide if we can make a paralog call based on del_best and
             # prob_match
-            if reverse_del_best < max_del_best and reverse_prob_match > min_call_prob:
-                reverse_found_paralog = True
+            if recip_del_best < max_del_best and recip_prob_match > min_call_prob:
+                recip_found_paralog = True
 
         else:
-            reverse_hit = hits["hit_def"].iloc[0]
-            reverse_paralog = None
-            reverse_prob_match = None
-            reverse_del_best = None
+            recip_hit = hits["hit_def"].iloc[0]
+            recip_paralog = None
+            recip_prob_match = None
+            recip_del_best = None
 
         # Record results of analysis
-        results["reverse_found_paralog"].append(reverse_found_paralog)
-        results["reverse_hit"].append(reverse_hit)
-        results["reverse_paralog"].append(reverse_paralog)
-        results["reverse_prob_match"].append(reverse_prob_match)
-        results["reverse_del_best"].append(reverse_del_best)
+        results["recip_found_paralog"].append(recip_found_paralog)
+        results["recip_hit"].append(recip_hit)
+        results["recip_paralog"].append(recip_paralog)
+        results["recip_prob_match"].append(recip_prob_match)
+        results["recip_del_best"].append(recip_del_best)
 
     # Only load results for values with keep == True
     for k in results:
 
-        # If reverse_found_paralog, set to False by default. Overwritten with
+        # If recip_found_paralog, set to False by default. Overwritten with
         # Trues below
-        if k == "reverse_found_paralog":
+        if k == "recip_found_paralog":
             df[k] = False
 
         # Otherwise, set to a missing value.
@@ -421,24 +421,24 @@ def _make_reverse_blast_calls(df,
 
     num_keep_at_start = np.sum(df.keep)
 
-    # Update keep with reverse_found_paralog
-    df.loc[:,"keep"] = np.logical_and(df["keep"],df["reverse_found_paralog"])
+    # Update keep with recip_found_paralog
+    df.loc[:,"keep"] = np.logical_and(df["keep"],df["recip_found_paralog"])
 
     # Write out some summary statistics
-    print(f"{np.sum(df.keep)} of {num_keep_at_start} sequences passed reverse blast.\n")
+    print(f"{np.sum(df.keep)} of {num_keep_at_start} sequences passed recip blast.\n")
     print("Found the following numbers of paralogs:")
     for p in patterns:
-        num_of_p = np.sum(df.reverse_paralog == p[1])
+        num_of_p = np.sum(df.recip_paralog == p[1])
         print(f"    {p[1]}: {num_of_p}")
     print("",flush=True)
 
     return df
 
 
-def reverse_blast(df,
+def recip_blast(df,
                   paralog_patterns,
-                  local_rev_blast_db=None,
-                  ncbi_rev_blast_db=None,
+                  local_blast_db=None,
+                  ncbi_blast_db=None,
                   ncbi_taxid=None,
                   ignorecase=True,
                   max_del_best=100,
@@ -450,19 +450,19 @@ def reverse_blast(df,
                   num_threads=-1,
                   **kwargs):
     """
-    Take sequences from a topiary dataframe and do a reverse blast analysis
+    Take sequences from a topiary dataframe and do a recip blast analysis
     against an NCBI or local blast database. Looks in blast hits for the
     regular expressions defined in paralog_patterns to call paralog for each
     sequence in df. Returns a copy of the input topiary dataframe with five new
     columns:
 
-        reverse_found_paralog: True/False, whether a paralog was found
-        reverse_hit: string, description for paralog hit (if found) or best hit
+        recip_found_paralog: True/False, whether a paralog was found
+        recip_hit: string, description for paralog hit (if found) or best hit
                      (if no match found)
-        reverse_paralog: string or None. name of paralog from paralog_patterns
-        reverse_prob_match: float. probability that this is the correct paralog
+        recip_paralog: string or None. name of paralog from paralog_patterns
+        recip_prob_match: float. probability that this is the correct paralog
                             call based on relative evalues of all paralog hits
-        reverse_del_best: float. how much worse paralog call is than the best
+        recip_del_best: float. how much worse paralog call is than the best
                           blast hit. log(e_hit_match) - log(e_hit_best)
 
     Parameters
@@ -490,11 +490,11 @@ def reverse_blast(df,
                           use regular expressions in your patterns, pass them in as
                           compiled regular expressions: pattern = re.compile("[A-Z]")
 
-        local_rev_blast_db: local database against which to blast (incompatible with
-                        ncbi_rev_blast_db)
+        local_blast_db: local database against which to blast (incompatible with
+                        ncbi_blast_db)
 
-        ncbi_rev_blast_db: database on ncbi against which to blast (incompatible
-                           with local_rev_blast_db)
+        ncbi_blast_db: database on ncbi against which to blast (incompatible
+                           with local_blast_db)
 
         ncbi_taxid: limit search to species specified by taxid for an ncbi search.
                     We recommend setting this to well-annotated genomes like
@@ -507,7 +507,7 @@ def reverse_blast(df,
                     will be used for all patterns.
 
         max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                      allows for paralog call. This means the matched reverse blast
+                      allows for paralog call. This means the matched recip blast
                       hit does not have to be the best hit, but must be within this
                       e-value difference of the best hit. A higher number means a
                       less stringent cutoff. A value of 0 would require the matched
@@ -523,7 +523,7 @@ def reverse_blast(df,
         use_start_end: boolean. whether or not to use start/stop columns in
                         dataframe (if present) to slice subset of sequence to blast.
 
-        histlist_size: number of hits to look at for reverse blast.
+        histlist_size: number of hits to look at for recip blast.
 
         e_value_cutoff: minimum allowable e value for a hit
 
@@ -539,18 +539,18 @@ def reverse_blast(df,
 
     Return
     ------
-        copy of input dataframe with new reverse blast columns
+        copy of input dataframe with new recip blast columns
     """
 
     # Check sanity of input parameters and return a validated topiary dataframe,
     # list of sequences, and compiled set of patterns to search. Note: the
-    # values of ncbi_rev_blast_db, local_rev_blast_db, ncbi_taxid, hitlist_size,
+    # values of ncbi_blast_db, local_blast_db, ncbi_taxid, hitlist_size,
     # gapcosts, num_threads, and kwargs are checked by the blast functions
     # themselves.
     out = _prepare_for_blast(df,
                              paralog_patterns,
-                             local_rev_blast_db,
-                             ncbi_rev_blast_db,
+                             local_blast_db,
+                             ncbi_blast_db,
                              ignorecase,
                              max_del_best,
                              min_call_prob,
@@ -562,8 +562,8 @@ def reverse_blast(df,
     # Run BLAST on sequence list, returning list of dataframes -- one for each
     # seqeunce in sequence_list
     hit_dfs = _run_blast(sequence_list,
-                         local_rev_blast_db,
-                         ncbi_rev_blast_db,
+                         local_blast_db,
+                         ncbi_blast_db,
                          ncbi_taxid,
                          hitlist_size,
                          e_value_cutoff,
@@ -572,11 +572,11 @@ def reverse_blast(df,
                          **kwargs)
 
     # Make paralog calls given blast output and list of patterns
-    out_df = _make_reverse_blast_calls(df,
+    out_df = _make_recip_blast_calls(df,
                                        hit_dfs,
                                        patterns,
                                        max_del_best,
                                        min_call_prob,
-                                       ncbi_rev_blast_db)
+                                       ncbi_blast_db)
 
     return out_df

@@ -38,7 +38,7 @@ def dataframe_good_files():
     return files
 
 @pytest.fixture(scope="module")
-def reverse_blast_hit_dfs():
+def recip_blast_hit_dfs():
     """
     Load saved hit_dfs output.
     """
@@ -48,7 +48,7 @@ def reverse_blast_hit_dfs():
         dir = os.path.dirname(os.path.realpath(__file__))
         files = glob.glob(os.path.join(dir,
                                        "data",
-                                       "reverse_blast",
+                                       "recip_blast",
                                        f"{prefix}_hit_dfs",
                                        "*.csv"))
         files.sort()

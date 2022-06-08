@@ -1,7 +1,7 @@
 import pytest
 from conftest import get_public_param_defaults
 
-from topiary.external.ncbi import _reverse_blast as _rb
+from topiary.external.ncbi import _recip_blast as _rb
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ import copy, re
 def test__prepare_for_blast(test_dataframes):
 
 
-    default_kwargs = get_public_param_defaults(_rb.reverse_blast,
+    default_kwargs = get_public_param_defaults(_rb.recip_blast,
                                                _rb._prepare_for_blast)
 
     df = test_dataframes["good-df"]
@@ -24,22 +24,22 @@ def test__prepare_for_blast(test_dataframes):
         out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should work (one blast db specified)
-    kwargs["local_rev_blast_db"] = "local"
+    kwargs["local_blast_db"] = "local"
     out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should fail (two blast db specified)
-    kwargs["ncbi_rev_blast_db"] = "nr"
+    kwargs["ncbi_blast_db"] = "nr"
     with pytest.raises(ValueError):
         out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Should work (one blast db specified)
-    kwargs["local_rev_blast_db"] = None
+    kwargs["local_blast_db"] = None
     out = _rb._prepare_for_blast(df,paralog_patterns,**kwargs)
 
     # Now hack default kwargs so it should run without modification
     default_kwargs["df"] = df.copy()
     default_kwargs["paralog_patterns"] = copy.deepcopy(paralog_patterns)
-    default_kwargs["local_rev_blast_db"] = "local"
+    default_kwargs["local_blast_db"] = "local"
 
     # Now start tests for each argument
 
@@ -116,7 +116,7 @@ def test__prepare_for_blast(test_dataframes):
                       {"stupid":"a","is":[]},
                       None,[],dict,pd.DataFrame({"test":[1,2,3]}),1,0,-1]
     for b in bad_paralog_patterns:
-        print(f"passing {b} to _prepare_for_reverse_blast")
+        print(f"passing {b} to _prepare_for_recip_blast")
         with pytest.raises(ValueError):
             out = _rb._prepare_for_blast(paralog_patterns=b,**kwargs)
 
@@ -129,7 +129,7 @@ def test__prepare_for_blast(test_dataframes):
             out = _rb._prepare_for_blast(paralog_patterns=b,**kwargs)
 
     # ------------------------------------------------------------------------
-    # local_rev_blast_db and ncbi_rev_blast_db already tested above
+    # local_blast_db and ncbi_blast_db already tested above
 
     # ------------------------------------------------------------------------
     # ignorecase
@@ -251,7 +251,7 @@ def test__prepare_for_blast(test_dataframes):
     with pytest.raises(ValueError):
         out = _rb._prepare_for_blast(use_start_end=True,**kwargs)
 
-    # Check for appropriate keep behavior. Should drop one sequence for reverse
+    # Check for appropriate keep behavior. Should drop one sequence for recip
     # blast because keep == False
     kwargs = copy.deepcopy(default_kwargs)
     hack_df = kwargs["df"].copy()
@@ -260,12 +260,12 @@ def test__prepare_for_blast(test_dataframes):
     out = _rb._prepare_for_blast(**kwargs)
     assert len(out[1])  == 4
 
-def test__make_reverse_blast_calls(test_dataframes,reverse_blast_hit_dfs):
+def test__make_recip_blast_calls(test_dataframes,recip_blast_hit_dfs):
 
     # --------------------------------------------------------------------------
     # Run _prepare_for_blast so we have all of the inputs we need for
-    # _make_reverse_blast_calls
-    prep_kwargs = get_public_param_defaults(_rb.reverse_blast,
+    # _make_recip_blast_calls
+    prep_kwargs = get_public_param_defaults(_rb.recip_blast,
                                             _rb._prepare_for_blast)
 
     df = test_dataframes["good-df"]
@@ -273,62 +273,62 @@ def test__make_reverse_blast_calls(test_dataframes,reverse_blast_hit_dfs):
                         "LY86":re.compile("lymphocyte antigen 86")}
 
     # Should work (one blast db specified, doesn't actually change output)
-    prep_kwargs["local_rev_blast_db"] = "local"
+    prep_kwargs["local_blast_db"] = "local"
     prep_out = _rb._prepare_for_blast(df,paralog_patterns,**prep_kwargs)
 
     # Okay, output from _prepare_for_blast
     df, sequence_list, patterns, max_del_best, min_call_prob = prep_out
 
-    # Get default arguments for _make_reverse_blast_calls
-    default_kwargs = get_public_param_defaults(_rb.reverse_blast,
-                                               _rb._make_reverse_blast_calls)
+    # Get default arguments for _make_recip_blast_calls
+    default_kwargs = get_public_param_defaults(_rb.recip_blast,
+                                               _rb._make_recip_blast_calls)
     default_kwargs["df"] = df.copy()
     default_kwargs["patterns"] = copy.deepcopy(patterns)
 
     # Go through the two blast types
-    for blast_type in reverse_blast_hit_dfs:
+    for blast_type in recip_blast_hit_dfs:
 
         # Does it run?
-        hit_dfs = reverse_blast_hit_dfs[blast_type]
+        hit_dfs = recip_blast_hit_dfs[blast_type]
         kwargs = copy.deepcopy(default_kwargs)
         if blast_type.startswith("ncbi"):
-            kwargs["ncbi_rev_blast_db"] = "nr"
-        out_df = _rb._make_reverse_blast_calls(hit_dfs=hit_dfs,**kwargs)
+            kwargs["ncbi_blast_db"] = "nr"
+        out_df = _rb._make_recip_blast_calls(hit_dfs=hit_dfs,**kwargs)
 
         assert np.all(out_df["keep"])
-        assert np.all(out_df["reverse_found_paralog"])
+        assert np.all(out_df["recip_found_paralog"])
 
 
     # Force a match to not occur
-    for blast_type in reverse_blast_hit_dfs:
+    for blast_type in recip_blast_hit_dfs:
 
-        hit_dfs = reverse_blast_hit_dfs[blast_type]
+        hit_dfs = recip_blast_hit_dfs[blast_type]
         kwargs = copy.deepcopy(default_kwargs)
         if blast_type.startswith("ncbi"):
-            kwargs["ncbi_rev_blast_db"] = "nr"
+            kwargs["ncbi_blast_db"] = "nr"
 
         # Set up first sequence so hit definition does not match
         hit_dfs[0]["hit_def"] = "NOT MATCHING"
-        out_df = _rb._make_reverse_blast_calls(hit_dfs=hit_dfs,**kwargs)
+        out_df = _rb._make_recip_blast_calls(hit_dfs=hit_dfs,**kwargs)
 
         assert np.array_equal(np.array(out_df["keep"]),
                               np.array([False,True,True,True,True]))
-        assert np.array_equal(np.array(out_df["reverse_found_paralog"]),
+        assert np.array_equal(np.array(out_df["recip_found_paralog"]),
                               np.array([False,True,True,True,True]))
 
     # Force a match to not occur
-    for blast_type in reverse_blast_hit_dfs:
+    for blast_type in recip_blast_hit_dfs:
 
-        hit_dfs = reverse_blast_hit_dfs[blast_type]
+        hit_dfs = recip_blast_hit_dfs[blast_type]
         kwargs = copy.deepcopy(default_kwargs)
         if blast_type.startswith("ncbi"):
-            kwargs["ncbi_rev_blast_db"] = "nr"
+            kwargs["ncbi_blast_db"] = "nr"
 
         # Set up first sequence so hit definition does not match
         hit_dfs[0]["hit_def"] = "lymphocyte antigen 86"
-        out_df = _rb._make_reverse_blast_calls(hit_dfs=hit_dfs,**kwargs)
+        out_df = _rb._make_recip_blast_calls(hit_dfs=hit_dfs,**kwargs)
 
         assert np.all(out_df["keep"])
-        assert np.all(out_df["reverse_found_paralog"])
-        assert np.array_equal(np.array(out_df["reverse_paralog"]),
+        assert np.all(out_df["recip_found_paralog"])
+        assert np.array_equal(np.array(out_df["recip_paralog"]),
                               np.array(["LY86","LY96","LY96","LY96","LY96"]))

@@ -150,8 +150,8 @@ def rockit(xml_input,
            output_dir="rockit",
            min_redundancy_cutoff=0.85,
            target_number_of_sequences=500,
-           ncbi_rev_blast_db="nr",
-           local_rev_blast_db=None,
+           ncbi_blast_db="nr",
+           local_blast_db=None,
            ncbi_rev_blast_taxid="9606",
            phylo_context="All life",
            clean_alignment=True,
@@ -176,15 +176,15 @@ def rockit(xml_input,
                                     approximately this number of sequences in
                                     final alignment
 
-        ncbi_rev_blast_db: NCBI reverse blast database. Ignored if local_rev_blast_db
+        ncbi_blast_db: NCBI recip blast database. Ignored if local_blast_db
                            is specified
 
-        local_rev_blast_db: local reverse blast database to use.
+        local_blast_db: local recip blast database to use.
 
-        ncbi_rev_blast_taxid: limit NCBI reverse blast to the specified taxid.
+        ncbi_rev_blast_taxid: limit NCBI recip blast to the specified taxid.
                               integer or list of integers. If called from the
                               command line use the format:
-                              --ncbi_rev_blast_db=9606,10090
+                              --ncbi_blast_db=9606,10090
 
         phylo_context: look for species within a specific phylogenetic context
                        on open tree of life. To see what's available given the
@@ -233,23 +233,23 @@ def rockit(xml_input,
                                                              "target_number_of_sequences",
                                                              minimum_allowed=1)
 
-    # If local_rev_blast_db is not None, create absolute path to that file
-    if local_rev_blast_db is not None:
-        local_rev_blast_db = str(local_rev_blast_db)
-        local_rev_blast_db = os.path.join(current_dir,local_rev_blast_db)
+    # If local_blast_db is not None, create absolute path to that file
+    if local_blast_db is not None:
+        local_blast_db = str(local_blast_db)
+        local_blast_db = os.path.join(current_dir,local_blast_db)
 
         # Check for existance of blast database
-        blast_file = f"{local_rev_blast_db}.psq"
+        blast_file = f"{local_blast_db}.psq"
         if not os.path.isfile(blast_file):
-            err = f"\ncould not find local blast database {local_rev_blast_db}\n\n"
+            err = f"\ncould not find local blast database {local_blast_db}\n\n"
             raise ValueError(err)
 
-        # Set ncbi reverse blast to None -- override with local
-        ncbi_rev_blast_db = None
+        # Set ncbi recip blast to None -- override with local
+        ncbi_blast_db = None
 
-    # Make ncbi_rev_blast_db a string
-    if ncbi_rev_blast_db is not None:
-        ncbi_rev_blast_db = str(ncbi_rev_blast_db)
+    # Make ncbi_blast_db a string
+    if ncbi_blast_db is not None:
+        ncbi_blast_db = str(ncbi_blast_db)
         ncbi_rev_blast_taxid = read_ncbi_taxid(ncbi_rev_blast_taxid)
 
     # Make sure the phylogenetic context is sane
@@ -296,7 +296,7 @@ def rockit(xml_input,
 
 
     # Remove basically identical sequences early on. Goal is to minimize
-    # sequences passed to reverse blast.
+    # sequences passed to recip blast.
     df, step_counter = _run_and_print(function=topiary.remove_redundancy,
                                       kwargs={"df":df,"cutoff":0.999,"key_species":key_species,"only_in_species":True,"silent":False},
                                       step_counter=step_counter,
@@ -304,19 +304,19 @@ def rockit(xml_input,
                                       human_string="Removing identical sequences within species.")
 
 
-    # If a reverse blast database was passed in, do reverse blast.
-    if local_rev_blast_db is not None or ncbi_rev_blast_db is not None:
+    # If a recip blast database was passed in, do recip blast.
+    if local_blast_db is not None or ncbi_blast_db is not None:
 
         kwargs = {"df":df,
                   "paralog_patterns":paralog_patterns,
-                  "local_rev_blast_db":local_rev_blast_db,
-                  "ncbi_rev_blast_db":ncbi_rev_blast_db,
+                  "local_blast_db":local_blast_db,
+                  "ncbi_blast_db":ncbi_blast_db,
                   "ncbi_taxid":ncbi_rev_blast_taxid}
-        df, step_counter = _run_and_print(function=topiary.reverse_blast,
+        df, step_counter = _run_and_print(function=topiary.recip_blast,
                                           kwargs=kwargs,
                                           step_counter=step_counter,
-                                          out_file_string="reverse-blast",
-                                          human_string="Running reverse blast.")
+                                          out_file_string="recip-blast",
+                                          human_string="Running recip blast.")
 
     # Identify a redundancy cutoff that yields approximately the target number
     # of sequences.

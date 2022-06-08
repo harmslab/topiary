@@ -257,7 +257,7 @@ def _thread_manager(all_args,num_threads):
 
 def _thread(args):
     """
-    Run reverse blast on a thread. Should only be called via _thread_manager.
+    Run blast on a thread. Should only be called via _thread_manager.
     Puts resulting hits as a pandas dataframe into the queue
 
     Parameters
