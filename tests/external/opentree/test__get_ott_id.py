@@ -1,5 +1,4 @@
 
-
 import pytest
 import topiary
 from topiary import opentree

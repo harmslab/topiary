@@ -132,6 +132,14 @@ def process_topiary_dataframe(df):
 
         df.loc[:,c] = casted
 
+    # -------------------------------------------------------------------------
+    # Process sequence column
+
+    # stripping leading/trailing whitespace and removing any in the middle. This
+    # is safe because operation above casted to string
+    for idx in df.index:
+        sequence = str(df.loc[idx,"sequence"]).strip()
+        df.loc[idx,"sequence"] = "".join(sequence.split())
 
     # -------------------------------------------------------------------------
     # Process keep column
@@ -357,7 +365,6 @@ def process_topiary_dataframe(df):
     try:
         length = df.loc[:,"length"]
     except KeyError:
-        print(df["sequence"])
         # No column: create one and set the length
         df["length"] = [len(s) for s in df["sequence"]]
 

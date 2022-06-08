@@ -6,6 +6,7 @@ import numpy as np
 
 import os, re, shutil
 
+from .base import _run_and_print
 
 
 def read_paralog_patterns(paralog_patterns):
@@ -141,39 +142,6 @@ def read_ncbi_taxid(ncbi_rev_blast_taxid):
         err += "human) or list of ncbi taxon ids. Individual ids can either be\n"
         err += "int or str. These are passed to NCBI without further validation.\n\n"
         raise ValueError(err)
-
-
-def _run_and_print(function,kwargs,step_counter,out_file_string,human_string):
-    """
-    Wrapper function that calls another function in a stereotyped way.
-
-    Parameters
-    ----------
-        function: function to call. code assumes this function returns a
-                  topiary dataframe.
-        kwargs: keyword arguments to pass to the function
-        step_counter: number output file with this counter
-        out_file_string: write the resulting dataframe to a csv file with
-                        the format step_counter_out_file_string-datframe.csv
-        human_string: Write this to stdout for human readability.
-
-    Return
-    ------
-        dataframe output of function, incremented step counter
-    """
-
-    print("-------------------------------------------------------------------")
-    print(human_string)
-    print("-------------------------------------------------------------------")
-    print("",flush=True)
-
-    df = function(**kwargs)
-    topiary.write_dataframe(df,f"{step_counter:02d}_{out_file_string}-dataframe.csv")
-
-    print("",flush=True)
-
-    return df, step_counter + 1
-
 
 
 def rockit(xml_input,
@@ -404,20 +372,3 @@ def rockit(xml_input,
                         seq_column="alignment")
 
     os.chdir(current_dir)
-
-def generate_ancestors(df,output_dir,do_bootstrap=True):
-    """
-    """
-
-    topiary.find_best_model(df,
-                            output="00_find-model")
-
-    topiary.generate_ml_tree(previous_dir="00_find-model",
-                             output="01_ml-tree",
-                             bootstrap=do_bootstrap)
-
-    topiary.reconcile(previous_dir="01_ml-tree",
-                      output="02_reconciliation")
-
-    topiary.generate_ancestors(previous_dir="02_reconciliation",
-                               output="03_ancestors")

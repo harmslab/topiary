@@ -95,7 +95,7 @@ def test_process_iter():
     value = process_iter([1])
     assert np.array_equal(value,[1])
 
-    bad_value = [None,0,float,int,np.inf,np.nan,1.3]
+    bad_value = [None,0,list,float,int,np.inf,np.nan,1.3]
     for b in bad_value:
         print(b)
         with pytest.raises(ValueError):

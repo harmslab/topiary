@@ -1,6 +1,6 @@
 __description__ = \
 """
-Initialize topiary, exposing API. 
+Initialize topiary, exposing API.
 """
 __author__ = "Michael J. Harms"
 __date__ = "2022-06-07"
@@ -34,6 +34,7 @@ from .io import ncbi_blast_xml_to_df
 from .io import write_dataframe, read_dataframe
 from .io import read_fasta_into, write_fasta, write_phy
 
+# Topiary version
 from .__version__ import __version__
 
 def check_for_notebook():

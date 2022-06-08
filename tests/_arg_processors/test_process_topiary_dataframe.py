@@ -41,6 +41,13 @@ def test_check_topiary_dataframe(test_dataframes):
         with pytest.raises(ValueError):
             process_topiary_dataframe(bad_df)
 
+    # Make sure it splices strings with \n and leading/trailing " "
+    test_df = good_df.copy()
+    test_df.loc[:,"sequence"] = ["TESTTHIS","TEST THIS","TEST\nTHIS"," TESTTHIS "," TEST\n THIS "]
+    test_df = test_df.drop(columns=["length"])
+    df = process_topiary_dataframe(test_df)
+    assert np.array_equal(df.sequence,["TESTTHIS" for _ in range(5)])
+
     # Check keep
     df = process_topiary_dataframe(test_dataframes["good-test-keep-parse"])
     assert df.keep.dtypes is np.dtype(bool)

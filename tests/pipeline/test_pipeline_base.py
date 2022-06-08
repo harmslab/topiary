@@ -24,7 +24,7 @@ def test__run_and_print(test_dataframes,tmpdir):
     not arg checking.
     """
 
-    from topiary.pipeline import _run_and_print as rap
+    from topiary.pipeline.base import _run_and_print as rap
 
     input_df = test_dataframes["good-df"].copy()
 

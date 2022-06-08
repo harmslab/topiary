@@ -28,6 +28,10 @@ def process_bool(value,variable_name=None):
         if hasattr(value,"__iter__"):
             raise ValueError
 
+        # See if this is a naked type
+        if type(value) is type:
+            raise ValueError
+
         if value != 0:
             if not np.isclose(round(value,0)/value,1):
                 raise ValueError
@@ -74,6 +78,10 @@ def process_float(value,
 
         # See if this is an iterable
         if hasattr(value,"__iter__"):
+            raise ValueError
+
+        # See if this is a naked type
+        if type(value) is type:
             raise ValueError
 
         value = float(value)
@@ -148,6 +156,10 @@ def process_int(value,
 
         # See if this is an iterable
         if hasattr(value,"__iter__"):
+            raise ValueError
+
+        # See if this is a naked type
+        if type(value) is type:
             raise ValueError
 
         # If this is a float to int cast, make sure it does not have decimal
@@ -241,6 +253,11 @@ def process_iter(value,
     # Make sure it's an iterable
     if not hasattr(value,"__iter__"):
         err = err_base + "must be list-like\n"
+        raise ValueError(err)
+
+    # See if this is a naked type
+    if type(value) is type:
+        err = err_base + "must not be a type\n"
         raise ValueError(err)
 
     # If requested, make sure it's the required type

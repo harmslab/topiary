@@ -477,7 +477,7 @@ def ncbi_blast(sequence,
                url_base="https://blast.ncbi.nlm.nih.gov/Blast.cgi",
                max_query_length=80000,
                num_tries_allowed=5,
-               num_threads=-1,
+               num_threads=1,
                **kwargs):
     """
     Perform a blast query against a remote NCBI database. Takes a sequence or
@@ -499,6 +499,8 @@ def ncbi_blast(sequence,
                           multiple requests, each sent to ncbi.
         num_tries_allowed: try num_tries_allowed times in case of timeout
         num_threads: number of threads to use (locally). if -1 use all available.
+                     Note that using more than one thread can cause the NCBI to
+                     drop query requests. 
         kwargs: extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
                 overriding anything constructed above. You could, for example, pass
                 entrez_query="txid9606[ORGN] or txid10090[ORGN]" to limit blast

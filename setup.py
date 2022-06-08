@@ -64,6 +64,7 @@ setup(
         'test': ['pytest'],
     },
     scripts=['bin/run-raxml','bin/setup-generax'],
+    package_data={'': ['*.csv']},
     include_package_data=True,
     license='MIT',
     classifiers=[
