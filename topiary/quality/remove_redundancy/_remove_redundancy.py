@@ -19,9 +19,7 @@ import multiprocessing as mp
 
 # Columns to check in order
 _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
-                     "precursor","hypothetical","isoform","diff_from_median",
-                     "length"]
-_LENGTH_COLUMN = -1
+                     "precursor","hypothetical","isoform","diff_from_median"]
 
 class DummyTqdm():
     """
@@ -80,7 +78,7 @@ def _get_quality_scores(row,key_species={}):
     expected = list(row[_EXPECTED_COLUMNS])
 
     # Flip length column
-    expected[_LENGTH_COLUMN] = 1/expected[_LENGTH_COLUMN]
+    expected.append(1/len(row.sequence))
 
     # Combine key species call with expected columns
     values.extend(expected)
@@ -278,10 +276,12 @@ def remove_redundancy(df,cutoff=0.95,key_species=[],silent=False,only_in_species
     # Figure out how different each sequence is from the median length.  We
     # want to favor sequences that are closer to the median length than
     # otherwise.
-    lengths = df.loc[df.keep,"length"]
-    counts, lengths = np.histogram(lengths,bins=int(np.round(2*np.sqrt(len(lengths)),0)))
-    median_length = lengths[np.argmax(counts)]
-    df["diff_from_median"] = np.abs(df.length - median_length)
+    lengths = np.array([len(s) for s in df.loc[:,"sequence"]],dtype=int)
+    kept_lengths = lengths[df.keep]
+    hist_counts, hist_lengths = np.histogram(kept_lengths,
+                                             bins=int(np.round(2*np.sqrt(len(kept_lengths)),0)))
+    median_length = hist_lengths[np.argmax(hist_counts)]
+    df["diff_from_median"] = np.abs(lengths - median_length)
 
     # Get quality scores for each sequence
     all_quality_array = []

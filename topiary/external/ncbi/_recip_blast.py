@@ -207,9 +207,8 @@ def _run_blast(sequence_list,
 
         # Warn that NCBI blasting can be slow
         w = "\nBlasting against the NCBI database can be slow/unstable. Consider\n"
-        w += "creating a local BLAST database for your recip BLAST needs.\n"
-        print(w)
-        sys.stdout.flush()
+        w += "creating a local BLAST database for your reciprocal BLAST needs.\n"
+        print(w,flush=True)
 
         hit_dfs = ncbi_blast(sequence_list,
                              db=ncbi_blast_db,

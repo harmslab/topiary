@@ -4,7 +4,7 @@ import pytest
 import topiary
 from topiary.quality import remove_redundancy, find_cutoff
 from topiary.quality.remove_redundancy._remove_redundancy import _get_quality_scores, _reduce_redundancy_thread_manager
-from topiary.quality.remove_redundancy._remove_redundancy import _EXPECTED_COLUMNS, _LENGTH_COLUMN
+from topiary.quality.remove_redundancy._remove_redundancy import _EXPECTED_COLUMNS
 
 import numpy as np
 import pandas as pd
@@ -31,8 +31,9 @@ def test__get_quality_scores(test_dataframes):
         row = df.loc[i,:]
         scores = _get_quality_scores(row)
 
-        values_from_df = np.array(row[_EXPECTED_COLUMNS],dtype=float)
-        values_from_df[_LENGTH_COLUMN] = 1/values_from_df[_LENGTH_COLUMN]
+        values_from_df = list(row[_EXPECTED_COLUMNS])
+        values_from_df.append(1/len(row.sequence))
+        values_from_df = np.array(values_from_df,dtype=float)
 
         assert np.array_equal(scores[1:],values_from_df)
 

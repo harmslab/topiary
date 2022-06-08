@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 from topiary.quality.remove_redundancy._check_block_redundancy_python import _compare_seqs
-from topiary.quality.remove_redundancy._remove_redundancy import _EXPECTED_COLUMNS, _LENGTH_COLUMN
+from topiary.quality.remove_redundancy._remove_redundancy import _EXPECTED_COLUMNS
 
 def test__compare_seqs(test_dataframes):
 

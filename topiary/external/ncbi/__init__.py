@@ -10,3 +10,4 @@ from . _ncbi_blast import ncbi_blast
 from . _local_blast import local_blast
 from . entrez_download import entrez_download
 from . _recip_blast import recip_blast
+from . _merge_blast_df import merge_blast_df 

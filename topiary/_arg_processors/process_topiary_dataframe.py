@@ -39,8 +39,6 @@ def process_topiary_dataframe(df):
     + 'ott': If present, makes sure it has the format ottINTEGER.
     + 'alignment': if present, makes sure that all columns are the same width,
                    and removes any gaps-only columns.
-    + 'length': if present, makes sure length of each row corresponds to length
-                of each sequence. If not present, creates
 
     + Enforces following column order:
         + nickname (if present)
@@ -357,28 +355,6 @@ def process_topiary_dataframe(df):
 
             # Store in dataframe
             df.loc[align_mask,"alignment"] = new_align
-
-    # -------------------------------------------------------------------------
-    # Process length column
-
-    # Try to extract length column
-    try:
-        length = df.loc[:,"length"]
-    except KeyError:
-        # No column: create one and set the length
-        df["length"] = [len(s) for s in df["sequence"]]
-
-    # Validate length column
-    try:
-        df.loc[:,"length"]*1.0
-        expected_lengths = [len(s) for s in df["sequence"]]
-        if not np.array_equal(df.loc[:,"length"],expected_lengths):
-            raise ValueError
-
-    except (ValueError,TypeError):
-        err = "\n'length' column must be numeric, storing the length of the\n"
-        err = "sequence in the 'sequence' column.\n\n"
-        raise ValueError(err)
 
     # -------------------------------------------------------------------------
     # Make sure columns have order nickname, keep, species, name, sequence

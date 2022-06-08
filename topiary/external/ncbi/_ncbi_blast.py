@@ -500,7 +500,7 @@ def ncbi_blast(sequence,
         num_tries_allowed: try num_tries_allowed times in case of timeout
         num_threads: number of threads to use (locally). if -1 use all available.
                      Note that using more than one thread can cause the NCBI to
-                     drop query requests. 
+                     drop query requests.
         kwargs: extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
                 overriding anything constructed above. You could, for example, pass
                 entrez_query="txid9606[ORGN] or txid10090[ORGN]" to limit blast
@@ -535,6 +535,12 @@ def ncbi_blast(sequence,
                                             max_query_length=max_query_length,
                                             num_threads=num_threads,
                                             num_tries_allowed=num_tries_allowed)
+
+    if num_threads > 1:
+        print("\nWarning: running an NCBI blast query on more than one thread")
+        print("can lead to instability. The server (sometimes) rejects queries")
+        print("that come in relatively short succession. If this calculation")
+        print("fails, consider setting num_threads = 1.\n\n",flush=True)
 
     # Run multi-threaded blast
     hits = _thread_manager(all_args,num_threads)
