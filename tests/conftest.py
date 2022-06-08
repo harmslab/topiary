@@ -195,3 +195,16 @@ def local_blast_output():
         all_hits.append(pd.read_csv(f))
 
     return all_hits
+
+@pytest.fixture(scope="module")
+def seed_dataframes():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","seed-dataframes"))
+    files = os.listdir(base_dir)
+
+    out_dict = {}
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict

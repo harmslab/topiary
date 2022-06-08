@@ -22,10 +22,10 @@ def _get_string_variants(some_string,spacers):
     and thus expects to be used in a regular expression ignoring case.
 
     Examples (for spacers = [" ","-","_","."]):
-        "LY96" -> "ly[\ \-_.]*96"
-        "MD-2" -> "md[\ \-_.]*2"
-        "myeloid factor 2" -> "myeloid[\ \-_.]*factor[\ \-_.]*2"
-        "CDR2L" -> "cdr[\ \-_.]*2[\ \-_.]*L"
+        "LY96" -> "ly[\ \-_\.]*96"
+        "MD-2" -> "md[\ \-_\.]*2"
+        "myeloid factor 2" -> "myeloid[\ \-_\.]*factor[\ \-_\.]*2"
+        "CDR2L" -> "cdr[\ \-_\.]*2[\ \-_\.]*L"
 
     Parameters
     ----------
@@ -70,19 +70,13 @@ def _get_string_variants(some_string,spacers):
         # Append the letter/digit we saw
         pattern.append(lower[i])
 
-        # Digit
-        if is_digit[i]:
+        # Digit followed by letter
+        if is_digit[i] and is_letter[i+1]:
+            pattern.append(spacer_re)
 
-            # To non-digit/non-spacer ... stick in a spacer
-            if not is_digit[i+1] and not is_spacer[i+1]:
-                pattern.append(spacer_re)
-
-        # Letter
-        if is_letter[i]:
-
-            # To non-letter/non-spacer ... stick in a spacer
-            if not is_letter[i+1] and not is_spacer[i+1]:
-                pattern.append(spacer_re)
+        # Letter followed by digit
+        if is_letter[i] and is_digit[i+1]:
+            pattern.append(spacer_re)
 
     # Last letter
     pattern.append(lower[-1])
@@ -111,6 +105,8 @@ def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
     # Make unique set of names
     list_of_names = list(set(list_of_names))
 
+
+
     # Make regular expression for each name
     all_names = []
     for n in list_of_names:
@@ -118,6 +114,9 @@ def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
 
     # Unique set of regex
     all_names = list(set(all_names))
+
+    # sort for testing purposes so regex has predictable order
+    all_names.sort()
 
     return re.compile("|".join(all_names),flags=re.IGNORECASE)
 
@@ -167,7 +166,7 @@ def load_seed_dataframe(df):
             err = f"Could not figure out how to read df '{df}'\n\n"
             raise ValueError(err)
 
-    required_columns = ["accession","species","name","aliases","sequence"]
+    required_columns = ["species","name","aliases","sequence"]
     for c in required_columns:
 
         try:
@@ -183,6 +182,8 @@ def load_seed_dataframe(df):
     # Get key_species and phylogenetic context
 
     key_species = list(np.unique(df.loc[:,"species"]))
+    key_species.sort() # sort alphabetically
+    
     phylo_context = topiary.opentree.get_phylo_context(key_species)
 
     # -----------------------------------------------------------------------

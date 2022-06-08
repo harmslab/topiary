@@ -74,7 +74,7 @@ def get_phylo_context(species_list):
     ott, not_resolved = species_to_ott(species_list,phylo_context="All life")
     for k in ott:
         if ott[k][0] is None:
-            err = "\nCould not find species '{k}' in opentree database.\n"
+            err = f"\nCould not find species '{k}' in opentree database.\n"
             err += "We cannot reliably find phylogenetic context as a result.\n\n"
             raise ValueError(err)
 
