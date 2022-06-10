@@ -273,7 +273,7 @@ def rockit(xml_input,
     step_counter = 0
 
     # Load xml files and download sequences
-    df, step_counter = _run_and_print(function=topiary.ncbi_blast_xml_to_df,
+    df, step_counter = _run_and_print(function=topiary.df_from_blast_xml,
                                       kwargs={"xml_input":xml_input},
                                       step_counter=step_counter,
                                       out_file_string="initial",

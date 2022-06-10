@@ -15,7 +15,7 @@ from Bio import SeqIO
 
 import os, glob, io
 
-def ncbi_blast_xml_to_df(xml_input):
+def df_from_blast_xml(xml_input):
     """
     Take a list of blast xml files and load in all sequences as a single
     topiary data frame. Parse meta data in an intelligent way, download
@@ -169,25 +169,3 @@ def ncbi_blast_xml_to_df(xml_input):
     df = _arg_processors.process_topiary_dataframe(df)
 
     return df
-
-
-def fasta_to_df(fasta_input):
-
-    # TRY NCBI, TRY UNIPROT,
-    # Look for OS= OR
-
-    # Try to parse with uniprot
-    # Try to parse with ncbi
-
-    # UNIPROT
-    #>db|UniqueIdentifier|EntryName ProteinName OS=OrganismName OX=OrganismIdentifier \
-    #   [GN=GeneName ]PE=ProteinExistence SV=SequenceVersion
-    # cols = line[1:].split("|")
-    # db = cols[0]
-    # accession = col1[1]
-    # entry = col[1]
-    # pattern = re.compile("..=")
-    # for field in pattern.split(entry):
-    #     print(field)
-
-    pass

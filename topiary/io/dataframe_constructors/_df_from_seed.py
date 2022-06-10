@@ -1,3 +1,9 @@
+__description__ = \
+"""
+Construct a topiary dataframe from a seed spreadsheet.
+"""
+__author__ = "Michael J. Harms"
+__date__ = "2022-06-09"
 
 import topiary
 from topiary import _arg_processors
@@ -5,15 +11,15 @@ from topiary import _arg_processors
 import numpy as np
 import pandas as pd
 
-def blast_seeds(seed_df,
-                ncbi_blast_db="nr",
-                local_blast_db=None,
-                phylo_context=None,
-                hitlist_size=1000,
-                e_value_cutoff=0.001,
-                gapcosts=(11,1),
-                num_threads=-1,
-                **kwargs):
+def df_from_seed(seed_df,
+                 ncbi_blast_db="nr",
+                 local_blast_db=None,
+                 phylo_context=None,
+                 hitlist_size=1000,
+                 e_value_cutoff=0.001,
+                 gapcosts=(11,1),
+                 num_threads=-1,
+                 **kwargs):
 
     # Validate dataframe
     seed_df = _arg_processors.process_topiary_dataframe(seed_df)
