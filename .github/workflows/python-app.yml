@@ -87,6 +87,7 @@ jobs:
         cd topiary
         C:\Miniconda\condabin\conda.bat env update --file environment.yml --name base
         C:\Miniconda\condabin\conda.bat init powershell
+        C:\Miniconda\condabin\conda.bat activate base
         python setup.py install
         cd ..
 
