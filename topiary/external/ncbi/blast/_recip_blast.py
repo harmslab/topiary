@@ -7,7 +7,10 @@ recip blast sequence datasets.
 
 import topiary
 from topiary import _arg_processors
-from topiary.external.ncbi import ncbi_blast, local_blast, parse_ncbi_line
+from ._ncbi_blast import ncbi_blast
+from ._local_blast import local_blast
+
+from topiary.external.ncbi import parse_ncbi_line
 
 import pandas as pd
 import numpy as np
@@ -217,6 +220,7 @@ def _run_blast(sequence_list,
                              hitlist_size=hitlist_size,
                              e_value_cutoff=e_value_cutoff,
                              gapcosts=gapcosts,
+                             num_threads=num_threads,
                              **kwargs)
 
     # Local blast

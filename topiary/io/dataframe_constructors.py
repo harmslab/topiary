@@ -111,7 +111,7 @@ def ncbi_blast_xml_to_df(xml_input):
         to_download = unique_download
 
     # Download sequences from entrez
-    all_output = ncbi.entrez_download(to_download)
+    all_output = ncbi.get_sequences(to_download)
 
     # Capture sequences from the downloaded data
     captured = []

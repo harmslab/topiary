@@ -6,13 +6,11 @@ __author__ = "Michael J. Harms"
 __date__ = "2021-04-23"
 
 import topiary
-from topiary.external.ncbi import read_blast_xml
-from topiary.external.ncbi.base import _standard_blast_args_checker
 from topiary import _arg_processors
+from .util import read_blast_xml, _standard_blast_args_checker
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
-Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
 import numpy as np
 import pandas as pd
@@ -262,7 +260,6 @@ def _construct_args(sequence_list,
             remainder -= 1
     windows.insert(0,0)
 
-
     windows = np.cumsum(windows)
 
     # Blocks will allow us to tile over all sequences
@@ -307,7 +304,7 @@ def _construct_args(sequence_list,
     return all_args, num_threads
 
 
-def _thread_manager(all_args,num_threads,wait_time_between_requests=10):
+def _thread_manager(all_args,num_threads):
     """
     Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
     by ncbi_blast.
@@ -318,8 +315,6 @@ def _thread_manager(all_args,num_threads,wait_time_between_requests=10):
                   Should not have the `queue` argument, as this will be added
                   by this function.
         num_threads: number of threads to use.
-        wait_time_between_requests: how long to wait between requests if a
-                                    request times out.
 
     Return
     ------
@@ -331,10 +326,12 @@ def _thread_manager(all_args,num_threads,wait_time_between_requests=10):
           flush=True)
 
     # queue will hold results from each run. Append to each entry in all_args
-    queue = mp.Manager().Queue()
+    manager = mp.Manager()
+    queue = manager.Queue()
+    lock = manager.Lock()
     for i in range(len(all_args)):
-        all_args[i].append(wait_time_between_requests)
         all_args[i].append(queue)
+        all_args[i].append(lock)
 
     with mp.Pool(num_threads) as pool:
 
@@ -379,8 +376,8 @@ def _thread(args):
     this_query = args[0]
     counter = args[1]
     num_tries_allowed = args[2]
-    wait_time_between_requests = args[3]
-    queue = args[4]
+    queue = args[3]
+    lock = args[4]
 
     # While we haven't run out of tries...
     tries = 0
@@ -388,6 +385,17 @@ def _thread(args):
 
         # Try to read output.
         try:
+
+            # NCBI limits requests to 3 per second for normal users. Use a lock
+            # when launching that sleeps for 0.5 seconds. This means we'll make
+            # a maximum of two requests per second across all threads and
+            # should avoid the NCBI limit.
+            lock.acquire()
+            try:
+                time.sleep(0.5)
+            finally:
+                lock.release()
+
             result = NCBIWWW.qblast(**this_query)
             out = NCBIXML.parse(result)
 
@@ -398,7 +406,6 @@ def _thread(args):
         # If out is None, try again. If not, break out of loop--success!
         if out is None:
             tries += 1
-            time.sleep(wait_time_between_requests)
             continue
         else:
             break
@@ -535,12 +542,6 @@ def ncbi_blast(sequence,
                                             max_query_length=max_query_length,
                                             num_threads=num_threads,
                                             num_tries_allowed=num_tries_allowed)
-
-    if num_threads > 1:
-        print("\nWarning: running an NCBI blast query on more than one thread")
-        print("can lead to instability. The server (sometimes) rejects queries")
-        print("that come in relatively short succession. If this calculation")
-        print("fails, consider setting num_threads = 1.\n\n",flush=True)
 
     # Run multi-threaded blast
     hits = _thread_manager(all_args,num_threads)

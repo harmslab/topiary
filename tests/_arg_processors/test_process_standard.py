@@ -32,10 +32,9 @@ def test_process_float():
         with pytest.raises(ValueError):
             value = process_float(b)
 
-    good_value = [-np.inf,np.inf,0,1,"1.0",np.array([1.0])]
-    for g in bad_value:
-        with pytest.raises(ValueError):
-            value = process_float(g)
+    good_value = [-np.inf,np.inf,0,1,"1.0"]
+    for g in good_value:
+        value = process_float(g)
 
     with pytest.raises(ValueError):
         process_float(1.0,minimum_allowed=2.0)
@@ -67,10 +66,9 @@ def test_process_int():
         with pytest.raises(ValueError):
             value = process_int(b)
 
-    good_value = [-10,0,10,"10",10.0,"10.0"]
-    for g in bad_value:
-        with pytest.raises(ValueError):
-            value = process_int(g)
+    good_value = [-10,0,10,"10",10.0]
+    for g in good_value:
+        value = process_int(g)
 
     with pytest.raises(ValueError):
         process_int(1,minimum_allowed=2.0)

@@ -1,22 +1,21 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 __description__ = \
 """
-Functions for downloading sequences off entrez in a multithreaded fashion.
+Functions for using NCBI entrez do download sequences.
 """
+__author__ = "Michael J. Harms"
+__date__ = "2021-04-08"
 
 import topiary
 from topiary import _arg_processors
 
 from Bio import Entrez
-Entrez.email = "DUMMY_EMAIL@DUMMY_URL.COM"
 
 from tqdm.auto import tqdm
 
 import os, urllib, http, time
 import multiprocessing as mp
 
-def _entrez_download_thread(args):
+def _get_sequences_thread(args):
     """
     Download ids from the NCBI. args is interpreted as:
 
@@ -27,7 +26,7 @@ def _entrez_download_thread(args):
             ids: string with comma-separated list of ids to download
             num_tries_allowed: how many attempts should be made to actually do
                                a given query
-            wait_time_between_requests: how many seconds to wait between failed requests.
+            lock: lock to control number of requests per thread per second
             queue: multiprocessing queue in which to store results
     Return
     ------
@@ -37,7 +36,7 @@ def _entrez_download_thread(args):
     index = args[0]
     ids = args[1]
     num_tries_allowed = args[2]
-    wait_time_between_requests = args[3]
+    lock = args[3]
     queue = args[4]
 
     # While we haven't run out of tries...
@@ -46,6 +45,17 @@ def _entrez_download_thread(args):
 
         # Try to read output.
         try:
+
+            # NCBI limits requests to 3 per second for normal users. Use a lock
+            # when launching that sleeps for 0.5 seconds. This means we'll make
+            # a maximum of two requests per second across all threads and
+            # should avoid the NCBI limit.
+            lock.acquire()
+            try:
+                time.sleep(0.5)
+            finally:
+                lock.release()
+
             handle = Entrez.efetch(db="protein",
                                    id=ids,
                                    rettype="fasta",
@@ -60,7 +70,6 @@ def _entrez_download_thread(args):
         # If out is None, try again. If not, break out of loop--success!
         if out is None:
             tries += 1
-            time.sleep(wait_time_between_requests)
             continue
         else:
             break
@@ -73,11 +82,10 @@ def _entrez_download_thread(args):
     # Record out and initial index in the output queue.
     queue.put((index,out))
 
-def entrez_download(to_download,
-                    block_size=50,
-                    num_tries_allowed=10,
-                    wait_time_between_requests=1,
-                    num_threads=-1):
+def get_sequences(to_download,
+                  block_size=50,
+                  num_tries_allowed=10,
+                  num_threads=-1):
     """
     Download sequences off of entrez, catching errors. This is done in a
     multi-threaded fashion, allowing multiple requests to NCBI at the same
@@ -89,8 +97,6 @@ def entrez_download(to_download,
         block_size: download in chunks this size
         num_tries_allowed: number of times to try before giving up and throwing
                            an error.
-        wait_time_between_requests: how many seconds to wait between failed
-                                    requests.
         num_threads: number of threads to use. if -1, use all available.
 
     Return
@@ -104,10 +110,6 @@ def entrez_download(to_download,
     num_tries_allowed = _arg_processors.process_int(num_tries_allowed,
                                                     "num_tries_allowed",
                                                     minimum_allowed=1)
-    wait_time_between_requests = _arg_processors.process_float(wait_time_between_requests,
-                                                    "wait_time_between_requests",
-                                                    minimum_allowed=0,
-                                                    minimum_inclusive=True)
     num_threads = _arg_processors.process_int(num_threads,
                                               "num_threads",
                                               minimum_allowed=-1)
@@ -127,7 +129,6 @@ def entrez_download(to_download,
                 print("Could not determine number of cpus. Using single thread.\n",flush=True)
                 num_threads = 1
 
-
     # Figure out how many blocks we're going to download
     num_blocks = len(to_download) // block_size
     if len(to_download) % block_size > 0:
@@ -135,23 +136,25 @@ def entrez_download(to_download,
     print(f"Downloading {num_blocks} blocks of ~{block_size} sequences... ",flush=True)
 
     # queue will hold results from each download batch.
-    queue = mp.Manager().Queue()
+    manager = mp.Manager()
+    queue = manager.Queue()
+    lock = manager.Lock()
     with mp.Pool(num_threads) as pool:
 
         # This is a bit obscure. Build a list of args to pass to the pool. Each
-        # tuple of args matches the args in _entrez_download_thread.
+        # tuple of args matches the args in _get_sequences_thread.
         # all_args has all len(df) recip blast runs we want to do.
         all_args = []
         for i in range(0,len(to_download),block_size):
             ids = ",".join(to_download[i:(i+block_size)])
-            all_args.append((i,ids,num_tries_allowed,wait_time_between_requests,queue))
+            all_args.append((i,ids,num_tries_allowed,lock,queue))
 
         # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _entrez_download_thread
+        # filling threads as each job finishes. (Calls _get_sequences_thread
         # on every args tuple in all_args). tqdm gives us a status bar.
         # By wrapping pool.imap iterator in tqdm, we get a status bar that
         # updates as each thread finishes.
-        list(tqdm(pool.imap(_entrez_download_thread,all_args),
+        list(tqdm(pool.imap(_get_sequences_thread,all_args),
                   total=len(all_args)))
 
     # Get results out of the queue. Sort by i to put in correct order

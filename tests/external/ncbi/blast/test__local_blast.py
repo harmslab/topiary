@@ -3,10 +3,10 @@ import pytest
 from conftest import get_public_param_defaults
 
 import topiary
-from topiary.external.ncbi._local_blast import local_blast as local_blast
-from topiary.external.ncbi._local_blast import _prepare_for_blast as _pfb
-from topiary.external.ncbi._local_blast import _construct_args as _ca
-from topiary.external.ncbi._local_blast import _combine_hits
+from topiary.external.ncbi.blast._local_blast import local_blast as local_blast
+from topiary.external.ncbi.blast._local_blast import _prepare_for_blast as _pfb
+from topiary.external.ncbi.blast._local_blast import _construct_args as _ca
+from topiary.external.ncbi.blast._local_blast import _combine_hits
 
 import Bio.Blast.Applications as apps
 

@@ -6,9 +6,8 @@ __author__ = "Michael J. Harms"
 __date__ = "2021-04-08"
 
 import topiary
-from topiary.external.ncbi import read_blast_xml
 from topiary import _arg_processors
-from topiary.external.ncbi.base import _standard_blast_args_checker
+from .util import read_blast_xml, _standard_blast_args_checker
 
 import Bio.Blast.Applications as apps
 

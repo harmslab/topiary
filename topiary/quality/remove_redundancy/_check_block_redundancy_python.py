@@ -41,10 +41,14 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
     # If sequence similarity is greater than the cutoff, select one.
     else:
 
+        # If both always keep, return that we keep both
+        if A_qual[0] == 0 and B_qual[0] == 0:
+            return True, True
+
         # If we are not discarding key sequences and both sequences are
         # from key species, automatically keep both.
         if not discard_key:
-            if A_qual[0] == 0 and B_qual[0] == 0:
+            if A_qual[1] == 0 and B_qual[1] == 0:
                 return True, True
 
         # Compare two vectors. Identify first element that differs.

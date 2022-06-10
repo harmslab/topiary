@@ -3,7 +3,7 @@
 import pytest
 
 import topiary
-from topiary.external.ncbi._merge_blast_df import _check_merge, merge_blast_df
+from topiary.external.ncbi.blast._merge_blast_df import _check_merge, merge_blast_df
 
 import numpy as np
 import pandas as pd

@@ -3,10 +3,10 @@ import pytest
 from conftest import get_public_param_defaults
 
 import topiary
-from topiary.external.ncbi._ncbi_blast import ncbi_blast as ncbi_blast
-from topiary.external.ncbi._ncbi_blast import _prepare_for_blast as _pfb
-from topiary.external.ncbi._ncbi_blast import _construct_args as _ca
-from topiary.external.ncbi._ncbi_blast import _combine_hits
+from topiary.external.ncbi.blast._ncbi_blast import ncbi_blast as ncbi_blast
+from topiary.external.ncbi.blast._ncbi_blast import _prepare_for_blast as _pfb
+from topiary.external.ncbi.blast._ncbi_blast import _construct_args as _ca
+from topiary.external.ncbi.blast._ncbi_blast import _combine_hits
 
 import numpy as np
 import pandas as pd

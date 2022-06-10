@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-import os, glob, inspect
+import os, glob, inspect, json
 
 @pytest.fixture(scope="module")
 def ncbi_lines():
@@ -206,5 +206,21 @@ def seed_dataframes():
     out_dict = {}
     for f in files:
         out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def esummary_assembly_records():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","ncbi-assembly-esummary-output"))
+    json_files = glob.glob(os.path.join(base_dir,"*.json"))
+
+    out_dict = {}
+    for json_file in json_files:
+        key = os.path.basename(json_file).split(".")[0]
+        f = open(json_file,'r')
+        out_dict[key] = json.load(f)
+        f.close()
 
     return out_dict

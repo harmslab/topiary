@@ -12,12 +12,16 @@ def test__compare_seqs(test_dataframes):
     B_seq = "TAST"
 
     # Identical quals
-    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
 
-    # Neither are key sequences
+    # Neither are always keep sequences
     A_qual[0] = 1
     B_qual[0] = 1
+
+    # Neither are key sequences
+    A_qual[1] = 1
+    B_qual[1] = 1
 
     # Keep both; below cutoff
     a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.9)
@@ -30,15 +34,15 @@ def test__compare_seqs(test_dataframes):
     assert a2 is False
 
     # Now make A_qual score worse than B, so keep B
-    A_qual[1] = 1
+    A_qual[2] = 1
     a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
     assert a1 is False
     assert a2 is True
 
     # Not set up qual scores so neither are key_species, B has earlier better
     # score than A
-    A_qual = np.ones(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.ones(len(_EXPECTED_COLUMNS) + 1,dtype=float)
+    A_qual = np.ones(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.ones(len(_EXPECTED_COLUMNS) + 2,dtype=float)
     A_qual[-1] = 0
     B_qual[-2] = 0
 
@@ -46,10 +50,12 @@ def test__compare_seqs(test_dataframes):
     assert a1 is False
     assert a2 is True
 
-    # both key species, A worse than B
-    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 1,dtype=float)
-    A_qual[1] = 1
+    # both key species, A worse than B. No always_keep
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    A_qual[0] = 1
+    B_qual[0] = 1
+    A_qual[2] = 1
 
     # implicit discard_key flag
     a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
@@ -64,4 +70,12 @@ def test__compare_seqs(test_dataframes):
     # Check discard_key flag
     a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5,discard_key=True)
     assert a1 is False
+    assert a2 is True
+
+    # both always keep, but  beter. Should keep both
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    A_qual[2] = 1
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is True
     assert a2 is True

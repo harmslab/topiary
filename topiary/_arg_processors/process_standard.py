@@ -76,6 +76,10 @@ def process_float(value,
 
     try:
 
+        # Try to cast as string to an integer
+        if type(value) is str:
+            value = float(value)
+
         # See if this is an iterable
         if hasattr(value,"__iter__"):
             raise ValueError
@@ -121,7 +125,10 @@ def process_float(value,
             err = f"\n{variable_name} '{value}' must be a float:\n\n"
         else:
             err = f"\n'{value}' must be a float:\n\n"
-        err += bounds
+
+        if not (minimum_allowed is None and maximum_allowed is None):
+            err += bounds
+
         err += "\n\n"
 
         raise ValueError(err)
@@ -153,6 +160,10 @@ def process_int(value,
 
 
     try:
+
+        # Try to cast as string to an integer
+        if type(value) is str:
+            value = int(value)
 
         # See if this is an iterable
         if hasattr(value,"__iter__"):
@@ -204,7 +215,10 @@ def process_int(value,
             err = f"\n{variable_name} '{value}' must be an integer:\n\n"
         else:
             err = f"\n'{value}' must be an integer:\n\n"
-        err += bounds
+
+        if not (minimum_allowed is None and maximum_allowed is None):
+            err += bounds
+
         err += "\n\n"
 
         raise ValueError(err)

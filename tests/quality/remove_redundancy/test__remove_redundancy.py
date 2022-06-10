@@ -20,11 +20,11 @@ def test__get_quality_scores(test_dataframes):
 
     # Make sure that the key species encoding works as expected
     # No key_species passed in or key_species not in dataframe
-    assert _get_quality_scores(df.loc[0,:])[0] == 1
-    assert _get_quality_scores(df.loc[0,:],{"Not a species":None})[0] == 1
+    assert _get_quality_scores(df.loc[0,:])[1] == 1
+    assert _get_quality_scores(df.loc[0,:],{"Not a species":None})[1] == 1
 
     # Key species
-    assert _get_quality_scores(df.loc[0,:],{species_in_df[0]:None})[0] == 0
+    assert _get_quality_scores(df.loc[0,:],{species_in_df[0]:None})[1] == 0
 
     # Make sure quality assignment doing what we think
     for i in df.index:
@@ -35,8 +35,17 @@ def test__get_quality_scores(test_dataframes):
         values_from_df.append(1/len(row.sequence))
         values_from_df = np.array(values_from_df,dtype=float)
 
-        assert np.array_equal(scores[1:],values_from_df)
+        assert np.array_equal(scores[2:],values_from_df)
 
+    # Test always_keep
+    # No always_keep in datafframe
+    assert _get_quality_scores(df.loc[0,:])[0] == 1
+
+    df["always_keep"] = False # always keep False
+    assert _get_quality_scores(df.loc[0,:])[0] == 1
+
+    df["always_keep"] = True # always keep True
+    assert _get_quality_scores(df.loc[0,:])[0] == 0
 
 def test__reduce_redundancy_thread_manager():
 

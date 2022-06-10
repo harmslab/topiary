@@ -1,7 +1,7 @@
 import pytest
 from conftest import get_public_param_defaults
 
-from topiary.external.ncbi import _recip_blast as _rb
+from topiary.external.ncbi.blast import _recip_blast as _rb
 
 import numpy as np
 import pandas as pd

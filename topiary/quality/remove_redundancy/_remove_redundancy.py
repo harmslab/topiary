@@ -67,21 +67,26 @@ def _get_quality_scores(row,key_species={}):
         float array for the sequence
     """
 
+    try:
+        if row.always_keep:
+            values = [0]
+        else:
+            values = [1]
+    except AttributeError:
+        values = [1]
+
     # See if this is a key species
     try:
         key_species[row.species]
-        values = [0]
+        values.append(0)
     except KeyError:
-        values = [1]
+        values.append(1)
 
     # Add values for expected columns
-    expected = list(row[_EXPECTED_COLUMNS])
+    values.extend(list(row[_EXPECTED_COLUMNS]))
 
     # Flip length column
-    expected.append(1/len(row.sequence))
-
-    # Combine key species call with expected columns
-    values.extend(expected)
+    values.append(1/len(row.sequence))
 
     return np.array(values,dtype=float)
 
@@ -254,7 +259,7 @@ def remove_redundancy(df,cutoff=0.95,key_species=[],silent=False,only_in_species
         return df
 
     # Make sure the dataframe has the columns needed for this comparison. If
-    # the dataframe
+    # the dataframe does not have the column, simply set to False
     for e in _EXPECTED_COLUMNS:
 
         try:

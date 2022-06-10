@@ -5,9 +5,9 @@ Interface to NCBI blast and entrez.
 __author__ = "Michael J. Harms"
 __date__ = "2022-06-07"
 
-from . base import read_blast_xml, parse_ncbi_line
-from . _ncbi_blast import ncbi_blast
-from . _local_blast import local_blast
-from . entrez_download import entrez_download
-from . _recip_blast import recip_blast
-from . _merge_blast_df import merge_blast_df 
+from Bio import Entrez
+Entrez.email = "topiary.phylogenetics@gmail.com"
+
+from . _parse_ncbi_line import parse_ncbi_line
+from . blast import read_blast_xml, local_blast, merge_blast_df, ncbi_blast, recip_blast, make_blast_db
+from . entrez import get_sequences, get_taxid, get_proteome
