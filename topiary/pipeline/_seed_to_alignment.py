@@ -79,12 +79,12 @@ def seed_to_alignment(seed_df,
     print("-------------------------------------------------------------------")
     print("",flush=True)
 
-    kwargs = {"df":seed_df,
+    kwargs = {"seed_df":seed_df,
               "ncbi_blast_db":ncbi_blast_db,
               "local_blast_db":local_blast_db,
               "hitlist_size":hitlist_size,
               "e_value_cutoff":e_value_cutoff,
-              "gapcost":gapcosts,
+              "gapcosts":gapcosts,
               "num_threads":num_ncbi_threads}
 
     out = topiary.df_from_seed(**kwargs)
