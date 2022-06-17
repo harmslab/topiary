@@ -41,6 +41,7 @@ jobs:
       run: |
         cd topiary
         $CONDA/bin/conda env update --file environment.yml --name base
+        $CONDA/bin/conda init
         $CONDA/bin/conda activate base
         python setup.py install
         cd ..
