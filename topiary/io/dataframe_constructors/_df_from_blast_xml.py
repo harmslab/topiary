@@ -168,4 +168,8 @@ def df_from_blast_xml(xml_input):
     df = pd.DataFrame(out)
     df = _arg_processors.process_topiary_dataframe(df)
 
+    # Get ott id for all sequences, setting False for those that can't be
+    # found/resolved
+    df = topiary.get_ott_id(df)
+
     return df

@@ -86,7 +86,7 @@ def _generate_parsimony_tree(alignment_file,
 
 def find_best_model(df,
                     tree_file=None,
-                    model_matrices=["Blosum62","cpREV","Dayhoff","DCMut","DEN",
+                    model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                     "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                     "mtART","mtMAM","mtREV","mtZOA","PMB",
                                     "rtREV","stmtREV","VT","WAG","LG4M","LG4X",
@@ -179,7 +179,9 @@ def find_best_model(df,
                             print(f"skpping incompatible model combination {model}",flush=True)
                             continue
 
-                    # Optimize branch lengths etc. on the existing tree
+                    # Optimize branch lengths etc. on the existing tree. The
+                    # --force model_lh_impr allows calculation to proceed even
+                    # if this particular model didn't optimize well.
                     run_raxml(algorithm="--evaluate",
                               alignment_file=alignment_file,
                               tree_file=tree_file,
@@ -188,7 +190,8 @@ def find_best_model(df,
                               dir_name="tmp",
                               threads=threads,
                               raxml_binary=raxml_binary,
-                              log_to_stdout=False)
+                              log_to_stdout=False,
+                              other_args=["--force","model_lh_impr"])
 
                     # Grab the info file from this run
                     os.chdir("tmp")

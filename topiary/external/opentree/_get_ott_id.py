@@ -19,7 +19,8 @@ import numpy as np
 import re, copy
 
 def get_ott_id(df,
-               phylo_context="All life"):
+               phylo_context="All life",
+               verbose=True):
     """
     Return a copy of df with an ott column holding open tree of life
     names for each species.
@@ -56,6 +57,8 @@ def get_ott_id(df,
                                    'Asteraceae','Aster','Symphyotrichum',
                                    'Campanulaceae','Lobelia']}
 
+        verbose: whether or not to print out unresolvable taxa, etc.
+
     Return
     ------
         Copy of df with added ott and orig_species column.  ott column
@@ -67,6 +70,8 @@ def get_ott_id(df,
     # Make sure this is a topiary dataframe
     df = _arg_processors.process_topiary_dataframe(df)
 
+    # Make sure verbose can be properly handled
+    verbose = _arg_processors.process_bool(verbose,"verbose")
 
     # Make copy of df and copy current species to original species
     local_df = df.copy()
@@ -172,7 +177,8 @@ def get_ott_id(df,
         ```
         \n""")
 
-        print(w)
+        if verbose:
+            print(w)
 
     # Print warning data for user -- species we could not resolve
     unresolved_taxa = set(unresolved_taxa)
@@ -203,6 +209,7 @@ def get_ott_id(df,
         `keep = True` for this sequence.
         """)
 
-        print(w)
+        if verbose:
+            print(w)
 
     return local_df

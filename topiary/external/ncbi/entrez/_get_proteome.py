@@ -165,6 +165,13 @@ def get_proteome(taxid=None,species=None,output_dir="."):
         except (urllib.error.URLError,urllib.error.HTTPError):
             continue
 
+    # Try to delete random file that gets downloaded when we make this query.
+    try:
+        os.remove(os.path.join(output_dir,"esummary_assembly.dtd"))
+    except FileNotFoundError:
+        pass
+
+
     if success:
         return local_file
 

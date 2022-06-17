@@ -14,12 +14,18 @@ import pandas as pd
 def df_from_seed(seed_df,
                  ncbi_blast_db="nr",
                  local_blast_db=None,
-                 phylo_context=None,
-                 hitlist_size=1000,
+                 hitlist_size=5000,
                  e_value_cutoff=0.001,
                  gapcosts=(11,1),
-                 num_threads=-1,
+                 num_threads=1,
                  **kwargs):
+
+
+    out = topiary.io.load_seed_dataframe(seed_df)
+    seed_df = out[0]
+    phylo_context = out[1]
+    key_species = out[2]
+    paralog_patterns = out[3]
 
     # Validate dataframe
     seed_df = _arg_processors.process_topiary_dataframe(seed_df)
@@ -99,6 +105,7 @@ def df_from_seed(seed_df,
     # Append uid (to prevent user-visible topiary warnings) and then
     # convert to a topiary dataframe
     df["uid"] = topiary._private.generate_uid(len(df.sequence))
+
     df = topiary._arg_processors.process_topiary_dataframe(df)
 
     df = pd.concat((seed_df,df),ignore_index=True)
@@ -106,4 +113,11 @@ def df_from_seed(seed_df,
     # Set new hits to always_keep
     df.loc[pd.isna(df["always_keep"]),"always_keep"] = False
 
-    return df
+    # Get ott id for all sequences, setting False for those that can't be
+    # found/resolved
+    df = topiary.get_ott_id(df,phylo_context=phylo_context,verbose=False)
+
+    # Create nicknames for sequences in dataframe
+    df = topiary.create_nicknames(df,paralog_patterns)
+
+    return df, phylo_context, key_species, paralog_patterns

@@ -17,7 +17,7 @@ import pandas as pd
 
 from tqdm.auto import tqdm
 
-import sys, urllib, http, copy, os, time
+import sys, urllib, http, copy, os, time, random, string
 import multiprocessing as mp
 
 def _prepare_for_blast(sequence,
@@ -397,7 +397,37 @@ def _thread(args):
                 lock.release()
 
             result = NCBIWWW.qblast(**this_query)
-            out = NCBIXML.parse(result)
+
+            # Write output to an xml file. NCBI can spit out trashed XML
+            # with CREATE_VIEW\n\n\n randomly injected between <hit> entries.
+            # biopython chokes on the input. To fix this, pull down the XML,
+            # clean up, write to a file, then pass the file handle back to
+            # biopython.
+
+            # Get rid of nastiness if present.
+            contents = result.readlines()
+            contents = [c for c in contents if c.strip() not in ["","CREATE_VIEW"]]
+
+            # Write temporary file
+            tmp_root = "".join([random.choice(string.ascii_letters)
+                                for _ in range(10)])
+            tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
+            f = open(tmp_file,"w")
+            f.write("".join(contents))
+            f.close()
+
+            # Read output xml file and parse
+            f = open(tmp_file,"r")
+
+            # Clean up
+            p = NCBIXML.parse(f)
+            out = []
+            for r in p:
+                out.append(r)
+            f.close()
+
+            # If parsing successful, nuke temporary file
+            os.remove(tmp_file)
 
         # If some kind of http error or timeout, set out to None
         except (urllib.error.URLError,urllib.error.HTTPError,http.client.IncompleteRead):

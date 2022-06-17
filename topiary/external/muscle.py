@@ -8,7 +8,7 @@ __date__ = "2022-05-02"
 import topiary
 from topiary import _arg_processors
 import pandas as pd
-import subprocess, sys, os, random, string
+import subprocess, sys, os, random, string, re
 
 def run_muscle(input,
                output_fasta=None,
@@ -173,7 +173,12 @@ def _run_muscle(input_fasta,
                              stderr=subprocess.STDOUT,
                              universal_newlines=True)
     for line in popen.stdout:
-        print(line,end="",flush=True)
+        if re.search("100.0%",line):
+            endl = "\n"
+        else:
+            print(90*" ",end="\r")
+            endl = "\r"
+        print(line.strip(),end=endl,flush=True)
     popen.stdout.close()
     return_code = popen.wait()
 

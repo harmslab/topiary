@@ -2,10 +2,10 @@
 import pytest
 
 import topiary
-from topiary.quality.clean_alignment import _get_sparse_columns, _rle, _drop_gaps_only
-from topiary.quality.clean_alignment import _find_too_many_sparse, _find_too_few_dense
-from topiary.quality.clean_alignment import _find_long_insertions, clean_alignment
-from topiary.quality.clean_alignment import AA_TO_INT, INT_TO_AA
+from topiary.quality._clean_alignment import _get_sparse_columns, _rle, _drop_gaps_only
+from topiary.quality._clean_alignment import _find_too_many_sparse, _find_too_few_dense
+from topiary.quality._clean_alignment import _find_long_insertions, clean_alignment
+from topiary.quality._clean_alignment import AA_TO_INT, INT_TO_AA
 
 import numpy as np
 import pandas as pd

@@ -18,7 +18,7 @@ AA = "ACDEFGHIKLMNPQRSTVWY-"
 AA_TO_INT = dict([(a,i) for i, a in enumerate(AA)])
 INT_TO_AA = list(AA)
 
-def _get_sparse_columns(seqs,sparse_column_cutoff=0.9):
+def _get_sparse_columns(seqs,sparse_column_cutoff=0.5):
     """
     Get True/False array for whether each column is less than cutoff % gaps.
 
@@ -265,14 +265,158 @@ def _find_long_insertions(seqs,
 
     return seqs, cumulative_keep, force_keep
 
+def score_alignment(df,
+                    alignment_column,
+                    sparse_column_cutoff=0.95,
+                    align_trim=(0.1,0.9)):
+    """
+    Calculate alignment quality scores for each sequence in the dataframe. The
+    resulting scores are loaded as columns into the dataframe. In all cases, a
+    higher score is a worse alignment.
+
+        fx_in_sparse: fraction of columns from the sequence that are in columns
+                      where most other sequences have a gap.
+        fx_missing_dense: fraction of columns from the sequence that have a gap
+                          where most other sequences have no gap.
+        sparse_run_length: maximum insertion length. The insertion does not have
+                           to be continuous in sequence. Instead, the program
+                           finds runs of sparse_columns and then counts how many
+                           columns within each run come from this sequence.
+        align_trim: do not score the first and last bits of the alignment.
+                    Interpreted like a slice, but with percentages. (0.0,1.0)
+                    would not trim; (0.05,0,98) would trim the first 0.05 off
+                    the front and the last 0.02 off the back.
+
+    Parameters
+    ----------
+        df: topiary dataframe
+        alignment_column: column in df with alignment. Must be strings that are
+                          all the same length.
+        sparse_column_cutoff: fraction of sequences with a '-' character in a
+                              given column at which this will be called a
+                              sparse column
+        front_trim: trim the first "front_trim" fraction of columns off
+                    alignment. (Used to avoid scoring sparse/variable N-terminii)
+        back_trim: trim the last "back_trim" fraction of columns off
+                    alignment. (Used to avoid scoring sparse/variable C-terminii)
+
+    Return
+    ------
+        copy of df with three new columns containing scores.
+    """
+
+    # check dataframe
+    df = _arg_processors.process_topiary_dataframe(df)
+
+    # Check alignment column validity
+    try:
+        aln = df.loc[df.keep,alignment_column]
+    except KeyError:
+        err = f"\ndataframe does not have alignment_column '{alignment_column}'\n\n"
+        raise ValueError(err)
+
+    # Get length of sequence column
+    try:
+        col_lengths = list(set([len(s) for s in aln]))
+        if len(col_lengths) != 1:
+            err = f"\nall sequences in '{alignment_column}' do not have the same legnth\n\n"
+            raise ValueError(err)
+        align_length = col_lengths[0]
+
+    except TypeError:
+        err = f"\n'{alignment_column}' could not be interpreted as sequences\n\n"
+        raise ValueError(err)
+
+    # Check float inputs
+    sparse_column_cutoff = _arg_processors.process_float(sparse_column_cutoff,
+                                                         "sparse_column_cutoff",
+                                                         minimum_allowed=0,
+                                                         maximum_allowed=1)
+
+    align_trim = _arg_processors.process_iter(align_trim,"align_trim",
+                                              minimum_allowed=2,
+                                              maximum_allowed=2)
+
+    front_trim = _arg_processors.process_float(align_trim[0],
+                                               "align_trim[0]",
+                                               minimum_allowed=0.0,
+                                               maximum_allowed=1.0)
+
+    back_trim =  _arg_processors.process_float(align_trim[1],
+                                               "align_trim[1]",
+                                               minimum_allowed=0.0,
+                                               maximum_allowed=1.0)
+
+    if front_trim >= back_trim:
+        err = "\nfront_trim must not overlap with back_trim\n\n"
+        raise ValueError(err)
+
+    # Get indexes for front and back trimming
+    front_index = int(round(align_length*front_trim,0))
+    back_index = int(round(align_length*back_trim,0))
+    if front_index == back_index:
+        if front_index > 0:
+            front_index -= 1
+        else:
+            back_index += 1
+
+    # Generate an array of sequences as integers.
+    seqs = []
+    for i in df.index:
+        if not df.loc[i,"keep"]:
+            continue
+        this_seq = re.sub(f"[^{AA}]","-",df.loc[i,alignment_column][front_index:back_index])
+        seqs.append([AA_TO_INT[c] for c in list(this_seq)])
+
+    seqs = np.array(seqs,dtype=int)
+
+    # Drop gaps only columns
+    seqs = _drop_gaps_only(seqs)
+
+    sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
+    non_gap_sparse = np.logical_and(seqs != 20,sparse_columns)
+    fx_in_sparse = np.sum(non_gap_sparse,axis=1)/seqs.shape[1]
+
+    dense_columns = np.logical_not(sparse_columns)
+    gap_dense = np.logical_and(seqs == 20,dense_columns)
+    fx_missing_dense = np.sum(gap_dense,axis=1)/np.sum(dense_columns)
+
+    sparse_run_length = np.zeros(len(seqs))
+    run_lengths, start_positions, values = _rle(dense_columns)
+    for i in range(len(run_lengths)):
+
+        # If the this is a run of sparse columns
+        if values[i] == False:
+
+            # Grab indexes for start and stop of sparse column run
+            s = start_positions[i]
+            e = s + run_lengths[i]
+
+            # Go through every sequence
+            for j in range(len(seqs)):
+                in_sparse_run = np.sum(seqs[j,s:e] != 20)
+                if in_sparse_run > sparse_run_length[j]:
+                    sparse_run_length[j] = in_sparse_run
+
+
+    # Load quality data into the dataframe
+    df["fx_in_sparse"] = np.nan
+    df.loc[df.keep,"fx_in_sparse"] = fx_in_sparse
+    df["fx_missing_dense"] = np.nan
+    df.loc[df.keep,"fx_missing_dense"] = fx_missing_dense
+    df["sparse_run_length"] = np.nan
+    df.loc[df.keep,"sparse_run_length"] = sparse_run_length
+
+    return df
+
 def clean_alignment(df,
                     alignment_column="alignment",
                     key_species=[],
-                    sparse_column_cutoff=0.5,
+                    sparse_column_cutoff=0.9,
                     maximum_sparse_allowed=0.025,
-                    minimum_dense_required=0.90,
+                    minimum_dense_required=0.95,
                     long_insertion_length=8,
-                    long_insertion_fx_cutoff=0.8):
+                    long_insertion_fx_cutoff=0.6):
     """
 
     Parameters
@@ -340,6 +484,15 @@ def clean_alignment(df,
     # were keeping already
     seqs = []
     force_keep = []
+
+    # If the "always_keep" columns exists, keep it
+    try:
+        always = np.array(df.loc[:,"always_keep"],dtype=bool)
+    except KeyError:
+        always = np.zeros(len(df),dtype=bool)
+
+    termini = int(round(len(df.loc[df.index[0],alignment_column])*0.05,0))
+
     for i in df.index:
         if not df.loc[i,"keep"]:
             continue
@@ -348,13 +501,17 @@ def clean_alignment(df,
 
         # If the sequence is from a key species, set force_keep to True for that
         # sequence
-        if df.loc[i,"species"] in key_species:
+        if df.loc[i,"species"] in key_species or always[i]:
             force_keep.append(True)
         else:
             force_keep.append(False)
 
+
+
     seqs = np.array(seqs,dtype=int)
     force_keep = np.array(force_keep,dtype=bool)
+
+    starting_keep_number = np.sum(df.keep)
 
     # Will hold indexes to keep after filtering, getting rid of those with
     # keep = False from the start
@@ -386,8 +543,6 @@ def clean_alignment(df,
                                                               long_insertion_length,
                                                               long_insertion_fx_cutoff)
 
-
-
     # Construct final set of sequences as strings
     final_seqs = []
     for i in range(seqs.shape[0]):
@@ -396,8 +551,13 @@ def clean_alignment(df,
     # Construct final dataframe with cleaned up alignment
     df.loc[:,"keep"] = False
     df.loc[cumulative_keep,"keep"] = True
-    df.loc[cumulative_keep,alignment_column] = final_seqs
+    #df.loc[cumulative_keep,alignment_column] = final_seqs
     no_keep = np.array(list(set(df.index).difference(set(cumulative_keep))))
     df.loc[no_keep,alignment_column] = pd.NA
+
+    final_keep_number = np.sum(df.keep)
+
+    print("Removing excessively gapped sequences.")
+    print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
 
     return df

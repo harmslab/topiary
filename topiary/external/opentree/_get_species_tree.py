@@ -1,6 +1,6 @@
 __description__ = \
 """
-Get a species tree given a topiary dataframe. 
+Get a species tree given a topiary dataframe.
 """
 __author__ = "Michael J. Harms"
 __date__ = "2022-06-07"
@@ -19,7 +19,13 @@ import re, copy
 
 def get_species_tree(df):
     """
-    Return an ete3 cladogram of species in tree.
+    Return an ete3 cladogram of species in tree. The leaves on the tree will
+    have the following features:
+
+        leaf.name: bionomial species name as string
+        leaf.ott: ott as string
+        leaf.species: bionomial species name as string
+        leaf.uid: list of all uid that have this species
 
     Parameters
     ----------
@@ -33,16 +39,20 @@ def get_species_tree(df):
 
     # Make sure this is a clean topiary dataframe
     df = _arg_processors.process_topiary_dataframe(df)
+    if "ott" not in df.columns:
+        err = "\ndataframe must contain an ott column. This can be generated\n"
+        err += "using topiary.opentree.get_ott_id\n\n"
+        raise ValueError(err)
 
     # Only get keep = True
     df = df.loc[df.keep,:].copy()
 
     # ott_to_df_columns will be a dictionary of dictionaries. The top-level
-    # dictionary is keyed to different columns (nickname, uid, etc.). Each of
+    # dictionary is keyed to different columns. Each of
     # those keys maps to a dictionary mapping ott to a tuple of values in that
     # column that have this ott. These will be attached as features to the
     # leaf nodes in the final ete3 tree.
-    to_get = ["nickname","species","sequence","name","ott","uid"]
+    to_get = ["species","ott","uid"]
     ott_to_df_columns = dict([(k,{}) for k in to_get])
     for k in to_get:
 
@@ -124,10 +134,13 @@ def get_species_tree(df):
 
         # Give leaves species name as a feature
         if n.is_leaf():
-            name_key = str(copy.deepcopy(n.name))
-            for k in ott_to_df_columns:
-                n.add_feature(k,ott_to_df_columns[k][name_key])
 
-            n.name = copy.deepcopy(n.species[0])
+            name_key = str(copy.deepcopy(n.name))
+
+            n.add_feature("species",ott_to_df_columns["species"][name_key][0])
+            n.add_feature("ott",ott_to_df_columns["ott"][name_key][0])
+            n.add_feature("uid",ott_to_df_columns["uid"][name_key])
+
+            n.name = copy.deepcopy(n.species)
 
     return final_tree

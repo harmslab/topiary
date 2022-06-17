@@ -21,7 +21,7 @@ from .external import opentree
 from .external import raxml
 
 # Core functions for pipeline
-from .quality import remove_redundancy, clean_alignment
+from .quality import remove_redundancy, clean_alignment, taxonomic_sample
 from .util import create_nicknames
 from .external import get_ott_id, get_species_tree
 from .external import recip_blast
