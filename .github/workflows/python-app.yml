@@ -44,7 +44,7 @@ jobs:
       run: |
         cd topiary
         $CONDA/bin/conda env update --file environment.yml --name base
-        python setup.py install
+        $CONDA/bin/python setup.py install
         cd ..
 
     - name: Lint with flake8
