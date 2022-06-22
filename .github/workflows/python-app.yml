@@ -48,7 +48,6 @@ jobs:
       shell: bash
       run: |
         cd topiary
-      #  $CONDA/bin/conda env update --file environment.yml --name base
         $CONDA/bin/conda create -y --file environment.yml --name test
         $CONDA/bin/conda activate test || true
         $CONDA/bin/python setup.py install
