@@ -48,15 +48,15 @@ jobs:
       shell: bash
       run: |
         cd topiary
-        $CONDA/bin/conda create -y --file environment.yml --name test
-        $CONDA/bin/conda activate test || true
+        $CONDA/bin/conda create -y --file environment.yml --name topiary
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/python setup.py install
         cd ..
 
     - name: Lint with flake8
       shell: bash
       run: |
-        $CONDA/bin/conda activate test || true
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/conda install flake8
         # stop the build if there are Python syntax errors or undefined names
         $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -66,7 +66,7 @@ jobs:
     - name: Run the tests
       shell: bash
       run: |
-        $CONDA/bin/conda activate test || true
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/conda install pytest
         $CONDA/bin/pytest
 
