@@ -18,17 +18,20 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.9' ]
     steps:
+    # - name: Install Python ${{ matrix.python-version }}
+    #   uses: actions/setup-python@v2
+    #   with:
+    #     python-version: ${{ matrix.python-version }}
+    #     architecture: 'x64'
 
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
+    - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
 
     - name: Checkout
       uses: actions/checkout@v3.0.0
@@ -41,8 +44,6 @@ jobs:
       run: |
         cd topiary
         $CONDA/bin/conda env update --file environment.yml --name base
-        $CONDA/bin/conda init
-        $CONDA/bin/conda activate base
         python setup.py install
         cd ..
 
@@ -67,12 +68,15 @@ jobs:
         os: [windows-latest]
         python-version: ['3.8', '3.9' ]
     steps:
-
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
+    - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+    # - name: Install Python ${{ matrix.python-version }}
+    #   uses: actions/setup-python@v2
+    #   with:
+    #     python-version: ${{ matrix.python-version }}
+    #     architecture: 'x64'
 
     - name: Install dependencies
       run: |
@@ -86,11 +90,10 @@ jobs:
         path: topiary
 
     - name: Install the Python dependencies
+      shell: powershell
       run: |
         cd topiary
-        C:\Miniconda\condabin\conda.bat env update --file environment.yml --name base
-        C:\Miniconda\condabin\conda.bat init powershell
-        C:\Miniconda\condabin\conda.bat activate base
+        conda env update --file environment.yml --name base
         python setup.py install
         cd ..
 
