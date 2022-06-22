@@ -1,5 +1,5 @@
 """
-Public utility functions for the topiary package.
+Create a nickname column that has a friendly nickname for each sequence.
 """
 
 from topiary import _private, check

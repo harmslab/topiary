@@ -84,8 +84,8 @@ def seed_to_alignment(seed_df,
     verbose : bool, default=False
         verbosity of output
 
-    Return
-    ------
+    Returns
+    -------
     topiary_dataframe : pandas.DataFrame
         Topiary dataframe with aligned, quality-controlled sequences.
     """

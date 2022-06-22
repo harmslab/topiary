@@ -1,6 +1,6 @@
 """
 Draw tree output from a maximum likelihood tree calculation, gene/species tree
-reconcilation, or ancestral sequence reconstruction. 
+reconcilation, or ancestral sequence reconstruction.
 """
 
 import topiary

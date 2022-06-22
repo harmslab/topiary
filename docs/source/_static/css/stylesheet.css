@@ -354,7 +354,8 @@ ul.auto-toc {
 }
 
 .emph {
-    color: #437EB4;
+  font-family: serif;
+  /*  color: #437EB4; */
   font-weight: bold;
 }
 

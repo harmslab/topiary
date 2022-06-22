@@ -395,13 +395,11 @@ Example seed dataframe
 | LY86 | lymphocyte antigen 86;MD1;Myeloid Differentiation Protein-1       | Danio rerio  | MKTYFNM... |
 +------+-------------------------------------------------------------------+--------------+------------+
 
-
 .. _opentreeoflife: https://tree.opentreeoflife.org/
 .. _ott770315: https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
 .. _ott276534: https://tree.opentreeoflife.org/opentree/argus/ottol@276534/Thermus-thermophilus
 .. _pandas: https://pandas.pydata.org/docs/
 .. _ete3: http://etetoolkit.org
-.. _`API reference`: api/topiary/index.html
 .. _GeneRax: https://github.com/BenoitMorel/GeneRax
 .. _`Open Tree of Life`: https://tree.opentreeoflife.org/
 .. _PastML: https://pastml.pasteur.fr
@@ -417,10 +415,14 @@ Example seed dataframe
 .. _genecards: https://www.genecards.org
 .. _`Also known as`: https://www.ncbi.nlm.nih.gov/gene/23643
 .. _`Protein names`: https://www.uniprot.org/help/protein_names
+.. _`API reference` : topiary.html
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   topiary
 
 
 Indices and tables

@@ -285,8 +285,8 @@ def taxonomic_sample(df,
                      key_species=[],
                      within_species_redundancy_cutoff=0.99,
                      sparse_column_cutoff=0.95,
-                     sparse_run_length_keep_percentile=0.98,
-                     fx_missing_dense_cutoff=0.85,
+                     sparse_run_length_keep_percentile=0.99,
+                     fx_missing_dense_cutoff=0.75,
                      align_trim=(0.05,0.95),
                      verbose=False):
     """
@@ -313,11 +313,11 @@ def taxonomic_sample(df,
     sparse_column_cutoff : float, default=0.95
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
-    sparse_run_length_keep_percentile : float, 0.98
+    sparse_run_length_keep_percentile : float, 0.99
         when checking alignment quality, remove the sequences with the longest
         insertions. Toss the longest (1 - sparse_run_length_keep_percentile)*num_sequences
         sequences.
-    fx_missing_dense_cutoff : float, default=0.9
+    fx_missing_dense_cutoff : float, default=0.75
         when checking alignment quality, remove sequences that are missing more
         than 1 - fx_missing_dense_cutoff of the dense (that is, not sparse,
         columns).
@@ -346,19 +346,19 @@ def taxonomic_sample(df,
                                                "key_species")
 
     within_species_redundancy_cutoff = check.check_float(within_species_redundancy_cutoff,
-                                                                     "within_species_redundancy_cutoff",
-                                                                     minimum_allowed=0.0,
-                                                                     maximum_allowed=1.0)
+                                                         "within_species_redundancy_cutoff",
+                                                         minimum_allowed=0.0,
+                                                         maximum_allowed=1.0)
 
     sparse_run_length_keep_percentile = check.check_float(sparse_run_length_keep_percentile,
-                                                                      "sparse_run_length_keep_percentile",
-                                                                      minimum_allowed=0.0,
-                                                                      maximum_allowed=1.0)
+                                                          "sparse_run_length_keep_percentile",
+                                                          minimum_allowed=0.0,
+                                                          maximum_allowed=1.0)
 
     fx_missing_dense_cutoff = check.check_float(fx_missing_dense_cutoff,
-                                                            "fx_missing_dense_cutoff",
-                                                            minimum_allowed=0.0,
-                                                            maximum_allowed=1.0)
+                                                "fx_missing_dense_cutoff",
+                                                minimum_allowed=0.0,
+                                                maximum_allowed=1.0)
 
     fx_missing_dense_cutoff = 1 - fx_missing_dense_cutoff
 
