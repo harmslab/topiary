@@ -46,8 +46,10 @@ jobs:
 
     - name: Install the Python dependencies
       run: |
+        cd topiary
         $CONDA/bin/conda env update --file environment.yml --name base
         $CONDA/bin/python setup.py install
+        cd ..
 
     - name: Lint with flake8
       run: |
