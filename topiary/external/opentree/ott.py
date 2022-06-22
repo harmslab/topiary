@@ -44,30 +44,31 @@ def get_ott_id(df,
     `phylo_context` should be a string recognized by opentreeoflife.org. To get
     the current strings recognized by the database, use the following code:
 
-    ```
-    from opentree import OT
-    print(OT.tnrs_contexts().response_dict)
-    ```
+    .. code-block:: python
+
+        from opentree import OT
+        print(OT.tnrs_contexts().response_dict)
 
     As of 2022-06-21, the following are recognized. You can use
     either the keys or values in this dictionary as a `phylo_context`.
 
-    ```
-    {'ANIMALS':
-        ['Animals', 'Birds', 'Tetrapods', 'Mammals', 'Amphibians',
-         'Vertebrates', 'Arthropods', 'Molluscs', 'Nematodes',
-         'Platyhelminthes', 'Annelids', 'Cnidarians', 'Arachnids','Insects'],
-     'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
-     'LIFE': ['All life'],
-     'MICROBES': ['Bacteria', 'SAR group', 'Archaea', 'Excavata', 'Amoebozoa',
-                  'Centrohelida', 'Haptophyta', 'Apusozoa', 'Diatoms',
-                  'Ciliates', 'Forams'],
-     'PLANTS': ['Land plants', 'Hornworts', 'Mosses', 'Liverworts',
-                'Vascular plants', 'Club mosses', 'Ferns', 'Seed plants',
-                'Flowering plants', 'Monocots', 'Eudicots', 'Rosids',
-                'Asterids', 'Asterales', 'Asteraceae', 'Aster',
-                'Symphyotrichum', 'Campanulaceae', 'Lobelia']}
-    ```
+    .. code-block:: python
+
+        {'ANIMALS':
+            ['Animals', 'Birds', 'Tetrapods', 'Mammals', 'Amphibians',
+             'Vertebrates', 'Arthropods', 'Molluscs', 'Nematodes',
+             'Platyhelminthes', 'Annelids', 'Cnidarians', 'Arachnids','Insects'],
+         'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
+         'LIFE': ['All life'],
+         'MICROBES': ['Bacteria', 'SAR group', 'Archaea', 'Excavata', 'Amoebozoa',
+                      'Centrohelida', 'Haptophyta', 'Apusozoa', 'Diatoms',
+                      'Ciliates', 'Forams'],
+         'PLANTS': ['Land plants', 'Hornworts', 'Mosses', 'Liverworts',
+                    'Vascular plants', 'Club mosses', 'Ferns', 'Seed plants',
+                    'Flowering plants', 'Monocots', 'Eudicots', 'Rosids',
+                    'Asterids', 'Asterales', 'Asteraceae', 'Aster',
+                    'Symphyotrichum', 'Campanulaceae', 'Lobelia']}
+
     """
 
     # Make sure this is a topiary dataframe

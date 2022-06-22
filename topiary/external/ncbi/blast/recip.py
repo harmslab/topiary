@@ -501,11 +501,11 @@ def recip_blast(df,
         hit be the best hit.
     min_call_prob: float, default=0.95
         hits from all paralogs that yield a regular expression match
-       are weighted by their relative e-values. Each paralog is
-       assigned a relative probability. This cutoff is the minimum
-       probability the best paralog match must have to result in a
-       paralog call. Value should be between 0 and 1 (not inclusive),
-       where min_call_prob --> 1 increases the stringency.
+        are weighted by their relative e-values. Each paralog is
+        assigned a relative probability. This cutoff is the minimum
+        probability the best paralog match must have to result in a
+        paralog call. Value should be between 0 and 1 (not inclusive),
+        where min_call_prob --> 1 increases the stringency.
     use_start_end : bool, default=True
         whether or not to use start/stop columns in dataframe (if present) to
         slice subset of sequence for reciprocal blast.
@@ -515,8 +515,6 @@ def recip_blast(df,
         only return hits with e_value better than e_value_cutoff
     gapcosts : tuple, default=(11,1)
         BLAST gapcosts (length 2 tuple of ints)
-    num_threads: number of threads to use for a local blast search. if -1,
-                       use all available.
     num_threads : int, default=-1
         number of threads to use. if -1, use all available. (Multithreading
         rarely speeds up remote BLAST).
@@ -532,24 +530,29 @@ def recip_blast(df,
 
     Notes
     -----
-    `paralog_patterns` are used to match reciprocal blast hits. For example:
+    :code:`paralog_patterns` are used to match reciprocal blast hits. For
+    example:
 
-    ```
-    paralog_patterns = {"LY96":["lymphocyte antigen 96","MD-2"],
-                        "LY86":["lymphocyte antigen 86","MD-1"]}
-    ```
+    .. code-block:: python
+
+        paralog_patterns = {"LY96":["lymphocyte antigen 96","MD-2"],
+                            "LY86":["lymphocyte antigen 86","MD-1"]}
+
 
     This would mean hits with 'lymphocyte antigen 96' or 'MD-2' will map to
     LY96; hits with 'lymphocyte antigen 86' or 'MD-1' will map to LY86. Hits
     that match neither would not be assigned a paralog.
 
-    NOTE: string patterns are interpreted literally. The pattern "[A-Z]" would
-    be escaped to look for "\[A\-Z\]". If you want to use regular expressions
-    in your patterns, pass them in as compiled regular expressions. For example,
+    NOTE: string patterns are interpreted literally. The pattern :code:`"[A-Z]"`
+    would be escaped to look for :code:`"\[A\-Z\]"`. If you want to use regular
+    expressions in your patterns, pass them in as compiled regular expressions.
+    For example,
 
-    ```
-    my_pattern = re.compile("[A-Z]")
-    ```
+    .. code-block:: python
+
+        my_pattern = re.compile("[A-Z]")
+
+
     """
 
     # Check sanity of input parameters and return a validated topiary dataframe,

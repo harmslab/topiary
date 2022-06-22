@@ -66,5 +66,5 @@ html_css_files = [
     'css/stylesheet.css',
 ]
 
-import os
-os.system("sphinx-apidoc -f . -o ../../topiary")
+# HACK that makes sure we actually run sphinx-apidoc on readthedocs
+os.system("sphinx-apidoc -f ../../topiary -o .")
