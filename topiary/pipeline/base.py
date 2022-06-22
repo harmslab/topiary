@@ -1,9 +1,6 @@
-__description__ = \
 """
 Shared functions for running pipelines.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-06-07"
 
 import topiary
 

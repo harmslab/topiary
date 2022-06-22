@@ -1,3 +1,6 @@
+"""
+Pipeline that starts from an alignment dataframe ultimately creates ancestors.
+"""
 
 import topiary
 

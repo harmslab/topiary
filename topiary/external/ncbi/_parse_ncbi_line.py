@@ -1,12 +1,8 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
-__description__ = \
 """
-functions interacting with ncbi databases and file types.
+Functions for interacting with NCBI databases and file types.
 """
 
-from topiary import util
-from topiary import _arg_processors
+from topiary import util, check
 
 import pandas as pd
 import numpy as np

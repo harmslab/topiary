@@ -1,12 +1,9 @@
-__description__ = \
 """
-Functions for dealing with alignment files.
+Functions for reading and writing alignments to files.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 
 import topiary
-from topiary import _arg_processors, _private
+from topiary import check, _private
 
 import pandas as pd
 import numpy as np
@@ -28,7 +25,7 @@ def _validate_seq_writer(df,
     For argument parameter meanings, see write_fasta and write_phy.
     """
 
-    df = topiary._arg_processors.process_topiary_dataframe(df)
+    df = topiary.check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
@@ -122,19 +119,27 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
 
     Parameters
     ----------
-        df: data frame to write out
-        out_file: output file
-        seq_column: column in data frame to use as sequence
-        label_columns: list of columns to use for the label
-        write_only_keepers: whether or not to write only seq with keep = True
-        empty_char: empty char. if the sequence is only empty char, do not write
-                    out. To disable check, set empty_char=None.
-        clean_sequence: replace any non-aa characters with "-"
-        overwrite: whether or not to overwrite an existing file
+    df: pandas.DataFrame
+        data frame to write out
+    out_file : str
+        output file
+    seq_column : str, default="sequence"
+        column in data frame to use as sequence
+    label_columns : list, default=["species","name"]
+        list of columns to use for sequence labels
+    write_only_keepers : bool, default=True
+        whether or not to write only seq with keep == True
+    empty_char : str or None
+        string containing empty char. If the sequence is only empty char, do not
+        write out. To disable check, set empty_char=None.
+    clean_sequence : bool, default=False
+        replace any non-aa characters with "-"
+    overwrite : bool, default=False
+        whether or not to overwrite an existing file
 
-    Return
-    ------
-        None. Writes to out_file
+    Returns
+    -------
+    None
     """
 
     df, label_columns, empty_char = _validate_seq_writer(df,
@@ -189,23 +194,32 @@ def write_phy(df,
               clean_sequence=False,
               overwrite=False):
     """
-    Write out a .phy file using uid as keys. NOTE: all sequences must have
-    the same length.
+    Write a .phy file from a dataframe. Uses the uid as the sequence name. All
+    sequences must have the same length.
 
     Parameters
     ----------
-        df: data frame to write out
-        out_file: output file
-        seq_column: column in data frame to use as sequence
-        write_only_keepers: whether or not to write only seq with keep = True
-        empty_char: empty char. if the sequence is only empty char, do not write
-                    out.
-        clean_sequence: replace any non-aa characters with "-"
-        overwrite: whether or not to overwrite an existing file
+    df: pandas.DataFrame
+        data frame to write out
+    out_file : str
+        output file
+    seq_column : str, default="alignment"
+        column in data frame to use as sequence
+    label_columns : list, default=["species","name"]
+        list of columns to use for sequence labels
+    write_only_keepers : bool, default=True
+        whether or not to write only seq with keep == True
+    empty_char : str or None
+        string containing empty char. If the sequence is only empty char, do not
+        write out. To disable check, set empty_char=None.
+    clean_sequence : bool, default=False
+        replace any non-aa characters with "-"
+    overwrite : bool, default=False
+        whether or not to overwrite an existing file
 
-    Return
-    ------
-        None. Writes to out_file
+    Returns
+    -------
+    None
     """
 
     label_columns = ["uid"]
@@ -295,22 +309,32 @@ def write_phy(df,
 
 def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
     """
-    Load sequences from a fasta file into a topiary dataframe
+    Load sequences from a fasta file into an existing topiary dataframe. This
+    function expects the fasta file to have names formated like >uid|other stuff.
+    It will match the uid in the fasta file with the uid in the topiary dataframe.
+    If a uid is not in the dataframe, the function will raise an error. 
 
     Parameters
     ----------
-        df: topiary data frame
-        fasta_file: a fasta file with headers formatted like >uid|other stuff
-        load_into_column: what column in the dataframe to load the sequences into
-        unkeep_missing: set sequences not loading into keep = False
+    df : pandas.DataFrame
+        topiary data frame
+    fasta_file : str
+        a fasta file with headers formatted like >uid|other stuff
+    load_into_column : str, default="alignment"
+        what column in the dataframe to load the sequences into
+    unkeep_missing : bool, default=True
+        set any sequences in the dataframe tht are not in the fasta file to
+        keep=False. This allows the user to delete sequences from the alignment
+        and have that reflected in the dataframe.
 
     Return
     ------
+    pandas.DataFrame
         topiary dataframe with sequences now in load_into_column
     """
 
     # Create data frame and make sure it has the column in which to load
-    new_df = _arg_processors.process_topiary_dataframe(df)
+    new_df = check.check_topiary_dataframe(df)
     try:
         new_df[load_into_column]
     except KeyError:
@@ -364,4 +388,4 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
                 new_df.loc[i,load_into_column] = pd.NA
 
     # Return dataframe with final sanity check to make sure uid stayed unique
-    return _arg_processors.process_topiary_dataframe(new_df)
+    return check.check_topiary_dataframe(new_df)

@@ -1,6 +1,6 @@
 
 import topiary
-from topiary import _arg_processors
+from topiary import check
 import pandas as pd
 import numpy as np
 
@@ -49,7 +49,7 @@ def read_paralog_patterns(paralog_patterns):
 
             paralog_patterns = out_dict
 
-    patterns = _arg_processors.process_paralog_patterns(paralog_patterns)
+    patterns = check.check_paralog_patterns(paralog_patterns)
 
     return dict([(p[1],p[0]) for p in patterns])
 
@@ -91,7 +91,7 @@ def read_key_species(key_species):
 
             key_species = out_list[:]
 
-    key_species = _arg_processors.process_iter(key_species,
+    key_species = check.check_iter(key_species,
                                                "key_species",
                                                required_value_type=str,
                                                is_not_type=[str,dict])
@@ -223,13 +223,13 @@ def rockit(xml_input,
     key_species = read_key_species(key_species)
 
     # check min_redundancy_cutoff
-    min_redundancy_cutoff = _arg_processors.process_float(min_redundancy_cutoff,
+    min_redundancy_cutoff = check.check_float(min_redundancy_cutoff,
                                                           "min_redundancy_cutoff",
                                                           minimum_allowed=0,
                                                           maximum_allowed=1)
 
     # check target_number_of_sequences
-    target_number_of_sequences = _arg_processors.process_int(target_number_of_sequences,
+    target_number_of_sequences = check.check_int(target_number_of_sequences,
                                                              "target_number_of_sequences",
                                                              minimum_allowed=1)
 

@@ -1,12 +1,9 @@
-__decription__ = \
 """
-Light wrapper for muscle, compatible with muscle 3.8 and 5.1.
+Interface to muscle, compatible with muscle 3.8 and 5.1.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-05-02"
 
 import topiary
-from topiary import _arg_processors
+from topiary import check
 import pandas as pd
 import subprocess, sys, os, random, string, re
 
@@ -20,24 +17,29 @@ def run_muscle(input,
 
     Parameters
     ----------
-        input: input to align (fasta file or topiary df)
-        output_fasta: output fasta file to store alignment. Optional if the input
-                      is a dataframe; reqiured if the input is a fasta file.
-        super5: bool. User the 'super5' mode of muscle 5
-        muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
-                         specifies "-align" and "-output" (or -in/-out for old
-                         version of the command line), but leaves rest as default.
-                         Format should be something like ['-replicates',20,...].
-                         Arguments are not checked by this function, but passed
-                         directly to muscle.
-        muscle_binary: location of muscle binary (default assumes 'muscle'
-                       command is in the PATH).
+    input : str or pandas.DataFrame
+        input to align (fasta file or topiary df)
+    output_fasta : str or None, default=None
+        output fasta file to store alignment. Optional if the input
+        is a dataframe; reqiured if the input is a fasta file.
+    super5 : bool, default=False
+        User the 'super5' mode of muscle 5. If using muscle 3.x, this parameter
+        is ignored.
+    muscle_cmd_args : list
+        arguments to pass directly to muscle. Wrapper specifies "-align" and
+        "-output" (or -in/-out for 3.x command line), but leaves rest as
+        default. Format should be something like ['-replicates',20,...].
+        Arguments are not checked by this function, but passed directly to
+        muscle.
+    muscle_binary : str, default="muscle"
+        location of muscle binary (default assumes 'muscle' command is in $PATH).
 
-    Return
-    ------
+    Returns
+    -------
+    alignment : None or pandas.DataFrame
         If input is a topiary dataframe, return a copy of the dataframe with the
-        aligned sequences loaded into the alignment column. Otherwise, write to the
-        output_fasta file and return None from the function.
+        aligned sequences loaded into the `alignment` column. Otherwise, write
+        to `output_fasta file` and return None from the function.
     """
 
     # If output_fasta is defined, make sure it's a string
@@ -71,7 +73,7 @@ def run_muscle(input,
     elif type(input) is pd.DataFrame:
 
         # Check the dataframe
-        df = _arg_processors.process_topiary_dataframe(input)
+        df = check.check_topiary_dataframe(input)
 
         # Create temporary input file
         tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])

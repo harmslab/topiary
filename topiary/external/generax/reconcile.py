@@ -1,12 +1,9 @@
-__description__ = \
 """
 Reconcile a gene tree with a species tree using generax.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-05-16"
 
 import topiary
-from topiary.external.interface import prep_calc, write_run_information
+from topiary.external._interface import prep_calc, write_run_information
 
 from ._generax import setup_generax, run_generax, GENERAX_BINARY
 
@@ -28,22 +25,35 @@ def reconcile(previous_dir=None,
 
     Parameters
     ----------
-        previous_dir: directory containing previous calculation. prep_calc will
-                      grab the the csv, model, and tree from the previous run.
-        df: topiary data frame or csv written out from topiary df
-        model: model (e.g. LG+G8).
-        tree_file: tree_file in newick format.
-        allow_horizontal_transfer: whether to allow horizontal transfer during
-                                   reconcilation. If True, use the UndatedDTL model.
-                                   If False, use the UndatedDL model.
-        output: output directory. If not specified, create an output directory with
-                form "generax_reconcilation_randomletters"
-        overwrite: whether or not to overwrite existing output (default False)
-        generax_binary: what generax binary to use
+    previous_dir : str, optional
+        directory containing previous calculation. function will grab the the
+        csv, model, and tree from the previous run. If this is not specified,
+        `df`, `model`, and `tree_file` arguments must be specified.
+    df : pandas.DataFrame or str, optional
+        topiary data frame or csv written out from topiary df. Will override
+        dataframe from `previous_dir` if specified.
+    model : str, optional
+        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        if specified.
+    tree_file : str
+        tree_file in newick format. Will override tree from `previous_dir` if
+        specified.
+    allow_horizontal_transfer : bool, default=False
+        whether to allow horizontal transfer during reconcilation. If True, use
+        the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    output: str, optional
+        output directory. If not specified, create an output directory with
+        form "generax_reconcilation_randomletters"
+    overwrite : bool, default=False
+        whether or not to overwrite existing output directory
+    generax_binary : str, optional
+        what generax binary to use
 
-    Return
-    ------
-        None or, if in jupyter notebook, ete3.render result for reconciled tree
+    Returns
+    -------
+    Python.core.display.Image or None
+        if running in jupyter notebook, return Image showing reconciled tree;
+        otherwise, return None.
     """
 
     # Prepare for the calculation, loading in previous calculation and

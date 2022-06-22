@@ -1,12 +1,8 @@
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
-__description__ = \
 """
 Shared functions for dealing with NCBI blast.
 """
 
-from topiary import util
-from topiary import _arg_processors
+from topiary import util, check
 
 import pandas as pd
 import numpy as np
@@ -73,10 +69,10 @@ def _standard_blast_args_checker(sequence,
     # -------------------------------------------------------------------------
     # Deal with hitlist_size, e_value_cutoff
 
-    hitlist_size = _arg_processors.process_int(hitlist_size,
+    hitlist_size = check.check_int(hitlist_size,
                                                "hitlist_size",
                                                minimum_allowed=1)
-    e_value_cutoff = _arg_processors.process_float(e_value_cutoff,
+    e_value_cutoff = check.check_float(e_value_cutoff,
                                                    "e_value_cutoff",
                                                    minimum_allowed=0,
                                                    minimum_inclusive=False)
@@ -107,11 +103,12 @@ def read_blast_xml(blast_record):
 
     Parameters
     ----------
-        blast_record: either biopython Blast record or string pointing to blast
-                      xml file
+    blast_record : biopython.Blast record or str
+        either biopython Blast record or string pointing to blast xml file
 
-    Return
-    ------
+    Returns
+    -------
+    results : list
         list of dataframes, one for each query in blast_record
     """
 

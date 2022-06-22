@@ -1,11 +1,8 @@
-__description__ = \
 """
 Public utility functions for the topiary package.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 
-from topiary import _private, _arg_processors
+from topiary import _private, check
 
 import pandas as pd
 import numpy as np
@@ -27,34 +24,35 @@ def create_nicknames(df,
 
     Parameters
     ----------
-        df: topiary dataframe
-        paralog_patterns: dictionary for creating standardized nicknames from
-                          input names. Key specifies what should be output, values
-                          the a list of patterns that map back to that key.  For
-                          example:
+    df : pandas.DataFrame
+        topiary dataframe
+    paralog_patterns : dict
+        dictionary for creating standardized nicknames from input names. Key
+        specifies what should be output, values the a list of patterns that map
+        back to that key. For example:
 
-                          {"S100A9":["S100-A9","S100 A9","S-100 A9","MRP14"],
-                           "S100A8":["S100-A8","S100 A8","S-100 A9","MRP8"]}
+        ```{"S100A9":["S100-A9","S100 A9","S-100 A9","MRP14"],
+            "S100A8":["S100-A8","S100 A8","S-100 A9","MRP8"]}```
 
-                          would assign "S100A9" to any sequence matching patterns
-                          only from its list; "S100A8" to any sequence matching
-                          patterns only from its list; and S100A9/S100A8 to any
-                          sequence matching patterns from both lists.
-        source_column: source column in dataframe to use to generate a nickname
-                       (accessed via df.loc[:,source_column])
-        output_column: column in which to store newly constructed nicknames
-                       (accessed via df.loc[:,output_column])
-        separator: "/" character to place between nicknames if more than one
-                   pattern matches.
-        unassigned_name: nickname to give sequences that do not match any of
-                         the patterns.
-        overwrite_output: boolean (default False). overwrite an existing output
-                          column
-        ignorecase: boolean (default True). Whether or not to ignore the case
-                    of matches when assigning the nickname.
+        would assign "S100A9" to any sequence matching patterns only from its
+        list; "S100A8" to any sequence matching patterns only from its list; and
+        S100A9/S100A8 to any sequence matching patterns from both lists.
+    source_column : str, default="name"
+        source column in dataframe to use to generate a nickname
+    output_column : str, default="nickname"
+        column in which to store newly constructed nicknames
+    separator : str, default="/"
+        character to place between nicknames if more than one pattern matches.
+    unassigned_name : str, default="unassigned"
+        nickname to give sequences that do not match any of the patterns.
+    overwrite_output : bool, default=False
+        overwrite an existing output column
+    ignorecase: bool, default=True
+        Whether or not to ignore the case of matches when assigning the nickname.
 
     Returns
     -------
+    topiary_dataframe : pandas.DataFrame
         Copy of dataframe with new nickname column
     """
 
@@ -97,7 +95,7 @@ def create_nicknames(df,
         err = "\nseparator should be a string.\n\n"
         raise ValueError(err)
 
-    patterns = _arg_processors.process_paralog_patterns(paralog_patterns,
+    patterns = check.check_paralog_patterns(paralog_patterns,
                                                         ignorecase=ignorecase)
 
     # Get entries from source column
@@ -130,4 +128,4 @@ def create_nicknames(df,
     # Validate topiary dataframe to make sure not mangled; will also update
     # column order so nickname is early and thus in a user-friendly place
 
-    return _arg_processors.process_topiary_dataframe(df)
+    return check.check_topiary_dataframe(df)

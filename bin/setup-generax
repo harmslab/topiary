@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__description__ = \
+
 """
 Command line script for setting up a generax genetree/species tree
 reconciliation.

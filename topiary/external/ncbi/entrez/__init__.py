@@ -1,4 +1,7 @@
+"""
+Functions for interfacing with NCBI entrez databases.
+"""
 
-from ._get_proteome import get_proteome
-from ._get_taxid import get_taxid
-from ._get_sequences import get_sequences
+from .proteome import get_proteome
+from .taxid import get_taxid
+from .sequences import get_sequences

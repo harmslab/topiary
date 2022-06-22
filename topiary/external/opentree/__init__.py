@@ -1,13 +1,10 @@
-__description__ = \
 """
 Interface to open tree of life database.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-06-07"
 
-from .primitive import is_allowed_phylo_context, get_phylo_context, species_to_ott
-from ._get_ott_id import get_ott_id
-from ._get_species_tree import get_species_tree
+from .util import is_allowed_phylo_context, get_phylo_context, species_to_ott
+from .ott import get_ott_id
+from .tree import get_species_tree
 
 import pandas as pd
 import os

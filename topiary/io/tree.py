@@ -1,10 +1,6 @@
-__description__ = \
 """
-Read and write trees.
+Load a tree into an ete3 tree data structure.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
-
 
 import ete3
 from ete3 import Tree
@@ -16,37 +12,37 @@ def read_tree(tree,fmt=None):
 
     Parameters
     ----------
-        tree: some sort of tree. can be an ete3.Tree (returns self), a dendropy
-              Tree (converts to newick and drops root), a newick file or a
-              newick string.
-        fmt: format for reading tree from newick.  0-9 or 100. See ete3
-             documentation for how these are read
-             (http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#reading-and-writing-newick-trees).
-             As of ETE3.1.1, these numbers mean:
+    tree : ete3.Tree or dendropy.Tree or str
+        some sort of tree. can be an ete3.Tree (returns self), a dendropy Tree
+        (converts to newick and drops root), a newick file or a newick string.
+    fmt : int or None
+        format for reading tree from newick. 0-9 or 100. (See Notes for what
+        these mean). If fmt is None, try to parse without a format descriptor,
+        then these formats in numerical order.
 
-
-             |        ======  ==============================================
-             |        FORMAT  DESCRIPTION
-             |        ======  ==============================================
-             |        0        flexible with support values
-             |        1        flexible with internal node names
-             |        2        all branches + leaf names + internal supports
-             |        3        all branches + all names
-             |        4        leaf branches + leaf names
-             |        5        internal and leaf branches + leaf names
-             |        6        internal branches + leaf names
-             |        7        leaf branches + all names
-             |        8        all names
-             |        9        leaf names
-             |        100      topology only
-             |        ======  ==============================================
-
-             if fmt is None, try to parse without a format descriptor, then these
-             formats in numerical order.
-
-    Return
-    ------
+    Returns
+    -------
+    tree : ete3.Tree
         an ete3 tree object.
+
+    Notes
+    -----
+    `fmt` number is read directly by ete3. See their documentation for how these
+    are read (http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#reading-and-writing-newick-trees).
+    As of ETE3.1.1, these numbers mean:
+
+    + 0: flexible with support values
+    + 1: flexible with internal node names
+    + 2: all branches + leaf names + internal supports
+    + 3: all branches + all names
+    + 4: leaf branches + leaf names
+    + 5: internal and leaf branches + leaf names
+    + 6: internal branches + leaf names
+    + 7: leaf branches + all names
+    + 8: all names
+    + 9: leaf names
+    + 100: topology only
+
     """
 
     # Already an ete3 tree.

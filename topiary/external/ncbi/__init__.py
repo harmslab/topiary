@@ -1,9 +1,6 @@
-__description__ = \
 """
 Interface to NCBI blast and entrez.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-06-07"
 
 from Bio import Entrez
 Entrez.email = "topiary.phylogenetics@gmail.com"

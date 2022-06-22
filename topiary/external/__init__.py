@@ -1,17 +1,13 @@
-__description__ = \
 """
-Interfaces to external programs such as raxml, generax, muscle, ncbi, and
-opentree.
+Interfaces to external programs: raxml-ng, generax, muscle, ncbi, and opentree.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-05-17"
 
 from . import generax
 from . import muscle
 from . import ncbi
 from . import opentree
 from . import raxml
-from . import interface
+from . import _interface
 
 from .opentree import get_ott_id, get_species_tree
 from .muscle import run_muscle

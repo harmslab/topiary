@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__description__ = \
+
 """
 Command line script for running raxml-ng for maximum likelihood phylogenetics
 and ancestral sequence reconstruction.

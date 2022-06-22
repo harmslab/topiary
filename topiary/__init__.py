@@ -1,17 +1,15 @@
-__description__ = \
 """
-Initialize topiary, exposing API.
+A python framework for doing ancestral sequence reconstruction using
+pandas dataframes and ete3 trees as the primary data structures.
 """
 __author__ = "Michael J. Harms"
-__date__ = "2022-06-07"
-
 
 # Submodules
 from . import util
 from . import draw
 from . import pipeline
 from . import _private
-from . import _arg_processors
+#from . import check
 from . import pipeline
 
 from .external import generax
@@ -22,6 +20,7 @@ from .external import raxml
 
 # Core functions for pipeline
 from .quality import remove_redundancy, clean_alignment, taxonomic_sample
+from .pipeline import seed_to_alignment
 from .util import create_nicknames
 from .external import get_ott_id, get_species_tree
 from .external import recip_blast
@@ -37,7 +36,7 @@ from .io import read_fasta_into, write_fasta, write_phy
 # Topiary version
 from .__version__ import __version__
 
-def check_for_notebook():
+def _check_for_notebook():
     """
     Check whether the code is being executed in a notebook or standard
     standard python interpreter.
@@ -60,4 +59,4 @@ def check_for_notebook():
     except NameError:
         return None
 
-_in_notebook = check_for_notebook()
+_in_notebook = _check_for_notebook()

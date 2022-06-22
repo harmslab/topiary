@@ -1,12 +1,9 @@
-__description__ = \
 """
 Functions for reading and writing dataframes.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2021-04-08"
 
 import topiary
-from topiary import _arg_processors
+from topiary import check
 
 import pandas as pd
 import numpy as np
@@ -17,16 +14,19 @@ def read_dataframe(input,remove_extra_index=True):
     """
     Read a topiary spreadsheet. Handles .csv, .tsv, .xlsx/.xls. If extension is
     not one of these, attempts to parse text as a spreadsheet using
-    pandas.read_csv(sep=None).
+    `pandas.read_csv(sep=None)`.
 
     Parameters
     ----------
-        input: either a pandas dataframe OR the filename to read in.
-        remove_extra_index: look for the 'Unnamed: 0' column that pandas writes out
-            for pd.to_csv(index=True) and, if found, drop column.
+    input : pandas.DataFrame or str
+        either a pandas dataframe OR the filename to read in.
+    remove_extra_index : bool, default=True
+        look for the 'Unnamed: 0' column that pandas writes out for
+        pandas.to_csv(index=True) and, if found, drop column.
 
-    Return
-    ------
+    Returns
+    -------
+    pandas.DataFrame
         validated topiary dataframe
     """
 
@@ -68,7 +68,7 @@ def read_dataframe(input,remove_extra_index=True):
                     df = df.drop(columns=[df.columns[0]])
 
     # Validate the dataframe
-    df = _arg_processors.process_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     return df
 
@@ -80,17 +80,20 @@ def write_dataframe(df,out_file,overwrite=False):
 
     Parameters
     ----------
-        df: topiary dataframe
-        out_file: output file name
-        overwrite: whether or not to overwrite an existing file
+    df : pandas.DataFrame
+        topiary dataframe
+    out_file : str
+        output file name
+    overwrite : bool, default=False
+        whether or not to overwrite an existing file
 
-    Return
-    ------
-        None. Writes to out_file
+    Returns
+    -------
+    None
     """
 
     # Validate dataframe before writing out
-    df = topiary._arg_processors.process_topiary_dataframe(df)
+    df = topiary.check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:

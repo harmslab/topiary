@@ -1,15 +1,13 @@
-__description__ = \
 """
-Generate maximum likelihood ancestors using raxml.
+Generate ancestors and various summary outputs.
 """
-__author__ = "Michael J. Harms (harmsm@gmail.com)"
-__date__ = "2021-07-22"
 
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary.external.interface import create_new_dir, copy_input_file
-from topiary.external.interface import prep_calc, write_run_information
+from topiary.external._interface import create_new_dir, copy_input_file
+from topiary.external._interface import prep_calc, write_run_information
+from topiary import check
 
 import pastml.acr
 import ete3
@@ -661,21 +659,39 @@ def generate_ancestors(previous_dir=None,
 
     Parameters
     ----------
-        df: topiary data frame or csv written out from topiary df
-        model: model (e.g. LG+G8).
-        tree_file: tree file to use for reconstruction.
-        output: name out output directory.
-        alt_cutoff: cutoff to use for altAll
-        output: output directory. If not specified, create an output directory
-                with form "generate_ancestors_randomletters"
-        overwrite: whether or not to overwrite existing output (default False)
+    previous_dir : str, optional
+        directory containing previous calculation. function will grab the the
+        csv, model, and tree from the previous run. If this is not specified,
+        `df`, `model`, and `tree_file` arguments must be specified.
+    df : pandas.DataFrame or str, optional
+        topiary data frame or csv written out from topiary df. Will override
+        dataframe from `previous_dir` if specified.
+    model : str, optional
+        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        if specified.
+    tree_file : str
+        tree_file in newick format. Will override tree from `previous_dir` if
+        specified.
+    tree_file_with_supports : str
+        tree file with supports for each node in newick format. Will override
+        tree_file_with_supports from `previous_dir` if specified.
+    alt_cutoff : float, default=0.25
+        cutoff to use for altAll calculation. Should be between 0 and 1.
+    output : str, optional
+        output directory. If not specified, create an output directory
+        with form "generate_ancestors_randomletters"
+    overwrite : bool, default=False
+        whether or not to overwrite existing output
+    threads : int, default=-1
+        number of threads to use. if -1, use all avaialable
+    raxml_binary : str, optional
+        what raxml binary to use
 
-        threads: number of threads to use. if -1, use all avaialable
-        raxml_binary: what raxml binary to use
-
-    Return
-    ------
-        None or, if running in notebook, ete3.render output for ancestral tree
+    Returns
+    -------
+    Python.core.display.Image or None
+        if running in jupyter notebook, return Image of tree with ancestors
+        drawn; otherwise, return None
     """
 
     result = prep_calc(previous_dir=previous_dir,
@@ -695,6 +711,11 @@ def generate_ancestors(previous_dir=None,
     tree_file_with_supports = result["other_files"][0]
     starting_dir = result["starting_dir"]
     output = result["output"]
+
+    alt_cutoff = check.check_float(alt_cutoff,
+                                   "alt_cutoff",
+                                   minimum_allowed=0,
+                                   maximum_allowed=1)
 
     # Do marginal reconstruction on the tree
     cmd = run_raxml(algorithm="--ancestral",
