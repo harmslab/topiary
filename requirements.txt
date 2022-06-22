@@ -6,3 +6,4 @@ ete3
 opentree
 dendropy
 pastml
+sphinx-rtd-theme
