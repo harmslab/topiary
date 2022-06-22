@@ -7,3 +7,4 @@ opentree
 dendropy
 pastml
 sphinx-rtd-theme
+sphinxcontrib-napoleon
