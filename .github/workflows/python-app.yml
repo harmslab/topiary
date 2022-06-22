@@ -45,9 +45,11 @@ jobs:
         path: topiary
 
     - name: Install the Python dependencies
+      shell: bash
       run: |
         cd topiary
         conda env update --file environment.yml --name base
+        conda init bash
         conda activate base
         python setup.py install
         cd ..
