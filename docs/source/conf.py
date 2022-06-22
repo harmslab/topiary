@@ -65,3 +65,6 @@ html_static_path = ['_static']
 html_css_files = [
     'css/stylesheet.css',
 ]
+
+import os
+os.system("sphinx-apidoc -f . -o ../../topiary")
