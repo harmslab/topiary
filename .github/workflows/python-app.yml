@@ -48,8 +48,8 @@ jobs:
       shell: bash
       run: |
         cd topiary
-        conda env update --file environment.yml --name base
         conda init bash
+        conda env update --file environment.yml --name base
         conda activate base
         python setup.py install
         cd ..
