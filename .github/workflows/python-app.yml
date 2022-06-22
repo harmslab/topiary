@@ -58,6 +58,7 @@ jobs:
     - name: Run the tests
       run: |
         $CONDA/bin/conda install pytest
+        export PATH=$CONDA/bin/:$PATH
         $CONDA/bin/pytest
 
   build-windows:
