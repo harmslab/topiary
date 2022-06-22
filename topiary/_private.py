@@ -1,17 +1,30 @@
+"""
+Private utility functions that are not publicly exposed in the API.
+"""
 
 import string, random
 
 required_columns = ["species","name","sequence"]
 reserved_columns = required_columns[:]
-reserved_columns.extend(["uid","ott","alignment"])
+reserved_columns.extend(["uid","ott","alignment","keep","always_keep"])
+
+# Data going into a newick tree can't have any of these symbols. We also reserve
+# the '#' character for comments.
+reserved_characters = ["(",")",";","#",":",",","'","\""]
 
 def generate_uid(number=1):
     """
     Generate a unique uid. This will be a 10 character random combination of
     ascii letters.
 
-    number: number of uid to generate. if 1, return a single uid. if > 1,
-            return a list of uid.
+    Parameters
+    ----------
+        number: number of uid to generate. if 1, return a single uid. if > 1,
+                return a list of uid.
+
+    Return
+    ------
+        uid or list of uid
     """
 
     if number < 1:
@@ -27,16 +40,3 @@ def generate_uid(number=1):
         return out[0]
 
     return out
-
-def create_pipeline_dict():
-    """
-    Create a dictionary with keys for column names and lists for values.
-    This can be populated by a loop through sequences, followed by
-    pandas.DataFrame(this_dictionary) to create a pandas data frame of
-    the sort expected by the functions used in this module.
-    """
-
-    # Column names for output dictionary
-    key_list = ["name","species","sequence","uid","keep"]
-
-    return dict([(k,[]) for k in key_list])

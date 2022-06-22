@@ -1,13 +1,10 @@
-__description__ = \
 """
-Convenience function for user. User can draw a tree for any valid calcualtion
-type using a single function call.
+Draw tree output from a maximum likelihood tree calculation, gene/species tree
+reconcilation, or ancestral sequence reconstruction. 
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-05-19"
 
 import topiary
-from topiary.external.interface import read_previous_run_dir
+from topiary.external._interface import read_previous_run_dir
 import inspect
 
 def tree(run_dir,
@@ -26,42 +23,51 @@ def tree(run_dir,
     reconcilation, or ancestral sequence reconstruction. Plot type is determined
     based on the type of calculation passed in as run_dir.
 
-
     Parameters
     ----------
-        run_dir: directory containing an ML tree run
-        output_file: output file to write tree. If running in a notebook, will
-                     return to notebook and write to this file. If not in a notebook
-                     and not specified, will write out ml-tree.pdf.
-        tip_columns: label the tree tips as "|".join(tip_columns). If tip_columns
-                     is ["species","nickname"], tips will have names like
-                     'Homo sapiens|LY96'.
-        tip_name_separator: string to separate columns in tip names ("|" in
-                            tip_columns example above.)
-        fontsize: fontsize in points for tip labels and support values
-        circle_radius: circle size for internal nodes (fraction of total width)
-        value_range: tuple holding minimum and maximum values for support color map.
-                     (0,100) means miminum support value is 0, maximum support value
-                     is 100. [Only relevant for ML tree and ancestor
-                     calculations, where it will map to support values or
-                     posterior probabilities, respectively.]
-        R: tuple holding red channel value for lowest support and highest
-           support. [Only relevant for ML tree and ancestor calculations.]
-        G: tuple holding green channel value for lowest support and highest
-           support. [Only relevant for ML tree and ancestor calculations.]
-        B: tuple holding blue channel value for lowest support and highest
-           support. [Only relevant for ML tree and ancestor calculations.]
-        event_color_map: map between events (duplication (D), loss (L),
-                         speciation (S), or transfer (T) and node color).[Only
-                         relevant for a reconcilation tree].
-        width: width of total tree (pixels)
-        space_between_taxa: number of pixels between taxa, sets hight.
-        line_width: width of tree lines (pixels)
-        df: dataframe (overides whatever is in run_dir/output/dataframe.csv)
+    run_dir : str
+        directory containing an ancestral reconstruction run
+    output_file : str, optional
+        output file to write tree. If running in a notebook, will return to
+        notebook and write to this file. If running in a notebook but not
+        specified, do not write to a file. If not in a notebook and not
+        specified, will write out ancestor-tree.pdf.
+    tip_columns: list, default=["species","nickname"]
+        label the tree tips as "|".join(tip_columns). For example, if
+        tip_columns is ["species","nickname"], tips will have names like
+        'Homo sapiens|LY96'.
+    tip_name_separator : str, default="|"
+        string to separate columns in tip names ("|" in tip_columns example
+        above.)
+    fontsize : float, default=36
+        fontsize in points for labels
+    circle_radius : float, default=0.025
+        circle size for internal nodes (fraction of total width)
+    value_range : tuple,None default=(0.6,1)
+        tuple holding minimum and maximum values for support color map.
+        (0,100) means miminum support value is 0, maximum support value
+        is 100. If None, disable node color map.
+    R : tuple, default=(0.95,0)
+        tuple holding red channel values for lowest and highest supports.
+    G : tuple, default=(0.95,0)
+        tuple holding green channel values for lowest and highest supports.
+    B : tuple, default=(1.0,1.0)
+        tuple holding blue channel values for lowest and highest supports.
+    event_color_map : dict
+        map between evolutionary events (D,L,S,T) and named colors.
+    width : int, default=800
+        width of total tree in pixels
+    space_between_taxa : int, default=10
+        number of pixels between taxa, sets height.
+    line_width : int, default=4
+        width of lines used to draw tree (pixels)
+    df : pandas.DataFrame or None, default=None
+        topiary dataframe (overides whatever is in run_dir/output/dataframe.csv)
 
-    Return
-    ------
-        None or rendered output if in notebook
+    Returns
+    -------
+    Python.core.display.Image or None
+        if running in jupyter notebook, return Image; otherwise, return None
     """
 
     prev_run = read_previous_run_dir(run_dir)

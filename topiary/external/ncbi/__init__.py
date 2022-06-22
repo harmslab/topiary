@@ -1,6 +1,10 @@
+"""
+Interface to NCBI blast and entrez.
+"""
 
-from . base import read_blast_xml, parse_ncbi_line
-from . ncbi_blast import ncbi_blast
-from . local_blast import local_blast
-from . entrez_download import entrez_download
-from . _reverse_blast import reverse_blast
+from Bio import Entrez
+Entrez.email = "topiary.phylogenetics@gmail.com"
+
+from . _parse_ncbi_line import parse_ncbi_line
+from . blast import read_blast_xml, local_blast, merge_blast_df, ncbi_blast, recip_blast, make_blast_db
+from . entrez import get_sequences, get_taxid, get_proteome

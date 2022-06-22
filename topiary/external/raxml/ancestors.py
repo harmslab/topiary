@@ -1,15 +1,13 @@
-__description__ = \
 """
-Generate maximum likelihood ancestors using raxml.
+Generate ancestors and various summary outputs.
 """
-__author__ = "Michael J. Harms (harmsm@gmail.com)"
-__date__ = "2021-07-22"
 
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary.external.interface import create_new_dir, copy_input_file
-from topiary.external.interface import prep_calc, write_run_information
+from topiary.external._interface import create_new_dir, copy_input_file
+from topiary.external._interface import prep_calc, write_run_information
+from topiary import check
 
 import pastml.acr
 import ete3
@@ -63,12 +61,15 @@ def _get_ancestral_gaps(alignment_file,tree_file):
     reconstructed by parsimony using the DOWNPASS algorithm as implemented in
     pastml.
 
-    alignment_file: phy file used to generate ancestors in RAxML
-    tree_file: output tree file with labeled internal nodes
+    Parameters
+    ----------
+        alignment_file: phy file used to generate ancestors in RAxML
+        tree_file: output tree file with labeled internal nodes
 
-    output: dictionary keying internal node names to lists of True (gap),
-            False (no gap), and None (gapping unclear) for each site in that
-            ancestor.
+    Return
+    ------
+        dictionary keying internal node names to lists of True (gap), False (no
+        gap), and None (gapping unclear) for each site in that ancestor.
     """
 
     # Read the alignment file
@@ -149,11 +150,17 @@ def _plot_ancestor_data(df_anc,
     """
     Create a summary plot for an ancestor.
 
-    df_anc: ancestral data frame
-    alt_anc_pp: cutoff (inclusive) for identifying plausible alternate states
-    width_ratio: width ratio for plot
-    anc_name: name of ancestor (name of plot, title on graph)
-    anc_data_string: data to dump in subtitle
+    Parameters
+    ----------
+        df_anc: ancestral data frame
+        alt_anc_pp: cutoff (inclusive) for identifying plausible alternate states
+        width_ratio: width ratio for plot
+        anc_name: name of ancestor (name of plot, title on graph)
+        anc_data_string: data to dump in subtitle
+
+    Return
+    ------
+        None. writes pdf for ancestor
     """
 
     def _draw_histogram(values,ax,bin_size=0.05,color="gray"):
@@ -296,21 +303,25 @@ def _make_ancestor_summary_trees(df,
                                  tree_file_with_labels,
                                  tree_file_with_supports=None):
     """
-    Make trees summarizng ASR results.
-
-    df: topiary data frame
-    avg_pp_dict: dictionary mapping ancestor names to avg ancestor posterior
-                 probability
-    tree_file_with_labels: output from RAxML that has nodes labeled by their
-                           ancestor identity. Should also have branch lengths.
-    tree_file_with_supports: tree file with supports (optional)
-
-    Creates three or four newick files:
-        ancestors_label.newick: tree where internal names are labeled with\
+    Make trees summarizing ASR results. Creates three or four newick files:
+        ancestors_label.newick: tree where internal names are labeled with
                                 ancestor names
         ancestors_pp.newick: tree where supports are avg pp for that ancestor
         ancestors_support.newick: tree with supports (optional)
         ancestors_all.newick: tree where internal names are name|pp OR name|pp|support
+
+    Parameters
+    ----------
+        df: topiary data frame
+        avg_pp_dict: dictionary mapping ancestor names to avg ancestor posterior
+                     probability
+        tree_file_with_labels: output from RAxML that has nodes labeled by their
+                               ancestor identity. Should also have branch lengths.
+        tree_file_with_supports: tree file with supports (optional)
+
+    Return
+    ------
+        None
     """
 
     # Create label trees
@@ -387,22 +398,24 @@ def _parse_raxml_anc_output(df,
                             plot_width_ratio=5):
     """
     Parse raxml marginal ancestral state reconstruction output and put out in
-    human-readable fashion.
+    human-readable fashion. Writes fasta file and csv file with ancestors.
+    Writes final newick with three trees: ancestor label, posterior probability,
+    and SH support. Creates creates summary plots for all ancestors.
 
-    df: topiary data frame
-    anc_prob_file: ancestor posterior probability file as written out by raxml
-    alignment_file: phylip alignment used to create ancestors
-    tree_file_with_labels: output newick tree file written by raxml
-    tree_file_with_supports: newick tree with supports (optional)
-    name: name for output directory
-    alt_cutoff: cutoff (inclusive) for identifying plausible alternate states
-    plot_width_ratio: ratio of main and histogram plot widths for ancestors
+    Parameters
+    ----------
+        df: topiary data frame
+        anc_prob_file: ancestor posterior probability file as written out by raxml
+        alignment_file: phylip alignment used to create ancestors
+        tree_file_with_labels: output newick tree file written by raxml
+        tree_file_with_supports: newick tree with supports (optional)
+        name: name for output directory
+        alt_cutoff: cutoff (inclusive) for identifying plausible alternate states
+        plot_width_ratio: ratio of main and histogram plot widths for ancestors
 
-    Writes fasta file and csv file with ancestors. Writes final newick with
-    three trees: ancestor label, posterior probability, and SH support.  Creates
-    creates summary plots for all ancestors.
-
-    returns None
+    Return
+    ------
+        None
     """
 
     # Make directory and copy in files
@@ -640,22 +653,45 @@ def generate_ancestors(previous_dir=None,
                        threads=-1,
                        raxml_binary=RAXML_BINARY):
     """
-    Generate ancestors and various summary outputs.
+    Generate ancestors and various summary outputs. Creates fasta file and csv
+    file with ancestral sequences, set of ancestor plots, and a tree with
+    ancestral names and supports.
 
-    df: topiary data frame or csv written out from topiary df
-    model: model (e.g. LG+G8).
-    tree_file: tree file to use for reconstruction.
-    output: name out output directory.
-    alt_cutoff: cutoff to use for altAll
-    output: output directory. If not specified, create an output directory with
-            form "generate_ancestors_randomletters"
-    overwrite: whether or not to overwrite existing output (default False)
+    Parameters
+    ----------
+    previous_dir : str, optional
+        directory containing previous calculation. function will grab the the
+        csv, model, and tree from the previous run. If this is not specified,
+        `df`, `model`, and `tree_file` arguments must be specified.
+    df : pandas.DataFrame or str, optional
+        topiary data frame or csv written out from topiary df. Will override
+        dataframe from `previous_dir` if specified.
+    model : str, optional
+        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        if specified.
+    tree_file : str
+        tree_file in newick format. Will override tree from `previous_dir` if
+        specified.
+    tree_file_with_supports : str
+        tree file with supports for each node in newick format. Will override
+        tree_file_with_supports from `previous_dir` if specified.
+    alt_cutoff : float, default=0.25
+        cutoff to use for altAll calculation. Should be between 0 and 1.
+    output : str, optional
+        output directory. If not specified, create an output directory
+        with form "generate_ancestors_randomletters"
+    overwrite : bool, default=False
+        whether or not to overwrite existing output
+    threads : int, default=-1
+        number of threads to use. if -1, use all avaialable
+    raxml_binary : str, optional
+        what raxml binary to use
 
-    threads: number of threads to use. if -1, use all avaialable
-    raxml_binary: what raxml binary to use
-
-    creates fasta file and csv file with ancestral sequences, set of ancestor
-    plots, and a tree with ancestral names and supports
+    Returns
+    -------
+    Python.core.display.Image or None
+        if running in jupyter notebook, return Image of tree with ancestors
+        drawn; otherwise, return None
     """
 
     result = prep_calc(previous_dir=previous_dir,
@@ -675,6 +711,11 @@ def generate_ancestors(previous_dir=None,
     tree_file_with_supports = result["other_files"][0]
     starting_dir = result["starting_dir"]
     output = result["output"]
+
+    alt_cutoff = check.check_float(alt_cutoff,
+                                   "alt_cutoff",
+                                   minimum_allowed=0,
+                                   maximum_allowed=1)
 
     # Do marginal reconstruction on the tree
     cmd = run_raxml(algorithm="--ancestral",

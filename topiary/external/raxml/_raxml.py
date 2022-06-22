@@ -1,15 +1,13 @@
-__description__ = \
 """
-Core functions for wrapping raxml-ng.
+Run raxml. Creates a working directory, copies in the relevant files, runs
+there, and then returns to the previous directory.
 """
-__author__ = "Michael J. Harms (harmsm@gmail.com)"
-__date__ = "2021-07-22"
 
 # raxml binary to use it not specified by user
 RAXML_BINARY = "raxml-ng"
 
 import topiary
-from topiary.external import interface
+import topiary.external._interface as interface
 
 import pandas as pd
 import multiprocessing as mp
@@ -29,18 +27,34 @@ def run_raxml(algorithm=None,
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
 
-    algorithm: algorithm to run (--all, --ancestral, etc.)
-    alignment_file: alignment file in .phy format (passed via --msa)
-    tree_file: tree file in .newick format (passed via --tree)
-    model: model in format recognized by --model
-    dir_name: If specified, this will be the name of the working directory.
-    seed: true/false, int, or str. If true, pass a randomly generated seed to
-          raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads). if -1, use all
-             available.
-    raxml_binary: raxml binary to use
-    log_to_stdout: capture log and write to std out.
-    other_args: list of arguments to pass to raxml
+    Parameters
+    ----------
+    algorithm : str
+        algorithm to run (--all, --ancestral, etc.)
+    alignment_file : str
+        alignment file in .phy format (passed via --msa)
+    tree_file : str
+        tree file in .newick format (passed via --tree)
+    model : str
+        model in format recognized by --model
+    dir_name : str,optional
+        If specified, this will be the name of the working directory.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
+    threads : int, default=-1
+        number of threads (passed via --threads). if -1, use all available.
+    raxml_binary : str, default=RAXML_BINARY
+        raxml binary to use
+    log_to_stdout : book, default=True
+        capture log and write to std out.
+    other_args : list-like
+        list of arguments to pass to raxml
+
+    Return
+    ------
+    raxml_command : string
+        command passed to raxml-ng as a string
     """
 
     # Create directory in which to do calculation
@@ -51,12 +65,12 @@ def run_raxml(algorithm=None,
         alignment_file = interface.copy_input_file(alignment_file,
                                                    dir_name,
                                                    file_name="alignment.phy",
-                                                   make_input_dir=False)
+                                                   put_in_input_dir=False)
     if tree_file is not None:
         tree_file = interface.copy_input_file(tree_file,
                                               dir_name,
                                               file_name="tree.newick",
-                                              make_input_dir=False)
+                                              put_in_input_dir=False)
 
     # Build a command list
     cmd = [raxml_binary]

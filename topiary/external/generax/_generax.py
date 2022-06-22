@@ -1,15 +1,12 @@
-__description__ = \
 """
 Wrapper for generax to perform gene/species tree reconcilation.
 """
-__author__ = "Michael J. Harms"
-__date__ = "2022-05-15"
 
 # raxml binary to use it not specified by user
 GENERAX_BINARY = "generax"
 
 import topiary
-import topiary.external.interface as interface
+import topiary.external._interface as interface
 
 import numpy as np
 
@@ -18,11 +15,23 @@ import multiprocessing as mp
 
 def setup_generax(df,gene_tree,model,out_dir):
     """
-    df: topiary data frame
-    gene_tree: gene_tree with uid as taxon names. can be ete3 tree, dendropy
-               tree, or newick file.
-    model: phylogenetic model to use (should match model used to generate gene_tree)
-    out_dir: output directory
+    Setup a generax run directory.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary data frame
+    gene_tree : ete3.Tree or dendropy.Tree or str
+        gene_tree with uid as taxon names. can be ete3 tree, dendropy tree, or
+        newick file.
+    model : str
+        phylogenetic model to use (should match model used to generate gene_tree)
+    out_dir : str
+        output directory
+
+    Returns
+    -------
+    None
     """
 
     # -------------------------------------------------------------------------
@@ -130,17 +139,27 @@ def run_generax(run_directory,
     Run generax. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
 
-    algorithm: algorithm to run (--all, --ancestral, etc.)
-    alignment_file: alignment file in .phy format (passed via --msa)
-    tree_file: tree file in .newick format (passed via --tree)
-    model: model in format recognized by --model
-    dir_name: If specified, this will be the name of the working directory.
-    seed: true/false, int, or str. If true, pass a randomly generated seed to
-          raxml. If int or str, use that as the seed. (passed via --seed)
-    threads: number of threads to use (passed via --threads)
-    raxml_binary: raxml binary to use
-    log_to_stdout: capture log and write to std out.
-    other_args: list of arguments to pass to raxml
+    Parameters
+    ----------
+    run_directory : str
+        directory in which to do calculation
+    allow_horizontal_transfer : bool, default=False
+        whether or not to allow horizontal gene transfer. This corresponds to
+        the UndatedDTL (horizontal) vs UndatedDL (no horizontal) models
+    seed : bool or int or str, optional
+        If true, pass a randomly generated seed to generax. If int or str, use
+        that as the seed (passed via --seed).
+    generax_binary : str, optional
+        generax binary to use
+    log_to_stdout : bool, default=True
+        capture log and write to std out.
+    other_args : list, optional
+        other arguments to pass to generax
+
+    Returns
+    -------
+    generax_cmd : str
+        string representation of command passed to generax
     """
 
     cmd = ["generax"]

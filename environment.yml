@@ -1,0 +1,17 @@
+name: topiary
+channels:
+  - defaults
+  - bioconda
+dependencies:
+  - openpyxl
+  - xlrd
+  - pytest
+  - pandas
+  - numpy
+  - jupyter
+  - pyqt
+  - tqdm
+  - blast
+  - generax
+  - muscle
+  - raxml-ng

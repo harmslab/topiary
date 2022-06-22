@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-import os, glob, inspect
+import os, glob, inspect, json
 
 @pytest.fixture(scope="module")
 def ncbi_lines():
@@ -38,7 +38,7 @@ def dataframe_good_files():
     return files
 
 @pytest.fixture(scope="module")
-def reverse_blast_hit_dfs():
+def recip_blast_hit_dfs():
     """
     Load saved hit_dfs output.
     """
@@ -48,7 +48,7 @@ def reverse_blast_hit_dfs():
         dir = os.path.dirname(os.path.realpath(__file__))
         files = glob.glob(os.path.join(dir,
                                        "data",
-                                       "reverse_blast",
+                                       "recip_blast",
                                        f"{prefix}_hit_dfs",
                                        "*.csv"))
         files.sort()
@@ -84,13 +84,46 @@ def run_directories():
 
     dir = os.path.dirname(os.path.realpath(__file__))
     base_dir = os.path.abspath(os.path.join(dir,"data","run-directories"))
-    run_dirs = os.listdir(base_dir)
+    files = os.listdir(base_dir)
 
     out_dict = {}
-    for k in run_dirs:
-        out_dict[k] = os.path.join(base_dir,k)
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def programs():
+    """
+    Dictionary holding paths pointing to programs to run.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","programs"))
+    files = os.listdir(base_dir)
+
+    out_dict = {}
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def xml():
+    """
+    Dictionary holding paths pointing to ncbi style xml files.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml"))
+    files = os.listdir(base_dir)
+
+    out_dict = {}
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict
+
 
 def get_public_param_defaults(public_function,private_function):
     """
@@ -115,3 +148,93 @@ def get_public_param_defaults(public_function,private_function):
             kwargs[p] = public_param[p].default
 
     return kwargs
+
+@pytest.fixture(scope="module")
+def xml_to_anc_output():
+    """
+    Directory holding an example run.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml-to-anc-output"))
+
+    return base_dir
+
+@pytest.fixture(scope="module")
+def ncbi_blast_server_output():
+    """
+    These csv files are output from topiary.external.ncbi.blast.ncbi._thread_manager
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","ncbi-blast-server-output"))
+
+    files = glob.glob(os.path.join(base_dir,"*.csv"))
+    files.sort()
+
+    all_hits = []
+    for f in files:
+        all_hits.append(pd.read_csv(f))
+
+    return all_hits
+
+@pytest.fixture(scope="module")
+def local_blast_output():
+    """
+    These csv files are output from topiary.external.ncbi._blast_blast._thread_manager
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","local-blast-output"))
+
+    files = glob.glob(os.path.join(base_dir,"*.csv"))
+    files.sort()
+
+    all_hits = []
+    for f in files:
+        all_hits.append(pd.read_csv(f))
+
+    return all_hits
+
+@pytest.fixture(scope="module")
+def seed_dataframes():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","seed-dataframes"))
+    files = os.listdir(base_dir)
+
+    out_dict = {}
+    for f in files:
+        out_dict[f] = os.path.join(base_dir,f)
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def esummary_assembly_records():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","ncbi-assembly-esummary-output"))
+    json_files = glob.glob(os.path.join(base_dir,"*.json"))
+
+    out_dict = {}
+    for json_file in json_files:
+        key = os.path.basename(json_file).split(".")[0]
+        f = open(json_file,'r')
+        out_dict[key] = json.load(f)
+        f.close()
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def make_blast_db_files():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","make_blast_db_files"))
+    files = glob.glob(os.path.join(base_dir,"*"))
+
+    out_dict = {}
+    for f in files:
+        key = os.path.basename(f)
+        out_dict[key] = f
+
+    return out_dict
