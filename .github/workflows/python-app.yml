@@ -53,7 +53,6 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        conda activate base
         conda install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -62,7 +61,6 @@ jobs:
 
     - name: Run the tests
       run: |
-        conda activate base
         pytest
 
   # build-windows:
