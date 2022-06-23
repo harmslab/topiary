@@ -6,5 +6,3 @@ Python framework for doing ancestral sequence reconstruction using pandas datafr
 
 [Documentation](https://topiary-asr.readthedocs.io/en/latest/)
 
-
-

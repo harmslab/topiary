@@ -9,8 +9,8 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command, Extension
 
 # Package meta-data.
-NAME = 'topiary'
-DESCRIPTION = 'A lightweight python package using pandas dataframes for phylogenetics.'
+NAME = 'topiary-asr'
+DESCRIPTION = "Python framework for doing ancestral sequence reconstruction using pandas dataframes and ete3 trees as the primary data structures."
 URL = 'https://github.com/harmslab/topiary'
 EMAIL = 'harmsm@gmail.com'
 AUTHOR = 'Michael J. Harms'
