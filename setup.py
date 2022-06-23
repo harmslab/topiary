@@ -9,7 +9,6 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command, Extension
 
 # Package meta-data.
-NAME = 'topiary-asr'
 DESCRIPTION = \
 """Python framework for doing ancestral sequence reconstruction using pandas
 dataframes and ete3 trees as the primary data structures."""
@@ -49,15 +48,15 @@ with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 # Load the package's __version__.py module as a dictionary.
 about = {}
-if not VERSION:
+if VERSION is None:
     with open(os.path.join(here, "topiary", '__version__.py')) as f:
-        exec(f.read(), about)
+        exec(f.read(),about)
 else:
     about['__version__'] = VERSION
 
 # Where the magic happens:
 setup(
-    name=NAME,
+    name="topiary-asr", # Note this is different than "topiary" for PIP package name
     version=about['__version__'],
     description=DESCRIPTION,
     long_description=long_description,
