@@ -39,10 +39,6 @@ jobs:
         $CONDA/bin/conda activate topiary || true
         export PATH=$CONDA/envs/topiary/bin:$PATH
 
-        echo "Do we have makeblastdb?"
-        echo $CONDA/envs/topiary/bin/makeblastdb
-        ls $CONDA/envs/topiary/bin | grep make
-
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest
         $CONDA/bin/python -m pip install --upgrade pip
@@ -59,80 +55,56 @@ jobs:
         cd ..
 
 
-  # build-windows:
-  #   runs-on: windows-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [windows-latest]
-  #       python-version: ['3.8', '3.9' ]
-  #   steps:
-  #   - name: Install Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: ${{ matrix.python-version }}
-  #       architecture: 'x64'
-  #   #
-  #   # - name: Setup conda
-  #   #   uses: conda-incubator/setup-miniconda@v2
-  #   #   with:
-  #   #     auto-update-conda: true
-  #   #     python-version: ${{ matrix.python-version }}
-  #   #
-  #   # - name: Install dependencies
-  #   #   run: |
-  #   #     python -m pip install --upgrade pip
-  #
-  #   - name: Checkout
-  #     uses: actions/checkout@v3.0.0
-  #     with:
-  #       repository: harmsm/topiary
-  #       path: topiary
-  #
-  #   - name: Install the Python dependencies
-  #     shell: powershell
-  #     run: |
-  #
-  #       cd topiary
-  #
-  #       $CONDA/bin/conda env create --file environment.yml
-  #       $CONDA/bin/conda activate topiary || true
-  #       $Env:PATH += ";C:\Program Files\Scripts"
-  #       export PATH=$CONDA/envs/topiary/bin:$PATH
-  #
-  #       $CONDA/bin/conda install flake8
-  #       $CONDA/bin/conda install pytest
-  #       $CONDA/bin/python -m pip install --upgrade pip
-  #
-  #       $CONDA/bin/python setup.py install
-  #
-  #       # stop the build if there are Python syntax errors or undefined names
-  #       $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-  #       $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-  #
-  #       $CONDA/bin/pytest
-  #
-  #       cd ..
-  #
-  #
-  #
-  #       cd topiary
-  #       conda env update --file environment.yml --name base
-  #       python setup.py install
-  #       cd ..
-  #
-  #   - name: Lint with flake8
-  #     run: |
-  #       C:\Miniconda\condabin\conda.bat activate base
-  #       C:\Miniconda\condabin\conda.bat install flake8
-  #       # stop the build if there are Python syntax errors or undefined names
-  #       flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-  #       flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-  #
-  #   - name: Run the tests
-  #     run: |
-  #       C:\Miniconda\condabin\conda.bat activate base
-  #       C:\Miniconda\condabin\conda.bat install pytest
-  #       pytest
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        python-version: ['3.8', '3.9' ]
+    steps:
+    - name: Install Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+    #
+    # - name: Setup conda
+    #   uses: conda-incubator/setup-miniconda@v2
+    #   with:
+    #     auto-update-conda: true
+    #     python-version: ${{ matrix.python-version }}
+    #
+    # - name: Install dependencies
+    #   run: |
+    #     python -m pip install --upgrade pip
+
+    - name: Checkout
+      uses: actions/checkout@v3.0.0
+      with:
+        repository: harmsm/topiary
+        path: topiary
+
+    - name: Install the Python dependencies
+      shell: powershell
+      run: |
+
+        cd topiary
+
+        C:\Miniconda\condabin\conda.bat env create --file environment.yml
+        C:\Miniconda\condabin\conda.bat activate topiary || true
+
+        C:\Miniconda\condabin\conda.bat install flake8
+        C:\Miniconda\condabin\conda.bat install pytest
+
+        C:\Miniconda3\python -m pip install --upgrade pip
+        C:\Miniconda3\python setup.py install
+
+        # stop the build if there are Python syntax errors or undefined names
+        C:\Miniconda3\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        C:\Miniconda3\Scripts\flake8. --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+        C:\Miniconda3\Scripts\pytest
+
+        cd ..

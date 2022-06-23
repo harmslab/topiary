@@ -8,6 +8,11 @@ import os
 
 def test_make_blast_db(make_blast_db_files,tmpdir):
 
+    # Skip test on windows machine
+    if os.name == "nt":
+        print("Skipping creation of database test on windows.")
+        return
+
     expected_extensions = ["pdb","pin","pot","ptf","phr","psq","pto"]
 
     faa = [make_blast_db_files["test1.faa"],make_blast_db_files["test2.faa"]]
