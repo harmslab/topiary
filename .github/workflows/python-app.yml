@@ -92,19 +92,19 @@ jobs:
         cd topiary
 
         C:\Miniconda\condabin\conda.bat env create --file environment.yml
-        C:\Miniconda\condabin\conda.bat activate topiary 
+        C:\Miniconda\condabin\conda.bat activate topiary
 
         C:\Miniconda\condabin\conda.bat install flake8
         C:\Miniconda\condabin\conda.bat install pytest
 
-        C:\Miniconda3\python -m pip install --upgrade pip
-        C:\Miniconda3\python setup.py install
+        python -m pip install --upgrade pip
+        ython setup.py install
 
         # stop the build if there are Python syntax errors or undefined names
-        C:\Miniconda3\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        C:\Miniconda3\Scripts\flake8. --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8. --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-        C:\Miniconda3\Scripts\pytest
+        pytest
 
         cd ..
