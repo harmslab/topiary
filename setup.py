@@ -10,11 +10,13 @@ from setuptools import find_packages, setup, Command, Extension
 
 # Package meta-data.
 NAME = 'topiary-asr'
-DESCRIPTION = "Python framework for doing ancestral sequence reconstruction using pandas dataframes and ete3 trees as the primary data structures."
-URL = 'https://github.com/harmslab/topiary'
-EMAIL = 'harmsm@gmail.com'
-AUTHOR = 'Michael J. Harms'
-REQUIRES_PYTHON = '>=3.8.0'
+DESCRIPTION = \
+"""Python framework for doing ancestral sequence reconstruction using pandas
+dataframes and ete3 trees as the primary data structures."""
+URL = "https://github.com/harmslab/topiary"
+EMAIL = "harmsm@gmail.com"
+AUTHOR = "Michael J. Harms"
+REQUIRES_PYTHON = ">=3.8.0"
 VERSION = None
 
 # What packages are required for this module to be executed?
@@ -48,7 +50,7 @@ with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 # Load the package's __version__.py module as a dictionary.
 about = {}
 if not VERSION:
-    with open(os.path.join(here, NAME, '__version__.py')) as f:
+    with open(os.path.join(here, "topiary", '__version__.py')) as f:
         exec(f.read(), about)
 else:
     about['__version__'] = VERSION
@@ -79,5 +81,5 @@ setup(
       'Programming Language :: Python :: 3.8',
       'Programming Language :: Python :: 3.9',
     ],
-    keywords='phylogenetics ASR'
+    keywords="phylogenetics; ancestral sequence reconstruction; ASR; bioinformatics"
 )
