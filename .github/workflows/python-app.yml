@@ -39,9 +39,13 @@ jobs:
         $CONDA/bin/conda activate topiary || true
         export PATH=$CONDA/envs/topiary/bin:$PATH
 
+        $CONDA/bin/python test_gh_workflow.py
+
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest
         $CONDA/bin/python -m pip install --upgrade pip
+
+
 
         $CONDA/bin/python setup.py install
 
