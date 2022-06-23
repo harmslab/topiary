@@ -39,13 +39,16 @@ jobs:
         $CONDA/bin/conda activate topiary || true
         export PATH=$CONDA/envs/topiary/bin:$PATH
 
+        echo "Do we have makeblastdb?"
+        echo $CONDA/envs/topiary/bin/makeblastdb
+        ls $CONDA/envs/topiary/bin | grep make
+
+        echo "What is the path that python sees?"
         $CONDA/bin/python test_gh_workflow.py
 
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest
         $CONDA/bin/python -m pip install --upgrade pip
-
-
 
         $CONDA/bin/python setup.py install
 
