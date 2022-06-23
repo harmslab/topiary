@@ -92,7 +92,7 @@ jobs:
         cd topiary
 
         C:\Miniconda\condabin\conda.bat env create --file environment.yml
-        C:\Miniconda\condabin\conda.bat activate topiary || true
+        C:\Miniconda\condabin\conda.bat activate topiary 
 
         C:\Miniconda\condabin\conda.bat install flake8
         C:\Miniconda\condabin\conda.bat install pytest
