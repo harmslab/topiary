@@ -30,9 +30,9 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
 
     # HACK HACK HACK HACK DO NOT KEEP IN PRODUCTION!!!
     # Here for testing github workflow insanity.
-    if binary == "makeblastdb":
+    if makeblastdb_binary == "makeblastdb":
         this_path = os.environ["PATH"].split(":")[0]
-        binary = os.path.join(this_bath,binary)
+        makeblastdb_binary = os.path.join(this_path,makeblastdb_binary)
 
     print("\nCreating blast database.\n",flush=True)
 
