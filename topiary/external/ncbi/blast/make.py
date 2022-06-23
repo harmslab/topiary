@@ -27,13 +27,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
     -------
     None
     """
-
-    # HACK HACK HACK HACK DO NOT KEEP IN PRODUCTION!!!
-    # Here for testing github workflow insanity.
-    if makeblastdb_binary == "makeblastdb":
-        this_path = os.environ["PATH"].split(":")[0]
-        makeblastdb_binary = os.path.join(this_path,makeblastdb_binary)
-
+    
     print("\nCreating blast database.\n",flush=True)
 
     # If the user passes in a string for input_files, make it into a list
