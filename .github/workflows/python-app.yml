@@ -98,7 +98,7 @@ jobs:
         C:\Miniconda\condabin\conda.bat install pytest
 
         python -m pip install --upgrade pip
-        ython setup.py install
+        python setup.py install
 
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
