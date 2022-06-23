@@ -39,29 +39,20 @@ jobs:
         $CONDA/bin/conda activate topiary || true
         export PATH=$CONDA/envs/topiary/bin:$PATH
 
-        echo $PATH
-        echo $CONDA
+        $CONDA/bin/conda install flake8
+        $CONDA/bin/conda install pytest
+        $CONDA/bin/python -m pip install --upgrade pip
 
-        ls $CONDA/envs/topiary/bin/makeblastdb
+        $CONDA/bin/python setup.py install
 
-        $CONDA/envs/topiary/bin/makeblastdb
+        # stop the build if there are Python syntax errors or undefined names
+        $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+        $CONDA/bin/pytest
 
         cd ..
-  #
-  # $CONDA/bin/conda install flake8
-  # $CONDA/bin/conda install pytest
-  # $CONDA/bin/python -m pip install --upgrade pip
-  #
-  # $CONDA/bin/python setup.py install
-  #
-  # # stop the build if there are Python syntax errors or undefined names
-  # $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-  # # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-  # $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-  #
-  # $CONDA/bin/pytest
-  #
-  # cd ..
 
 
   # build-windows:
