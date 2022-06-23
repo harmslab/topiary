@@ -67,6 +67,7 @@ jobs:
     - name: Run the tests
       shell: bash
       run: |
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/pytest
 
   # build-windows:
