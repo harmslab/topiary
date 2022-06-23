@@ -8,7 +8,7 @@ import os
 
 def test_make_blast_db(make_blast_db_files,tmpdir):
 
-    expected_extensions = ["pdb","pin","pot","ptf","phr","pjs","psq","pto"]
+    expected_extensions = ["pdb","pin","pot","ptf","phr","psq","pto"]
 
     faa = [make_blast_db_files["test1.faa"],make_blast_db_files["test2.faa"]]
     out = os.path.join(tmpdir,"output")
