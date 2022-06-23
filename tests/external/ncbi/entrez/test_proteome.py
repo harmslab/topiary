@@ -9,7 +9,7 @@ import pandas as pd
 
 import datetime, os
 
-def test__get_genome_url(esummary_assembly_records):
+def xtest__get_genome_url(esummary_assembly_records):
 
     # If parsing and sorting is doing what we think, we should get the following
     # out of our stack of urls for each json
@@ -42,7 +42,7 @@ def test__get_genome_url(esummary_assembly_records):
 
         assert acc == expected_output[k]
 
-def test_get_proteome(tmpdir):
+def xtest_get_proteome(tmpdir):
 
     with pytest.raises(ValueError):
         get_proteome(species=None,taxid=None)
