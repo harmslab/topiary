@@ -44,7 +44,7 @@ jobs:
 
         ls $CONDA/envs/topiary/bin/makeblastdb
 
-        $PATH/makeblastdb
+        $CONDA/envs/topiary/bin/makeblastdb
 
         cd ..
   #
