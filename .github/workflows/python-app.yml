@@ -44,7 +44,7 @@ jobs:
         ls $CONDA/envs/topiary/bin | grep make
 
         echo "What is the path that python sees?"
-        $CONDA/bin/python test_gh_workflow.py
+        #$CONDA/bin/python test_gh_workflow.py
 
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest
