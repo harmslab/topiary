@@ -197,16 +197,16 @@ def _construct_args(sequence_list,
 
     # Validate inputs that have not yet been validated.
     max_query_length = check.check_int(max_query_length,
-                                                   "max_query_length",
-                                                   minimum_allowed=1)
+                                       "max_query_length",
+                                       minimum_allowed=1)
 
     num_tries_allowed = check.check_int(num_tries_allowed,
-                                                    "num_tries_allowed",
-                                                    minimum_allowed=1)
+                                        "num_tries_allowed",
+                                        minimum_allowed=1)
 
     num_threads = check.check_int(num_threads,
-                                              "num_threads",
-                                              minimum_allowed=-1)
+                                  "num_threads",
+                                  minimum_allowed=-1)
     if num_threads == 0:
         err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
         err += "or any integer > 0.\n\n"

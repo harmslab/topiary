@@ -497,7 +497,7 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=3,
-                                test_num_cores=None)
+                                test_num_cores=1000) # way more cores than 3
     assert num_threads == 3
 
 
