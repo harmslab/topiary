@@ -427,7 +427,7 @@ def test__construct_args(test_dataframes,tmpdir):
                                 block_size=1,
                                 keep_tmp=False,
                                 num_threads=3,
-                                test_num_cores=None)
+                                test_num_cores=1000)
     assert num_threads == 3
 
 
@@ -435,13 +435,13 @@ def test__construct_args(test_dataframes,tmpdir):
     for b in bad_int:
         print("passing bad num_threads:",b)
         with pytest.raises(ValueError):
-                    all_args, num_threads = _ca(sequence_list,
-                                                blast_function=blast_function,
-                                                blast_kwargs=blast_kwargs,
-                                                block_size=5,
-                                                keep_tmp=False,
-                                                num_threads=b,
-                                                test_num_cores=None)
+            all_args, num_threads = _ca(sequence_list,
+                                        blast_function=blast_function,
+                                        blast_kwargs=blast_kwargs,
+                                        block_size=5,
+                                        keep_tmp=False,
+                                        num_threads=b,
+                                        test_num_cores=None)
 
 def test__combine_hits(local_blast_output):
 

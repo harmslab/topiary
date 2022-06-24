@@ -505,12 +505,12 @@ def test__construct_args(test_dataframes):
     for b in bad_int:
         print("passing bad num_threads:",b)
         with pytest.raises(ValueError):
-                all_args, num_threads = _ca(sequence_list,
-                                            blast_kwargs=blast_kwargs,
-                                            max_query_length=10000,
-                                            num_tries_allowed=5,
-                                            num_threads=b,
-                                            test_num_cores=None)
+            all_args, num_threads = _ca(sequence_list,
+                                        blast_kwargs=blast_kwargs,
+                                        max_query_length=10000,
+                                        num_tries_allowed=5,
+                                        num_threads=b,
+                                        test_num_cores=None)
 
 def test__combine_hits(ncbi_blast_server_output):
 
