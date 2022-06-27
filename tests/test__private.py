@@ -16,3 +16,8 @@ def test_generate_uid():
     for i in range(2):
         assert type(uid[i]) is str
         assert len(uid[i]) == 10
+
+
+def test_wrap_function():
+
+    pass

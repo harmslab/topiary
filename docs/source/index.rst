@@ -106,12 +106,12 @@ Protocol for preparing the table:
    a robust ASR investigation. As you add more paralogs, you need more sequences
    to resolve the evolutionary tree, making the calculation progressively slower.
 #. :emph:`Determine the taxonomic distribution of the protein family.` LY86 and LY96 are
-   found across bony vertebrates (humans and bony fish, but not sharks). If you
+   found across bony vertebrates (humans and bony fish, but not sharks). If you are
    unsure of the taxonomic distribution of your proteins of interest, you can
    BLAST the protein sequences against the `nr-clustered`_ BLAST database,
    setting the :code:`Max target sequences` parameter to 1000 or more. On the
    resulting output page, the "Taxonomy" tab will show which organisms have
-   hits.
+   hits. XX RECIPROCAL BLAST XX
 #. :emph:`Choose two or three species with well-annotated genomes` that span the whole
    taxonomic distribution of your proteins of interest. For LY86 and LY96, we
    selected humans, chickens, and zebrafish, covering the breadth of species

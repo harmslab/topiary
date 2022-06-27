@@ -113,6 +113,8 @@ def find_best_model(df,
         ways to treat model rates
     model_freqs : list, optional
         ways to treat model freqs.
+    model_invariant : list, optional
+        ways to treat invariant alignment columns
     output : str, optional
         output directory. If not specified, create an output directory with
         form "find_best_model_randomletters"

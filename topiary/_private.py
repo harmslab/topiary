@@ -2,7 +2,7 @@
 Private utility functions that are not publicly exposed in the API.
 """
 
-import string, random, sys, inspect, argparse
+import string, random, sys, inspect, argparse, re
 
 required_columns = ["species","name","sequence"]
 reserved_columns = required_columns[:]
@@ -58,9 +58,15 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
     if argv is None:
         argv = sys.argv[1:]
 
-    # Build parser
+    # Get program name
+    prog = re.sub("_","-",fcn.__name__)
+    prog = f"topiary-{prog}"
+
+    # Get description
     description = dict(inspect.getmembers(fcn))["__doc__"]
-    parser = argparse.ArgumentParser(prog=f"{fcn.__name__}.py",
+
+    # Build parser
+    parser = argparse.ArgumentParser(prog=prog,
                                      description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
 
@@ -93,4 +99,9 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
     args = parser.parse_args(argv)
 
     # Call function with kwargs
-    fcn(**args.__dict__)
+    try:
+        fcn(**args.__dict__)
+    except Exception as e:
+        err = f"\n\n{description}\n\nIncorrect arguments specified.\n\n"
+        err += "See command line help and error raised above.\n\n"
+        raise RuntimeError(err) from e
