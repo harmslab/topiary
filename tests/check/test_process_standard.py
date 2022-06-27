@@ -161,24 +161,3 @@ def test_check_iter():
         check_iter([1,2],is_not_type=[str,list])
 
     check_iter(tuple([1,2]),is_not_type=[str,list])
-
-    # with pytest.raises(ValueError):
-    #     check_iter(1,maximum_allowed=0)
-    #
-    # with pytest.raises(ValueError):
-    #     check_iter(1,maximum_allowed=1,maximum_inclusive=False)
-    #
-    # value = check_iter(1,minimum_allowed=1,maximum_inclusive=True)
-    # assert value == 1
-        #
-        #
-        #
-        # value,
-        #  variable_name=None,
-        #  required_iter_type=None,
-        #  required_value_type=None,
-        #  minimum_length=None,
-        #  maximum_length=None,
-        #  minimum_inclusive=True,
-        #  maximum_inclusive=True,
-        #  is_not_type=None):

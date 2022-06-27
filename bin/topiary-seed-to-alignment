@@ -15,7 +15,7 @@ def main(argv=None):
         argv = sys.argv[1:]
 
     # Set arg types for args with None as default
-    optional_arg_types = {"local_blast_db":str}
+    optional_arg_types = {}
 
     # Wrap and run function
     wrap_function(seed_to_alignment,

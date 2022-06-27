@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Command line interface to topiary.raxml.generate_ancestors
+Command line interface to topiary.raxml.find_best_model
 """
 
 import topiary
