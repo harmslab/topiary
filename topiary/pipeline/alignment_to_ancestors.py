@@ -16,6 +16,13 @@ def alignment_to_ancestors(df,
                            do_bootstrap=True,
                            allow_horizontal_transfer=False,
                            alt_cutoff=0.25,
+                           model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
+                                           "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
+                                           "mtART","mtMAM","mtREV","mtZOA","PMB",
+                                           "rtREV","stmtREV","VT","WAG","LG4M","LG4X"],
+                           model_rates=["","G8"],
+                           model_freqs=["","FC","FO"],
+                           model_invariant=["","IC","IO"],
                            overwrite=False,
                            num_threads=-1,
                            raxml_binary=RAXML_BINARY,
@@ -44,6 +51,22 @@ def alignment_to_ancestors(df,
     alt_cutoff : float, default=0.25
         cutoff to use for altAll alternate ancestral protein sequence
         generation. Should be between 0 and 1.
+    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
+        list of model matrices to check. If calling from command line, these
+        can be specified directly (:code:`--model_matrices LG JTT ...`) or by specifying
+        a file with models on each line (:code:`--model_matrices SOME_FILE`)
+    model_rates : list, default=["","G8"]
+        ways to treat model rates. If calling from command line, these
+        can be specified directly (:code:`--model_rates G8 ...`) or by specifying
+        a file with rates on each line (:code:`--model_rates SOME_FILE`)
+    model_freqs : list, default=["","FC","FO"]
+        ways to treat model freqs. If calling from command line, these
+        can be specified directly (:code:`--model_freqs FC FO ...`) or by specifying
+        a file with freqs on each line (:code:`--model_freqs SOME_FILE`)
+    model_invariant : list, default=["","IC","IO"]
+        ways to treat invariant alignment columns. If calling from command line, these
+        can be specified directly (:code:`--model_invariant IC IO ...`) or by specifying
+        a file with invariants on each line (:code:`--model_invariant SOME_FILE`)
     overwrite : bool, default=False
         whether or not to overwrite existing output
     threads : int, default=-1
@@ -52,18 +75,6 @@ def alignment_to_ancestors(df,
         raxml binary to use
     generax_binary : str, optional
         what generax binary to use
-
-
-    ## NOT SURE WHETHER/HOW TO INCLUDE...
-    model_matrices : list, optional
-        list of model matrices to check
-    model_rates : list, optional
-        ways to treat model rates
-    model_freqs : list, optional
-        ways to treat model freqs.
-    model_invariant : list, optional
-        ways to treat invariant alignment columns
-
     Returns
     -------
     None

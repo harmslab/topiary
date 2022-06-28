@@ -7,6 +7,7 @@ import topiary
 
 from ._raxml import RAXML_BINARY, run_raxml
 from topiary.external._interface import prep_calc, gen_seed, write_run_information
+from topiary import check
 
 import pandas as pd
 import numpy as np
@@ -87,11 +88,10 @@ def find_best_model(df,
                     model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                     "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                     "mtART","mtMAM","mtREV","mtZOA","PMB",
-                                    "rtREV","stmtREV","VT","WAG","LG4M","LG4X",
-                                    "PROTGTR"],
+                                    "rtREV","stmtREV","VT","WAG","LG4M","LG4X"],
                     model_rates=["","G8"],
                     model_freqs=["","FC","FO"],
-                    model_invariant=["","IO","IC"],
+                    model_invariant=["","IC","IO"],
                     output=None,
                     overwrite=False,
                     threads=-1,
@@ -107,13 +107,13 @@ def find_best_model(df,
     tree_file : str
         tree_file in newick format. If not specified, parsimony tree is
         generated and used
-    model_matrices : list, optional
+    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
         list of model matrices to check
-    model_rates : list, optional
+    model_rates : list, default=["","G8"]
         ways to treat model rates
-    model_freqs : list, optional
+    model_freqs : list, default=["","FC","FO"]
         ways to treat model freqs.
-    model_invariant : list, optional
+    model_invariant : list, default=["","IC","IO"]
         ways to treat invariant alignment columns
     output : str, optional
         output directory. If not specified, create an output directory with
@@ -154,6 +154,38 @@ def find_best_model(df,
                                  raxml_binary=raxml_binary)
         tree_file = os.path.join("working",
                                  "alignment.phy.raxml.startTree")
+
+    # Deal with model matrices
+    model_matrices = check.check_iter(model_matrices,
+                                      "model_matrices",
+                                      required_value_type=str)
+    model_matrices = list(model_matrices)
+    if "" not in model_matrices:
+        model_matrices.insert(0,"")
+
+    # Deal with model rates
+    model_rates = check.check_iter(model_rates,
+                                   "model_rates",
+                                   required_value_type=str)
+    model_rates = list(model_rates)
+    if "" not in model_rates:
+        model_rates.insert(0,"")
+
+    # Deal with model freqs
+    model_freqs = check.check_iter(model_freqs,
+                                   "model_freqs",
+                                   required_value_type=str)
+    model_freqs = list(model_freqs)
+    if "" not in model_freqs:
+        model_freqs.insert(0,"")
+
+    # Deal with model invariant
+    model_invariant = check.check_iter(model_invariant,
+                                       "model_invariant",
+                                       required_value_type=str)
+    model_invariant = list(model_invariant)
+    if "" not in model_invariant:
+        model_invariant.insert(0,"")
 
     # Dictionary to hold stats for each model
     out = {"model":[]}

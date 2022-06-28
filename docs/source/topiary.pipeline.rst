@@ -12,14 +12,6 @@ topiary.pipeline.alignment\_to\_ancestors module
    :undoc-members:
    :show-inheritance:
 
-topiary.pipeline.base module
-----------------------------
-
-.. automodule:: topiary.pipeline.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 topiary.pipeline.seed\_to\_alignment module
 -------------------------------------------
 
