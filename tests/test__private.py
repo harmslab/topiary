@@ -32,6 +32,9 @@ def test_wrap_function(tmpdir):
                  arg6=1.0,
                  arg7="test",
                  arg8=[1.0,2.0]):
+        """
+        test function.
+        """
 
         return arg1, arg2, arg3, arg4, arg5, arg6, arg7
 
