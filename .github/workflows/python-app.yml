@@ -18,6 +18,9 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.9' ]
     steps:
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+
     - name: Install Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -40,7 +43,7 @@ jobs:
         export PATH=$CONDA/envs/topiary/bin:$PATH
 
         $CONDA/bin/conda install flake8
-        $CONDA/bin/conda install pytest
+        $CONDA/bin/conda install pytest-timeout
         $CONDA/bin/python -m pip install --upgrade pip
 
         $CONDA/bin/python setup.py install
@@ -50,7 +53,8 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-        $CONDA/bin/pytest
+        # test with pytest timeout
+        $CONDA/bin/pytest --timeout 60 --timeout_method thread
 
         cd ..
 
@@ -97,8 +101,8 @@ jobs:
         C:\Miniconda\condabin\conda.bat install flake8
         C:\Miniconda\condabin\conda.bat install pytest
 
-        python -m pip install --upgrade pip
-        python setup.py install
+        C:\Miniconda\python -m pip install --upgrade pip
+        C:\Miniconda\python setup.py install
 
         ls C:\Miniconda\Scripts\
 
