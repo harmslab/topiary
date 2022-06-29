@@ -4,6 +4,31 @@ pandas dataframes and ete3 trees as the primary data structures.
 """
 __author__ = "Michael J. Harms"
 
+def _check_for_notebook():
+    """
+    Check whether the code is being executed in a notebook or standard
+    standard python interpreter.
+
+    Return
+    ------
+        string for jupyter or IPython, None for something not recognized.
+    """
+
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return "jupyter"   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return "IPython"   # Terminal running IPython
+        else:
+            return None        # Not sure what interpreter
+
+    # Probably standard Python interpreter
+    except NameError:
+        return None
+
+_in_notebook = _check_for_notebook()
+
 # Submodules
 from . import util
 from . import draw
@@ -34,28 +59,3 @@ from .io import read_fasta_into, write_fasta, write_phy
 
 # Topiary version
 from .__version__ import __version__
-
-def _check_for_notebook():
-    """
-    Check whether the code is being executed in a notebook or standard
-    standard python interpreter.
-
-    Return
-    ------
-        string for jupyter or IPython, None for something not recognized.
-    """
-
-    try:
-        shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
-            return "jupyter"   # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
-            return "IPython"   # Terminal running IPython
-        else:
-            return None        # Not sure what interpreter
-
-    # Probably standard Python interpreter
-    except NameError:
-        return None
-
-_in_notebook = _check_for_notebook()

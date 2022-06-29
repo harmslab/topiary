@@ -3,8 +3,10 @@ Animation indicating topiary is waiting for something without knowing
 how long it will take. Launches animation on its own thread.
 """
 
+import topiary
+
 import multiprocessing as mp
-import time
+import time, sys
 
 class WaitingAnimation:
     """
@@ -32,37 +34,40 @@ class WaitingAnimation:
             this_status = [" " for _ in range(self._num_stack)]
             for j in range(i):
                 this_status[j] = icon
+            this_status.append("\r")
             self._status.append(" ".join(this_status))
-        self._clear = num_stack*10*" "
+        self._clear = num_stack*10*" " + "\r"
 
-        self._queue = mp.Queue()
+        self._stop_queue = mp.Queue()
         self._proc = None
 
-    def _iterate(self,queue):
+    def _iterate(self,stop_queue):
 
         counter = 0
         while True:
 
-            if not queue.empty():
-                break
-
-            print(self._status[counter],end="\r",flush=True)
+            sys.stdout.write(self._status[counter])
+            sys.stdout.flush()
             time.sleep(self._delay)
+
+            if not stop_queue.empty():
+                break
 
             counter += 1
             if counter > self._num_stack:
                 counter = 0
-                print(self._clear,end="\r",flush=True)
+                sys.stdout.write(self._clear)
 
     def start(self):
         """
         Start the animation on its own thread.
         """
 
-        print("")
-        print(self._clear,end="\r",flush=True)
+        sys.stdout.write("\n")
+        sys.stdout.write(self._clear)
+        sys.stdout.flush()
 
-        self._proc = mp.Process(target=self._iterate,args=(self._queue,))
+        self._proc = mp.Process(target=self._iterate,args=(self._stop_queue,))
         self._proc.start()
 
     def stop(self):
@@ -70,8 +75,9 @@ class WaitingAnimation:
         Stop the animation.
         """
 
-        self._queue.put(True)
+        self._stop_queue.put(True)
         self._proc.join()
 
-        print(self._clear,end="\r",flush=True)
-        print("",flush=True)
+        sys.stdout.write(self._clear)
+        sys.stdout.write("\n")
+        sys.stdout.flush()

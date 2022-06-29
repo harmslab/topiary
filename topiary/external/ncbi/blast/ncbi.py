@@ -4,8 +4,10 @@ Run BLAST against a remote NCBI database.
 
 import topiary
 from topiary._private import check
-from .util import read_blast_xml, _standard_blast_args_checker
+from topiary._private import animation
 from topiary._private import threads
+
+from .util import read_blast_xml, _standard_blast_args_checker
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
@@ -284,159 +286,6 @@ def _construct_args(sequence_list,
     return kwargs_list, num_threads
 
 
-# def _thread_manager(all_args,num_threads):
-#     """
-#     Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
-#     by ncbi_blast.
-#
-#     Parameters
-#     ----------
-#         all_args: list of lists containing arguments to pass to to _thread.
-#                   Should not have the `queue` argument, as this will be added
-#                   by this function.
-#         num_threads: number of threads to use.
-#
-#     Return
-#     ------
-#         list of hits from all blast calls when all threads complete. These will
-#         be ordered by `counter`, passed in via all_args.
-#     """
-#
-#     print(f"Performing {len(all_args)} blast queries on {num_threads} threads.",
-#           flush=True)
-#
-#     # queue will hold results from each run. Append to each entry in all_args
-#     manager = mp.Manager()
-#     queue = manager.Queue()
-#     lock = manager.Lock()
-#     for i in range(len(all_args)):
-#         all_args[i].append(queue)
-#         all_args[i].append(lock)
-#
-#     with mp.Pool(num_threads) as pool:
-#
-#         # Black magic. pool.imap() runs a function on elements in iterable,
-#         # filling threads as each job finishes. (Calls _blast_thread
-#         # on every args tuple in all_args). tqdm gives us a status bar.
-#         # By wrapping pool.imap iterator in tqdm, we get a status bar that
-#         # updates as each thread finishes.
-#         if num_threads > 1:
-#             list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
-#         else:
-#             list(pool.imap(_thread,all_args))
-#
-#     # Get results out of the queue.
-#     results = []
-#     while not queue.empty():
-#         results.append(queue.get())
-#
-#     # Sort results
-#     results.sort()
-#     hits = [r[1] for r in results]
-#
-#     return hits
-#
-# def _thread(args):
-#     """
-#     Run an NCBIWWW.qblast call on a single thread, making several attempts.
-#     Put results in a multiprocessing queue.
-#
-#     args is expanded into the following:
-#         this_query: qblast keyword arguments
-#         counter: integer, used to sort results after they all complete
-#         num_tries_allowed: how many times to try before giving up
-#         queue: multiprocessing queue in which to store results
-#
-#     Parameters
-#     ----------
-#         args. a list of arguments expanded as detailed above.
-#
-#     Return
-#     ------
-#         None. results put into queue.
-#     """
-#
-#     this_query = args[0]
-#     counter = args[1]
-#     num_tries_allowed = args[2]
-#     queue = args[3]
-#     lock = args[4]
-#
-#     # While we haven't run out of tries...
-#     tries = 0
-#     while tries < num_tries_allowed:
-#
-#         # Try to read output.
-#         try:
-#
-#             # NCBI limits requests to 3 per second for normal users. Use a lock
-#             # when launching that sleeps for 0.5 seconds. This means we'll make
-#             # a maximum of two requests per second across all threads and
-#             # should avoid the NCBI limit.
-#             lock.acquire()
-#             try:
-#                 time.sleep(0.5)
-#             finally:
-#                 lock.release()
-#
-#             result = NCBIWWW.qblast(**this_query)
-#
-#             # Write output to an xml file. NCBI can spit out trashed XML
-#             # with CREATE_VIEW\n\n\n randomly injected between <hit> entries.
-#             # biopython chokes on the input. To fix this, pull down the XML,
-#             # clean up, write to a file, then pass the file handle back to
-#             # biopython.
-#
-#             # Get rid of nastiness if present.
-#             contents = result.readlines()
-#             contents = [c for c in contents if c.strip() not in ["","CREATE_VIEW"]]
-#
-#             # Write temporary file
-#             tmp_root = "".join([random.choice(string.ascii_letters)
-#                                 for _ in range(10)])
-#             tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
-#             f = open(tmp_file,"w")
-#             f.write("".join(contents))
-#             f.close()
-#
-#             # Read output xml file and parse
-#             f = open(tmp_file,"r")
-#
-#             # Clean up
-#             p = NCBIXML.parse(f)
-#             out = []
-#             for r in p:
-#                 out.append(r)
-#             f.close()
-#
-#             # If parsing successful, nuke temporary file
-#             os.remove(tmp_file)
-#
-#         # If some kind of http error or timeout, set out to None
-#         except (urllib.error.URLError,urllib.error.HTTPError,http.client.IncompleteRead):
-#             out = None
-#
-#         # If out is None, try again. If not, break out of loop--success!
-#         if out is None:
-#             tries += 1
-#             continue
-#         else:
-#             break
-#
-#     # We didn't get result even after num_tries_allowed tries. Throw
-#     # an error.
-#     if out is None:
-#         err = "\nProblem accessing with NCBI server. We got no output after\n"
-#         err += f"{num_tries_allowed} attempts. This is likely due to a server\n"
-#         err += "timeout. Try again at a later time.\n"
-#         raise RuntimeError(err)
-#
-#     # Parse output
-#     out_df = read_blast_xml(out)
-#
-#     queue.put((counter,out_df))
-
-
 def _ncbi_blast_thread_function(this_query,num_tries_allowed,lock):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
@@ -670,10 +519,22 @@ def ncbi_blast(sequence,
                                                num_tries_allowed=num_tries_allowed)
 
     # Run multi-threaded blast
+    print(f"Performing {len(sequence_list)} BLAST queries against the NCBI {db} database")
+    print(f"on {num_threads} threads. Depending on the server load, this could")
+    print(f"take awhile. This is a good time to grab a cup of coffee.",flush=True)
+
+    a = animation.WaitingAnimation()
+    a.start()
+
     hits = threads.thread_manager(kwargs_list,
                                   _ncbi_blast_thread_function,
                                   num_threads,
+                                  progress_bar=False,
                                   pass_lock=True)
+
+    a.stop()
+    print("BLAST query complete.",flush=True)
+
 
     # Combine hits into dataframes, one for each query
     out_df = _combine_hits(hits,return_singleton)
