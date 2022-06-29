@@ -50,7 +50,7 @@ def test_check_muscle():
     version = installed.check_muscle()
 
     if version == (-2,-2,-2):
-        warings.warn("muscle not installed -- skipping test")
+        warnings.warn("muscle not installed -- skipping test")
 
     if version == (-1,-1,-1):
         raise RuntimeError("muscle is installed but not working!")
@@ -64,7 +64,7 @@ def test_check_generax():
     version = installed.check_generax()
 
     if version == (-2,-2,-2):
-        warings.warn("generax not installed -- skipping test")
+        warnings.warn("generax not installed -- skipping test")
 
     if version == (-1,-1,-1):
         raise RuntimeError("generax is installed but not working!")
@@ -77,7 +77,7 @@ def test_check_raxml():
     version = installed.check_raxml()
 
     if version == (-2,-2,-2):
-        warings.warn("raxml-ng not installed -- skipping test")
+        warnings.warn("raxml-ng not installed -- skipping test")
 
     if version == (-1,-1,-1):
         raise RuntimeError("raxml-ng is installed but not working!")
@@ -90,7 +90,7 @@ def test_check_blastp():
     version = installed.check_blastp()
 
     if version == (-2,-2,-2):
-        warings.warn("blastp not installed -- skipping test")
+        warnings.warn("blastp not installed -- skipping test")
 
     if version == (-1,-1,-1):
         raise RuntimeError("blastp is installed but not working!")
@@ -103,7 +103,7 @@ def test_check_makeblastdb():
     version = installed.check_makeblastdb()
 
     if version == (-2,-2,-2):
-        warings.warn("makeblastdb not installed -- skipping test")
+        warnings.warn("makeblastdb not installed -- skipping test")
 
     if version == (-1,-1,-1):
         raise RuntimeError("makeblastdb is installed but not working!")

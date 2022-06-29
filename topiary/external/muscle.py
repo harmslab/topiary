@@ -4,8 +4,9 @@ Interface to muscle, compatible with muscle 3.8 and 5.1.
 
 import topiary
 from topiary import check
+from topiary._private import installed
 import pandas as pd
-import subprocess, sys, os, random, string, re
+import subprocess, sys, os, random, string, re, warnings
 
 def run_muscle(input,
                output_fasta=None,
@@ -22,17 +23,18 @@ def run_muscle(input,
     output_fasta : str or None, default=None
         output fasta file to store alignment. Optional if the input
         is a dataframe; reqiured if the input is a fasta file.
-    super5 : bool, default=False
-        User the 'super5' mode of muscle 5. If using muscle 3.x, this parameter
-        is ignored.
+    super5 : bool
+        Use the 'super5' mode of muscle 5
     muscle_cmd_args : list
-        arguments to pass directly to muscle. Wrapper specifies "-align" and
-        "-output" (or -in/-out for 3.x command line), but leaves rest as
-        default. Format should be something like ['-replicates',20,...].
-        Arguments are not checked by this function, but passed directly to
-        muscle.
-    muscle_binary : str, default="muscle"
-        location of muscle binary (default assumes 'muscle' command is in $PATH).
+        list of arguments to pass directly to muscle. Wrapper specifies :code:`-align`
+        and :code:`-output` (or :code:`-in/-out` for old version of the command
+        line), but leaves rest as default. Format should be something like
+        :code:`['-replicates','20',...]`. Arguments are not checked by this
+        function, but passed directly to muscle.
+    muscle_binary : str
+        location of muscle binary (default assumes 'muscle' command is in the
+        :code:`$PATH`).
+
 
     Returns
     -------
@@ -125,45 +127,55 @@ def _run_muscle(input_fasta,
 
     Parameters
     ----------
-        input_fasta: input fasta file to align
-        output_fasta: output fasta file to store alignment
-        super5: bool. User the 'super5' mode of muscle 5
-        muscle_cmd_args: list of arguments to pass directly to muscle. Wrapper
-                         specifies "-align" and "-output" (or -in/-out for old
-                         version of the command line), but leaves rest as default.
-                         Format should be something like ['-replicates',20,...].
-                         Arguments are not checked by this function, but passed
-                         directly to muscle.
-        muscle_binary: location of muscle binary (default assumes 'muscle'
-                       command is in the PATH).
+    input_fasta : str
+        input fasta file to align
+    output_fasta : str
+        output fasta file to store alignment
+    super5 : bool
+        Use the 'super5' mode of muscle 5
+    muscle_cmd_args : list
+        list of arguments to pass directly to muscle. Wrapper specifies :code:`-align`
+        and :code:`-output` (or :code:`-in/-out` for old version of the command
+        line), but leaves rest as default. Format should be something like
+        :code:`['-replicates','20',...]`. Arguments are not checked by this
+        function, but passed directly to muscle.
+    muscle_binary : str
+        location of muscle binary (default assumes 'muscle' command is in the
+        :code:`$PATH`).
 
-    Return
-    ------
-        None
+    Returns
+    -------
+    None
     """
 
+    # Check muscle version
+    muscle_version = installed.check_muscle()
+    if muscle_version == (-2,-2,-2):
+        err = f"\nmuscle not found in the PATH ({os.environ['PATH']})\n\n"
+        raise RuntimeError(err)
 
-    # Make sure that muscle is in the path
-    try:
-        subprocess.run([muscle_binary])
-    except FileNotFoundError:
-        err = f"\nmuscle binary '{muscle_binary}' not found in path\n\n"
-        raise ValueError(err)
+    if muscle_version == (-1,-1,-1):
+        ret = subprocess.run([muscle_binary],capture_output=True)
+        err = f"\nmuscle is in the PATH, but is crashing. The output of \n"
+        err += f"`muscle` follows:\n\n {ret.stderr.decode()}\n\n"
+        raise RuntimeError(err)
 
-    # This checks for the version of the muscle command line in use. The old
-    # version used -version and will throw an error with this call; the current
-    # version uses --version and this will work. This is not the most robust
-    # check of versions, but is likely more robust than some kind of regex given
-    # variety of compiled versions out there...
-    ret_version = subprocess.run([muscle_binary,"--version"])
-    if ret_version.returncode == 0:
+    if muscle_version == (0,0,0):
+        w = "\nmuscle is in the PATH, but topiary could not determine the\n"
+        w += "muscle version. Proceeding with assumption it is >= 5.0.\n"
+        warnings.warn(w)
+
+        muscle_version = ("5",)
+
+    # Construct command line appropriate to muscle version being used
+    if int(muscle_version[0]) >= 5:
         cmd = [muscle_binary,"-align",input_fasta,"-output",output_fasta]
         if super5:
             cmd[1] = "-super5"
     else:
         cmd = [muscle_binary,"-in",input_fasta,"-out",output_fasta]
 
-
+    # Append user-specified arguments
     cmd.extend(muscle_cmd_args)
 
     # This relatively complicated code is effectively subprocess.run, but
@@ -175,12 +187,17 @@ def _run_muscle(input_fasta,
                              stderr=subprocess.STDOUT,
                              universal_newlines=True)
     for line in popen.stdout:
+
+        # This bit of trickery makes it so the muscle output counts up to 100%
+        # on a single line, rather than spewing out over 100s of lines over the
+        # course of the alignment
         if re.search("100.0%",line):
             endl = "\n"
         else:
             print(90*" ",end="\r")
             endl = "\r"
         print(line.strip(),end=endl,flush=True)
+
     popen.stdout.close()
     return_code = popen.wait()
 

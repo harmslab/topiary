@@ -66,7 +66,7 @@ def check_muscle():
     def _version_slicer(ret):
         return ret.stdout.split()[1].decode()
 
-    return _version_checker(["muscle","-version"],_version_slicer)
+    return _version_checker(["muscle"],_version_slicer)
 
 
 def check_generax():
