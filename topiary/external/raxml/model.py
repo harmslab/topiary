@@ -18,77 +18,34 @@ import multiprocessing as mp
 from tqdm.auto import tqdm
 
 
-def _thread_manager(all_kwargs,num_threads,test_num_cores=None):
+def _generate_parsimony_tree(alignment_file,
+                             dir_name="parsimony-tree",
+                             num_threads=1,
+                             raxml_binary=RAXML_BINARY):
     """
-    Run raxml jobs in parallel.
+    Generate a parsimony tree from an alignment.
 
     Parameters
     ----------
-        all_kwargs: list of kwargs to pass for each calculation
+        alignment_file: alignment file in .phy format
+        dir_name: name to give directory
         num_threads: number of threads to use
-    """
+        raxml_binary: raxml binary to use
 
-    num_threads = threads.get_num_threads(num_threads)
-
-    print(f"\nTrying {len(all_kwargs)} combinations of matrix and model parameters")
-    print(f"on {num_threads} threads.\n",flush=True)
-    sys.stdout.flush()
-
-    # queue will hold results from each run.
-    queue = mp.Manager().Queue()
-    all_args = []
-    for i in range(len(all_kwargs)):
-        all_args.append((all_kwargs[i],queue))
-
-    with mp.Pool(num_threads) as pool:
-
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _blast_thread
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
-
-    # Get results out of the queue.
-    results = []
-    while not queue.empty():
-        results.append(queue.get())
-
-    # Sort results
-    results.sort()
-
-    return results
-
-def _thread(args):
-    """
-
-    Parameters
-    ----------
-        args. list that is expanded as follows:
-
-        kwargs
-        queue
     Return
     ------
         None
     """
 
-    # parse args
-    kwargs = args[0]
-    queue = args[1]
-
-    run_raxml(**kwargs)
-
-    # Get results from the info file
-    tmp_dir = kwargs["dir_name"]
-    info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
-    result = _parse_raxml_info_for_aic(info_file)
-
-    # Nuke temporary directory
-    shutil.rmtree(tmp_dir)
-
-    queue.put((model_counter,model,result))
-
+    run_raxml(algorithm="--start",
+              alignment_file=alignment_file,
+              dir_name=dir_name,
+              seed=True,
+              model="LG",
+              num_threads=num_threads,
+              raxml_binary=raxml_binary,
+              log_to_stdout=False,
+              other_args=["--tree","pars{1}"])
 
 
 def _parse_raxml_info_for_aic(info_file):
@@ -131,34 +88,36 @@ def _parse_raxml_info_for_aic(info_file):
     # Return L, N, and AIC
     return out
 
-def _generate_parsimony_tree(alignment_file,
-                             dir_name="parsimony-tree",
-                             threads=1,
-                             raxml_binary=RAXML_BINARY):
+
+def _model_thread_function(kwargs):
     """
-    Generate a parsimony tree from an alignment.
+    Run raxml on a single thread and extract likelihood, number of parameters,
+    and AIC scores.
 
     Parameters
     ----------
-        alignment_file: alignment file in .phy format
-        dir_name: name to give directory
-        threads: number of threads to use
-        raxml_binary: raxml binary to use
+    kwargs : dict
+        keyword arguments to pass to run_raxml
 
-    Return
-    ------
-        None
+    Returns
+    -------
+    result : dict
+        dictionary with "L", "N", and various AIC scores.
     """
 
-    run_raxml(algorithm="--start",
-              alignment_file=alignment_file,
-              dir_name=dir_name,
-              seed=True,
-              model="LG",
-              threads=threads,
-              raxml_binary=raxml_binary,
-              log_to_stdout=False,
-              other_args=["--tree","pars{1}"])
+    # Run raxml
+    run_raxml(**kwargs)
+
+    # Get results from the info file
+    tmp_dir = kwargs["dir_name"]
+    info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
+    result = _parse_raxml_info_for_aic(info_file)
+
+    # Nuke temporary directory
+    shutil.rmtree(tmp_dir)
+
+    return result
+
 
 def find_best_model(df,
                     tree_file=None,
@@ -171,7 +130,7 @@ def find_best_model(df,
                     model_invariant=["","IC","IO"],
                     output=None,
                     overwrite=False,
-                    threads=-1,
+                    num_threads=-1,
                     raxml_binary=RAXML_BINARY):
     """
     Find the best phylogentic model to use for tree and ancestor reconstruction
@@ -197,7 +156,7 @@ def find_best_model(df,
         form "find_best_model_randomletters"
     overwrite : bool, default=False
         whether or not to overwrite existing output
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads to use. if -1 use all available
     raxml_binary : str, optional
         raxml binary to use
@@ -227,7 +186,7 @@ def find_best_model(df,
 
         _generate_parsimony_tree(alignment_file,
                                  dir_name="working",
-                                 threads=threads,
+                                 num_threads=num_threads,
                                  raxml_binary=raxml_binary)
         tree_file = os.path.join("working",
                                  "alignment.phy.raxml.startTree")
@@ -261,21 +220,14 @@ def find_best_model(df,
     if "" not in model_invariant:
         model_invariant.insert(0,"")
 
-    threads = check.check_int(threads,
-                              "threads",
-                              minimum_allowed=-1)
-    if threads == 0:
-        err = "\nthreads cannot be zero. It can be -1 (use all available),\n"
-        err += "or any integer > 0.\n\n"
-        raise ValueError(err)
-
-
+    num_threads = threads.get_num_threads(num_threads)
 
     seed = gen_seed()
 
     # Go over all combos of the requested matrices, rates, freqs, invariant and
     # create kwargs for run_raxml calls
     kwargs_list = []
+    models = []
     for matrix in model_matrices:
         for rate in model_rates:
             for freq in model_freqs:
@@ -303,45 +255,23 @@ def find_best_model(df,
                               "model":model,
                               "seed":seed,
                               "dir_name":dir_name,
-                              "threads":1,
+                              "num_threads":1, # single thread per calc
                               "raxml_binary":raxml_binary,
                               "log_to_stdout":False}
-                    kwargs_list.append(kwargs)
+                    kwargs_list.append({"kwargs":kwargs})
+                    models.append(model)
 
 
-    # out_list = []
-    # model_counter = 1
-    # for model_counter, kwargs in enumerate(kwargs_list):
-    #
-    #     model = kwargs["model"]
-    #
-    #     # Print model number we're trying
-    #     print(f"{model} ({model_counter + 1}/{len(kwargs_list)})",flush=True)
-    #
-    #     # Optimize branch lengths etc. on the existing tree.
-    #     run_raxml(**kwargs)
-    #
-    #     # Get results from the info file and store in out_list
-    #     tmp_dir = kwargs["dir_name"]
-    #     info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
-    #     result = _parse_raxml_info_for_aic(info_file)
-    #     out_list.append((model_counter,model,result))
-    #
-    #     # Nuke temporary directory
-    #     shutil.rmtree(tmp_dir)
+    out_list = threads.thread_manager(kwargs_list,
+                                      _model_thread_function,
+                                      num_threads)
 
-
-    out_list = _thread_manager(kwargs_list,threads)
-
-    # Sort out_list by model counter
-    #out_list.sort()
 
     # Go through output list and store results in out
     out = {"model":[]}
-    for o in out_list:
+    for i, result in enumerate(out_list):
 
-        out["model"].append(o[1])
-        result = o[2]
+        out["model"].append(models[i])
         for r in result:
             try:
                 out[r].append(result[r])

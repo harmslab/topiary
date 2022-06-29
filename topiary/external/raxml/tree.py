@@ -16,7 +16,7 @@ def generate_ml_tree(previous_dir=None,
                      tree_file=None,
                      output=None,
                      overwrite=False,
-                     threads=-1,
+                     num_threads=-1,
                      raxml_binary=RAXML_BINARY,
                      bootstrap=False):
     """
@@ -43,7 +43,7 @@ def generate_ml_tree(previous_dir=None,
         with form "generate_ancestors_randomletters"
     overwrite : bool, default=False
         whether or not to overwrite existing output
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads to use. if -1, use all avaialable
     raxml_binary : str, optional
         what raxml binary to use
@@ -91,7 +91,7 @@ def generate_ml_tree(previous_dir=None,
                     model=model,
                     dir_name="working",
                     seed=True,
-                    threads=threads,
+                    num_threads=num_threads,
                     raxml_binary=raxml_binary,
                     other_args=other_args)
 

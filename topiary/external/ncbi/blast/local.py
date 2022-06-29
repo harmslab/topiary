@@ -190,54 +190,32 @@ def _construct_args(sequence_list,
     return kwargs_list, num_threads
 
 
-# def _thread_manager(all_args,num_threads):
-#     """
-#     Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
-#     by local_blast.
-#
-#     Parameters
-#     ----------
-#         all_args: list of args to pass for each calculatio
-#         nm_threads: number of threads to use
-#
-#     Return
-#     ------
-#         list of dataframes with blast results
-#     """
-#
-#     print(f"Performing {len(all_args)} blast queries on {num_threads} threads.",
-#           flush=True)
-#
-#     # queue will hold results from each run. Append to each entry in all_args
-#     queue = mp.Manager().Queue()
-#     for i in range(len(all_args)):
-#         all_args[i].append(queue)
-#
-#     with mp.Pool(num_threads) as pool:
-#
-#         # Black magic. pool.imap() runs a function on elements in iterable,
-#         # filling threads as each job finishes. (Calls _blast_thread
-#         # on every args tuple in all_args). tqdm gives us a status bar.
-#         # By wrapping pool.imap iterator in tqdm, we get a status bar that
-#         # updates as each thread finishes.
-#         list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
-#
-#     # Get results out of the queue.
-#     results = []
-#     while not queue.empty():
-#         results.append(queue.get())
-#
-#     # Sort results
-#     results.sort()
-#     hits = [r[1] for r in results]
-#
-#     return hits
-
 def _local_blast_thread_function(sequence_list,
                                  index,
                                  blast_function,
                                  blast_kwargs,
                                  keep_tmp):
+    """
+    Run local blast on a list of sequences.
+
+    Parameters
+    ----------
+    sequence_list : list
+        list of sequences
+    index : tuple
+        indexes to pull from sequence_list
+    blast_function : function
+        blast function to run
+    blast_kwargs : dict
+        kwargs to pass to blast function
+    keep_tmp : bool
+        whether or not to keep temporary files
+
+    Returns
+    -------
+    out_df : pandas.DataFrame
+        dataframe containing blast hits
+    """
 
     # make a 10-character random string for temporary files
     tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
@@ -271,66 +249,6 @@ def _local_blast_thread_function(sequence_list,
     return out_df
 
 
-# def _thread(args):
-#     """
-#     Run blast on a thread. Should only be called via _thread_manager.
-#     Puts resulting hits as a pandas dataframe into the queue
-#
-#     Parameters
-#     ----------
-#         args. list that is expanded as follows:
-#
-#         sequence_list: list of sequences as strings
-#         index: sequence to grab
-#         blast_kwargs: keyword arguments to pass to blast call
-#         blast_function: blast function to call
-#         keep_tmp: whether or not to keep temporary files
-#         queue: multiprocessing queue for storing results
-#
-#     Return
-#     ------
-#         None
-#     """
-#
-#     # parse args
-#     sequence_list = args[0]
-#     index = args[1]
-#     blast_function = args[2]
-#     blast_kwargs = args[3]
-#     keep_tmp = args[4]
-#     queue = args[5]
-#
-#     # make a 10-character random string for temporary files
-#     tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
-#     input_file = "topiary-tmp_{}_blast-in.fasta".format(tmp_file_root)
-#     out_file = "topiary-tmp_{}_blast-out.xml".format(tmp_file_root)
-#
-#     f = open(input_file,'w')
-#     for i in range(index[0],index[1]):
-#         f.write("".join(f">count{i}\n{sequence_list[i]}\n"))
-#     f.close()
-#
-#     blast_kwargs = copy.deepcopy(blast_kwargs)
-#     blast_kwargs["query"] = input_file
-#     blast_kwargs["out"] = out_file
-#
-#     blast_function(**blast_kwargs)()
-#
-#     # Parse output
-#     try:
-#         out_df = read_blast_xml(out_file)
-#     except FileNotFoundError:
-#         err = "\nLocal blast failed on sequence:\n"
-#         err += f"    '{sequence_list[i]}'\n\n"
-#         raise RuntimeError(err)
-#
-#     # Delete temporary files
-#     if not keep_tmp:
-#         os.remove(input_file)
-#         os.remove(out_file)
-#
-#     # update queue
-#     queue.put((index[0],out_df))
 
 def _combine_hits(hits,return_singleton):
     """

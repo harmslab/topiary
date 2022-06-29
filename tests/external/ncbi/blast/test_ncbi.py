@@ -268,22 +268,19 @@ def test__construct_args(test_dataframes):
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[i]
 
         # useful kwargs
-        assert a[0]["database"] == "nr"
-        assert a[0]["hitlist_size"] == '100'
-        assert a[0]["program"] == "blastp"
-        assert a[0]["expect"] == '0.001'
-        assert a[0]["gapcosts"] == '11 1'
-        assert a[0]["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
-
-        # Make sure counter is working
-        assert a[1] == i
+        assert a["this_query"]["database"] == "nr"
+        assert a["this_query"]["hitlist_size"] == '100'
+        assert a["this_query"]["program"] == "blastp"
+        assert a["this_query"]["expect"] == '0.001'
+        assert a["this_query"]["gapcosts"] == '11 1'
+        assert a["this_query"]["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
 
         # Num tries allowed
-        assert a[2] == 5
+        assert a["num_tries_allowed"] == 5
 
     # -------------------------------------------------------------------------
     # test sequence bits
@@ -297,7 +294,7 @@ def test__construct_args(test_dataframes):
                                 test_num_cores=5)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
     assert num_threads == 1
 
     # Machine as two core, auto detect cores. Should have two args
@@ -310,8 +307,8 @@ def test__construct_args(test_dataframes):
                                 test_num_cores=2)
 
     assert len(all_args) == 2
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[1][0]["sequence"].split("\n")[1] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[1]["this_query"]["sequence"].split("\n")[1] == "this"
     assert num_threads == 2
 
     # Machine as one core, auto detect cores. Should have one arg
@@ -324,8 +321,8 @@ def test__construct_args(test_dataframes):
                                 test_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[0][0]["sequence"].split("\n")[3] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[3] == "this"
     assert num_threads == 1
 
     # Machine as one core. Pass in 2. Should have one arg, one thread
@@ -338,8 +335,8 @@ def test__construct_args(test_dataframes):
                                 test_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[0][0]["sequence"].split("\n")[3] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[3] == "this"
     assert num_threads == 1
 
 
@@ -353,8 +350,8 @@ def test__construct_args(test_dataframes):
                                 num_threads=-1,
                                 test_num_cores=1)
     assert len(all_args) == 2
-    assert all_args[0][0]["sequence"].split("\n")[1] == 25*"test"
-    assert all_args[1][0]["sequence"].split("\n")[1] == 25*"this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == 25*"test"
+    assert all_args[1]["this_query"]["sequence"].split("\n")[1] == 25*"this"
     assert num_threads == 1
 
     # -------------------------------------------------------------------------
@@ -389,7 +386,7 @@ def test__construct_args(test_dataframes):
                                 test_num_cores=1)
 
     assert len(all_args) == 1
-    seqs = all_args[0][0]["sequence"].split("\n")
+    seqs = all_args[0]["this_query"]["sequence"].split("\n")
     idx = [1,3,5,7,9]
     for i in range(5):
         assert seqs[idx[i]].strip() == df.sequence.iloc[i]
@@ -417,7 +414,7 @@ def test__construct_args(test_dataframes):
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[i]
 
 
@@ -434,7 +431,7 @@ def test__construct_args(test_dataframes):
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[counter]
         counter += 2
 
@@ -451,7 +448,7 @@ def test__construct_args(test_dataframes):
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[counter]
         counter += 3
 
@@ -475,7 +472,7 @@ def test__construct_args(test_dataframes):
                                 num_tries_allowed=7,
                                 num_threads=1,
                                 test_num_cores=1)
-    assert all_args[0][2] == 7
+    assert all_args[0]["num_tries_allowed"] == 7
 
 
     bad_int = [0,False,[],-1,None,str,"",{},int]

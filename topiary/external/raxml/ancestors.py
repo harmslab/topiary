@@ -650,7 +650,7 @@ def generate_ancestors(previous_dir=None,
                        alt_cutoff=0.25,
                        output=None,
                        overwrite=False,
-                       threads=-1,
+                       num_threads=-1,
                        raxml_binary=RAXML_BINARY):
     """
     Generate ancestors and various summary outputs. Creates fasta file and csv
@@ -682,7 +682,7 @@ def generate_ancestors(previous_dir=None,
         with form "generate_ancestors_randomletters"
     overwrite : bool, default=False
         whether or not to overwrite existing output
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads to use. if -1, use all avaialable
     raxml_binary : str, optional
         what raxml binary to use
@@ -724,7 +724,7 @@ def generate_ancestors(previous_dir=None,
                     model=model,
                     seed=True,
                     dir_name="working_inference",
-                    threads=threads,
+                    num_threads=num_threads,
                     raxml_binary=raxml_binary)
 
     anc_prob_file = os.path.join("working_inference",

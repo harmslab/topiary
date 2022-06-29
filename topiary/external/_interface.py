@@ -415,8 +415,9 @@ def _follow_log_generator(f,queue):
 
 def launch(cmd,run_directory,log_file=None):
     """
-    Launch an external command in a specific directory. Runs command on its own
-    thread, allowing python to capture output from a file as standard output.
+    Launch an external command in a specific directory. If log_file is
+    specified, runs command on its own thread, allowing python to capture output
+    from a file as standard output.
 
     Parameters
     ----------
@@ -430,14 +431,14 @@ def launch(cmd,run_directory,log_file=None):
         output of the log file is captured and written to standard output
         (equivalent to `tail -f log_file`).
 
-    Return
-    ------
+    Returns
+    -------
     None
 
     Raises
     ------
     RuntimeError :
-        If the command itself terminates unexpectedly.
+        If the command terminates unexpectedly.
     """
 
     # Go into working directory
@@ -448,15 +449,19 @@ def launch(cmd,run_directory,log_file=None):
     full_cmd = " ".join(cmd)
     print(f"Running '{full_cmd}'",flush=True)
 
-    # Launch as a multiprocessing process that will return its output to a
-    # multiprocessing queue.
-    queue = mp.Queue()
-    main_process = mp.Process(target=_follow_log_subproc_wrapper,
-                              args=(cmd,subprocess.PIPE,queue))
-    main_process.start()
+    # If no log file specified, run directly
+    if log_file is None:
+        ret = subprocess.run(cmd)
 
-    # If following a log
-    if log_file is not None:
+    # Otherwise, run on it's own thread and capture output to standard out
+    else:
+
+        # Launch as a multiprocessing process that will return its output to a
+        # multiprocessing queue.
+        queue = mp.Queue()
+        main_process = mp.Process(target=_follow_log_subproc_wrapper,
+                                  args=(cmd,subprocess.PIPE,queue))
+        main_process.start()
 
         # If queue is not empty, the job has finished and put its return value
         # into the queue
@@ -474,9 +479,10 @@ def launch(cmd,run_directory,log_file=None):
             except FileNotFoundError:
                 time.sleep(1)
 
-    # Wait for main process to complete and get return
-    ret = queue.get()
-    main_process.join()
+        # Wait for main process to complete and get return
+        ret = queue.get()
+        main_process.join()
+
 
     # Check for error on return
     if ret.returncode != 0:

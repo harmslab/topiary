@@ -8,6 +8,7 @@ RAXML_BINARY = "raxml-ng"
 
 import topiary
 import topiary.external._interface as interface
+from topiary._private import threads
 
 import pandas as pd
 import multiprocessing as mp
@@ -19,7 +20,7 @@ def run_raxml(algorithm=None,
               model=None,
               dir_name=None,
               seed=None,
-              threads=-1,
+              num_threads=-1,
               raxml_binary=RAXML_BINARY,
               log_to_stdout=True,
               other_args=[]):
@@ -42,7 +43,7 @@ def run_raxml(algorithm=None,
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
         that as the seed. (passed via --seed)
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads (passed via --threads). if -1, use all available.
     raxml_binary : str, default=RAXML_BINARY
         raxml binary to use
@@ -107,17 +108,8 @@ def run_raxml(algorithm=None,
             err = "seed must be True/False, int, or string representation of int\n"
             raise ValueError(err)
 
-    # Figure out number of threads to use
-    if threads < 0:
-        try:
-            threads = mp.cpu_count()
-        except NotImplementedError:
-            threads = os.cpu_count()
-            if threads is None:
-                print("Could not determine number of cpus. Using single thread.\n")
-                threads = 1
-
-    cmd.extend(["--threads",f"{threads:d}"])
+    num_threads = threads.get_num_threads(num_threads)
+    cmd.extend(["--threads",f"{num_threads:d}"])
 
     # Put on any custom args
     for a in other_args:
