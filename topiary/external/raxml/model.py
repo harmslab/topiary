@@ -8,11 +8,88 @@ import topiary
 from ._raxml import RAXML_BINARY, run_raxml
 from topiary.external._interface import prep_calc, gen_seed, write_run_information
 from topiary import check
+from topiary._private import threads
 
 import pandas as pd
 import numpy as np
 
-import os, re, shutil, sys
+import os, re, shutil, sys, random, string
+import multiprocessing as mp
+from tqdm.auto import tqdm
+
+
+def _thread_manager(all_kwargs,num_threads,test_num_cores=None):
+    """
+    Run raxml jobs in parallel.
+
+    Parameters
+    ----------
+        all_kwargs: list of kwargs to pass for each calculation
+        num_threads: number of threads to use
+    """
+
+    num_threads = threads.get_num_threads(num_threads)
+
+    print(f"\nTrying {len(all_kwargs)} combinations of matrix and model parameters")
+    print(f"on {num_threads} threads.\n",flush=True)
+    sys.stdout.flush()
+
+    # queue will hold results from each run.
+    queue = mp.Manager().Queue()
+    all_args = []
+    for i in range(len(all_kwargs)):
+        all_args.append((all_kwargs[i],queue))
+
+    with mp.Pool(num_threads) as pool:
+
+        # Black magic. pool.imap() runs a function on elements in iterable,
+        # filling threads as each job finishes. (Calls _blast_thread
+        # on every args tuple in all_args). tqdm gives us a status bar.
+        # By wrapping pool.imap iterator in tqdm, we get a status bar that
+        # updates as each thread finishes.
+        list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
+
+    # Get results out of the queue.
+    results = []
+    while not queue.empty():
+        results.append(queue.get())
+
+    # Sort results
+    results.sort()
+
+    return results
+
+def _thread(args):
+    """
+
+    Parameters
+    ----------
+        args. list that is expanded as follows:
+
+        kwargs
+        queue
+    Return
+    ------
+        None
+    """
+
+    # parse args
+    kwargs = args[0]
+    queue = args[1]
+
+    run_raxml(**kwargs)
+
+    # Get results from the info file
+    tmp_dir = kwargs["dir_name"]
+    info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
+    result = _parse_raxml_info_for_aic(info_file)
+
+    # Nuke temporary directory
+    shutil.rmtree(tmp_dir)
+
+    queue.put((model_counter,model,result))
+
+
 
 def _parse_raxml_info_for_aic(info_file):
     """
@@ -159,9 +236,6 @@ def find_best_model(df,
     model_matrices = check.check_iter(model_matrices,
                                       "model_matrices",
                                       required_value_type=str)
-    model_matrices = list(model_matrices)
-    if "" not in model_matrices:
-        model_matrices.insert(0,"")
 
     # Deal with model rates
     model_rates = check.check_iter(model_rates,
@@ -187,19 +261,21 @@ def find_best_model(df,
     if "" not in model_invariant:
         model_invariant.insert(0,"")
 
-    # Dictionary to hold stats for each model
-    out = {"model":[]}
+    threads = check.check_int(threads,
+                              "threads",
+                              minimum_allowed=-1)
+    if threads == 0:
+        err = "\nthreads cannot be zero. It can be -1 (use all available),\n"
+        err += "or any integer > 0.\n\n"
+        raise ValueError(err)
+
+
 
     seed = gen_seed()
 
-    # All possible models, dropping rate, freq, invariant for LG4M and LG4X.
-    num_models = len(model_matrices)*len(model_rates)*len(model_freqs)*len(model_invariant)
-
-    print(f"\nTrying {num_models} combinations of matrix and model parameters.\n",flush=True)
-    sys.stdout.flush()
-
-    # Go over all combos of the requested matrices, rates, and freqs.
-    model_counter = 1
+    # Go over all combos of the requested matrices, rates, freqs, invariant and
+    # create kwargs for run_raxml calls
+    kwargs_list = []
     for matrix in model_matrices:
         for rate in model_rates:
             for freq in model_freqs:
@@ -210,45 +286,67 @@ def find_best_model(df,
                     model = [m for m in model if m != ""]
                     model = "+".join(model)
 
-                    # Print model number we're trying
-                    print(f"{model} ({model_counter}/{num_models})",flush=True)
-                    model_counter += 1
-
                     # Check for incompatible matrix/freq/rate combos
                     if matrix in ["LG4M","LG4X"]:
                         if rate != "" or freq != "" or invariant != "":
-                            print(f"skpping incompatible model combination {model}",flush=True)
+                            print(f"skipping incompatible model combination {model}",flush=True)
                             continue
 
-                    # Optimize branch lengths etc. on the existing tree. The
-                    # --force model_lh_impr allows calculation to proceed even
-                    # if this particular model didn't optimize well.
-                    run_raxml(algorithm="--evaluate",
-                              alignment_file=alignment_file,
-                              tree_file=tree_file,
-                              model=model,
-                              seed=seed,
-                              dir_name="tmp",
-                              threads=threads,
-                              raxml_binary=raxml_binary,
-                              log_to_stdout=False,
-                              other_args=["--force","model_lh_impr"])
+                    # Make temporary directory
+                    rand = "".join([random.choice(string.ascii_letters)
+                                    for _ in range(10)])
+                    dir_name = f"tmp_{rand}"
 
-                    # Grab the info file from this run
-                    os.chdir("tmp")
+                    kwargs = {"algorithm":"--evaluate",
+                              "alignment_file":alignment_file,
+                              "tree_file":tree_file,
+                              "model":model,
+                              "seed":seed,
+                              "dir_name":dir_name,
+                              "threads":1,
+                              "raxml_binary":raxml_binary,
+                              "log_to_stdout":False}
+                    kwargs_list.append(kwargs)
 
-                    # Get results from the info file
-                    result = _parse_raxml_info_for_aic("alignment.phy.raxml.log")
-                    out["model"].append(model)
-                    for r in result:
-                        try:
-                            out[r].append(result[r])
-                        except KeyError:
-                            out[r] = [result[r]]
 
-                    # Get out of temporary directory and nuke
-                    os.chdir("..")
-                    shutil.rmtree("tmp")
+    # out_list = []
+    # model_counter = 1
+    # for model_counter, kwargs in enumerate(kwargs_list):
+    #
+    #     model = kwargs["model"]
+    #
+    #     # Print model number we're trying
+    #     print(f"{model} ({model_counter + 1}/{len(kwargs_list)})",flush=True)
+    #
+    #     # Optimize branch lengths etc. on the existing tree.
+    #     run_raxml(**kwargs)
+    #
+    #     # Get results from the info file and store in out_list
+    #     tmp_dir = kwargs["dir_name"]
+    #     info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
+    #     result = _parse_raxml_info_for_aic(info_file)
+    #     out_list.append((model_counter,model,result))
+    #
+    #     # Nuke temporary directory
+    #     shutil.rmtree(tmp_dir)
+
+
+    out_list = _thread_manager(kwargs_list,threads)
+
+    # Sort out_list by model counter
+    #out_list.sort()
+
+    # Go through output list and store results in out
+    out = {"model":[]}
+    for o in out_list:
+
+        out["model"].append(o[1])
+        result = o[2]
+        for r in result:
+            try:
+                out[r].append(result[r])
+            except KeyError:
+                out[r] = [result[r]]
 
     # Create a dataframe sorted best to worst aicc
     final_df = pd.DataFrame(out)

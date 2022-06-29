@@ -15,6 +15,7 @@ def gen_seed():
 
     Return
     ------
+    seed : str
         10-digit integer as a string
     """
 
@@ -26,11 +27,14 @@ def create_new_dir(dir_name=None,overwrite=False):
 
     Parameters
     ----------
-        dir_name: if specified, name the directory this
-        overwrite: overwrite existing directory
+    dir_name : str
+        if specified, name the directory this
+    overwrite : bool, default=False
+        overwrite existing directory
 
     Return
     ------
+    directory : str
         name of created directory
     """
 
@@ -68,13 +72,18 @@ def copy_input_file(input_file,
 
     Parameters
     ----------
-        input_file: file to copy in
-        dir_name: copy into dir_name
-        file_name: what to call file in new directory. If None, use same name.
-        put_in_input_dir: (bool) copy into directory input or not.
+    input_file : str
+        file to copy in
+    dir_name : str
+        copy into dir_name
+    file_name : str, optional
+        what to call file in new directory. If None, use same name.
+    put_in_input_dir : bool, default=True
+        copy into directory input or not.
 
     Return
     ------
+    file : str
         name of copied file
     """
 
@@ -109,11 +118,12 @@ def read_previous_run_dir(previous_dir):
 
     Parameters
     ----------
-        previous_dir: directory of previous run (top level; meaning, ml-tree
-                      not ml-tree/output)
+    previous_dir : str
+        directory of previous run (top level; meaning, ml-tree not ml-tree/output)
 
     Return
     ------
+    out : dict
         dictionary with df, tree_file, and parameters
     """
 
@@ -179,26 +189,35 @@ def prep_calc(previous_dir=None,
               output_base="calculation"):
     """
     Prepare a calculation, organizing input files and creating an output
-    directory.
+    directory. The df, model, and tree_file arguments will override anything
+    pulled out from the previous_dir.
 
     Parameters
     ----------
-        previous_dir: directory containing previous calculation. prep_calc will
-                      grab the the csv, model, and tree from the previous run.
-        These arguments will override anything pulled out from the previous_dir.
-        df: topiary data frame or .csv file written out from a topiary data frame
-        model: phylogenetic model as string (e.g. JTT, LG+G8)
-        tree_file: newick tree file
-        other_files: other files besides the df and tree that are needed
-        output: output directory. If not specified, create an output directory with
-                form "{output_base}_randomletters"
-        overwrite: whether or not to overwrite existing (default is False)
-        output_base: base to assign the directory if no output is specified.
+    previous_dir : str, optional
+        directory containing previous calculation. prep_calc will grab the the
+        csv, model, and tree from the previous run.
+    df : pandas.DataFrame or str, optional
+        topiary data frame or .csv file written out from a topiary data frame
+    model : str, optional
+        phylogenetic model as string (e.g. JTT, LG+G8)
+    tree_file : str, optional
+        newick tree file
+    other_files : list, optional
+        other files besides the df and tree that are needed
+    output : str, optional
+        output directory. If not specified, create an output directory with
+        form "{output_base}_randomletters"
+    overwrite : bool, default=False
+        whether or not to overwrite existing
+    output_base : str, default="calculation"
+        base to assign the directory if no output is specified.
 
     Return
     ------
-        dictionary containing information about the prepared calculation
-        (things like filenames, etc.)
+    out : dict
+        dictionary containing information about the prepared calculation (things
+        like filenames, etc.)
     """
 
     # -------------------------------------------------------------------------
@@ -322,19 +341,22 @@ def prep_calc(previous_dir=None,
 
     return out
 
-def _subproc_wrapper(cmd,stdout,queue):
+def _follow_log_subproc_wrapper(cmd,stdout,queue):
     """
-    Wrap the subprocess.run call to allow multithreading.
+    Wrap the subprocess.run call to allow multithreaded following of a log file.
 
     Parameters
     ----------
-        args: args to pass to subprocess.run
-        kwargs: kwargs to pass to subprocess.run
-        queue: multiprocessing queue to catch return value
+    cmd : list
+        args to pass to subprocess.run
+    stdout : subprocess.PIPE
+        where to write standard output
+    queue : multiprocessing.Queue
+        multiprocessing queue to catch return value
 
     Return
     ------
-        None
+    None
     """
 
     ret = subprocess.run(cmd,stdout=stdout)
@@ -349,12 +371,14 @@ def _follow_log_generator(f,queue):
 
     Parameters
     ----------
-        f: open file object
-        queue: multiprocessing.Queue object
+    f : open file object
+        log file to read
+    queue: multiprocessing.Queue object
+        multiprocessing queue to append output from file
 
     Return
     ------
-        None
+    None
     """
 
     # start infinite loop
@@ -396,16 +420,24 @@ def launch(cmd,run_directory,log_file=None):
 
     Parameters
     ----------
-        cmd: subprocess style command list (i.e. ["ls","-al"])
-        run_directory: directory in which to run the command. changes into that
-                       directory, then returns out when process completes
-        log_file: log file where command output will be stored. if specified, the
-                  output of the log file is captured and written to standard output
-                  (equivalent to `tail -f log_file`).
+    cmd : list
+        subprocess style command list (i.e. ["ls","-al"])
+    run_directory : str
+        directory in which to run the command. changes into that directory, then
+        returns back from that directory when process completes
+    log_file : str, optional
+        log file where command output will be stored. if specified, the
+        output of the log file is captured and written to standard output
+        (equivalent to `tail -f log_file`).
 
     Return
     ------
-        None. Throws RuntimeError if the command terminates unexpectedly.
+    None
+
+    Raises
+    ------
+    RuntimeError :
+        If the command itself terminates unexpectedly.
     """
 
     # Go into working directory
@@ -419,7 +451,7 @@ def launch(cmd,run_directory,log_file=None):
     # Launch as a multiprocessing process that will return its output to a
     # multiprocessing queue.
     queue = mp.Queue()
-    main_process = mp.Process(target=_subproc_wrapper,
+    main_process = mp.Process(target=_follow_log_subproc_wrapper,
                               args=(cmd,subprocess.PIPE,queue))
     main_process.start()
 
@@ -467,16 +499,22 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
 
     Parameters
     ----------
-        outdir: output directory (i.e. ml-run/output)
-        df: dataframe to write to dataframe.csv
-        calc_type: calculation type (string)
-        model: model (string)
-        cmd: command invoked to raxml or generax (string)
-        outgroup: length 2 list with two sets of outgroups
+    outdir : str
+        output directory (i.e. ml-run/output)
+    df : pandas.DataFrame
+        dataframe to write to dataframe.csv
+    calc_type : str
+        calculation type (human readable description)
+    model : str
+        phylogenetic model
+    cmd : str
+        invoked raxml or generax command
+    outgroup : list, optional
+        length 2 list with two sets of outgroups
 
     Return
     ------
-        None
+    None
     """
 
     # Dataframe

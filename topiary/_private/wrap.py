@@ -1,45 +1,9 @@
 """
-Private utility functions that are not publicly exposed in the API.
+Construct a command line argument parser for a function, parse the command
+line arguments, and then run the function.
 """
 
-import string, random, sys, inspect, argparse, re, os
-
-required_columns = ["species","name","sequence"]
-reserved_columns = required_columns[:]
-reserved_columns.extend(["uid","ott","alignment","keep","always_keep"])
-
-# Data going into a newick tree can't have any of these symbols. We also reserve
-# the '#' character for comments.
-reserved_characters = ["(",")",";","#",":",",","'","\""]
-
-def generate_uid(number=1):
-    """
-    Generate a unique uid. This will be a 10 character random combination of
-    ascii letters.
-
-    Parameters
-    ----------
-        number: number of uid to generate. if 1, return a single uid. if > 1,
-                return a list of uid.
-
-    Return
-    ------
-        uid or list of uid
-    """
-
-    if number < 1:
-        err = "number must be 1 or more\n"
-        raise ValueError(err)
-
-    out = []
-    for n in range(number):
-        out.append("".join([random.choice(string.ascii_letters)
-                            for _ in range(10)]))
-
-    if number == 1:
-        return out[0]
-
-    return out
+import sys, inspect, argparse, re, os
 
 class IterFromFile(argparse.Action):
     """
@@ -122,9 +86,9 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
     ----------
     fcn : function
         function to run.
-    argv : list
+    argv : list, optional
         arguments to parse. if None, use sys.argv[1:]
-    optional_arg_types : dict
+    optional_arg_types : dict, optional
         dictionary of arg types for arguments with None as their default in the
         function. If an argument where default is None is not in
         optional_arg_types, treat argument as str.

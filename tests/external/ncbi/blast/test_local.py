@@ -212,39 +212,39 @@ def test__construct_args(test_dataframes,tmpdir):
 
     # Run in configuration where we will have one query per core (5 threads,
     # 5 cores, 5 input sequences, long max_query_length)
-    all_args, num_threads = _ca(sequence_list=sequence_list,
-                                blast_function=blast_function,
-                                blast_kwargs=blast_kwargs,
-                                num_threads=5,
-                                keep_tmp=False,
-                                block_size=1,
-                                test_num_cores=5)
+    kwargs_list, num_threads = _ca(sequence_list=sequence_list,
+                                   blast_function=blast_function,
+                                   blast_kwargs=blast_kwargs,
+                                   num_threads=5,
+                                   keep_tmp=False,
+                                   block_size=1,
+                                   test_num_cores=5)
 
-    assert type(all_args) is list
-    assert len(all_args) == 5
+    assert type(kwargs_list) is list
+    assert len(kwargs_list) == 5
     assert num_threads == 5
 
-    for i, a in enumerate(all_args):
+    for i, a in enumerate(kwargs_list):
 
         # Make sure it's pulling out sequences
-        sequences = a[0]
+        sequences = a["sequence_list"]
         for j in range(len(sequences)):
             assert sequences[j] == df.sequence.iloc[j]
 
         # Make sure counter is working
-        assert a[1][0] == i
-        assert a[1][1] == i + 1
+        assert a["index"][0] == i
+        assert a["index"][1] == i + 1
 
-        assert a[2] == apps.NcbiblastpCommandline
+        assert a["blast_function"] == apps.NcbiblastpCommandline
 
         # useful kwargs
-        assert a[3]["max_target_seqs"] == 100
-        assert a[3]["threshold"] == 0.001
-        assert a[3]["gapopen"] == 11
-        assert a[3]["gapextend"] == 1
+        assert a["blast_kwargs"]["max_target_seqs"] == 100
+        assert a["blast_kwargs"]["threshold"] == 0.001
+        assert a["blast_kwargs"]["gapopen"] == 11
+        assert a["blast_kwargs"]["gapextend"] == 1
 
-        # Num tries allowed
-        assert a[4] == False
+        # Keep tmp
+        assert a["keep_tmp"] == False
 
     # -------------------------------------------------------------------------
     # test sequence bits
@@ -259,7 +259,7 @@ def test__construct_args(test_dataframes,tmpdir):
                                 test_num_cores=5)
 
     assert len(all_args) == 1
-    assert all_args[0][0][all_args[0][1][0]] == "test"
+    assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
     assert num_threads == 1
 
     # Machine as two core, auto detect cores. Should have two args
@@ -273,8 +273,8 @@ def test__construct_args(test_dataframes,tmpdir):
                                 test_num_cores=2)
 
     assert len(all_args) == 2
-    assert all_args[0][0][all_args[0][1][0]] == "test"
-    assert all_args[1][0][all_args[1][1][0]] == "this"
+    assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
+    assert all_args[1]["sequence_list"][all_args[1]["index"][0]] == "this"
     assert num_threads == 2
 
     # Machine as one core, auto detect cores. Should have one arg
@@ -288,8 +288,8 @@ def test__construct_args(test_dataframes,tmpdir):
                                 test_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][0][all_args[0][1][0]] == "test"
-    assert all_args[0][0][all_args[0][1][0]+1] == "this"
+    assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
+    assert all_args[0]["sequence_list"][all_args[0]["index"][0]+1] == "this"
     assert num_threads == 1
 
     # -------------------------------------------------------------------------
@@ -322,8 +322,8 @@ def test__construct_args(test_dataframes,tmpdir):
                                 test_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][1][0] == 0
-    assert all_args[0][1][1] == 5
+    assert all_args[0]["index"][0] == 0
+    assert all_args[0]["index"][1] == 5
 
     # Make sure splitting looks reasonable -- each sequence on own
     all_args, num_threads = _ca(sequence_list,
@@ -336,7 +336,7 @@ def test__construct_args(test_dataframes,tmpdir):
 
     assert len(all_args) == 5
     for i, a in enumerate(all_args):
-        seq = all_args[i][0][all_args[i][1][0]]
+        seq = all_args[i]["sequence_list"][all_args[i]["index"][0]]
         assert seq == df.sequence.iloc[i]
 
 
@@ -352,7 +352,7 @@ def test__construct_args(test_dataframes,tmpdir):
     assert len(all_args) == 3
     counter = 0
     for i, a in enumerate(all_args):
-        seq = all_args[i][0][all_args[i][1][0]]
+        seq = all_args[i]["sequence_list"][all_args[i]["index"][0]]
         assert seq == df.sequence.iloc[counter]
         counter += 2
 
@@ -368,7 +368,7 @@ def test__construct_args(test_dataframes,tmpdir):
     assert len(all_args) == 2
     counter = 0
     for i, a in enumerate(all_args):
-        seq = all_args[i][0][all_args[i][1][0]]
+        seq = all_args[i]["sequence_list"][all_args[i]["index"][0]]
         assert seq == df.sequence.iloc[counter]
         counter += 3
 
@@ -393,7 +393,7 @@ def test__construct_args(test_dataframes,tmpdir):
                                 keep_tmp=False,
                                 num_threads=3,
                                 test_num_cores=None)
-    assert all_args[0][4] is False
+    assert all_args[0]["keep_tmp"] is False
 
     all_args, num_threads = _ca(sequence_list,
                                 blast_function=blast_function,
@@ -402,7 +402,7 @@ def test__construct_args(test_dataframes,tmpdir):
                                 keep_tmp=True,
                                 num_threads=3,
                                 test_num_cores=None)
-    assert all_args[0][4] is True
+    assert all_args[0]["keep_tmp"] is True
 
 
     bad_bool = [1.5,[],None,str,"",{}]

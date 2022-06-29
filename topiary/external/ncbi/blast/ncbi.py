@@ -5,6 +5,7 @@ Run BLAST against a remote NCBI database.
 import topiary
 from topiary import check
 from .util import read_blast_xml, _standard_blast_args_checker
+from topiary._private import threads
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
@@ -204,34 +205,7 @@ def _construct_args(sequence_list,
                                         "num_tries_allowed",
                                         minimum_allowed=1)
 
-    num_threads = check.check_int(num_threads,
-                                  "num_threads",
-                                  minimum_allowed=-1)
-    if num_threads == 0:
-        err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
-        err += "or any integer > 0.\n\n"
-        raise ValueError(err)
-
-
-    if test_num_cores is not None:
-        num_cores = test_num_cores
-    else:
-
-        # Try to figure out how many cores are available
-        try:
-            num_cores = mp.cpu_count()
-        except NotImplementedError:
-            num_cores = os.cpu_count()
-
-        # If we can't figure it out, revert to 1. (os.cpu_count() gives None
-        # if the number of cores unknown).
-        if num_cores is None:
-            print("Could not determine number of cpus. Using single thread.",flush=True)
-            num_cores = 1
-
-    # Set number of threads
-    if num_threads == -1 or num_threads > num_cores:
-        num_threads = num_cores
+    num_threads = threads.get_num_threads(num_threads,test_num_cores)
 
     # Make sure sequence_list is an array
     sequence_list = np.array(sequence_list)
@@ -337,7 +311,10 @@ def _thread_manager(all_args,num_threads):
         # on every args tuple in all_args). tqdm gives us a status bar.
         # By wrapping pool.imap iterator in tqdm, we get a status bar that
         # updates as each thread finishes.
-        list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
+        if num_threads > 1:
+            list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
+        else:
+            list(pool.imap(_thread,all_args))
 
     # Get results out of the queue.
     results = []
@@ -512,6 +489,7 @@ def ncbi_blast(sequence,
                max_query_length=80000,
                num_tries_allowed=5,
                num_threads=1,
+               verbose=False,
                **kwargs):
     """
     Perform a blast query against a remote NCBI blast database. Takes a sequence
@@ -547,6 +525,8 @@ def ncbi_blast(sequence,
         try num_tries_allowed times in case of server timeout
     num_threads : int, default=1
         number of threads to use. if -1, use all available.
+    verbose : bool, default=False
+        whether or not to use verbose output
     **kwargs : dict, optional
         extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
         overriding anything constructed above. You could, for example, pass
