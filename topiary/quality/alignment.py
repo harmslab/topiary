@@ -3,7 +3,7 @@ Functions for cleaning up an alignment, removing poorly aligned sequences.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import pandas as pd
 import numpy as np

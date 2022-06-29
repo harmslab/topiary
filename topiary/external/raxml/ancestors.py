@@ -7,7 +7,7 @@ import topiary
 from ._raxml import run_raxml, RAXML_BINARY
 from topiary.external._interface import create_new_dir, copy_input_file
 from topiary.external._interface import prep_calc, write_run_information
-from topiary import check
+from topiary._private import check
 
 import pastml.acr
 import ete3

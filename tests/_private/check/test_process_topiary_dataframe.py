@@ -1,7 +1,7 @@
 import pytest
 
 import topiary
-from topiary.check import check_topiary_dataframe
+from topiary._private.check import check_topiary_dataframe
 
 import numpy as np
 import pandas as pd

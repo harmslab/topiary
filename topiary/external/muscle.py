@@ -3,7 +3,7 @@ Interface to muscle, compatible with muscle 3.8 and 5.1.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 from topiary._private import installed
 import pandas as pd
 import subprocess, sys, os, random, string, re, warnings

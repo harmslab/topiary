@@ -2,7 +2,8 @@
 Functions for interacting with NCBI databases and file types.
 """
 
-from topiary import util, check
+from topiary import util
+from topiary._private import check
 
 import pandas as pd
 import numpy as np

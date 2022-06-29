@@ -1,6 +1,6 @@
 
 import topiary
-from topiary.check import check_bool, check_float, check_int, check_iter
+from topiary._private.check import check_bool, check_float, check_int, check_iter
 
 import pytest
 import numpy as np

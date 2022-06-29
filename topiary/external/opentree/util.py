@@ -3,7 +3,7 @@ Basic interface to opentree.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 from opentree import OT, taxonomy_helpers
 import dendropy as dp

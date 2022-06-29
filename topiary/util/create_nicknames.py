@@ -2,7 +2,8 @@
 Create a nickname column that has a friendly nickname for each sequence.
 """
 
-from topiary import _private, check
+import topiary
+from topiary._private import check, reserved_columns
 
 import pandas as pd
 import numpy as np
@@ -71,7 +72,7 @@ def create_nicknames(df,
         raise ValueError(err)
 
     # Make sure the output column is not reserved by topiary
-    if output_column in _private.reserved_columns:
+    if output_column in reserved_columns:
         err = f"\n'{output_column}' is a reserved column name. Please choose\n"
         err += "another column name.\n\n"
         raise ValueError(err)

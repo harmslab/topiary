@@ -3,7 +3,7 @@ Run BLAST against a local database.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 from topiary._private import threads
 from .util import read_blast_xml, _standard_blast_args_checker
 

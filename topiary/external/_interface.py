@@ -3,6 +3,7 @@ Generic interface for wrapping external programs.
 """
 
 import topiary
+from topiary._private import check
 
 import pandas as pd
 
@@ -248,7 +249,7 @@ def prep_calc(previous_dir=None,
 
         # Read dataframe
         if type(df) is pd.DataFrame:
-            df = topiary.check.check_topiary_dataframe(df)
+            df = check.check_topiary_dataframe(df)
 
         # Read csv
         elif type(df) is str:

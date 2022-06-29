@@ -3,7 +3,7 @@ Functions for reading and writing dataframes.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import pandas as pd
 import numpy as np
@@ -93,7 +93,7 @@ def write_dataframe(df,out_file,overwrite=False):
     """
 
     # Validate dataframe before writing out
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:

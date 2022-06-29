@@ -1,6 +1,7 @@
 import pytest
 
 import topiary
+from topiary._private import check
 import topiary.external._interface as interface
 import numpy as np
 import pandas as pd
@@ -154,7 +155,7 @@ def test_read_previous_run_dir(run_directories,tmpdir):
         except KeyError:
             pass
         # This will throw an error if the dataframe read is bad
-        topiary.check.check_topiary_dataframe(out["df"])
+        check.check_topiary_dataframe(out["df"])
 
 
 def test_prep_calc(xml_to_anc_output,tmpdir):

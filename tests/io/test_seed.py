@@ -2,7 +2,7 @@
 import pytest
 
 import topiary
-from topiary import check
+from topiary._private import check
 from topiary.io.seed import _get_string_variants, _get_alias_regex
 from topiary.io.seed import load_seed_dataframe
 

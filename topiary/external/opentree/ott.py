@@ -3,7 +3,7 @@ Get OTT ids given a topiary dataframe.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 from topiary.external.opentree.util import species_to_ott
 
 from opentree import OT, taxonomy_helpers

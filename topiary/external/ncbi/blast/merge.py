@@ -3,7 +3,7 @@ Merge dataframes from multiple BLAST queries.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import numpy as np
 import pandas as pd

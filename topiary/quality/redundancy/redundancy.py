@@ -3,7 +3,7 @@ Remove redundancy for datasets in a semi-intelligent way.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 from ._block import _check_block_redundancy
 

@@ -2,7 +2,8 @@
 Shared functions for dealing with NCBI blast.
 """
 
-from topiary import util, check
+from topiary import util
+from topiary._private import check
 
 import pandas as pd
 import numpy as np

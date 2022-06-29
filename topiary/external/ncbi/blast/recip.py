@@ -3,7 +3,7 @@ Reciprocal blast sequences.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 from .ncbi import ncbi_blast
 from .local import local_blast
 

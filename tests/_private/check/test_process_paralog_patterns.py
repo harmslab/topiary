@@ -2,7 +2,7 @@
 import pytest
 
 import topiary
-from topiary.check import check_paralog_patterns
+from topiary._private.check import check_paralog_patterns
 
 import numpy as np
 import pandas as pd

@@ -3,7 +3,7 @@ Use entrez to get the NCBI taxid for species.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 from Bio import Entrez
 

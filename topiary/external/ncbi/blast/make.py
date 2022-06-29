@@ -3,7 +3,7 @@ Construct a blast database.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import os, subprocess, gzip, random, string
 

@@ -2,7 +2,7 @@
 Multithreading functions.
 """
 
-from topiary import check
+from topiary._private import check
 
 import os
 import multiprocessing as mp

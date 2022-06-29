@@ -3,7 +3,7 @@ Use entrez to download a proteome from the NCBI.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 from Bio import Entrez
 

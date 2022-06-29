@@ -3,7 +3,7 @@ Functions for reading and writing alignments to files.
 """
 
 import topiary
-from topiary import check, _private
+from topiary._private import check
 
 import pandas as pd
 import numpy as np
@@ -25,7 +25,7 @@ def _validate_seq_writer(df,
     For argument parameter meanings, see write_fasta and write_phy.
     """
 
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
@@ -312,7 +312,7 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     Load sequences from a fasta file into an existing topiary dataframe. This
     function expects the fasta file to have names formated like >uid|other stuff.
     It will match the uid in the fasta file with the uid in the topiary dataframe.
-    If a uid is not in the dataframe, the function will raise an error. 
+    If a uid is not in the dataframe, the function will raise an error.
 
     Parameters
     ----------

@@ -9,7 +9,6 @@ from . import util
 from . import draw
 from . import pipeline
 from . import _private
-#from . import check
 from . import pipeline
 
 from .external import generax

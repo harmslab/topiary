@@ -4,7 +4,7 @@ Sample sequences from a topiary dataframe in a taxonomically informed way.
 
 import topiary
 from topiary.quality import score_alignment
-from topiary import check
+from topiary._private import check
 
 import ete3
 

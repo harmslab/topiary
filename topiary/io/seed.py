@@ -4,6 +4,7 @@ ancestral sequence reconstruction calculation.
 """
 
 import topiary
+from topiary._private import check
 
 import numpy as np
 import pandas as pd
@@ -244,6 +245,6 @@ def load_seed_dataframe(df):
     except KeyError:
         df["uid"] = topiary._private.generate_uid(len(df["always_keep"]))
 
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     return df, phylo_context, key_species, paralog_patterns

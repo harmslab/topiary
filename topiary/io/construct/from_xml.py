@@ -3,7 +3,8 @@ Construct a topiary dataframe from NCBI blast xml files.
 """
 
 import topiary
-from topiary import check, _private, ncbi
+from topiary import ncbi
+from topiary._private import check, generate_uid
 
 import pandas as pd
 import numpy as np
@@ -161,7 +162,7 @@ def df_from_blast_xml(xml_input):
         out["start"].append(start-1)
         out["end"].append(end)
 
-        out["uid"].append(_private.generate_uid())
+        out["uid"].append(generate_uid())
 
         out["keep"].append(True)
 

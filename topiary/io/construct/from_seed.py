@@ -3,7 +3,7 @@ Construct a topiary dataframe from a seed dataframe.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import numpy as np
 import pandas as pd
@@ -151,7 +151,7 @@ def df_from_seed(seed_df,
     # convert to a topiary dataframe
     df["uid"] = topiary._private.generate_uid(len(df.sequence))
 
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     df = pd.concat((seed_df,df),ignore_index=True)
 
