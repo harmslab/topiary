@@ -402,7 +402,7 @@ def taxonomic_sample(df,
         print(f"Performing initial alignment of paralog {p}.\n",flush=True)
         this_df = topiary.run_muscle(this_df,super5=True)
 
-        print(f"\nRemoving poorly aligned sequences.\n",flush=True)
+        #print(f"\nRemoving poorly aligned sequences.\n",flush=True)
 
         # Score alignment
         this_df = score_alignment(this_df,
@@ -414,19 +414,19 @@ def taxonomic_sample(df,
         df.loc[paralog_mask,"fx_missing_dense"] = this_df["fx_missing_dense"]
 
         # Remove hardest-to-align to align sequences from consideration
-        tmp = np.array(this_df.sparse_run_length)
-        slicer = int(np.round(len(tmp)*sparse_run_length_keep_percentile,0))
-        sparse_run_length_cutoff = tmp[np.argsort(tmp)][slicer]
-
-        keep_mask = np.product((this_df.sparse_run_length < sparse_run_length_cutoff,
-                                this_df.fx_missing_dense < fx_missing_dense_cutoff),axis=0)
-
-        df.loc[paralog_mask,"keep"] = np.logical_and(df.loc[paralog_mask,"keep"],
-                                                     keep_mask)
-
-        if np.sum(keep_mask) == 0:
-            err = f"alignment quality pass removed all sequences for paralog {p}!\n"
-            raise ValueError(err)
+        # tmp = np.array(this_df.sparse_run_length)
+        # slicer = int(np.round(len(tmp)*sparse_run_length_keep_percentile,0))
+        # sparse_run_length_cutoff = tmp[np.argsort(tmp)][slicer]
+        #
+        # keep_mask = np.product((this_df.sparse_run_length < sparse_run_length_cutoff,
+        #                         this_df.fx_missing_dense < fx_missing_dense_cutoff),axis=0)
+        #
+        # df.loc[paralog_mask,"keep"] = np.logical_and(df.loc[paralog_mask,"keep"],
+        #                                              keep_mask)
+        #
+        # if np.sum(keep_mask) == 0:
+        #     err = f"alignment quality pass removed all sequences for paralog {p}!\n"
+        #     raise ValueError(err)
 
 
     print(f"\nInitial sequence quality control: {starting_keep} --> {np.sum(df.keep)} sequences.\n",flush=True)

@@ -6,6 +6,8 @@ informed fashion, and generates an alignment.
 
 import topiary
 
+from topiary._private import installed
+
 import numpy as np
 import pandas as pd
 
@@ -89,6 +91,17 @@ def seed_to_alignment(seed_df,
     topiary_dataframe : pandas.DataFrame
         Topiary dataframe with aligned, quality-controlled sequences.
     """
+
+    # Make sure the software stack is valid before doing anything
+    installed.validate_stack([{"program":"blastp",
+                               "min_version":topiary._private.software_requirements["blastp"],
+                               "must_pass":True},
+                              {"program":"makeblastdb",
+                               "min_version":topiary._private.software_requirements["makeblastdb"],
+                               "must_pass":True},
+                              {"program":"muscle",
+                               "min_version":topiary._private.software_requirements["muscle"],
+                               "must_pass":True}])
 
     # Try to create the output directory
     out_dir = str(out_dir)

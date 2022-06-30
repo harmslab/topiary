@@ -149,7 +149,7 @@ def _run_muscle(input_fasta,
     """
 
     # Check muscle version
-    muscle_version = installed.check_muscle()
+    binary, muscle_version = installed.check_muscle()
     if muscle_version == (-2,-2,-2):
         err = f"\nmuscle not found in the PATH ({os.environ['PATH']})\n\n"
         raise RuntimeError(err)

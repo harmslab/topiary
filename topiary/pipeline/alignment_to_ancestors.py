@@ -7,6 +7,7 @@ and then infers ancestral proteins.
 import topiary
 from topiary.external.raxml import RAXML_BINARY
 from topiary.external.generax import GENERAX_BINARY
+from topiary._private import installed
 
 import os, random, string, shutil
 
@@ -80,6 +81,15 @@ def alignment_to_ancestors(df,
     None
     """
 
+    # Make sure the software stack is valid before doing anything
+    installed.validate_stack([{"program":"raxml-ng",
+                               "min_version":topiary._private.software_requirements["raxml-ng"],
+                               "must_pass":True},
+                              {"program":"generax",
+                               "min_version":topiary._private.software_requirements["generax"],
+                               "must_pass":True}])
+
+
     # If no output directory is specified, make up a name
     if out_dir is None:
         rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
@@ -134,10 +144,10 @@ def alignment_to_ancestors(df,
 
     topiary.find_best_model(df,
                             tree_file=starting_tree,
-                            # model_matrices
-                            # model_rates
-                            # model_freqs
-                            # model_invariant
+                            model_matrices=model_matrices,
+                            model_rates=model_rates,
+                            model_freqs=model_freqs,
+                            model_invariant=model_invariant,
                             output="00_find-model",
                             threads=num_threads,
                             raxml_binary=raxml_binary)
@@ -158,12 +168,3 @@ def alignment_to_ancestors(df,
                                alt_cutoff=alt_cutoff)
 
     os.chdir(current_dir)
-
-    ## model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
-    ##                 "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
-    ##                 "mtART","mtMAM","mtREV","mtZOA","PMB",
-    ##                 "rtREV","stmtREV","VT","WAG","LG4M","LG4X",
-    ##                 "PROTGTR"],
-    ## model_rates=["","G8"],
-    ## model_freqs=["","FC","FO"],
-    ## model_invariant=["","IO","IC"],

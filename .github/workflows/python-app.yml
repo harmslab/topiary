@@ -51,7 +51,7 @@ jobs:
         $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
         # test with pytest timeout
-        $CONDA/bin/pytest --timeout 60 --timeout_method thread
+        $CONDA/bin/pytest --timeout 300 --timeout_method thread
 
         cd ..
 
