@@ -298,7 +298,7 @@ def test__subproc_wrapper():
 
 def test__follow_log_generator():
     # Function that would require lots of test infrastructure to
-    # run. Logging not critical to results, so skipping.
+    # run. Logging not critical to results, so skipping for now.
     pass
 
 

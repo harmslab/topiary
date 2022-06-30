@@ -20,8 +20,6 @@ def seed_to_alignment(seed_df,
                       local_blast_db=None,
                       within_species_redundancy_cutoff=0.99,
                       sparse_column_cutoff=0.95,
-                      sparse_run_length_keep_percentile=0.98,
-                      fx_missing_dense_cutoff=0.9,
                       align_trim=(0.05,0.95),
                       hitlist_size=5000,
                       e_value_cutoff=0.001,
@@ -56,14 +54,6 @@ def seed_to_alignment(seed_df,
     sparse_column_cutoff : float, default=0.95
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
-    sparse_run_length_keep_percentile : float, 0.98
-        when checking alignment quality, remove the sequences with the longest
-        insertions. Toss the longest (1 - sparse_run_length_keep_percentile)*num_sequences
-        sequences.
-    fx_missing_dense_cutoff : float, default=0.9
-        when checking alignment quality, remove sequences that are missing more
-        than 1 - fx_missing_dense_cutoff of the dense (that is, not sparse,
-        columns).
     align_trim : tuple, default=(0.05,0.95)
         when checking alignment quality, do not score the first and last parts
         of the alignment. Interpreted like a slice, but with percentages.
@@ -187,8 +177,6 @@ def seed_to_alignment(seed_df,
               "key_species":key_species,
               "within_species_redundancy_cutoff":within_species_redundancy_cutoff,
               "sparse_column_cutoff":sparse_column_cutoff,
-              "sparse_run_length_keep_percentile":sparse_run_length_keep_percentile,
-              "fx_missing_dense_cutoff":fx_missing_dense_cutoff,
               "align_trim":align_trim,
               "verbose":verbose}
 
