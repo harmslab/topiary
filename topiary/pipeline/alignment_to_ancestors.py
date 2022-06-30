@@ -70,7 +70,7 @@ def alignment_to_ancestors(df,
         a file with invariants on each line (:code:`--model_invariant SOME_FILE`)
     overwrite : bool, default=False
         whether or not to overwrite existing output
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads to use. if -1 use all available
     raxml_binary : str, optional
         raxml binary to use
@@ -149,12 +149,12 @@ def alignment_to_ancestors(df,
                             model_freqs=model_freqs,
                             model_invariant=model_invariant,
                             output="00_find-model",
-                            threads=num_threads,
+                            num_threads=num_threads,
                             raxml_binary=raxml_binary)
 
     topiary.generate_ml_tree(previous_dir="00_find-model",
                              output="01_ml-tree",
-                             threads=num_threads,
+                             num_threads=num_threads,
                              raxml_binary=raxml_binary,
                              bootstrap=do_bootstrap)
 

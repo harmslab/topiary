@@ -4,7 +4,7 @@ Check for installed external software in the path.
 
 import numpy as np
 
-import subprocess, shutil, os
+import subprocess, shutil, os, re
 
 def _version_checker(cmd,version_slicer):
     """
@@ -96,8 +96,12 @@ def check_generax():
     """
 
     def _version_slicer(ret):
-        return ret.stdout.decode().split("\n")[0].split()[2:][0]
 
+        lines = ret.stdout.decode().split("\n")
+        for line in lines:
+            if re.search("generax",line,flags=re.IGNORECASE):
+                return line.split()[2].strip()
+            
     return _version_checker(["generax"],_version_slicer)
 
 
@@ -263,7 +267,7 @@ def validate_stack(to_check):
 
     binary_tests = {"makeblastdb":check_makeblastdb,
                     "blastp":check_blastp,
-                    "raxml":check_raxml,
+                    "raxml-ng":check_raxml,
                     "generax":check_generax,
                     "muscle":check_muscle,
                     "git":check_git}
