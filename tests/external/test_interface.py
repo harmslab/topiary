@@ -316,6 +316,11 @@ def test_launch(tmpdir,programs):
 
     prg = programs["write_to_file_over_time.py"]
     cmd = [prg,"output.txt","--num_steps","2"]
+
+    # On windows box, we need to inject python as first argument
+    if os.name == "nt":
+        cmd.insert(0,sys.executable)
+
     interface.launch(cmd,out_dir)
 
     f = open(os.path.join(out_dir,"output.txt"))
