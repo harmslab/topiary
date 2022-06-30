@@ -6,7 +6,7 @@ import topiary.external._interface as interface
 import numpy as np
 import pandas as pd
 
-import warnings, os, shutil, glob, json
+import warnings, os, shutil, glob, json, sys
 
 def test_gen_seed():
 
