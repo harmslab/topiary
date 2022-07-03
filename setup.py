@@ -26,14 +26,15 @@ REQUIRED = [
     "openpyxl",
     "matplotlib>=3.4.2",
     "tqdm",
-    "pyqt5",
+    #"pyqt5",
 
     # bioinformatics
     "biopython>=1.78",
     "ete3>=3.1.2",
     "opentree>=1.0.1",
     "dendropy>=4.5.2",
-    "pastml>=1.9.34"
+    "pastml>=1.9.34",
+    "toytree"
 ]
 
 

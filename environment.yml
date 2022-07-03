@@ -2,6 +2,7 @@ name: topiary
 channels:
   - defaults
   - bioconda
+  - conda-forge
 dependencies:
   - openpyxl
   - xlrd
@@ -9,9 +10,9 @@ dependencies:
   - pandas
   - numpy
   - jupyter
-  - pyqt
   - tqdm
   - blast
   - generax
   - muscle
   - raxml-ng
+  - toytree
