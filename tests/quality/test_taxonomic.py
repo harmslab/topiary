@@ -8,7 +8,7 @@ import ete3
 import numpy as np
 import pandas as pd
 
-import random
+import random, os
 
 def test__prep_species_tree(test_dataframes):
 
@@ -437,6 +437,10 @@ def test__identify_merge_blocks():
         assert m[0] == expected_merges[leaves]
 
 def test_taxonomic_sample(for_real_inference,tmpdir):
+
+    # Skip test of windows because muscle cannot be installed by conda
+    if os.name == "nt":
+        return
 
     df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])
 
