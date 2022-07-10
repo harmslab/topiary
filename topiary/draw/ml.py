@@ -4,7 +4,8 @@ Draw a maximum likelihood tree with nodes colored by their bootstrap support.
 
 import topiary
 from topiary.external._interface import read_previous_run_dir
-from ._base import load_trees, create_name_dict, setup_generic_tree_format, final_render
+from .core import load_trees, create_name_dict, final_render
+from .prettytree import PrettyTree
 
 import ete3
 
@@ -12,11 +13,15 @@ def ml_tree(run_dir,
             output_file=None,
             tip_columns=["species","nickname"],
             tip_name_separator="|",
-            fontsize=36,
-            circle_radius=0.025,
-            value_range=(0,100),R=(0.95,0),G=(0.95,0),B=(1,1),
-            width=800,space_between_taxa=10,line_width=4,
-            df=None):
+            support_span=(50,100),
+            color=("white","red"),
+            size=None,
+            font_size=15,
+            stroke_width=2,
+            vertical_pixels_per_taxon=20,
+            min_height=300,
+            df=None,
+            **kwargs):
     """
     Draw a maximum likelihood tree with nodes colored by their bootstrap support.
 
@@ -32,41 +37,53 @@ def ml_tree(run_dir,
     tip_columns: list, default=["species","nickname"]
         label the tree tips as "|".join(tip_columns). For example, if
         tip_columns is ["species","nickname"], tips will have names like
-        'Homo sapiens|LY96'.
+        'Homo sapiens|LY96'. If the name is not unique, the uid will be
+        appended to the name.
     tip_name_separator : str, default="|"
         string to separate columns in tip names ("|" in tip_columns example
-        above.)
-    fontsize : float, default=36
-        fontsize in points for labels
-    circle_radius : float, default=0.025
-        circle size for internal nodes (fraction of total width)
-    value_range : tuple,None default=(0.6,1)
-        tuple holding minimum and maximum values for support color map.
-        (0,100) means miminum support value is 0, maximum support value
-        is 100. If None, disable node color map.
-    R : tuple, default=(0.95,0)
-        tuple holding red channel values for lowest and highest supports.
-    G : tuple, default=(0.95,0)
-        tuple holding green channel values for lowest and highest supports.
-    B : tuple, default=(1.0,1.0)
-        tuple holding blue channel values for lowest and highest supports.
-    width : int, default=800
-        width of total tree in pixels
-    space_between_taxa : int, default=10
-        number of pixels between taxa, sets height.
-    line_width : int, default=4
-        width of lines used to draw tree (pixels)
+        above.) Cannot be "#,;:'\")(" as these are used in newick format.
+    support_span : tuple, default=(50,100)
+        set min/max values for support color calculation. First element
+        is min, second is max. If either is None, take min or max from the
+        min/max of the property
+    color : str or tuple or dict, default=("white","red")
+        set node color. If a single value, color all nodes that color. If
+        list-like and length 2, treat as colors for minimum and maximum of a
+        color gradient.  If dict, map property keys to color values. Colors
+        can be RGBA tuples, named colors, or hexadecimal strings. See the
+        toyplot documentation for allowed values.
+    size : float or tuple or dict, optional
+        set node size. If a single value, make all nodes that size. If
+        list-like and length 2, treat as sizes for minimum and maximum of a
+        size gradient. If dict, map property keys to size values. Sizes must
+        be float >= 0.
+    font_size : float, default=15
+        font size in points for labels
+    stroke_width : int, default=2
+        width of lines drawing tree (pixels)
+    vertical_pixels_per_taxon : int, default=20
+        number of pixels to assign to each taxon when calculating figure
+        height
+    min_height : float, default=300
+        minimum height for figure (pixels)
     df : pandas.DataFrame or None, default=None
         topiary dataframe (overides whatever is in run_dir/output/dataframe.csv)
+    **kwargs : dict, optional
+        pass any other keyword arguments directly to toytree.tree.draw
 
     Returns
     -------
-    Python.core.display.Image or None
-        if running in jupyter notebook, return Image; otherwise, return None
+    plot : toyplot.canvas or None
+        if running in jupyter notebook, return toyplot.canvas; otherwise, return
+        None.
     """
 
     # Load data from previous run
     prev_run = read_previous_run_dir(run_dir)
+
+    # Make sure output file is a string
+    if output_file is not None:
+        output_file = str(output_file)
 
     # Load the tree and relevant information from the run_dir output
     # directory.
@@ -85,71 +102,40 @@ def ml_tree(run_dir,
                                  tip_columns=tip_columns,
                                  separator=tip_name_separator)
 
-    # Set up formats (color map for main nodes, tree format (ts) and generic
-    # node format (ns)).
-    cm, ts, ns = setup_generic_tree_format(num_leaves=len(T.get_leaves()),
-                                           value_range=value_range,
-                                           R=R,G=G,B=B,
-                                           width=width,
-                                           space_between_taxa=space_between_taxa,
-                                           line_width=line_width)
-
+    # Rename leaves and grab supports
+    supports = []
+    for n in T.traverse():
+        if n.is_leaf():
+            n.name = name_dict[n.name]
+        else:
+            supports.append(n.support)
 
     # Figure out if the tree has supports. If the tree did not have supports,
     # ete3 will load it in with a support value of 1.0 for all nodes. This would
     # be very unlikely for a tree with real supports, so use that to look for
     # trees without supports
-    supports = []
-    for n in T.traverse():
-        if not n.is_leaf():
-            supports.append(n.support)
-
     supports_seen = list(set(supports))
     if len(supports_seen) == 1 and supports_seen[0] == 1:
         has_supports = False
     else:
         has_supports = True
 
-    circle_radius = circle_radius*width
+    # Create tree
+    pt = PrettyTree(T,
+                    font_size=font_size,
+                    stroke_width=stroke_width,
+                    vertical_pixels_per_taxon=vertical_pixels_per_taxon,
+                    min_height=min_height,
+                    **kwargs)
+    pt.draw_scale_bar()
 
-    # Traverse T
-    for n in T.traverse():
+    # Draw supports
+    if has_supports:
+        pt.draw_nodes(property_label="support",
+                      prop_span=support_span,
+                      color=color,
+                      size=size)
+        pt.draw_node_labels(property_labels="support")
+        pt.draw_node_legend()
 
-        # Set base style on node of T
-        n.set_style(ns)
-
-        # If this is not a leaf
-        if not n.is_leaf():
-
-            if has_supports:
-
-                if cm is not None:
-
-                    # Get color for node
-                    rgb = cm.hex(float(n.support))
-
-                    # Draw circles on internal nodes
-                    node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
-                    node_circle.margin_right=-circle_radius
-                    n.add_face(node_circle,0,position="branch-right")
-
-                # Wwrite out upport labels
-                anc_label = ete3.TextFace(text=f"{int(round(n.support,0)):d}",fsize=fontsize)
-                anc_label.inner_background.color = "white"
-                anc_label.margin_right = circle_radius
-                anc_label.margin_top = 0
-                n.add_face(anc_label,0,position="float")
-
-        # If this is a leaf
-        else:
-
-            # Get the clean name (rather than uid)
-            clean_name = name_dict[n.name]
-
-            # Add text for clean name
-            n.name = ""
-            txt = ete3.TextFace(clean_name,fsize=fontsize)
-            txt.margin_left = 4
-            n.add_face(txt,0,position="branch-right")
-
-    return final_render(T,ts,output_file,"ml-tree.pdf")
+    return final_render(pt,output_file=output_file,default_file="ml-tree.pdf")

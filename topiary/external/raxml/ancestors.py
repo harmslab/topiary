@@ -303,25 +303,22 @@ def _make_ancestor_summary_trees(df,
                                  tree_file_with_labels,
                                  tree_file_with_supports=None):
     """
-    Make trees summarizing ASR results. Creates three or four newick files:
-        ancestors_label.newick: tree where internal names are labeled with
-                                ancestor names
-        ancestors_pp.newick: tree where supports are avg pp for that ancestor
-        ancestors_support.newick: tree with supports (optional)
-        ancestors_all.newick: tree where internal names are name|pp OR name|pp|support
+    Make trees summarizing ASR results. Creates two or three newick files:
+    + ancestors_label.newick. internal names are labeled with ancestor names
+    + ancestors_pp.newick. internal names are avg pp for that ancestor
+    + ancestors_support.newick. internal names are branch supports
 
     Parameters
     ----------
-        df: topiary data frame
-        avg_pp_dict: dictionary mapping ancestor names to avg ancestor posterior
-                     probability
-        tree_file_with_labels: output from RAxML that has nodes labeled by their
-                               ancestor identity. Should also have branch lengths.
-        tree_file_with_supports: tree file with supports (optional)
-
-    Return
-    ------
-        None
+    df : pandas.DataFrame
+        topiary data frame
+    avg_pp_dict : dict
+        map ancestor names to avg ancestor posterior probability
+    tree_file_with_labels : str
+        output from RAxML that has nodes labeled by their ancestor identity.
+        Tree Should also have branch lengths.
+    tree_file_with_supports : str
+        tree file with branch supports (optional)
     """
 
     # Create label trees
@@ -400,22 +397,26 @@ def _parse_raxml_anc_output(df,
     Parse raxml marginal ancestral state reconstruction output and put out in
     human-readable fashion. Writes fasta file and csv file with ancestors.
     Writes final newick with three trees: ancestor label, posterior probability,
-    and SH support. Creates creates summary plots for all ancestors.
+    and branch support. Creates creates summary plots for all ancestors.
 
     Parameters
     ----------
-        df: topiary data frame
-        anc_prob_file: ancestor posterior probability file as written out by raxml
-        alignment_file: phylip alignment used to create ancestors
-        tree_file_with_labels: output newick tree file written by raxml
-        tree_file_with_supports: newick tree with supports (optional)
-        name: name for output directory
-        alt_cutoff: cutoff (inclusive) for identifying plausible alternate states
-        plot_width_ratio: ratio of main and histogram plot widths for ancestors
-
-    Return
-    ------
-        None
+    df : pandas.DataFrame
+        topiary data frame
+    anc_prob_file : str
+        ancestor posterior probability file as written out by raxml
+    alignment_file : str
+        phylip alignment used to create ancestors
+    tree_file_with_labels : str
+        output newick tree file written by raxml
+    tree_file_with_supports : str, optional
+        newick tree with supports
+    dir_name : str, default="ancestors"
+        name for output directory
+    alt_cutoff : float, default=.25
+        cutoff (inclusive) for identifying plausible alternate states
+    plot_width_ratio : float,default=5
+        ratio of main and histogram plot widths for ancestors
     """
 
     # Make directory and copy in files
@@ -662,7 +663,8 @@ def generate_ancestors(previous_dir=None,
     previous_dir : str, optional
         directory containing previous calculation. function will grab the the
         csv, model, and tree from the previous run. If this is not specified,
-        `df`, `model`, and `tree_file` arguments must be specified.
+        :code:`df`, :code:`model`, and :code:`tree_file` arguments must be
+        specified.
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
         dataframe from `previous_dir` if specified.
@@ -689,9 +691,9 @@ def generate_ancestors(previous_dir=None,
 
     Returns
     -------
-    Python.core.display.Image or None
-        if running in jupyter notebook, return Image of tree with ancestors
-        drawn; otherwise, return None
+    plot : toyplot.canvas or None
+        if running in jupyter notebook, return toyplot.canvas; otherwise, return
+        None.
     """
 
     result = prep_calc(previous_dir=previous_dir,
@@ -772,5 +774,4 @@ def generate_ancestors(previous_dir=None,
                                      output_file=os.path.join(output,
                                                               "output",
                                                               "summary-tree.pdf"))
-    if topiary._in_notebook:
-        return ret
+    return ret

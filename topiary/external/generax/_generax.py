@@ -82,7 +82,7 @@ def setup_generax(df,gene_tree,model,out_dir):
     # lengths to 1.
     for n in species_tree.traverse():
         if n.is_leaf():
-            n.name = copy.deepcopy(n.ott[0])
+            n.name = copy.deepcopy(n.ott)
         if n.dist != 1:
             n.dist = 1
         if n.support != 1:

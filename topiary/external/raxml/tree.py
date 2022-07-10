@@ -52,9 +52,9 @@ def generate_ml_tree(previous_dir=None,
 
     Returns
     -------
-    Python.core.display.Image or None
-        if running in jupyter notebook, return Image of maximum likelihood tree;
-        otherwise, return None
+    plot : toyplot.canvas or None
+        if running in jupyter notebook, return toyplot.canvas; otherwise, return
+        None.
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
@@ -134,5 +134,4 @@ def generate_ml_tree(previous_dir=None,
                                output_file=os.path.join(output,
                                                         "output",
                                                         "summary-tree.pdf"))
-    if topiary._in_notebook:
-        return ret
+    return ret

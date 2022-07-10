@@ -3,7 +3,7 @@ Draw a species tree with tips labeled by species name.
 """
 
 import topiary
-from ._base import setup_generic_tree_format, final_render
+from .core import final_render
 
 import ete3
 

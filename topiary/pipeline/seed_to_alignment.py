@@ -18,6 +18,7 @@ def seed_to_alignment(seed_df,
                       target_seq_number=500,
                       ncbi_blast_db="nr",
                       local_blast_db=None,
+                      local_recip_blast_db=None,
                       within_species_redundancy_cutoff=0.99,
                       sparse_column_cutoff=0.95,
                       align_trim=(0.05,0.95),
@@ -45,9 +46,13 @@ def seed_to_alignment(seed_df,
     ncbi_blast_db : str or None, default="nr"
         NCBI blast database to use. If None, use a local database. Incompatible
         with local_blast_db.
-    local_blast_db : str or None, default=None
+    local_blast_db : str, optional
         Local blast database to use. If None, use an NCBI database. Incompatible
         with ncbi_blast_db.
+    local_recip_blast_db : str, optional
+        Local blast database to use for reciprocal blast. If None, construct a
+        reciprocal blast database by downloading the proteomes of the key
+        species from the ncbi.
     within_species_redundancy_cutoff : float, default=0.99
         merge sequences with sequence identity above cutoff when removing
         redundancy of sequences within species.
@@ -92,21 +97,21 @@ def seed_to_alignment(seed_df,
                               {"program":"muscle",
                                "min_version":topiary._private.software_requirements["muscle"],
                                "must_pass":True}])
-
-    # Try to create the output directory
-    out_dir = str(out_dir)
-    if os.path.exists(out_dir):
-        if os.path.isdir(out_dir):
-            if overwrite:
-                shutil.rmtree(out_dir)
-            else:
-                err = f"\nout_dir '{out_dir}' already exists\n\n"
-                raise FileExistsError(err)
-        else:
-            err = f"\nout_dir '{out_dir}' already exists and is not a directory\n\n"
-            raise FileExistsError(err)
-    os.mkdir(out_dir)
-
+    #
+    # # Try to create the output directory
+    # out_dir = str(out_dir)
+    # if os.path.exists(out_dir):
+    #     if os.path.isdir(out_dir):
+    #         if overwrite:
+    #             shutil.rmtree(out_dir)
+    #         else:
+    #             err = f"\nout_dir '{out_dir}' already exists\n\n"
+    #             raise FileExistsError(err)
+    #     else:
+    #         err = f"\nout_dir '{out_dir}' already exists and is not a directory\n\n"
+    #         raise FileExistsError(err)
+    # os.mkdir(out_dir)
+    #
     # If the seed_df is a file, copy that into the output directory
     if type(seed_df) is str:
         if os.path.exists(seed_df):
@@ -151,13 +156,19 @@ def seed_to_alignment(seed_df,
     print("-------------------------------------------------------------------")
     print("",flush=True)
 
-    proteome_list = []
-    for k in key_species:
-        proteome_list.append(topiary.ncbi.get_proteome(species=k))
+    # If no reciprocal blast database is specified, construct from key species. 
+    if local_recip_blast_db is None:
 
-    base = "".join([random.choice(string.ascii_letters) for _ in range(10)])
-    blast_db = f"{base}_local_blast"
-    topiary.ncbi.make_blast_db(proteome_list,"blast_db",overwrite=True)
+        proteome_list = []
+        for k in key_species:
+           proteome_list.append(topiary.ncbi.get_proteome(species=k))
+
+        base = "".join([random.choice(string.ascii_letters) for _ in range(10)])
+        blast_db = f"{base}_local_blast"
+        topiary.ncbi.make_blast_db(proteome_list,"blast_db",overwrite=True)
+
+        local_recip_blast_db = "blast_db"
+
     df = topiary.recip_blast(df,
                              paralog_patterns=paralog_patterns,
                              local_blast_db="blast_db",
