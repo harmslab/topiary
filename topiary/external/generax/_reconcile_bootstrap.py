@@ -99,7 +99,7 @@ def _prepare_for_bootstrap(previous_dir=None,
         err += "with bootstrap=True?\n\n"
         raise FileNotFoundError(err)
 
-    bs_df = df.copy()
+    bs_df = df.loc[df.keep,:]
 
     # Load species tree from opentree
     species_tree = topiary.get_species_tree(bs_df)

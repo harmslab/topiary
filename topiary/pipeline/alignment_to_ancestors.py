@@ -14,7 +14,7 @@ import os, random, string, shutil
 def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
-                           do_bootstrap=True,
+                           no_bootstrap=True,
                            allow_horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
@@ -44,8 +44,8 @@ def alignment_to_ancestors(df,
         tree in newick format. This will be used for the best model
         inference and starting tree for the maximum likelihood tree estimation.
         If not specified, the maximum parsimony tree is generated and used.
-    do_bootstrap : bool, default=True
-        whether or not to do bootstrap replicates
+    no_bootstrap : bool, default=False
+        do not do bootstrap replicates
     allow_horizontal_transfer : bool, default=False
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -142,6 +142,10 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
+    do_bootstrap = True
+    if no_bootstrap:
+        do_boostrap = False
+
     topiary.find_best_model(df,
                             tree_file=starting_tree,
                             model_matrices=model_matrices,
@@ -149,12 +153,12 @@ def alignment_to_ancestors(df,
                             model_freqs=model_freqs,
                             model_invariant=model_invariant,
                             output="00_find-model",
-                            threads=num_threads,
+                            num_threads=num_threads,
                             raxml_binary=raxml_binary)
 
     topiary.generate_ml_tree(previous_dir="00_find-model",
                              output="01_ml-tree",
-                             threads=num_threads,
+                             num_threads=num_threads,
                              raxml_binary=raxml_binary,
                              bootstrap=do_bootstrap)
 
