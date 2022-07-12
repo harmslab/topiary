@@ -3,7 +3,7 @@ Draw a tree with ancestors colored by their relative posterior probability.
 """
 
 import topiary
-from topiary.external._interface import read_previous_run_dir
+from topiary._private.interface import read_previous_run_dir
 
 import os, re, copy
 

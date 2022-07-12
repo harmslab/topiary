@@ -3,7 +3,7 @@ Reconcile a gene tree with a species tree using generax.
 """
 
 import topiary
-from topiary.external._interface import prep_calc, write_run_information
+from topiary._private.interface import prep_calc, write_run_information
 
 from topiary._private import check
 from ._generax import setup_generax, run_generax, GENERAX_BINARY

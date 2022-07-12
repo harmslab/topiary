@@ -4,7 +4,7 @@ reconcilation, or ancestral sequence reconstruction.
 """
 
 import topiary
-from topiary.external._interface import read_previous_run_dir
+from topiary._private.interface import read_previous_run_dir
 import inspect
 
 def tree(run_dir,

@@ -3,7 +3,7 @@ Draw a maximum likelihood tree with nodes colored by their bootstrap support.
 """
 
 import topiary
-from topiary.external._interface import read_previous_run_dir
+from topiary._private.interface import read_previous_run_dir
 from .core import load_trees, create_name_dict, final_render
 from .prettytree import PrettyTree
 

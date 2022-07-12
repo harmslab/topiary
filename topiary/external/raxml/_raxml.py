@@ -7,7 +7,7 @@ there, and then returns to the previous directory.
 RAXML_BINARY = "raxml-ng"
 
 import topiary
-import topiary.external._interface as interface
+from topiary._private import interface
 from topiary._private import threads
 
 import pandas as pd

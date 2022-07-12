@@ -6,7 +6,7 @@ Wrapper for generax to perform gene/species tree reconcilation.
 GENERAX_BINARY = "generax"
 
 import topiary
-import topiary.external._interface as interface
+from topiary._private import interface
 
 import numpy as np
 

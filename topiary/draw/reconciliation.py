@@ -4,7 +4,7 @@ whether they are speciations, duplications, or losses.
 """
 
 import topiary
-from topiary.external._interface import read_previous_run_dir
+from topiary._private.interface import read_previous_run_dir
 
 import os
 

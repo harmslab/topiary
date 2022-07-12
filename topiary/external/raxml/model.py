@@ -6,7 +6,7 @@ given an alignment and (possibly) a tree.
 import topiary
 
 from ._raxml import RAXML_BINARY, run_raxml
-from topiary.external._interface import prep_calc, gen_seed, write_run_information
+from topiary._private.interface import prep_calc, gen_seed, write_run_information
 from topiary._private import check
 from topiary._private import threads
 

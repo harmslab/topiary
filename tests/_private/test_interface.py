@@ -2,7 +2,7 @@ import pytest
 
 import topiary
 from topiary._private import check
-import topiary.external._interface as interface
+from topiary._private import interface
 import numpy as np
 import pandas as pd
 

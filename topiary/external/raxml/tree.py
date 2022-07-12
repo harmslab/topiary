@@ -6,7 +6,7 @@ model.
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary.external._interface import prep_calc, write_run_information
+from topiary._private.interface import prep_calc, write_run_information
 
 import os, shutil, glob
 

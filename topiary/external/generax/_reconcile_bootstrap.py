@@ -6,7 +6,7 @@ of the gene tree and alignments.
 import topiary
 
 from topiary._private import threads
-from topiary.external._interface import prep_calc, write_run_information
+from topiary._private.interface import prep_calc, write_run_information
 from topiary.external.raxml._raxml import run_raxml
 from topiary.external.generax._generax import setup_generax, run_generax, GENERAX_BINARY
 

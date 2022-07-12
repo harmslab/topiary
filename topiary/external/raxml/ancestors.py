@@ -5,8 +5,8 @@ Generate ancestors and various summary outputs.
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary.external._interface import create_new_dir, copy_input_file
-from topiary.external._interface import prep_calc, write_run_information
+from topiary._private.interface import create_new_dir, copy_input_file
+from topiary._private.interface import prep_calc, write_run_information
 from topiary._private import check
 
 import pastml.acr
