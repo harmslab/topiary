@@ -136,10 +136,6 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         replace any non-aa characters with "-"
     overwrite : bool, default=False
         whether or not to overwrite an existing file
-
-    Returns
-    -------
-    None
     """
 
     df, label_columns, empty_char = _validate_seq_writer(df,
@@ -307,7 +303,7 @@ def write_phy(df,
     f.write("".join(out))
     f.close()
 
-def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
+def read_fasta_into(df,fasta,load_into_column="alignment",unkeep_missing=True):
     """
     Load sequences from a fasta file into an existing topiary dataframe. This
     function expects the fasta file to have names formated like >uid|other stuff.
@@ -318,8 +314,8 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     ----------
     df : pandas.DataFrame
         topiary data frame
-    fasta_file : str
-        a fasta file with headers formatted like >uid|other stuff
+    fasta : str
+        a fasta string or fasta file with headers formatted like >uid|other stuff
     load_into_column : str, default="alignment"
         what column in the dataframe to load the sequences into
     unkeep_missing : bool, default=True
@@ -334,58 +330,69 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
     """
 
     # Create data frame and make sure it has the column in which to load
-    new_df = check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
     try:
-        new_df[load_into_column]
+        df[load_into_column]
     except KeyError:
-        new_df[load_into_column] = None
+        df[load_into_column] = None
 
-    # Go through the fasta file and get sequences
+    # Dictionary mapping uid to index
+    uid_to_index = dict(zip(df.uid,df.index))
+
+    # If iterable but not string, treat as a list of lines
+    if hasattr(fasta,"__iter__") and not issubclass(type(fasta),str):
+        lines = fasta
+
+    # Read in lines
+    else:
+        f = open(fasta)
+        lines = f.readlines()
+        f.close()
+
+    # Go through lines
     headers = []
     uids = []
     seqs = []
-    with open(fasta_file) as f:
-        for line in f:
-            if line.startswith(">"):
-                headers.append(line.strip())
-                uids.append(line[1:].split("|")[0].strip())
-                seqs.append([])
-            else:
-                seqs[-1].append(line.strip())
+    for line in lines:
+        if line.startswith(">"):
+            headers.append(line.strip())
+            uids.append(line[1:].split("|")[0].strip())
+            seqs.append([])
+        else:
+            seqs[-1].append(line.strip())
 
+    # Make sure uid are unique
     if len(uids) != len(set(uids)):
         err = "Not all uids unique in this fasta file\n"
         raise ValueError(err)
 
     final_seqs = []
-    for s in seqs:
-        final_seqs.append("".join(s))
-    uid_to_index = dict(zip(df.uid,df.index))
+    indexes = []
+    # Note try is on level up from where we'd normally put it, but this function
+    # gets called a lot and lower number of try/except faster. We use i to
+    # report which iteration died.
+    try:
+        for i, s in enumerate(seqs):
+            final_seqs.append("".join(s))
+            indexes.append(uid_to_index[uids[i]])
+    except KeyError:
+        err = f"Could not map the sequence titled {headers[i]} to an index\n"
+        err += "in the data frame. This function expects the sequence titles\n"
+        err += "in a fasta file to have the format:\n"
+        err += ">uid|other stuff here\n"
+        err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
+        raise ValueError(err)
 
-    # Load sequences from fasta into data frame
-    loaded_seq = {}
-    for i in range(len(seqs)):
+    indexes = np.array(indexes)
+    final_seqs = np.array(final_seqs)
 
-        try:
-            index = uid_to_index[uids[i]]
-            new_df.loc[index,load_into_column] = final_seqs[i]
-            loaded_seq[index] = None
-        except KeyError:
-            err = f"Could not map the sequence titled {headers[i]} to an index\n"
-            err += "in the data frame. This function expects the sequence titles\n"
-            err += "in a fasta file to have the format:\n"
-            err += ">uid|other stuff here\n"
-            err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
-            raise ValueError(err)
+    # Record new df
+    df.loc[indexes,load_into_column] = final_seqs
 
     # If requested, set all sequences not in alignment to Keep = False
     if unkeep_missing:
-        for i in list(new_df.index):
-            try:
-                loaded_seq[i]
-            except KeyError:
-                new_df.loc[i,"keep"] = False
-                new_df.loc[i,load_into_column] = pd.NA
+        to_drop = np.setdiff1d(df.index[df.keep],indexes)
+        df.loc[to_drop,"keep"] = False
+        df.loc[to_drop,load_into_column] = pd.NA
 
-    # Return dataframe with final sanity check to make sure uid stayed unique
-    return check.check_topiary_dataframe(new_df)
+    return df

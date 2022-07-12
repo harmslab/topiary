@@ -54,6 +54,91 @@ def _color_to_css(color):
     return toyplot.color.to_css(color)
 
 
+def map_tree_to_tree(T1,T2):
+    """
+    Map nodes between one tree and another based on shared descendants.
+
+    Parameters
+    ----------
+    T1 : ete3.Tree or toytree.tree
+        one tree to compare
+    T2 : ete3.Tree or toytree.tree
+        second tree to compare
+
+    Returns
+    -------
+    shared_nodes : list
+        list of tuples containing shared nodes between the two trees
+    T1_nodes : list
+        list of nodes from T1 that are not in T2
+    T2_nodes : list
+        list of nodes from T2 that are not in T1
+    """
+
+    def _ete3_node_dict(T):
+        """
+        Create dictionary keying ete3 tree nodes to tuple of descendants.
+        """
+
+        node_dict = {}
+        for node in T.traverse():
+            leaves = node.get_leaf_names()
+            leaves = [t for t in leaves]
+            leaves.sort()
+            leaves = tuple(leaves)
+            node_dict[leaves] = node
+
+        return node_dict
+
+    def _toytree_node_dict(T):
+        """
+        Create dictionary keying toytree tree nodes to tuple of descendants.
+        """
+
+        node_dict = {}
+        for k in T.idx_dict:
+            leaves = T.idx_dict[k].get_leaf_names()
+            leaves.sort()
+            leaves = tuple(leaves)
+            node_dict[leaves] = T.idx_dict[k]
+
+        return node_dict
+
+    # Construct dictionary keying node to tuple of descendants for T1
+    if issubclass(type(T1),ete3.Tree):
+        T1_node_dict = _ete3_node_dict(T1)
+    else:
+        T1_node_dict = _toytree_node_dict(T1)
+
+    # Construct dictionary keying node to tuple of descendants for T2
+    if issubclass(type(T2),ete3.Tree):
+        T2_node_dict = _ete3_node_dict(T2)
+    else:
+        T2_node_dict = _toytree_node_dict(T2)
+
+    T1_nodes = []
+    shared_nodes = []
+    T2_keys = list(T2_node_dict.keys())
+    for key in T1_node_dict:
+
+        try:
+            # Shared, not in T2 alone
+            shared_nodes.append((T1_node_dict[key],T2_node_dict[key]))
+            T2_keys.remove(key)
+
+        except KeyError:
+            # Only in T1
+            T1_nodes.append(T1_node_dict[key])
+
+    # If key is left in T2_keys, the node is only in T2
+    T2_nodes = []
+    for key in T2_keys:
+        T2_nodes.append(T2_node_dict[key])
+
+
+    return shared_nodes, T1_nodes, T2_nodes
+
+
 def ete3_to_toytree(T):
     """
     Generate a toytree.tree instance from an ete3.Tree instance. Copies over

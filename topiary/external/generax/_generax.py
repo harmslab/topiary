@@ -13,7 +13,7 @@ import numpy as np
 import subprocess, os, sys, time, random, string, shutil, copy
 import multiprocessing as mp
 
-def setup_generax(df,gene_tree,model,out_dir):
+def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
     """
     Setup a generax run directory.
 
@@ -28,10 +28,8 @@ def setup_generax(df,gene_tree,model,out_dir):
         phylogenetic model to use (should match model used to generate gene_tree)
     out_dir : str
         output directory
-
-    Returns
-    -------
-    None
+    species_tree : ete3.Tree, optional
+        file with species tree. if not specified, download from opentree
     """
 
     # -------------------------------------------------------------------------
@@ -67,13 +65,15 @@ def setup_generax(df,gene_tree,model,out_dir):
         # Record that we saw this uid
         uid_in_gene_tree.append(uid)
 
+
     # Make df only have uid seen (will automatically trim down to only ott
     # of interest)
     mask = np.array([u in uid_in_gene_tree for u in df.uid],dtype=np.bool)
     df = df.loc[mask]
 
     # Get species tree corresponding to uid seen
-    species_tree = topiary.get_species_tree(df)
+    if species_tree is None:
+        species_tree = topiary.get_species_tree(df)
 
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()
@@ -91,7 +91,7 @@ def setup_generax(df,gene_tree,model,out_dir):
     # -------------------------------------------------------------------------
     # Write out generax input
 
-    os.mkdir("working")
+    os.mkdir(out_dir)
 
     # Construct the control file for generax
     control_out = []

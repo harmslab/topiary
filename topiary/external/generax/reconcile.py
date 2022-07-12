@@ -5,7 +5,9 @@ Reconcile a gene tree with a species tree using generax.
 import topiary
 from topiary.external._interface import prep_calc, write_run_information
 
+from topiary._private import check
 from ._generax import setup_generax, run_generax, GENERAX_BINARY
+from ._reconcile_bootstrap import reconcile_bootstrap
 
 import ete3
 import numpy as np
@@ -16,12 +18,14 @@ def reconcile(previous_dir=None,
               df=None,
               model=None,
               tree_file=None,
-              allow_horizontal_transfer=False,
+              allow_horizontal_transfer=True,
               output=None,
               overwrite=False,
+              bootstrap=False,
+              num_threads=-1,
               generax_binary=GENERAX_BINARY):
     """
-    Reoncile the gene tree to the species tree using generax.
+    Reconcile the gene tree to the species tree using generax.
 
     Parameters
     ----------
@@ -38,7 +42,7 @@ def reconcile(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
-    allow_horizontal_transfer : bool, default=False
+    allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
     output: str, optional
@@ -46,15 +50,35 @@ def reconcile(previous_dir=None,
         form "generax_reconcilation_randomletters"
     overwrite : bool, default=False
         whether or not to overwrite existing output directory
+    bootstrap : bool, default=False
+        whether or not to do bootstrap replicates. Requires a previous_dir from
+        an ML tree estimation that was run with bootstrap replicates.
+    num_threads : int, default=-1
+        number of threads to use. if -1 use all available.
     generax_binary : str, optional
         what generax binary to use
 
     Returns
     -------
-    Python.core.display.Image or None
-        if running in jupyter notebook, return Image showing reconciled tree;
-        otherwise, return None.
+    plot : toyplot.canvas or None
+        if running in jupyter notebook, return toyplot.canvas; otherwise, return
+        None.
     """
+
+    # If bootstrap requested, run bootstrap version
+    bootstrap = check.check_bool(bootstrap,"bootstrap")
+    if bootstrap:
+        ret = reconcile_bootstrap(previous_dir=previous_dir,
+                                  df=df,
+                                  model=model,
+                                  tree_file=tree_file,
+                                  allow_horizontal_transfer=allow_horizontal_transfer,
+                                  output=output,
+                                  overwrite=overwrite,
+                                  num_threads=num_threads,
+                                  generax_binary=GENERAX_BINARY)
+        return ret
+
 
     # Prepare for the calculation, loading in previous calculation and
     # combining with arguments as passed in.
@@ -72,6 +96,7 @@ def reconcile(previous_dir=None,
     tree_file = result["tree_file"]
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
+    output = result["output"]
 
     required = [df,model,tree_file]
     for r in required:
@@ -95,7 +120,6 @@ def reconcile(previous_dir=None,
     # Copy in tree.newick
     shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
                 os.path.join("output","tree.newick"))
-
 
     # Get outgroups (e.g. leaves descending from each half after root)
     reconcile_file = os.path.join("working","result","reconciliations","reconcile_events.newick")
@@ -122,9 +146,5 @@ def reconcile(previous_dir=None,
     os.chdir(starting_dir)
 
     # Write out a summary tree.
-    ret = topiary.draw.reconciliation_tree(run_dir=output,
-                                           output_file=os.path.join(output,
-                                                                    "output",
-                                                                    "summary-tree.pdf"))
-    if topiary._in_notebook:
-        return ret
+    return topiary.draw.reconciliation_tree(run_dir=output,
+                                            output_file=os.path.join(output,outdir,"summary-tree.pdf"))

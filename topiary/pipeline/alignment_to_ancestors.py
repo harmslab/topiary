@@ -161,7 +161,8 @@ def alignment_to_ancestors(df,
     topiary.reconcile(previous_dir="01_ml-tree",
                       output="02_reconciliation",
                       allow_horizontal_transfer=allow_horizontal_transfer,
-                      generax_binary=generax_binary)
+                      generax_binary=generax_binary,
+                      bootstrap=do_bootstrap)
 
     topiary.generate_ancestors(previous_dir="02_reconciliation",
                                output="03_ancestors",

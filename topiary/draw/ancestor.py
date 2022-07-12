@@ -11,12 +11,13 @@ from .core import load_trees, create_name_dict, final_render
 from .prettytree import PrettyTree
 import ete3
 
+
 def ancestor_tree(run_dir,
                   output_file=None,
                   tip_columns=["species","nickname"],
                   tip_name_separator="|",
                   support_span=(0.5,1.0),
-                  color=("black","red"),
+                  color=("#ffffff","#D16A16"),
                   size=None,
                   font_size=15,
                   stroke_width=2,
@@ -47,7 +48,7 @@ def ancestor_tree(run_dir,
     support_span : tuple, default=(0.5,1.0)
         set min/max values for posterior probability calculation. First element
         is min, second is max. If None, take full span.
-    color : str or tuple or dict, default=("white","red")
+    color : str or tuple or dict, default=("#ffffff","#D16A16")
         set node color. If a single value, color all nodes that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
         color gradient.  If dict, map property keys to color values. Colors
@@ -109,6 +110,8 @@ def ancestor_tree(run_dir,
     pp_root = T_pp.get_tree_root()
     if pp_root.name != "":
         offset_root = (copy.deepcopy(label_root.name),copy.deepcopy(pp_root.name))
+        pp_root.name = -1
+        label_root.name = ""
     else:
         offset_root = None
 
@@ -124,23 +127,25 @@ def ancestor_tree(run_dir,
         if n.is_leaf():
             n.name = name_dict[n.name]
 
-
         # If this is not a leaf
         if not n.is_leaf():
 
             pp = m.name
-            if pp != "":
-                n.add_feature("pp",m.name)
 
-            # If the root was mislabeled above, stick the label on this node
-            else:
+            # pp == "" only happens for root node
+            if pp == "":
+
+                # If the root was mislabeled above, stick the label on this node
                 if offset_root is not None:
                     n.add_feature("name",offset_root[0])
                     n.add_feature("pp",offset_root[1])
                     offset_root = None
 
-            n.name = re.sub("anc","a",n.name)
+            else:
+                n.add_feature("pp",m.name)
 
+
+            n.name = re.sub("anc","a",n.name)
 
     pt = PrettyTree(T_label,
                     font_size=font_size,
@@ -153,60 +158,10 @@ def ancestor_tree(run_dir,
     # Draw supports
     pt.draw_nodes(property_label="pp",
                   prop_span=support_span,
+                  plot_root=False,
                   color=color,
                   size=size)
     pt.draw_node_labels(property_labels="name")
     pt.draw_node_legend(label_renamer={"pp":"post. prob."})
 
     return final_render(pt,output_file=output_file,default_file="ancestor-tree.pdf")
-
-        #
-        #
-        #     anc_name = n.name
-        #     pp = m.name
-        #
-        #     # If posterior probability is not defined for a node that is *not*
-        #     # the root...
-        #     if pp == "":
-        #
-        #         # If the root was mislabeled above, stick the label on this node
-        #         if offset_root is not None:
-        #             anc_name = offset_root[0]
-        #             pp = offset_root[1]
-        #             offset_root = None
-        #
-        #     if cm is not None:
-        #
-        #         try:
-        #             v = float(pp)
-        #             rgb = cm.hex(v)
-        #
-        #             # Draw circles
-        #             node_circle = ete3.CircleFace(radius=circle_radius,color=rgb,style="circle")
-        #             node_circle.margin_right=-circle_radius
-        #             n.add_face(node_circle,0,position="branch-right")
-        #
-        #         except ValueError:
-        #             pass
-        #
-        #     # Ancestor labels
-        #     anc_label = ete3.TextFace(text=re.sub("anc","a",anc_name),fsize=fontsize)
-        #     anc_label.inner_background.color = "white"
-        #     anc_label.margin_right = 5
-        #     anc_label.margin_top = 0
-        #     n.add_face(anc_label,0,position="float")
-        #
-        # # If this is a leaf
-        # else:
-        #
-        #     # Get the clean name (rather than uid)
-        #     clean_name = name_dict[n.name]
-        #
-        #     # Add text for clean name
-        #     n.name = ""
-        #     txt = ete3.TextFace(clean_name,fsize=fontsize)
-        #     txt.margin_left = 4
-        #     n.add_face(txt,0,position="branch-right")
-        #
-
-    #return final_render(T_label,ts,output_file,"ancestor-tree.pdf")

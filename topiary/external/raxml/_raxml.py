@@ -23,7 +23,8 @@ def run_raxml(algorithm=None,
               num_threads=-1,
               raxml_binary=RAXML_BINARY,
               log_to_stdout=True,
-              other_args=[]):
+              other_args=None,
+              other_files=None):
     """
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
@@ -49,8 +50,11 @@ def run_raxml(algorithm=None,
         raxml binary to use
     log_to_stdout : book, default=True
         capture log and write to std out.
-    other_args : list-like
+    other_args : list-like, optional
         list of arguments to pass to raxml
+    other_files : list-like, optional
+        list of files to copy into working directory (besides tree_file and
+        alignment_file)
 
     Return
     ------
@@ -72,6 +76,15 @@ def run_raxml(algorithm=None,
                                               dir_name,
                                               file_name="tree.newick",
                                               put_in_input_dir=False)
+
+    # Copy in any other required files, if requested
+    if other_files is not None:
+        for i in range(len(other_files)):
+            tail = os.path.split(other_files[i])[-1]
+            other_files[i] = interface.copy_input_file(other_files[i],
+                                                       dir_name,
+                                                       file_name=tail,
+                                                       put_in_input_dir=False)
 
     # Build a command list
     cmd = [raxml_binary]
@@ -112,8 +125,9 @@ def run_raxml(algorithm=None,
     cmd.extend(["--threads",f"{num_threads:d}"])
 
     # Put on any custom args
-    for a in other_args:
-        cmd.append(a)
+    if other_args is not None:
+        for a in other_args:
+            cmd.append(a)
 
     # If logging to standard out, get log file name
     log_file = None

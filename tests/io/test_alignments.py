@@ -302,3 +302,65 @@ def test_write_phy(test_dataframes,tmpdir):
 
     # Should work because we have the file in place
     io.write_phy(df,out_file,overwrite=True)
+
+
+def test_read_fasta_into(test_dataframes,tmpdir):
+
+    df = test_dataframes["good-df"].copy()
+
+    # Make sure alignment gets read into test_column (tests load_into_column)
+    fasta = os.path.join(tmpdir,"tmp.fasta")
+    io.write_fasta(df,fasta)
+    new_df = io.read_fasta_into(df,fasta,load_into_column="test_column")
+    assert np.array_equal(new_df.loc[:,"test_column"],df.loc[:,"sequence"])
+
+    # Load in lines of fasta file
+    fasta_lines = []
+    for i in range(len(df)):
+        fasta_lines.append(f">{df.uid.iloc[i]}\n")
+        fasta_lines.append(f"{df.sequence.iloc[i]}\n")
+    new_df = io.read_fasta_into(df,fasta_lines,load_into_column="test_column")
+    assert np.array_equal(new_df.loc[:,"test_column"],df.loc[:,"sequence"])
+
+    # Load in lines of fasta file, no \n
+    fasta_lines = []
+    for i in range(len(df)):
+        fasta_lines.append(f">{df.uid.iloc[i]}")
+        fasta_lines.append(f"{df.sequence.iloc[i]}")
+    new_df = io.read_fasta_into(df,fasta_lines,load_into_column="test_column")
+    assert np.array_equal(new_df.loc[:,"test_column"],df.loc[:,"sequence"])
+
+    # Pass in file without uid
+    fasta = os.path.join(tmpdir,"tmp.fasta")
+    f = open(fasta,'w')
+    f.write(">bad\nQQQQQQQQQQ\n")
+    f.close()
+    with pytest.raises(ValueError):
+        new_df = io.read_fasta_into(df,fasta,load_into_column="test_column")
+
+    # Pass in file without uid, another format
+    fasta = os.path.join(tmpdir,"tmp.fasta")
+    f = open(fasta,'w')
+    f.write(">bad|bad\nQQQQQQQQQQ\n")
+    f.close()
+    with pytest.raises(ValueError):
+        new_df = io.read_fasta_into(df,fasta,load_into_column="test_column")
+
+    # testing unkeep missing
+
+    # Make sure if we don't write out a sequence, when we load the alignment
+    # back in the dataframe drops the unwritten sequence
+    df = test_dataframes["good-df"].copy()
+    test_df = df.copy()
+    test_df.loc[df.index[0],"keep"] = False
+    io.write_fasta(test_df,fasta,overwrite=True)
+    new_df = io.read_fasta_into(df,fasta,load_into_column="test_column")
+    assert new_df.loc[new_df.index[0],"keep"] == False
+
+    # But still keep if unkeep_missing == False
+    df = test_dataframes["good-df"].copy()
+    test_df = df.copy()
+    test_df.loc[df.index[0],"keep"] = False
+    io.write_fasta(test_df,fasta,overwrite=True)
+    new_df = io.read_fasta_into(df,fasta,load_into_column="test_column",unkeep_missing=False)
+    assert new_df.loc[new_df.index[0],"keep"] == True

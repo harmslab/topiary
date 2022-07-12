@@ -407,8 +407,9 @@ class PrettyTree:
                 for i in idx[mask]:
                     node = self._tT.idx_dict[i]
                     if p_label not in node.features:
-                        err = f"\ntoytree node {node} does not have a feature {p_label}\n\n"
-                        raise ValueError(err)
+                        continue
+                        #err = f"\ntoytree node {node} does not have a feature {p_label}\n\n"
+                        #raise ValueError(err)
 
                     try:
                         prop.append(self._tT.idx_dict[i].__dict__[f"_{p_label}"])
@@ -875,9 +876,9 @@ class PrettyTree:
                 rgba = toyplot.color.broadcast(m_style["mstyle"]["fill"],1)[0]
                 saturation = (rgba[0] + rgba[1] + rgba[2])*rgba[3]
                 if saturation < 1.5:
-                    txt_color = "white"
+                    txt_color = "#ffffff"
                 else:
-                    txt_color = "black"
+                    txt_color = "#000000"
 
                 m_style["lstyle"]["fill"] = txt_color
                 m_style["size"] = legend_node_size

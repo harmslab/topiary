@@ -14,7 +14,7 @@ def ml_tree(run_dir,
             tip_columns=["species","nickname"],
             tip_name_separator="|",
             support_span=(50,100),
-            color=("white","red"),
+            color=("#ffffff","#155677"),
             size=None,
             font_size=15,
             stroke_width=2,
@@ -46,7 +46,7 @@ def ml_tree(run_dir,
         set min/max values for support color calculation. First element
         is min, second is max. If either is None, take min or max from the
         min/max of the property
-    color : str or tuple or dict, default=("white","red")
+    color : str or tuple or dict, default=("#ffffff","#155677")
         set node color. If a single value, color all nodes that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
         color gradient.  If dict, map property keys to color values. Colors

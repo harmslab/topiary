@@ -493,7 +493,8 @@ def launch(cmd,run_directory,log_file=None):
         err += "------------------------------------------------------------\n"
         err += "\n\n"
 
-        err += "".join([line for line in ret.stdout.decode()])
+        if ret.stdout is not None:
+            err += "".join([line for line in ret.stdout.decode()])
 
         raise RuntimeError(err)
 
