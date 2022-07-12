@@ -81,10 +81,10 @@ def get_phylo_context(species_list):
             raise ValueError(err)
 
     # Infer the phylogenetic context from this set of species
-    w = OT.tnrs_infer_context(species_list)
+    ot_matches = OT.tnrs_infer_context(species_list)
 
     # Return context
-    return w.response_dict["context_name"]
+    return ot_matches.response_dict["context_name"]
 
 def species_to_ott(species_list,phylo_context="All life"):
     """
@@ -110,8 +110,9 @@ def species_to_ott(species_list,phylo_context="All life"):
 
     # Check input arguments
     species_list = check.check_iter(species_list,
-                                                "species_list",
-                                                required_value_type=str)
+                                    "species_list",
+                                    is_not_type=str,
+                                    required_value_type=str)
 
     # Make sure the phylo_context is recognizable by OTT
     phylo_context = is_allowed_phylo_context(phylo_context)
@@ -120,13 +121,17 @@ def species_to_ott(species_list,phylo_context="All life"):
     species_list = [s.strip() for s in species_list]
 
     # Do fuzzy match for species names
-    w = OT.tnrs_match(species_list,
-                      context_name=phylo_context,
-                      do_approximate_matching=True)
+    ot_matches = OT.tnrs_match(species_list,
+                               context_name=phylo_context,
+                               do_approximate_matching=True)
+
+    # Compile pattern to remove gobblygook like "(in domain bacteria)" that
+    # comes down with tnrs match
+    domain_pattern = re.compile(" \(.*?in domain.*?\)")
 
     # Go through hits
     results = {}
-    for match in w.response_dict["results"]:
+    for match in ot_matches.response_dict["results"]:
 
         # No match
         if len(match["matches"]) == 0:
@@ -153,15 +158,15 @@ def species_to_ott(species_list,phylo_context="All life"):
             # Record data about hit
             hit = matches[0]
 
-            matched_name = hit["matched_name"]
-            otl_name = hit["taxon"]["unique_name"]
+            matched_name = domain_pattern.sub("",hit["matched_name"])
+            otl_name = domain_pattern.sub("",hit["taxon"]["unique_name"])
             ott_id = hit["taxon"]["ott_id"]
 
             results[matched_name] = (ott_id,otl_name)
 
 
     # Record non-hits
-    for unmatch in w.response_dict["unmatched_names"]:
+    for unmatch in ot_matches.response_dict["unmatched_names"]:
         results[unmatch] = (None,unmatch,None)
 
     # List of ott numbers to query as tree

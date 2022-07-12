@@ -41,8 +41,9 @@ def get_ott_id(df,
 
     Notes
     -----
-    `phylo_context` should be a string recognized by opentreeoflife.org. To get
-    the current strings recognized by the database, use the following code:
+    :code:`phylo_context`:code: should be a string recognized by
+    opentreeoflife.org. Strings are case-sensitive. To get the current strings
+    recognized by the database, use the following code:
 
     .. code-block:: python
 
@@ -50,7 +51,7 @@ def get_ott_id(df,
         print(OT.tnrs_contexts().response_dict)
 
     As of 2022-06-21, the following are recognized. You can use
-    either the keys or values in this dictionary as a `phylo_context`.
+    either the keys or values in this dictionary as a :code:`phylo_context`.
 
     .. code-block:: python
 

@@ -19,10 +19,10 @@ def get_species_tree(df):
     Return an ete3 cladogram of species in tree. The leaves on the tree will
     have the following features:
 
-    + `leaf.name`: bionomial species name as string
-    + `leaf.ott`: ott as string
-    + `leaf.species`: bionomial species name as string
-    + `leaf.uid`: list of all uid that have this species
+    + :code:`leaf.name`: bionomial species name as string
+    + :code:`leaf.ott`: ott as string
+    + :code:`leaf.species`: bionomial species name as string
+    + :code:`leaf.uid`: list of all uid that have this species
 
     Parameters
     ----------
