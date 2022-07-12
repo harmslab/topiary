@@ -190,37 +190,6 @@ def ete3_to_toytree(T):
         T_leaves = tuple(T_leaves)
         T_node_dict[T_leaves] = node
 
-    tT_keys = set(tT_node_dict.keys())
-    T_keys = set(T_node_dict.keys())
-
-    only_tT = tT_keys - T_keys
-    only_T = T_keys - tT_keys
-
-    all_tT_keys = []
-    for k in only_tT:
-        all_tT_keys.extend(list(k))
-
-    only_tT_single = set(all_tT_keys)
-
-
-    all_T_keys = []
-    for k in only_T:
-        all_T_keys.extend(list(k))
-
-    only_T_single = set(all_T_keys)
-    print(len(only_tT_single),len(only_T_single))
-    print(only_T_single - only_tT_single)
-    print(only_tT_single - only_T_single)
-
-
-    # for t in only_tT_single:
-    #     print(t)
-    #
-    # print("----------------------------------------------------------")
-    # for t in only_T_single:
-    #     print(t)
-
-
     # We can now map between toytree and ete3.Trees based on their shared keys.
     for node in tT_node_dict:
 

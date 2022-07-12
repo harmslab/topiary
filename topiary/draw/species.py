@@ -50,13 +50,18 @@ def species_tree(species_tree,
         None.
     """
 
+    name_dict = {}
+    for n in species_tree.traverse():
+        if n.is_leaf():
+            name_dict[n.name] = n.species
+
     pt = PrettyTree(species_tree,
+                    name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
                     vertical_pixels_per_taxon=vertical_pixels_per_taxon,
                     min_height=min_height,
                     tip_labels_align=tip_labels_align,
                     **kwargs)
-
 
     return final_render(pt,output_file=output_file,default_file="species-tree.pdf")

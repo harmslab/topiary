@@ -105,9 +105,7 @@ def ml_tree(run_dir,
     # Rename leaves and grab supports
     supports = []
     for n in T.traverse():
-        if n.is_leaf():
-            n.name = name_dict[n.name]
-        else:
+        if not n.is_leaf():
             supports.append(n.support)
 
     # Figure out if the tree has supports. If the tree did not have supports,
@@ -122,6 +120,7 @@ def ml_tree(run_dir,
 
     # Create tree
     pt = PrettyTree(T,
+                    name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
                     vertical_pixels_per_taxon=vertical_pixels_per_taxon,

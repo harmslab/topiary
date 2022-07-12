@@ -19,7 +19,7 @@ def get_species_tree(df):
     Return an ete3 cladogram of species in tree. The leaves on the tree will
     have the following features:
 
-    + :code:`leaf.name`: bionomial species name as string
+    + :code:`leaf.name`: ott as string
     + :code:`leaf.ott`: ott as string
     + :code:`leaf.species`: bionomial species name as string
     + :code:`leaf.uid`: list of all uid that have this species
@@ -141,6 +141,6 @@ def get_species_tree(df):
             n.add_feature("ott",ott_to_df_columns["ott"][name_key][0])
             n.add_feature("uid",ott_to_df_columns["uid"][name_key])
 
-            n.name = copy.deepcopy(n.species)
+            n.name = copy.deepcopy(n.ott)
 
     return final_tree

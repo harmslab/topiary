@@ -111,11 +111,6 @@ def reconciliation_tree(run_dir,
                                  tip_columns=tip_columns,
                                  separator=tip_name_separator)
 
-    # Rename leaves in T_event (tree we're going to draw)
-    for n in T_event.traverse():
-        if n.is_leaf():
-            n.name = name_dict[n.name]
-
     # Go through shared nodes and label T_event nodes with support. (Shared will
     # have len(shared) == 0 if no supports loaded)
     for i in range(len(shared)):
@@ -127,6 +122,7 @@ def reconciliation_tree(run_dir,
 
     # Create tree
     pt = PrettyTree(T_event,
+                    name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
                     vertical_pixels_per_taxon=vertical_pixels_per_taxon,

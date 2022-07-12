@@ -124,9 +124,6 @@ def ancestor_tree(run_dir,
         n = T_label_nodes[i]
         m = T_pp_nodes[i]
 
-        if n.is_leaf():
-            n.name = name_dict[n.name]
-
         # If this is not a leaf
         if not n.is_leaf():
 
@@ -148,6 +145,7 @@ def ancestor_tree(run_dir,
             n.name = re.sub("anc","a",n.name)
 
     pt = PrettyTree(T_label,
+                    name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
                     vertical_pixels_per_taxon=vertical_pixels_per_taxon,

@@ -109,6 +109,7 @@ class PrettyTree:
 
     def __init__(self,
                  T,
+                 name_dict=None,
                  font_size=15,
                  stroke_width=2,
                  vertical_pixels_per_taxon=20,
@@ -121,7 +122,11 @@ class PrettyTree:
         Parameters
         ----------
         T : ete3.Tree or dp.Tree or toytree.tree or newick
-            tree to draw
+            tree to draw. We *strongly* recommend this tree have uid as its
+            tip labels to avoid mangled trees. If you want to assign prettier
+            names to the tips, pass in name_dict.
+        name_dict : dict, optional
+            dictionary mapping strings in node.name to more useful names.
         font_size : float, default=15
             font size (pixels)
         stroke_width : float, default=2
@@ -145,6 +150,15 @@ class PrettyTree:
         else:
             # Convert to a toytree
             self._tT = ete3_to_toytree(topiary.io.read_tree(T))
+
+        # Rename tree.name entries according to name_dict
+        if name_dict is not None:
+            for idx in self._tT.idx_dict:
+                name = self._tT.idx_dict[idx].name
+                try:
+                    self._tT.idx_dict[idx].name = name_dict[name]
+                except KeyError:
+                    pass
 
         # Artwork parameters
         self._font_size = check.check_float(font_size,
