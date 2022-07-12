@@ -7,8 +7,8 @@ from topiary._private.interface import read_previous_run_dir
 
 import os, re, copy
 
-from .core import load_trees, create_name_dict, final_render
-from .prettytree import PrettyTree
+from ._core import load_trees, create_name_dict, final_render
+from ._prettytree import PrettyTree
 import ete3
 
 

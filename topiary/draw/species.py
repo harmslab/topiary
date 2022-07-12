@@ -3,8 +3,8 @@ Draw a species tree with tips labeled by species name.
 """
 
 import topiary
-from .core import final_render
-from .prettytree import PrettyTree
+from ._core import final_render
+from ._prettytree import PrettyTree
 
 import ete3
 

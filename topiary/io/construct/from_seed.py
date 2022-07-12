@@ -120,18 +120,24 @@ def df_from_seed(seed_df,
     # blast_df is a list of dataframes, one for each hit in seed_df.sequence
 
     # Go through each blast dataframe
-    for i, this_df in enumerate(blast_df):
+    for i in range(len(blast_df)):
 
         # Assign the blast query to a useful name (i.e. LY96|Homo sapiens)
-        this_df.loc[:,"query"] = f"{seed_df.name.iloc[i]}|{seed_df.species.iloc[i]}"
+        blast_df[i].loc[:,"query"] = f"{seed_df.name.iloc[i]}|{seed_df.species.iloc[i]}"
 
         # Parse the blast output from each line to extract the features useful
         # for downstream analyses -- structure, partial, etc.
         # out_dict will be a dictionary keyed to the new columns we want
         # (structure, etc.) with lists of values as long as the dataframe.
+        keep = []
         out_dict = None
-        for idx in this_df.index:
-            parsed = topiary.external.ncbi.parse_ncbi_line(this_df.loc[idx,"title"])
+        for idx in blast_df[i].index:
+            parsed = topiary.external.ncbi.parse_ncbi_line(blast_df[i].loc[idx,"title"])
+
+            if parsed is None:
+                keep.append(False)
+                continue
+
             if out_dict is None:
                 out_dict = {}
                 for k in parsed:
@@ -140,10 +146,24 @@ def df_from_seed(seed_df,
                 for k in parsed:
                     out_dict[k].append(parsed[k])
 
+            keep.append(True)
+
+        # Create mask of goodness
+        keep = np.array(keep,dtype=bool)
+
         # Load newly extracted column into the dataframe
         for k in out_dict:
-            this_df[k] = out_dict[k]
+            blast_df[i][k] = pd.NA
+            blast_df[i].loc[keep,k] = out_dict[k]
 
+        # Drop empty columns
+        blast_df[i] = blast_df[i].loc[keep,:]
+
+    # Drop completely empty blast returns
+    blast_df = [b for b in blast_df if len(b) > 0]
+    if len(blast_df) == 0:
+        err = "BLAST did not return any hits\n"
+        raise RuntimeError(err)
 
     df = topiary.ncbi.merge_blast_df(blast_df)
 

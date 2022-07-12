@@ -8,8 +8,8 @@ from topiary._private.interface import read_previous_run_dir
 
 import os
 
-from .core import load_trees, create_name_dict, final_render, map_tree_to_tree
-from .prettytree import PrettyTree
+from ._core import load_trees, create_name_dict, final_render, map_tree_to_tree
+from ._prettytree import PrettyTree
 import ete3
 
 def reconciliation_tree(run_dir,

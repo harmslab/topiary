@@ -3,8 +3,8 @@ Class for drawing formatted phylogenetic trees using toytree.
 """
 
 import topiary
-from topiary.draw.core import construct_colormap, construct_sizemap
-from topiary.draw.core import ete3_to_toytree
+from topiary.draw._core import construct_colormap, construct_sizemap
+from topiary.draw._core import ete3_to_toytree
 import topiary._private.check as check
 
 import toytree
@@ -105,6 +105,30 @@ def _get_round_to(value,total_requested=3):
 class PrettyTree:
     """
     Class for drawing formatted phylogenetic trees using toytree.
+
+    Parameters
+    ----------
+    T : ete3.Tree or dp.Tree or toytree.tree or newick
+        tree to draw. We *strongly* recommend this tree have uid as its
+        tip labels to avoid mangled trees. If you want to assign prettier
+        names to the tips, pass in name_dict.
+    name_dict : dict, optional
+        dictionary mapping strings in node.name to more useful names.
+    font_size : float, default=15
+        font size (pixels)
+    stroke_width : float, default=2
+        width of lines drawing tree (pixels)
+    vertical_pixels_per_taxon : float, default=20
+        number of pixels to assign to each taxon when calculating figure
+        height
+    aspect_ratio_parameters : tuple, default=(0.02,0.47)
+        these parameters used to relate figure aspect ratio to number of
+        taxa by the following equation:
+        :code:`aspect_ratio_parameters[0]*num_taxa + aspect_ratio_parameters[1]`
+    min_height : float, default=300
+        minimum height for figure (pixels)
+    **kwargs : dict
+        pass any other keyword arguments directly to toytree.tree.draw
     """
 
     def __init__(self,
@@ -118,30 +142,6 @@ class PrettyTree:
                  **kwargs):
         """
         Initialize PrettyTree class.
-
-        Parameters
-        ----------
-        T : ete3.Tree or dp.Tree or toytree.tree or newick
-            tree to draw. We *strongly* recommend this tree have uid as its
-            tip labels to avoid mangled trees. If you want to assign prettier
-            names to the tips, pass in name_dict.
-        name_dict : dict, optional
-            dictionary mapping strings in node.name to more useful names.
-        font_size : float, default=15
-            font size (pixels)
-        stroke_width : float, default=2
-            width of lines drawing tree (pixels)
-        vertical_pixels_per_taxon : float, default=20
-            number of pixels to assign to each taxon when calculating figure
-            height
-        aspect_ratio_parameters : tuple, default=(0.02,0.47)
-            these parameters used to relate figure aspect ratio to number of
-            taxa by the following equation:
-            :code:`aspect_ratio_parameters[0]*num_taxa + aspect_ratio_parameters[1]`
-        min_height : float, default=300
-            minimum height for figure (pixels)
-        **kwargs : dict
-            pass any other keyword arguments directly to toytree.tree.draw
         """
 
         # Read into an ete3 tree
@@ -350,6 +350,8 @@ class PrettyTree:
         """
         Get the x,y coordinates and properties of nodes.
 
+        Parameters
+        ----------
         get_ancestors : bool
             whether or not to get ancestors
         get_leaves : bool
@@ -600,6 +602,8 @@ class PrettyTree:
         """
         Draw labels on nodes on tree.
 
+        Parameters
+        ----------
         property_labels : str or list-like
             write values in property_labels to the node labels. if str, treat as
             a single property_label; if list-like, use each of the list entries
@@ -713,6 +717,8 @@ class PrettyTree:
         """
         Draw a scale bar on the tree plot.
 
+        Parameters
+        ----------
         bar_length : float, default=0.3
             draw a scale bar that is bar_length fraction of the total tree
             length. Note: this may be ignored and the bar truncated if the
@@ -921,16 +927,29 @@ class PrettyTree:
 
     @property
     def canvas(self):
+        """
+        toyplot canvas holding tree.
+        """
         return self._canvas
 
     @property
     def axes(self):
+        """
+        toyplot axes holding tree.
+        """
+
         return self._axes
 
     @property
     def mark(self):
+        """
+        tree object (a toyplot mark)
+        """
         return self._mark
 
     @property
     def tT(self):
+        """
+        toytree object used to generate the plot.
+        """
         return self._tT

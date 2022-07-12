@@ -2,10 +2,10 @@
 import pytest
 
 import topiary
-from topiary.draw.core import ete3_to_toytree
-from topiary.draw.core import construct_colormap, construct_sizemap
-from topiary.draw.core import create_name_dict, final_render
-from topiary.draw.core import _protect_name, _deprotect_name, _color_to_css
+from topiary.draw._core import ete3_to_toytree
+from topiary.draw._core import construct_colormap, construct_sizemap
+from topiary.draw._core import create_name_dict, final_render
+from topiary.draw._core import _protect_name, _deprotect_name, _color_to_css
 
 import ete3
 import toyplot

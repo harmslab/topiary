@@ -218,6 +218,8 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
     Construct a toyplot color map. If value_min == value_max, the cmap will
     always return color_min.
 
+    Parameters
+    ----------
     color : str or tuple or dict
         set node color. If a single value, color all nodes that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
