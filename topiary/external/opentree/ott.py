@@ -6,10 +6,6 @@ import topiary
 from topiary._private import check
 from topiary.external.opentree.util import species_to_ott
 
-from opentree import OT, taxonomy_helpers
-import dendropy as dp
-import ete3
-
 import pandas as pd
 import numpy as np
 

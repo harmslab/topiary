@@ -15,7 +15,7 @@ def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
                            no_bootstrap=False,
-                           reconcile_trees=True,
+                           no_reconcile=False,
                            allow_horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
@@ -142,11 +142,20 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
+    # Flip logic from user interface (where flags turn off bootstrap and
+    # reconcilation) to more readable flags that turn on (do_bootstrap,
+    # do_reconcile)
     if no_bootstrap:
-        do_boostrap = False
+        do_bootstrap = False
     else:
         do_bootstrap = True
 
+    if no_reconcile:
+        do_reconcile = False
+    else:
+        do_reconcile = True
+
+    # Find best phylogenetic model
     topiary.find_best_model(df,
                             tree_file=starting_tree,
                             model_matrices=model_matrices,
@@ -157,25 +166,31 @@ def alignment_to_ancestors(df,
                             num_threads=num_threads,
                             raxml_binary=raxml_binary)
 
+    # Generate the maximum likelihood tree with our without bootstraps
     topiary.generate_ml_tree(previous_dir="00_find-model",
                              output="01_ml-tree",
                              num_threads=num_threads,
                              raxml_binary=raxml_binary,
                              bootstrap=do_bootstrap)
 
+    # If reconciling...
+    if do_reconcile:
 
-    if not no_reconcile:
-
+        # Do an initial pass without bootstrap for ancestor generation
         topiary.reconcile(previous_dir="01_ml-tree",
                           output="02_reconciliation",
                           allow_horizontal_transfer=allow_horizontal_transfer,
                           generax_binary=generax_binary,
                           bootstrap=False)
 
+        # Generate ancestors
         topiary.generate_ancestors(previous_dir="02_reconciliation",
                                    output="03_ancestors",
                                    alt_cutoff=alt_cutoff)
 
+
+        # If we're doing bootstrap, reconcile all bootstrap replicates and
+        # generate ancestor with branch supports
         if do_bootstrap:
 
             topiary.reconcile(previous_dir="01_ml-tree",
@@ -189,6 +204,7 @@ def alignment_to_ancestors(df,
                                        alt_cutoff=alt_cutoff)
 
 
+    # No reconcilation, so just generate ancestors
     else:
 
         topiary.generate_ancestors(previous_dir="01_ml-tree",

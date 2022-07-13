@@ -5,7 +5,7 @@ Get a species tree given a topiary dataframe.
 import topiary
 from topiary._private import check
 
-from opentree import OT, taxonomy_helpers
+from opentree import taxonomy_helpers
 import dendropy as dp
 import ete3
 
