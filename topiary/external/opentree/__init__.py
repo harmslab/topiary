@@ -2,7 +2,8 @@
 Interface to open tree of life database.
 """
 
-from .util import is_allowed_phylo_context, get_phylo_context, species_to_ott
+from .util import is_allowed_phylo_context
+from .util import get_phylo_context, species_to_ott, get_resolvable
 from .ott import get_ott_id
 from .tree import get_species_tree
 

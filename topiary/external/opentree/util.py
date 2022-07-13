@@ -10,7 +10,7 @@ from opentree import OT, taxonomy_helpers
 import pandas as pd
 import numpy as np
 
-import re, copy
+import re, copy, time
 
 def is_allowed_phylo_context(phylo_context):
     """
@@ -83,6 +83,72 @@ def get_phylo_context(species_list):
 
     # Return context
     return ot_matches.response_dict["context_name"]
+
+def get_resolvable(ott_list,chunk_size=100):
+    """
+    Get whether or not taxa are resolvable on the syntehtic ott tree.
+
+    Parameters
+    ----------
+    ott_list : list-like
+        list of ott as integers
+    chunk_size : int, default=100
+        break query into N chunk_size chunks to avoid slamming ott server with
+        request for a huge synthetic tree
+
+    Returns
+    -------
+    resolved : list
+        list of ott that can be resolved
+    not_resolved : list
+        list of ott that cannot be resolved
+    """
+
+    ott_list = check.check_iter(ott_list,"ott_list")
+    chunk_size = check.check_int(chunk_size,"chunk_size",minimum_allowed=1)
+
+    # Check type of ott list
+    try:
+        ott_list = [int(o) for o in ott_list]
+    except (ValueError,TypeError):
+        err = "\nott_list should be a list of integer ott values\n\n"
+        raise ValueError(err)
+
+    # Make unique
+    ott_list = list(set(ott_list))
+
+    # Nothing passed in, don't do anything else
+    if len(ott_list) == 0:
+        return [], []
+
+    not_resolved = []
+    ott_broken_up = [ott_list[i:i + chunk_size]
+                     for i in range(0, len(ott_list), chunk_size)]
+    for query in ott_broken_up:
+
+        try:
+            # Get tree
+            ret = taxonomy_helpers.labelled_induced_synth(ott_ids=query,
+                                                          label_format="name_and_id",
+                                                          inc_unlabelled_mrca=False)
+            # Taxa unresolvable in synthetic tree
+            for bad in ret["unknown_ids"].keys():
+                ott_id = ret["unknown_ids"][bad]["ott_id"]
+                not_resolved.append(ott_id)
+
+        except ValueError:
+            # opentree throws a ValueError if none of the ott can be placed on
+            # on the tree. They're all bad.
+            not_resolved.extend(query)
+
+        # Pause briefly. No DOS attack here. :)
+        time.sleep(0.1)
+
+    resolved = list(set(ott_list) - set(not_resolved))
+
+    return resolved, not_resolved
+
+
 
 def species_to_ott(species_list,phylo_context="All life"):
     """
@@ -174,15 +240,7 @@ def species_to_ott(species_list,phylo_context="All life"):
     if len(tmp_ott_list) == 0:
         return results, []
 
-    # Check for ott that cannot be resolved into trees
-    ret = taxonomy_helpers.labelled_induced_synth(ott_ids=tmp_ott_list,
-                                                  label_format="name_and_id",
-                                                  inc_unlabelled_mrca=False)
-
-    # Taxa unresolvable in synthetic tree
-    not_resolved = []
-    for bad in ret["unknown_ids"].keys():
-        ott_id = ret["unknown_ids"][bad]["ott_id"]
-        not_resolved.append(ott_id)
+    # Get taxa that cannot be resolved
+    resolved, not_resolved = get_resolvable(tmp_ott_list)
 
     return results, not_resolved

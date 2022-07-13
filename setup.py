@@ -27,7 +27,6 @@ REQUIRED = [
     "openpyxl",
     "matplotlib>=3.4.2",
     "tqdm",
-    #"pyqt5",
 
     # bioinformatics
     "biopython>=1.78",
@@ -80,6 +79,6 @@ setup(
       'Programming Language :: Python :: 3.8',
       'Programming Language :: Python :: 3.9',
     ],
-    keywords="phylogenetics; ancestral sequence reconstruction; ASR; bioinformatics"
+    keywords="phylogenetics; ancestral sequence reconstruction; ASR; bioinformatics; protein; evolutionary biochemistry"
 )
 

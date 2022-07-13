@@ -118,6 +118,8 @@ def df_from_seed(seed_df,
                                             num_threads=num_threads,
                                             **kwargs)
 
+    print("Parsing BLAST output",flush=True)
+
     # blast_df is a list of dataframes, one for each hit in seed_df.sequence
 
     # Go through each blast dataframe
@@ -178,6 +180,8 @@ def df_from_seed(seed_df,
 
     # Set new hits to always_keep
     df.loc[pd.isna(df["always_keep"]),"always_keep"] = False
+
+    print("Getting OTT species ids for all species.",flush=True)
 
     # Get ott id for all sequences, setting False for those that can't be
     # found/resolved
