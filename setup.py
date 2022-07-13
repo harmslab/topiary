@@ -3,6 +3,7 @@
 
 import io
 import os
+import glob
 
 from setuptools import find_packages, setup
 
@@ -69,7 +70,7 @@ setup(
     extras_require = {
         'test': ['pytest'],
     },
-    scripts=['bin/run-raxml','bin/setup-generax'],
+    scripts=glob.glob("bin/topiary-*"),
     package_data={'': ['*.csv']},
     include_package_data=True,
     license='MIT',
@@ -81,3 +82,4 @@ setup(
     ],
     keywords="phylogenetics; ancestral sequence reconstruction; ASR; bioinformatics"
 )
+
