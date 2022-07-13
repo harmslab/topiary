@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   topiary.check
    topiary.draw
    topiary.external
    topiary.io

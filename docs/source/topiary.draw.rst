@@ -12,6 +12,14 @@ topiary.draw.ancestor module
    :undoc-members:
    :show-inheritance:
 
+topiary.draw.ancestor\_data module
+----------------------------------
+
+.. automodule:: topiary.draw.ancestor_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.draw.ml module
 ----------------------
 
@@ -32,14 +40,6 @@ topiary.draw.species module
 ---------------------------
 
 .. automodule:: topiary.draw.species
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-topiary.draw.tree module
-------------------------
-
-.. automodule:: topiary.draw.tree
    :members:
    :undoc-members:
    :show-inheritance:
