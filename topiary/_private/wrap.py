@@ -3,7 +3,7 @@ Construct a command line argument parser for a function, parse the command
 line arguments, and then run the function.
 """
 
-import sys, inspect, argparse, re, os
+import sys, inspect, argparse, re, os, copy
 
 class IterFromFile(argparse.Action):
     """
@@ -77,7 +77,7 @@ class IterFromFile(argparse.Action):
         # Set the destination attribute in the name space to our parsed values.
         setattr(namespace, self.dest, final_values)
 
-def wrap_function(fcn,argv=None,optional_arg_types={}):
+def wrap_function(fcn,argv=None,optional_arg_types={},extra_args=[],description=None):
     """
     Construct a command line argument parser for a function, parse the command
     line arguments, and then run the function.
@@ -92,6 +92,13 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
         dictionary of arg types for arguments with None as their default in the
         function. If an argument where default is None is not in
         optional_arg_types, treat argument as str.
+    extra_args : list
+        list of tuples of the form [(arg,kwargs),(arg,kwargs),...] that are
+        used to make command-line specific arguments. Passes in the following
+        way: parser.add_argument(arg,**kwargs). These are passed after the
+        arguments from the wrapped function.
+    description : str, optional
+        description to pass to help string
 
     Return
     ------
@@ -108,7 +115,8 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
     prog = f"topiary-{prog}"
 
     # Get description
-    description = dict(inspect.getmembers(fcn))["__doc__"]
+    if description is None:
+        description = dict(inspect.getmembers(fcn))["__doc__"]
     description = re.sub(":code:","",description)
 
     # Build parser
@@ -159,15 +167,25 @@ def wrap_function(fcn,argv=None,optional_arg_types={}):
 
         parser.add_argument(f"--{p}",**kwargs)
 
-    # Parse stats
+    # Load in wrapper specific arguments
+
+    for a in extra_args:
+        parser.add_argument(a[0],**a[1])
+
+    # Parse args
     args = parser.parse_args(argv)
 
-    # Call function with kwargs
+    # Create fcn_args, which does not have the extra arguments passed in
+    fcn_args = copy.deepcopy(args)
+    for a in extra_args:
+        fcn_args.__dict__.pop(a[0].strip("-"))
+
+    # Call function with fcn_args
     try:
-        fcn(**args.__dict__)
+        ret = fcn(**fcn_args.__dict__)
     except Exception as e:
         err = f"\n\nFunction {fcn.__name__} raised an error.\n\n"
         err += f"To see command line help, run {prog} --help\n\n"
         raise RuntimeError(err) from e
 
-    return args
+    return ret, args

@@ -25,9 +25,10 @@ def test_wrap_function(tmpdir):
         return arg1, arg2, arg3, arg4, arg5, arg6, arg7
 
     with pytest.raises(TypeError):
-        out = wf()
+        ret, out = wf()
 
-    out = wf(test_fcn,argv=["stupid"])
+    ret, out = wf(test_fcn,argv=["stupid"])
+    assert out.__dict__["arg1"] == "stupid"
     assert out.__dict__["arg2"] is None
     assert np.array_equal(out.__dict__["arg3"],["test","this"])
     assert out.__dict__["arg4"] is True
@@ -39,11 +40,12 @@ def test_wrap_function(tmpdir):
     # Don't send in useful first arg to argv. Should throw error because arg
     # is required.
     with pytest.raises(SystemExit):
-        out = wf(test_fcn,argv=["--arg2","numb"])
+        ret, out = wf(test_fcn,argv=["--arg2","numb"])
 
     # Check basic parsing of the args. Pass in arg2 and make sure arg3-7 are
     # unchanged.
-    out = wf(test_fcn,argv=["stupid","--arg2","numb"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg2","numb"])
+    assert out.__dict__["arg1"] == "stupid"
     assert out.__dict__["arg2"] == "numb"
     assert np.array_equal(out.__dict__["arg3"],["test","this"])
     assert out.__dict__["arg4"] is True
@@ -53,49 +55,48 @@ def test_wrap_function(tmpdir):
     assert np.array_equal(out.__dict__["arg8"],[1,2])
 
     # Make sure arg3-7 are parsed properly when sent in
-    out = wf(test_fcn,argv=["stupid","--arg3","bob"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg3","bob"])
     #assert np.array_equal(out.__dict__["arg3"],list("bob"))
 
-    out = wf(test_fcn,argv=["stupid","--arg4"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg4"])
     assert out.__dict__["arg4"] == False
 
-    out = wf(test_fcn,argv=["stupid","--arg5"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg5"])
     assert out.__dict__["arg5"] == True
 
-    out = wf(test_fcn,argv=["stupid","--arg6","5"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg6","5"])
     assert out.__dict__["arg6"] == 5.0
 
-    out = wf(test_fcn,argv=["stupid","--arg6","-5"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg6","-5"])
     assert out.__dict__["arg6"] == -5.0
 
-    out = wf(test_fcn,argv=["stupid","--arg7","string"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg7","string"])
     assert out.__dict__["arg7"] == "string"
 
     # Make sure arg type checking working (really only matters for float)
     with pytest.raises(SystemExit):
-        out = wf(test_fcn,argv=["stupid","--arg6","string"])
+        ret, out = wf(test_fcn,argv=["stupid","--arg6","string"])
 
     optional_arg_types = {"arg2":str}
-    out = wf(test_fcn,argv=["stupid","--arg2","numb"],optional_arg_types=optional_arg_types)
+    ret, out = wf(test_fcn,argv=["stupid","--arg2","numb"],optional_arg_types=optional_arg_types)
     assert out.__dict__["arg2"] == "numb"
 
     optional_arg_types = {"arg2":float}
     with pytest.raises(SystemExit):
-        out = wf(test_fcn,argv=["stupid","--arg2","numb"],optional_arg_types=optional_arg_types)
+        ret, out = wf(test_fcn,argv=["stupid","--arg2","numb"],optional_arg_types=optional_arg_types)
 
     optional_arg_types = {"arg2":float}
-    out = wf(test_fcn,argv=["stupid","--arg2","1.0"],optional_arg_types=optional_arg_types)
+    ret, out = wf(test_fcn,argv=["stupid","--arg2","1.0"],optional_arg_types=optional_arg_types)
     assert out.__dict__["arg2"] == 1.0
 
     # Make sure list parsing works
-    # Make sure list parsing works
-    out = wf(test_fcn,argv=["stupid","--arg8","3"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg8","3"])
     assert np.array_equal(out.__dict__["arg8"],[3])
 
-    out = wf(test_fcn,argv=["stupid","--arg8","3","4"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg8","3","4"])
     assert np.array_equal(out.__dict__["arg8"],[3,4])
 
-    out = wf(test_fcn,argv=["stupid","--arg8","3","4","5"])
+    ret, out = wf(test_fcn,argv=["stupid","--arg8","3","4","5"])
     assert np.array_equal(out.__dict__["arg8"],[3,4,5])
 
     # Test file read for value
@@ -104,7 +105,7 @@ def test_wrap_function(tmpdir):
     f.write("3\n4\n5\n")
     f.close()
 
-    out = wf(test_fcn,argv=["stupid","--arg8",test_file])
+    ret, out = wf(test_fcn,argv=["stupid","--arg8",test_file])
     assert np.array_equal(out.__dict__["arg8"],[3,4,5])
 
     # Test comment/blank line parsing
@@ -113,7 +114,7 @@ def test_wrap_function(tmpdir):
     f.write("#3\n4\n5\n\n\n")
     f.close()
 
-    out = wf(test_fcn,argv=["stupid","--arg8",test_file])
+    ret, out = wf(test_fcn,argv=["stupid","--arg8",test_file])
     assert np.array_equal(out.__dict__["arg8"],[4,5])
 
     # Test bad file  (with non-float values)
@@ -122,4 +123,56 @@ def test_wrap_function(tmpdir):
     f.write("A\nB\n5\n\n\n")
     f.close()
     with pytest.raises(ValueError):
-        out = wf(test_fcn,argv=["stupid","--arg8",test_file])
+        ret, out = wf(test_fcn,argv=["stupid","--arg8",test_file])
+
+    # Extra arguments
+
+    # Do not pass in required extra argument
+    with pytest.raises(SystemExit):
+        ret, out = wf(test_fcn,argv=["stupid"],extra_args=[("extra",{"type":str})])
+
+    # string required
+    ret, out = wf(test_fcn,argv=["stupid","rocket"],
+                  extra_args=[("extra",{"type":str})])
+    assert out.__dict__["extra"] == "rocket"
+
+    # int required
+    ret, out = wf(test_fcn,argv=["stupid","5"],
+                  extra_args=[("extra",{"type":int})])
+    assert out.__dict__["extra"] == 5
+
+
+    # string optional
+    ret, out = wf(test_fcn,argv=["stupid"],
+                  extra_args=[("--extra",{"type":str,"default":"xnay"})])
+    assert out.__dict__["extra"] == "xnay"
+
+    ret, out = wf(test_fcn,argv=["stupid","--extra","rocket"],
+                  extra_args=[("--extra",{"type":str})])
+    assert out.__dict__["extra"] == "rocket"
+
+    # int optional
+    ret, out = wf(test_fcn,argv=["stupid","--extra","5"],
+                  extra_args=[("--extra",{"type":int})])
+    assert out.__dict__["extra"] == 5
+
+    ret, out = wf(test_fcn,argv=["stupid"],
+                  extra_args=[("--extra",{"type":int,"default":-5})])
+    assert out.__dict__["extra"] == -5
+
+    # bool optional
+    ret, out = wf(test_fcn,argv=["stupid","--extra"],
+                  extra_args=[("--extra",{"action":"store_false"})])
+    assert out.__dict__["extra"] == False
+
+    ret, out = wf(test_fcn,argv=["stupid"],
+                  extra_args=[("--extra",{"action":"store_false"})])
+    assert out.__dict__["extra"] == True
+
+    ret, out = wf(test_fcn,argv=["stupid","--extra"],
+                  extra_args=[("--extra",{"action":"store_true"})])
+    assert out.__dict__["extra"] == True
+
+    ret, out = wf(test_fcn,argv=["stupid"],
+                  extra_args=[("--extra",{"action":"store_true"})])
+    assert out.__dict__["extra"] == False

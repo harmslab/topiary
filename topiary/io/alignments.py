@@ -315,7 +315,7 @@ def read_fasta_into(df,fasta,load_into_column="alignment",unkeep_missing=True):
     df : pandas.DataFrame
         topiary data frame
     fasta : str
-        a fasta string or fasta file with headers formatted like >uid|other stuff
+        a fasta file with headers formatted like >uid|other stuff
     load_into_column : str, default="alignment"
         what column in the dataframe to load the sequences into
     unkeep_missing : bool, default=True
@@ -328,6 +328,10 @@ def read_fasta_into(df,fasta,load_into_column="alignment",unkeep_missing=True):
     pandas.DataFrame
         topiary dataframe with sequences now in load_into_column
     """
+
+    # Read dataframe from file, if specified that way
+    if issubclass(type(df),str):
+        df = topiary.io.dataframe.read_dataframe(df)
 
     # Create data frame and make sure it has the column in which to load
     df = check.check_topiary_dataframe(df)
