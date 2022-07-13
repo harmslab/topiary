@@ -14,7 +14,7 @@ import os, random, string, shutil
 def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
-                           no_bootstrap=True,
+                           no_bootstrap=False,
                            allow_horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
@@ -76,9 +76,6 @@ def alignment_to_ancestors(df,
         raxml binary to use
     generax_binary : str, optional
         what generax binary to use
-    Returns
-    -------
-    None
     """
 
     # Make sure the software stack is valid before doing anything

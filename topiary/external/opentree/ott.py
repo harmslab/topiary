@@ -41,7 +41,7 @@ def get_ott_id(df,
 
     Notes
     -----
-    :code:`phylo_context`:code: should be a string recognized by
+    :code:`phylo_context` should be a string recognized by
     opentreeoflife.org. Strings are case-sensitive. To get the current strings
     recognized by the database, use the following code:
 

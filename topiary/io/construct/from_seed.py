@@ -62,8 +62,9 @@ def df_from_seed(seed_df,
 
     Notes
     -----
-    Every sequence in the original seed dataframe will have `always_keep` set
-    to True, so they will not be deleted by subsequent quality control steps.
+    Every sequence in the original seed dataframe will have :code:`always_keep`
+    set to :code:`True`, so they will not be deleted by subsequent quality
+    control steps.
     """
 
     out = topiary.io.load_seed_dataframe(seed_df)
