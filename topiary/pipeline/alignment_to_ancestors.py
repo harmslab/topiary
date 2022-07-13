@@ -15,6 +15,7 @@ def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
                            no_bootstrap=False,
+                           reconcile_trees=True,
                            allow_horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
@@ -46,6 +47,8 @@ def alignment_to_ancestors(df,
         If not specified, the maximum parsimony tree is generated and used.
     no_bootstrap : bool, default=False
         do not do bootstrap replicates
+    no_reconcile : bool, default=False
+        do not reconcile gene and species trees
     allow_horizontal_transfer : bool, default=False
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -139,9 +142,10 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
-    do_bootstrap = True
     if no_bootstrap:
         do_boostrap = False
+    else:
+        do_bootstrap = True
 
     topiary.find_best_model(df,
                             tree_file=starting_tree,
@@ -159,14 +163,36 @@ def alignment_to_ancestors(df,
                              raxml_binary=raxml_binary,
                              bootstrap=do_bootstrap)
 
-    topiary.reconcile(previous_dir="01_ml-tree",
-                      output="02_reconciliation",
-                      allow_horizontal_transfer=allow_horizontal_transfer,
-                      generax_binary=generax_binary,
-                      bootstrap=do_bootstrap)
 
-    topiary.generate_ancestors(previous_dir="02_reconciliation",
-                               output="03_ancestors",
-                               alt_cutoff=alt_cutoff)
+    if not no_reconcile:
+
+        topiary.reconcile(previous_dir="01_ml-tree",
+                          output="02_reconciliation",
+                          allow_horizontal_transfer=allow_horizontal_transfer,
+                          generax_binary=generax_binary,
+                          bootstrap=False)
+
+        topiary.generate_ancestors(previous_dir="02_reconciliation",
+                                   output="03_ancestors",
+                                   alt_cutoff=alt_cutoff)
+
+        if do_bootstrap:
+
+            topiary.reconcile(previous_dir="01_ml-tree",
+                              output="04_reconciliation_bootstrap",
+                              allow_horizontal_transfer=allow_horizontal_transfer,
+                              generax_binary=generax_binary,
+                              bootstrap=do_bootstrap)
+
+            topiary.generate_ancestors(previous_dir="04_reconciliation_bootstrap",
+                                       output="05_ancestors_with_branch_supports",
+                                       alt_cutoff=alt_cutoff)
+
+
+    else:
+
+        topiary.generate_ancestors(previous_dir="01_ml-tree",
+                                   output="02_ancestors",
+                                   alt_cutoff=alt_cutoff)
 
     os.chdir(current_dir)
