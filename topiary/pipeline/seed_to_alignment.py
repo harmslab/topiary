@@ -19,7 +19,7 @@ def seed_to_alignment(seed_df,
                       ncbi_blast_db="nr",
                       local_blast_db=None,
                       local_recip_blast_db=None,
-                      within_species_redundancy_cutoff=0.99,
+                      within_species_redundancy_cutoff=0.95,
                       sparse_column_cutoff=0.95,
                       align_trim=(0.05,0.95),
                       hitlist_size=5000,
@@ -53,7 +53,7 @@ def seed_to_alignment(seed_df,
         Local blast database to use for reciprocal blast. If None, construct a
         reciprocal blast database by downloading the proteomes of the key
         species from the ncbi.
-    within_species_redundancy_cutoff : float, default=0.99
+    within_species_redundancy_cutoff : float, default=0.95
         merge sequences with sequence identity above cutoff when removing
         redundancy of sequences within species.
     sparse_column_cutoff : float, default=0.95

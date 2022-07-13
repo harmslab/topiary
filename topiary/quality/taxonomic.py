@@ -421,7 +421,7 @@ def taxonomic_sample(df,
                      target_seq_number=500,
                      even_paralog_split=True,
                      key_species=[],
-                     within_species_redundancy_cutoff=0.99,
+                     within_species_redundancy_cutoff=0.95,
                      sparse_column_cutoff=0.95,
                      align_trim=(0.05,0.95),
                      verbose=False):
@@ -443,7 +443,7 @@ def taxonomic_sample(df,
         list of species (binomial names) that will not have sequences removed
         (unless there are duplicate sequences for that species with identity >
         within_species_redundancy_cutoff).
-    within_species_redundancy_cutoff : float, default=0.99
+    within_species_redundancy_cutoff : float, default=0.95
         merge sequences with sequence identity above cutoff when removing
         redundancy of sequences within species.
     sparse_column_cutoff : float, default=0.95
