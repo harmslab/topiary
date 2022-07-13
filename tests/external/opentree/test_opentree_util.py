@@ -62,6 +62,36 @@ def test_is_allowed_phylo_context():
     with pytest.raises(ValueError):
         opentree.util.is_allowed_phylo_context("not_real_context")
 
+def test_get_resolvable():
+
+    some_good_ott = [770315,276534,565131,356221]
+
+    # hybrid that is not on synthetic tree
+    bad_ott = [4942641]
+
+    good, bad = topiary.external.opentree.get_resolvable(some_good_ott)
+    assert set(good) == set(some_good_ott)
+    assert len(bad) == 0
+
+    good, bad = topiary.external.opentree.get_resolvable(bad_ott)
+    assert set(bad) == set(bad_ott)
+    assert len(good) == 0
+
+    both_together = some_good_ott[:]
+    both_together.extend(bad_ott)
+    good, bad = topiary.external.opentree.get_resolvable(both_together)
+    assert set(good) == set(some_good_ott)
+    assert set(bad) == set(bad_ott)
+
+    replicated = [770315,770315,770315,770315,770315,4942641,4942641,4942641,4942641]
+    good, bad = topiary.external.opentree.get_resolvable(replicated)
+    assert set(good) == set([770315])
+    assert set(bad) == set([4942641])
+
+    with pytest.raises(ValueError):
+        good, bad = topiary.external.opentree.get_resolvable(["not_ott",
+                                                              "not_ott2"])
+
 
 def test_species_to_ott():
 
