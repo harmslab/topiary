@@ -16,3 +16,4 @@ dependencies:
   - muscle
   - raxml-ng
   - toytree
+  - ghostscript

@@ -209,6 +209,9 @@ def load_seed_dataframe(df):
         key = str(df.loc[idx,"name"])
         values = [v.strip() for v in df.loc[idx,"aliases"].split(";")]
 
+        # Get rid of ""
+        values = [v for v in values if v != ""]
+
         try:
             alias_dict[key].extend(values)
         except KeyError:
