@@ -28,6 +28,7 @@ def seed_to_alignment(seed_df,
                       num_ncbi_threads=1,
                       num_recip_blast_threads=-1,
                       overwrite=False,
+                      keep_blast_xml=False,
                       verbose=False):
     """
     Pipeline that takes a seed dataframe, BLASTs to find sequence hits,
@@ -78,6 +79,8 @@ def seed_to_alignment(seed_df,
         available.
     overwrite : bool, default=False
         overwrite out_dir if it already exists
+    keep_blast_xml : bool, default=False
+        whether or not to keep raw blast xml outpu
     verbose : bool, default=False
         verbosity of output
 
@@ -139,7 +142,8 @@ def seed_to_alignment(seed_df,
               "hitlist_size":hitlist_size,
               "e_value_cutoff":e_value_cutoff,
               "gapcosts":gapcosts,
-              "num_threads":num_ncbi_threads}
+              "num_threads":num_ncbi_threads,
+              "keep_blast_xml":keep_blast_xml}
 
     out = topiary.df_from_seed(**kwargs)
 
@@ -172,7 +176,8 @@ def seed_to_alignment(seed_df,
     df = topiary.recip_blast(df,
                              paralog_patterns=paralog_patterns,
                              local_blast_db="blast_db",
-                             num_threads=num_recip_blast_threads)
+                             num_threads=num_recip_blast_threads,
+                             keep_blast_xml=keep_blast_xml)
 
     topiary.write_dataframe(df,f"{step_counter:02d}_recip-blast-dataframe.csv")
     step_counter += 1

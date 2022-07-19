@@ -7,24 +7,21 @@ def ncbi_lines():
     """
     A list of generic ncbi lines.
     """
+    dir = os.path.dirname(os.path.realpath(__file__))
+    filename = os.path.join(dir,"data","ncbi-lines-file.txt")
 
-    return ["sp|Q9Y6Y9|LY96_HUMAN Lymphocyte antigen 96 OS=Homo sapiens OX=9606 GN=LY96 PE=1 SV=2"]
+    lines = []
+    with open(filename) as f:
+        for line in f:
+            lines.append(line.strip())
 
-@pytest.fixture(scope="module")
-def ncbi_lines_parsed():
-    """
-    A list of parse results for those ncbi_lines.
-    """
+    filename = os.path.join(dir,"data","ncbi-lines-parsed.json")
+    f = open(filename)
+    parsed_lines =json.load(f)
+    f.close()
 
-    parsed_lines =  [{"structure":False,
-                      "low_quality":False,
-                      "predicted":False,
-                      "precursor":False,
-                      "isoform":False,
-                      "hypothetical":False,
-                      "partial":False}]
+    return (lines, parsed_lines)
 
-    return parsed_lines
 
 @pytest.fixture(scope="module")
 def dataframe_good_files():

@@ -166,6 +166,7 @@ def _run_blast(sequence_list,
                e_value_cutoff,
                gapcosts,
                num_threads,
+               keep_blast_xml,
                **kwargs):
     """
     Run blast on sequence_sequence list, returning a list of dataframes -- one
@@ -173,21 +174,30 @@ def _run_blast(sequence_list,
 
     Parameters
     ----------
-        sequence_list: list of sequences to use as blast queries.
-        local_blast_db: local database against which to blast
-        ncbi_blast_db: database on ncbi against which to blast
-        ncbi_taxid: limit search to species specified by taxid for an ncbi search.
-        e_value_cutoff: minimum allowable e value for a hit
-        gapcosts: gap costs (must be length 2 tuple of ints)
-        num_threads: number of threads to use for blast search. if -1,
-                           use all available.
-        kwargs: extra keyword arguments are passed directly to biopython
-                NcbiblastXXXCommandline (for local blast) or qblast (for remote
-                blast). These take precedence over anything specified above
-                (hitlist_size, for example).
+    sequence_list : list
+        list of sequences to use as blast queries.
+    local_blast_db : str
+        local database against which to blast
+    ncbi_blast_db : str
+        database on ncbi against which to blast
+    ncbi_taxid : int
+        limit search to species specified by taxid for an ncbi search.
+    e_value_cutoff : float
+        minimum allowable e value for a hit
+    gapcosts : tuple
+        gap costs (must be length 2 tuple of ints)
+    num_threads : int
+        number of threads to use for blast search. if -1, use all available.
+    keep_blast_xml: whether or not to keep blast xml
+    kwargs : dict
+        extra keyword arguments are passed directly to biopython
+        NcbiblastXXXCommandline (for local blast) or qblast (for remote
+        blast). These take precedence over anything specified above
+        (hitlist_size, for example).
 
     Return
     ------
+    out : list
         list of dataframes with blast hits, one for each sequence in sequence_list
     """
 
@@ -218,6 +228,7 @@ def _run_blast(sequence_list,
                              e_value_cutoff=e_value_cutoff,
                              gapcosts=gapcosts,
                              num_threads=num_threads,
+                             keep_blast_xml=keep_blast_xml,
                              **kwargs)
 
     # Local blast
@@ -229,6 +240,7 @@ def _run_blast(sequence_list,
                               e_value_cutoff=e_value_cutoff,
                               gapcosts=gapcosts,
                               num_threads=num_threads,
+                              keep_blast_xml=keep_blast_xml,
                               **kwargs)
 
     return hit_dfs
@@ -448,6 +460,7 @@ def recip_blast(df,
                   e_value_cutoff=0.01,
                   gapcosts=(11,1),
                   num_threads=-1,
+                  keep_blast_xml=False,
                   **kwargs):
     """
     Take sequences from a topiary dataframe and do a recip blast analysis
@@ -518,6 +531,8 @@ def recip_blast(df,
     num_threads : int, default=-1
         number of threads to use. if -1, use all available. (Multithreading
         rarely speeds up remote BLAST).
+    keep_blast_xml : bool, default=False
+        whether or not to keep raw blast xml output
     **kwargs : dict, optional
         extra keyword arguments are passed directly to biopython
         blast). These take precedence over anything specified above
@@ -582,6 +597,7 @@ def recip_blast(df,
                          e_value_cutoff,
                          gapcosts,
                          num_threads,
+                         keep_blast_xml,
                          **kwargs)
 
     # Make paralog calls given blast output and list of patterns

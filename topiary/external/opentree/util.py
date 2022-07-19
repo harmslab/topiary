@@ -129,8 +129,7 @@ def get_resolvable(ott_list,chunk_size=100):
         try:
             # Get tree
             ret = taxonomy_helpers.labelled_induced_synth(ott_ids=query,
-                                                          label_format="name_and_id",
-                                                          inc_unlabelled_mrca=False)
+                                                          label_format="name_and_id")
             # Taxa unresolvable in synthetic tree
             for bad in ret["unknown_ids"].keys():
                 ott_id = ret["unknown_ids"][bad]["ott_id"]
@@ -142,7 +141,7 @@ def get_resolvable(ott_list,chunk_size=100):
             not_resolved.extend(query)
 
         # Pause briefly. No DOS attack here. :)
-        time.sleep(0.1)
+        time.sleep(0.5)
 
     resolved = list(set(ott_list) - set(not_resolved))
 

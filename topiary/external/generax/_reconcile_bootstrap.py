@@ -204,8 +204,9 @@ def _construct_args(calc_dirs,
                     seed=None,
                     generax_binary=GENERAX_BINARY,
                     other_args=[],
+                    use_mpi=True,
                     num_threads=-1,
-                    test_num_cores=None):
+                    manual_num_cores=None):
     """
     Construct arguments to pass to each thread in the pool.
 
@@ -223,17 +224,37 @@ def _construct_args(calc_dirs,
         generax binary to use
     other_args : list, optional
         other arguments to pass to generax
+    use_mpi : bool, default=True
+        whether or not to use mpirun
     num_threads : int, default=-1
         number of threads. if -1, use all available
-    test_num_cores : int, optional
-        for the number of cores to be test_num_cores (for testing)
+    manual_num_cores : int, optional
+        for the number of cores to be manual_num_cores (for testing)
 
     Returns
     ------
         list of args to pass for each calculation, number of threads
     """
 
-    num_threads = threads.get_num_threads(num_threads,test_num_cores)
+    # If using MPI and have a specified number of threads, set manual_num_cores
+    # to num_threads. (Don't rely on os.cpu_count and friends for MPI)
+    if use_mpi and num_threads > 0 and manual_num_cores is None:
+        manual_num_cores = num_threads
+
+    # Get number of threads available
+    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
+
+    # If mpi, each generax calc will get num_threads. python will run each
+    # calcualation in series on a single thread
+    if use_mpi:
+        num_mpi_threads = num_threads
+        num_python_threads = 1
+
+    # If no mpi, each generax calc will get 1 thread. python will run individual
+    # calcs in parallel over num_threads
+    else:
+        num_mpi_threads = 1
+        num_python_threads = num_threads
 
     kwargs_list = []
     for c in calc_dirs:
@@ -243,13 +264,17 @@ def _construct_args(calc_dirs,
                             "generax_binary":generax_binary,
                             "other_args":copy.deepcopy(other_args)})
 
-    return kwargs_list, num_threads
+        # Give each calculation all num_threads
+        kwargs_list[-1]["num_threads"] = num_mpi_threads
+
+    return kwargs_list, num_python_threads
 
 
 def _generax_thread(run_directory,
                     allow_horizontal_transfer,
                     seed,
                     generax_binary,
+                    num_threads,
                     other_args):
     """
     Run a generax calculation on a single thread.
@@ -264,8 +289,10 @@ def _generax_thread(run_directory,
     seed : bool or int or str, optional
         If true, pass a randomly generated seed to generax. If int or str, use
         that as the seed (passed via --seed).
-    generax_binary : str, optional
+    generax_binary : str
         generax binary to use
+    num_threads : int
+        number of mpi threads to use
     log_to_stdout : bool, default=True
         capture log and write to std out.
     other_args : list, optional
@@ -276,6 +303,7 @@ def _generax_thread(run_directory,
                       allow_horizontal_transfer=allow_horizontal_transfer,
                       seed=seed,
                       generax_binary=generax_binary,
+                      num_threads=num_threads,
                       log_to_stdout=False,
                       other_args=other_args)
 
@@ -392,7 +420,9 @@ def reconcile_bootstrap(previous_dir=None,
                         allow_horizontal_transfer=True,
                         output=None,
                         overwrite=False,
+                        use_mpi=True,
                         num_threads=-1,
+                        num_cores=None,
                         generax_binary=GENERAX_BINARY):
     """
     Reconcile gene and species trees using generax with bootstrap replicates
@@ -421,8 +451,12 @@ def reconcile_bootstrap(previous_dir=None,
         form "generax_reconcilation_randomletters"
     overwrite : bool, default=False
         whether or not to overwrite existing output directory
+    use_mpi : bool, default=True
+        whether or not to use mpirun
     num_threads : int, default=-1
         number of threads to use. if -1 use all available.
+    num_cores : int, optional
+        number of cores on system (useful for mpi)
     generax_binary : str, optional
         what generax binary to use
 
@@ -444,7 +478,9 @@ def reconcile_bootstrap(previous_dir=None,
                                                     overwrite=overwrite)
 
     # Construct keyword arguments to pass to thread
-    kwargs_list, num_threads = _construct_args(calc_dirs,num_threads)
+    kwargs_list, num_threads = _construct_args(calc_dirs,
+                                               num_threads=num_threads,
+                                               manual_num_cores=num_cores)
 
     # Run multi-threaded generax--one reconciliation per thread
     threads.thread_manager(kwargs_list,

@@ -198,6 +198,29 @@ def check_git():
 
     return _version_checker(["git","--version"],_version_slicer)
 
+def check_mpirun():
+    """
+    Check for mpirun in the PATH and get its version.
+
+    Returns
+    -------
+    binary_path : str or None
+        path to binary. If program is not in the path, return None
+    version : tuple
+        output meanings:
+        + :code:`(-2,-2,-2)`, not found
+        + :code:`(-1,-1,-1)`, found but does not run
+        + :code:`(0,0,0)` found but could not figure out version
+        + :code:`(major,minor,patch)` i.e. (3.8.1). This is done by splitting on
+          the :code:`.` character, so this will always be a tuple but may have
+          any length > 1. Also, the elements will be :code:`str` not :code:`int`.
+    """
+
+    def _version_slicer(ret):
+        return ret.stdout.decode().split("\n")[0].split()[-1]
+
+    return _version_checker(["mpirun","--version"],_version_slicer)
+
 def _compare_versions(installed,required):
     """
     Compare an installed version tuple to a required version tuple.
@@ -270,7 +293,8 @@ def validate_stack(to_check):
                     "raxml-ng":check_raxml,
                     "generax":check_generax,
                     "muscle":check_muscle,
-                    "git":check_git}
+                    "git":check_git,
+                    "mpirun":check_mpirun}
 
     out = []
     bad_prog = []

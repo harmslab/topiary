@@ -15,6 +15,7 @@ def df_from_seed(seed_df,
                  e_value_cutoff=0.001,
                  gapcosts=(11,1),
                  num_threads=1,
+                 keep_blast_xml=False,
                  **kwargs):
     """
     Construct a topiary dataframe from a seed dataframe, blasting to fill in the
@@ -41,6 +42,8 @@ def df_from_seed(seed_df,
         number of threads to use for BLAST. If -1, use all available threads.
         Note: multithreading rarely speeds up NCBI blast queries, but can
         dramatically speed up local blast searches.
+    keep_blast_xml : bool, default=False
+        whether or not to keep raw blast xml output
     **kwargs : dict, optional
         extra keyword arguments are passed directly to biopython
         NcbiblastXXXCommandline (for local blast) or qblast (for remote
@@ -105,6 +108,7 @@ def df_from_seed(seed_df,
                                            e_value_cutoff=e_value_cutoff,
                                            gapcosts=gapcosts,
                                            num_threads=num_threads,
+                                           keep_blast_xml=keep_blast_xml,
                                            **kwargs)
 
     # local blast
@@ -116,14 +120,24 @@ def df_from_seed(seed_df,
                                             e_value_cutoff=e_value_cutoff,
                                             gapcosts=gapcosts,
                                             num_threads=num_threads,
+                                            keep_blast_xml=keep_blast_xml,
                                             **kwargs)
 
     print("Parsing BLAST output",flush=True)
 
     # blast_df is a list of dataframes, one for each hit in seed_df.sequence
+    for i, d in enumerate(blast_df):
+        d.to_csv(f"blast_{i}.csv")
 
     # Go through each blast dataframe
     for i in range(len(blast_df)):
+
+        if len(blast_df[i]) == 0:
+            seed_name = seed_df.loc[seed_df.index[i],"name"]
+            seed_species = seed_df.loc[seed_df.index[i],"species"]
+            print(f"There were no BLAST hits for {seed_name} from {seed_species}",
+                  flush=True)
+            continue
 
         # Assign the blast query to a useful name (i.e. LY96|Homo sapiens)
         blast_df[i].loc[:,"query"] = f"{seed_df.name.iloc[i]}|{seed_df.species.iloc[i]}"

@@ -9,23 +9,23 @@ import numpy as np
 
 def test_get_num_threads():
 
-    num_threads = threads.get_num_threads(-1,test_num_cores=10)
+    num_threads = threads.get_num_threads(-1,manual_num_cores=10)
     assert num_threads == 10
 
-    num_threads = threads.get_num_threads(1,test_num_cores=10)
+    num_threads = threads.get_num_threads(1,manual_num_cores=10)
     assert num_threads == 1
 
-    num_threads = threads.get_num_threads(5,test_num_cores=10)
+    num_threads = threads.get_num_threads(5,manual_num_cores=10)
     assert num_threads == 5
 
-    num_threads = threads.get_num_threads(5,test_num_cores=2)
+    num_threads = threads.get_num_threads(5,manual_num_cores=2)
     assert num_threads == 2
 
     bad_num_threads = [0,-2,"test",None,int,1.1]
     for b in bad_num_threads:
         print(f"testing {b} in get_num_threads")
         with pytest.raises(ValueError):
-            threads.get_num_threads(b,test_num_cores=10)
+            threads.get_num_threads(b,manual_num_cores=10)
 
 def _function_to_thread(rocking,usa=False,lock=None):
     """

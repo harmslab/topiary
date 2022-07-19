@@ -4,6 +4,7 @@ Reconcile a gene tree with a species tree using generax.
 
 import topiary
 from topiary._private.interface import prep_calc, write_run_information
+from topiary._private.threads import get_num_threads
 
 from topiary._private import check
 from ._generax import setup_generax, run_generax, GENERAX_BINARY
@@ -22,7 +23,9 @@ def reconcile(previous_dir=None,
               output=None,
               overwrite=False,
               bootstrap=False,
+              use_mpi=True,
               num_threads=-1,
+              num_cores=None,
               generax_binary=GENERAX_BINARY):
     """
     Reconcile the gene tree to the species tree using generax.
@@ -53,8 +56,12 @@ def reconcile(previous_dir=None,
     bootstrap : bool, default=False
         whether or not to do bootstrap replicates. Requires a previous_dir from
         an ML tree estimation that was run with bootstrap replicates.
+    use_mpi : bool, default=True
+        whether or not to use mpi
     num_threads : int, default=-1
         number of threads to use. if -1 use all available.
+    num_cores : int, optional
+        number of cores. if None, infer. (Useful for mpirun calls).
     generax_binary : str, optional
         what generax binary to use
 
@@ -75,7 +82,9 @@ def reconcile(previous_dir=None,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   output=output,
                                   overwrite=overwrite,
+                                  use_mpi=use_mpi,
                                   num_threads=num_threads,
+                                  num_cores=num_cores,
                                   generax_binary=GENERAX_BINARY)
         return ret
 
@@ -108,9 +117,15 @@ def reconcile(previous_dir=None,
     # Set up generax directory
     setup_generax(df,tree_file,model,"working")
 
+    # Get number of threads to use. If no mpi, use only one thread
+    num_threads = get_num_threads(num_threads,num_cores)
+    if not use_mpi:
+        num_threads = 1
+
     # Actually run generax
     cmd = run_generax(run_directory="working",
                       allow_horizontal_transfer=allow_horizontal_transfer,
+                      num_threads=num_threads,
                       generax_binary=generax_binary)
 
     # Make output directory to hold final outputs

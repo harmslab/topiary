@@ -7,7 +7,7 @@ and then infers ancestral proteins.
 import topiary
 from topiary.external.raxml import RAXML_BINARY
 from topiary.external.generax import GENERAX_BINARY
-from topiary._private import installed
+from topiary._private import installed, software_requirements
 
 import os, random, string, shutil
 
@@ -81,14 +81,34 @@ def alignment_to_ancestors(df,
         what generax binary to use
     """
 
-    # Make sure the software stack is valid before doing anything
-    installed.validate_stack([{"program":"raxml-ng",
-                               "min_version":topiary._private.software_requirements["raxml-ng"],
-                               "must_pass":True},
-                              {"program":"generax",
-                               "min_version":topiary._private.software_requirements["generax"],
-                               "must_pass":True}])
+    # Flip logic from user interface (where flags turn off bootstrap and
+    # reconcilation) to more readable flags that turn on (do_bootstrap,
+    # do_reconcile)
+    if no_bootstrap:
+        do_bootstrap = False
+    else:
+        do_bootstrap = True
 
+    if no_reconcile:
+        do_reconcile = False
+    else:
+        do_reconcile = True
+
+    to_validate = [{"program":"raxml-ng",
+                              "min_version":software_requirements["raxml-ng"],
+                              "must_pass":True}]
+
+    if do_reconcile:
+
+        to_validate.append({"program":"generax",
+                            "min_version":software_requirements["generax"],
+                            "must_pass":True})
+        to_validate.append({"program":"mpirun",
+                            "min_version":software_requirements["mpirun"],
+                            "must_pass":True})
+
+    # Make sure the software stack is valid before doing anything
+    installed.validate_stack(to_validate)
 
     # If no output directory is specified, make up a name
     if out_dir is None:
@@ -142,73 +162,85 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
-    # Flip logic from user interface (where flags turn off bootstrap and
-    # reconcilation) to more readable flags that turn on (do_bootstrap,
-    # do_reconcile)
-    if no_bootstrap:
-        do_bootstrap = False
-    else:
-        do_bootstrap = True
 
-    if no_reconcile:
-        do_reconcile = False
-    else:
-        do_reconcile = True
+    counter = 0
+
 
     # Find best phylogenetic model
+    output = f"{counter:02d}_find-model"
     topiary.find_best_model(df,
                             tree_file=starting_tree,
                             model_matrices=model_matrices,
                             model_rates=model_rates,
                             model_freqs=model_freqs,
                             model_invariant=model_invariant,
-                            output="00_find-model",
+                            output=output,
                             num_threads=num_threads,
                             raxml_binary=raxml_binary)
+    counter += 1
 
-    # Generate the maximum likelihood tree with our without bootstraps
-    topiary.generate_ml_tree(previous_dir="00_find-model",
-                             output="01_ml-tree",
+    # Generate the maximum likelihood tree without bootstraps
+    previous_dir = output
+    output = f"{counter:02d}_ml-tree"
+    topiary.generate_ml_tree(previous_dir=previous_dir,
+                             output=output,
                              num_threads=num_threads,
                              raxml_binary=raxml_binary,
-                             bootstrap=do_bootstrap)
+                             bootstrap=False)
+    counter += 1
 
     # If reconciling...
     if do_reconcile:
 
-        # Do an initial pass without bootstrap for ancestor generation
-        topiary.reconcile(previous_dir="01_ml-tree",
-                          output="02_reconciliation",
+        # Reconcile without bootstrap.
+        previous_dir = output
+        output = f"{counter:02d}_reconciliation"
+        topiary.reconcile(previous_dir=previous_dir,
+                          output=output,
                           allow_horizontal_transfer=allow_horizontal_transfer,
                           generax_binary=generax_binary,
                           bootstrap=False)
+        counter += 1
 
-        # Generate ancestors
-        topiary.generate_ancestors(previous_dir="02_reconciliation",
-                                   output="03_ancestors",
-                                   alt_cutoff=alt_cutoff)
+    # Generate ancestors
+    previous_dir = output
+    output = f"{counter:02d}_ancestors"
+    topiary.generate_ancestors(previous_dir=previous_dir,
+                               output=output,
+                               alt_cutoff=alt_cutoff)
+    counter += 1
 
+    # If we're doing bootstrap, reconcile all bootstrap replicates and
+    # generate ancestor with branch supports
+    if do_bootstrap:
 
-        # If we're doing bootstrap, reconcile all bootstrap replicates and
-        # generate ancestor with branch supports
-        if do_bootstrap:
+        # Generate bootstrap replicates for the tree
+        previous_dir = output
+        output = f"{counter:02d}_bootstraps"
+        topiary.generate_bootstraps(previous_dir=previous_dir,
+                                    output=output,
+                                    num_threads=num_threads,
+                                    raxml_binary=raxml_binary)
+        counter += 1
 
-            topiary.reconcile(previous_dir="01_ml-tree",
-                              output="04_reconciliation_bootstrap",
+        # Generate bootstraps for reconciliation
+        if do_reconcile:
+            previous_dir = output
+            output = f"{counter:02d}_reconciliation-bootstraps"
+            topiary.reconcile(previous_dir=previous_dir,
+                              output=output,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
                               bootstrap=do_bootstrap)
+            counter += 1
 
-            topiary.generate_ancestors(previous_dir="04_reconciliation_bootstrap",
-                                       output="05_ancestors_with_branch_supports",
-                                       alt_cutoff=alt_cutoff)
-
-
-    # No reconcilation, so just generate ancestors
-    else:
-
-        topiary.generate_ancestors(previous_dir="01_ml-tree",
-                                   output="02_ancestors",
+        # Generate final ancestors on tree with branch supports
+        previous_dir = output
+        output = f"{counter:02d}_ancestors_with_branch_supports"
+        topiary.generate_ancestors(previous_dir=previous_dir,
+                                   output=output,
                                    alt_cutoff=alt_cutoff)
+
+
 
     os.chdir(current_dir)

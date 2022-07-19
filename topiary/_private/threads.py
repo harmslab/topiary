@@ -8,7 +8,7 @@ import os
 import multiprocessing as mp
 from tqdm.auto import tqdm
 
-def get_num_threads(num_threads,test_num_cores=None):
+def get_num_threads(num_threads,manual_num_cores=None):
     """
     Get the number of cores availble for a multithreaded calculation.
 
@@ -16,8 +16,8 @@ def get_num_threads(num_threads,test_num_cores=None):
     ----------
     num_threads : int
         number of threads requested. if -1 use all available.
-    test_num_cores : int, optional
-        for the number of cores to be test_num_cores (for testing)
+    manual_num_cores : int, optional
+        for the number of cores to be manual_num_cores (for testing)
 
     Return
     ------
@@ -31,8 +31,8 @@ def get_num_threads(num_threads,test_num_cores=None):
         raise ValueError(err)
 
     # Try to figure out how many cores are available
-    if test_num_cores is not None:
-        num_cores = test_num_cores
+    if manual_num_cores is not None:
+        num_cores = manual_num_cores
     else:
         try:
             num_cores = mp.cpu_count()

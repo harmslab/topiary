@@ -110,10 +110,10 @@ def _prepare_for_blast(sequence,
 def _construct_args(sequence_list,
                     blast_function,
                     blast_kwargs,
-                    keep_tmp=False,
+                    keep_blast_xml=False,
                     block_size=20,
                     num_threads=-1,
-                    test_num_cores=None):
+                    manual_num_cores=None):
     """
     Construct a list of arguments to pass to each thread in the pool.
 
@@ -122,7 +122,7 @@ def _construct_args(sequence_list,
         sequence_list: list of sequences as strings
         blast_function: blast function to use
         blast_kwargs: keyword arguments to pass to blast call
-        keep_tmp: whether or not to keep temporary files
+        keep_blast_xml: whether or not to keep temporary files
         num_threads: number of threads to use. if -1, use all available.
         block_size: break into block_size sequence chunks
 
@@ -136,9 +136,9 @@ def _construct_args(sequence_list,
                                  "block_size",
                                  minimum_allowed=1)
 
-    num_threads = threads.get_num_threads(num_threads,test_num_cores)
+    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
 
-    keep_tmp = check.check_bool(keep_tmp,"keep_tmp")
+    keep_blast_xml = check.check_bool(keep_blast_xml,"keep_blast_xml")
 
     # Determine number of threads useful for this problem. It's not worth
     # chopping up a super small set of comparisons
@@ -184,7 +184,7 @@ def _construct_args(sequence_list,
                             "index":i_block,
                             "blast_function":blast_function,
                             "blast_kwargs":blast_kwargs,
-                            "keep_tmp":keep_tmp})
+                            "keep_blast_xml":keep_blast_xml})
 
 
     return kwargs_list, num_threads
@@ -194,7 +194,7 @@ def _local_blast_thread_function(sequence_list,
                                  index,
                                  blast_function,
                                  blast_kwargs,
-                                 keep_tmp):
+                                 keep_blast_xml):
     """
     Run local blast on a list of sequences.
 
@@ -208,7 +208,7 @@ def _local_blast_thread_function(sequence_list,
         blast function to run
     blast_kwargs : dict
         kwargs to pass to blast function
-    keep_tmp : bool
+    keep_blast_xml : bool
         whether or not to keep temporary files
 
     Returns
@@ -242,7 +242,7 @@ def _local_blast_thread_function(sequence_list,
         raise RuntimeError(err)
 
     # Delete temporary files
-    if not keep_tmp:
+    if not keep_blast_xml:
         os.remove(input_file)
         os.remove(out_file)
 
@@ -296,7 +296,7 @@ def local_blast(sequence,
                 hitlist_size=100,
                 e_value_cutoff=0.001,
                 gapcosts=(11,1),
-                keep_tmp=False,
+                keep_blast_xml=False,
                 num_threads=-1,
                 block_size=20,
                 **kwargs):
@@ -319,8 +319,8 @@ def local_blast(sequence,
         only return hits with e_value better than e_value_cutoff
     gapcosts : tuple, default=(11,1)
         BLAST gapcosts (length 2 tuple of ints)
-    keep_tmp : bool, default=False
-        whether or not to keep temporary blast output
+    keep_blast_xml : bool, default=False
+        whether or not to keep temporary blast xml files
     num_threads : int, default=-1
         number of threads to use. if -1, use all available.
     block_size : int, default=20
@@ -355,7 +355,7 @@ def local_blast(sequence,
     kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
                                                blast_function=blast_function,
                                                blast_kwargs=blast_kwargs,
-                                               keep_tmp=keep_tmp,
+                                               keep_blast_xml=keep_blast_xml,
                                                block_size=block_size,
                                                num_threads=num_threads)
 

@@ -11,7 +11,7 @@ def check_bool(value,variable_name=None):
 
     Parameters
     ----------
-    value : 
+    value :
         input value to check/process
     variable_name : str
         name of variable (string, for error message)
@@ -305,7 +305,7 @@ def check_iter(value,
 
     # Set up error message
     if variable_name is not None:
-        err_base = f"\nvariable_name '{value}' "
+        err_base = f"\n{variable_name} = {value} "
     else:
         err_base = f"\n'{value}' "
 

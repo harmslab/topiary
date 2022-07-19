@@ -216,9 +216,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                    blast_function=blast_function,
                                    blast_kwargs=blast_kwargs,
                                    num_threads=5,
-                                   keep_tmp=False,
+                                   keep_blast_xml=False,
                                    block_size=1,
-                                   test_num_cores=5)
+                                   manual_num_cores=5)
 
     assert type(kwargs_list) is list
     assert len(kwargs_list) == 5
@@ -244,7 +244,7 @@ def test__construct_args(test_dataframes,tmpdir):
         assert a["blast_kwargs"]["gapextend"] == 1
 
         # Keep tmp
-        assert a["keep_tmp"] == False
+        assert a["keep_blast_xml"] == False
 
     # -------------------------------------------------------------------------
     # test sequence bits
@@ -254,9 +254,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 num_threads=5,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 block_size=1,
-                                test_num_cores=5)
+                                manual_num_cores=5)
 
     assert len(all_args) == 1
     assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
@@ -268,9 +268,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 num_threads=5,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 block_size=1,
-                                test_num_cores=2)
+                                manual_num_cores=2)
 
     assert len(all_args) == 2
     assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
@@ -283,9 +283,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=20,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
     assert all_args[0]["sequence_list"][all_args[0]["index"][0]] == "test"
@@ -306,9 +306,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                         blast_function=blast_function,
                                         blast_kwargs=blast_kwargs,
                                         block_size=b,
-                                        keep_tmp=False,
+                                        keep_blast_xml=False,
                                         num_threads=-1,
-                                        test_num_cores=1)
+                                        manual_num_cores=1)
 
 
 
@@ -317,9 +317,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=5,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
     assert all_args[0]["index"][0] == 0
@@ -330,9 +330,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=1,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 5
     for i, a in enumerate(all_args):
@@ -345,9 +345,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=2,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 3
     counter = 0
@@ -361,9 +361,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=3,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 2
     counter = 0
@@ -377,45 +377,45 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=5,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
 
     # -------------------------------------------------------------------------
-    # keep_tmp
+    # keep_blast_xml
 
     all_args, num_threads = _ca(sequence_list,
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=5,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=3,
-                                test_num_cores=None)
-    assert all_args[0]["keep_tmp"] is False
+                                manual_num_cores=None)
+    assert all_args[0]["keep_blast_xml"] is False
 
     all_args, num_threads = _ca(sequence_list,
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=5,
-                                keep_tmp=True,
+                                keep_blast_xml=True,
                                 num_threads=3,
-                                test_num_cores=None)
-    assert all_args[0]["keep_tmp"] is True
+                                manual_num_cores=None)
+    assert all_args[0]["keep_blast_xml"] is True
 
 
     bad_bool = [1.5,[],None,str,"",{}]
     for b in bad_bool:
-        print("passing bad keep_tmp:",b)
+        print("passing bad keep_blast_xml:",b)
         with pytest.raises(ValueError):
             all_args, num_threads = _ca(sequence_list,
                                         blast_function=blast_function,
                                         blast_kwargs=blast_kwargs,
                                         block_size=5,
-                                        keep_tmp=b,
+                                        keep_blast_xml=b,
                                         num_threads=3,
-                                        test_num_cores=None)
+                                        manual_num_cores=None)
 
 
     # -------------------------------------------------------------------------
@@ -425,9 +425,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                 blast_function=blast_function,
                                 blast_kwargs=blast_kwargs,
                                 block_size=1,
-                                keep_tmp=False,
+                                keep_blast_xml=False,
                                 num_threads=3,
-                                test_num_cores=1000)
+                                manual_num_cores=1000)
     assert num_threads == 3
 
 
@@ -439,9 +439,9 @@ def test__construct_args(test_dataframes,tmpdir):
                                         blast_function=blast_function,
                                         blast_kwargs=blast_kwargs,
                                         block_size=5,
-                                        keep_tmp=False,
+                                        keep_blast_xml=False,
                                         num_threads=b,
-                                        test_num_cores=None)
+                                        manual_num_cores=None)
 
 def test__combine_hits(local_blast_output):
 

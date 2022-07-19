@@ -67,24 +67,29 @@ def parse_ncbi_line(line,accession=None):
 
     Parameters
     ----------
-        line: line from an NCBI record
-        accession: extract entry from line that matches acccession.  Ignores
-                   version (e.g. "1" in XXXXXXXXX.1).  If None, parse first
-                   entry on line.
+    line : str
+        line from an NCBI record
+    accession : str
+        extract entry from line that matches acccession.  Ignores
+        version (e.g. "1" in XXXXXXXXX.1).  If None, parse first
+        entry on line.
 
-    Return
-    ------
-        dictionary with following keys:
-            raw_line: unprocessed line (input)
-            line: processed line (remove multiple titles)
-            name: protein name
-            structure: whether or not this is a structure (bool)
-            low_quality: whether or not this is low quality (bool)
-            predicted: whether or not this is predicted (bool)
-            precursor: whether or not this is a precursor (bool)
-            isoform: whether or not this is an isoform (bool)
-            hypothetical: whether or not this is hypothetical (bool)
-            partial: whether or not this is a partial sequence (bool)
+    Returns
+    -------
+    out : dict
+        dictionary describing line. Has the following keys:
+        + *raw_line* unprocessed line (input)
+        + *line* processed line (remove multiple titles)
+        + *name* protein name
+        + *species* organism
+        + *accession* ncbi accession number
+        + *structure* whether or not this is a structure (bool)
+        + *low_quality* whether or not this is low quality (bool)
+        + *predicted* whether or not this is predicted (bool)
+        + *precursor* whether or not this is a precursor (bool)
+        + *isoform* whether or not this is an isoform (bool)
+        + *hypothetical* whether or not this is hypothetical (bool)
+        + *partial* whether or not this is a partial sequence (bool)
     """
 
     out = {"raw_line":line}
@@ -146,13 +151,24 @@ def parse_ncbi_line(line,accession=None):
 
     # Look for species name (thing within [ xxx ])
     species = None
-    species_pattern = re.compile("\[.*?]")
 
+    # Look for species with format [[something] this] (ncbi taxnomy convention)
+    # https://support.nlm.nih.gov/knowledgebase/article/KA-03379/en-us
+    species_pattern = re.compile("\[.*?\[.*?].*?]")
     sm = species_pattern.search(line)
     if sm:
-        out["species"] = sm.group(0)[1:-1]
-    else:
-        out["species"] = None
+        species = sm.group(0)[1:-1]
+        species = re.sub("[\[\]]","",species)
+
+    # If we didn't get species yet, look for generic [something this]
+    if species is None:
+        species_pattern = re.compile("\[.*?\]")
+        sm = species_pattern.search(line)
+        if sm:
+            species = sm.group(0)[1:-1]
+
+    # Record species
+    out["species"] = species
 
     # Clean up any double spaces introduced into the line at this point
     line = re.sub("  "," ",line)

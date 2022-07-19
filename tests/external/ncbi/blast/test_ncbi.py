@@ -259,7 +259,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
-                                test_num_cores=5)
+                                keep_blast_xml=False,
+                                manual_num_cores=5)
 
     assert type(all_args) is list
     assert len(all_args) == 5
@@ -291,7 +292,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
-                                test_num_cores=5)
+                                keep_blast_xml=False,
+                                manual_num_cores=5)
 
     assert len(all_args) == 1
     assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
@@ -304,7 +306,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=2)
+                                keep_blast_xml=False,
+                                manual_num_cores=2)
 
     assert len(all_args) == 2
     assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
@@ -318,7 +321,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
     assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
@@ -332,7 +336,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=2,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
     assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
@@ -348,7 +353,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=150,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
     assert len(all_args) == 2
     assert all_args[0]["this_query"]["sequence"].split("\n")[1] == 25*"test"
     assert all_args[1]["this_query"]["sequence"].split("\n")[1] == 25*"this"
@@ -369,7 +375,8 @@ def test__construct_args(test_dataframes):
                                         max_query_length=b,
                                         num_tries_allowed=5,
                                         num_threads=-1,
-                                        test_num_cores=1)
+                                        keep_blast_xml=False,
+                                        manual_num_cores=1)
 
     # Get expected and actual sequence length for this df.sequence compiled
     # into >countX\nSEQUENCE\n ... format. Assumes there are less than 10
@@ -383,7 +390,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
     seqs = all_args[0]["this_query"]["sequence"].split("\n")
@@ -400,7 +408,8 @@ def test__construct_args(test_dataframes):
                                     max_query_length=long_indiv_sequence//2,
                                     num_tries_allowed=5,
                                     num_threads=1,
-                                    test_num_cores=1)
+                                    keep_blast_xml=False,
+                                    manual_num_cores=1)
 
     # Make sure splitting looks reasonable -- each sequence on own
     all_args, num_threads = _ca(sequence_list,
@@ -408,7 +417,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=180,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 5
     for i, a in enumerate(all_args):
@@ -424,7 +434,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=340,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 3
     counter = 0
@@ -441,7 +452,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=510,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 2
     counter = 0
@@ -459,7 +471,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
 
@@ -471,7 +484,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
     assert all_args[0]["num_tries_allowed"] == 7
 
 
@@ -484,7 +498,8 @@ def test__construct_args(test_dataframes):
                                             max_query_length=10000,
                                             num_tries_allowed=b,
                                             num_threads=1,
-                                            test_num_cores=1)
+                                            keep_blast_xml=False,
+                                            manual_num_cores=1)
 
     # -------------------------------------------------------------------------
     # num_threads.
@@ -494,7 +509,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=3,
-                                test_num_cores=1000) # way more cores than 3
+                                keep_blast_xml=False,
+                                manual_num_cores=1000) # way more cores than 3
     assert num_threads == 3
 
 
@@ -507,7 +523,8 @@ def test__construct_args(test_dataframes):
                                         max_query_length=10000,
                                         num_tries_allowed=5,
                                         num_threads=b,
-                                        test_num_cores=None)
+                                        keep_blast_xml=False,
+                                        manual_num_cores=None)
 
 def test__combine_hits(ncbi_blast_server_output):
 

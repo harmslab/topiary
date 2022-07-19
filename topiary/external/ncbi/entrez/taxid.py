@@ -63,7 +63,7 @@ def get_taxid(species_list):
                 error_list.append(f"{k}: {error[k]}")
 
         err = "\nEntrez returned the following error when retrieving taxids. This\n"
-        err += "caused by mis-spelled species name(s).\n\n"
+        err += "can be caused by mis-spelled species name(s).\n\n"
         for e in error_list:
             err += f" -> {e}\n"
         err += "\n"

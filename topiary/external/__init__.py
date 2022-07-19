@@ -15,5 +15,6 @@ from .ncbi.blast import recip_blast
 from .raxml import find_best_model
 from .raxml import generate_ml_tree
 from .raxml import generate_ancestors
+from .raxml import generate_bootstraps
 
 from .generax import reconcile

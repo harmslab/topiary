@@ -133,6 +133,7 @@ def run_generax(run_directory,
                 seed=None,
                 generax_binary=GENERAX_BINARY,
                 log_to_stdout=True,
+                num_threads=1,
                 other_args=[]):
 
     """
@@ -153,6 +154,8 @@ def run_generax(run_directory,
         generax binary to use
     log_to_stdout : bool, default=True
         capture log and write to std out.
+    num_threads : int, default=1
+        number of threads. if > 1, execute by mpirun -np num_threads
     other_args : list, optional
         other arguments to pass to generax
 
@@ -161,8 +164,11 @@ def run_generax(run_directory,
     generax_cmd : str
         string representation of command passed to generax
     """
+    if num_threads > 1:
+        cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
+    else:
+        cmd = ["generax"]
 
-    cmd = ["generax"]
     cmd.extend(["--families","control.txt"])
     cmd.extend(["--species-tree","species_tree.newick"])
     cmd.extend(["--prefix","result"])
