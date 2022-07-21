@@ -414,7 +414,7 @@ def _follow_log_generator(f,queue):
             if counter > 200:
                 break
 
-def launch(cmd,run_directory,log_file=None):
+def launch(cmd,run_directory,log_file=None,suppress_output=False):
     """
     Launch an external command in a specific directory. If log_file is
     specified, runs command on its own thread, allowing python to capture output
@@ -431,6 +431,9 @@ def launch(cmd,run_directory,log_file=None):
         log file where command output will be stored. if specified, the
         output of the log file is captured and written to standard output
         (equivalent to `tail -f log_file`).
+    suppress_output : bool, default=False
+        whether or not to capture (and not return) stdout and stderr. Ignored
+        if log_file is specified.
 
     Returns
     -------
@@ -452,7 +455,11 @@ def launch(cmd,run_directory,log_file=None):
 
     # If no log file specified, run directly
     if log_file is None:
-        ret = subprocess.run(cmd)
+        if suppress_output:
+            capture_output = True
+        else:
+            capture_output = False
+        ret = subprocess.run(cmd,capture_output=capture_output)
 
     # Otherwise, run on it's own thread and capture output to standard out
     else:

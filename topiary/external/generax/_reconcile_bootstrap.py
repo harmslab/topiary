@@ -293,8 +293,6 @@ def _generax_thread(run_directory,
         generax binary to use
     num_threads : int
         number of mpi threads to use
-    log_to_stdout : bool, default=True
-        capture log and write to std out.
     other_args : list, optional
         other arguments to pass to generax
     """
@@ -305,6 +303,7 @@ def _generax_thread(run_directory,
                       generax_binary=generax_binary,
                       num_threads=num_threads,
                       log_to_stdout=False,
+                      suppress_output=True,
                       other_args=other_args)
 
 def _combine_results(prep_output):
@@ -373,6 +372,7 @@ def _combine_results(prep_output):
                     tree_file="ml-tree.newick",
                     num_threads=1,
                     log_to_stdout=False,
+                    suppress_output=True,
                     dir_name="combine_with_raxml",
                     other_files=["bs-trees.newick"],
                     other_args=["--bs-trees","bs-trees.newick","--redo"])

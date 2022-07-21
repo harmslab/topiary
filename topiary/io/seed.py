@@ -179,6 +179,7 @@ def load_seed_dataframe(df):
             raise ValueError(err)
 
     required_columns = ["species","name","aliases","sequence"]
+    df.columns = [c.lower().strip() for c in df.columns]
     for c in required_columns:
 
         try:

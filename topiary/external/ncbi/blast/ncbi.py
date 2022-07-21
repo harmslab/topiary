@@ -545,30 +545,30 @@ def ncbi_blast(sequence,
     a = animation.WaitingAnimation()
     a.start()
     all_hits = []
-    for i in range(0,len(sequence_list),2):
+    #for i in range(0,len(sequence_list),2):
 
-        s = sequence_list[i:i+2]
+    s = sequence_list[:] #i:i+2]
 
-        # Get arguments to pass to each thread
-        kwargs_list, num_threads = _construct_args(sequence_list=s,
-                                                   blast_kwargs=blast_kwargs,
-                                                   max_query_length=max_query_length,
-                                                   num_tries_allowed=num_tries_allowed,
-                                                   keep_blast_xml=keep_blast_xml,
-                                                   num_threads=num_threads)
-
-
-
-        hits = threads.thread_manager(kwargs_list,
-                                      _ncbi_blast_thread_function,
-                                      num_threads,
-                                      progress_bar=False,
-                                      pass_lock=True)
-
-        all_hits.extend(hits)
+    # Get arguments to pass to each thread
+    kwargs_list, num_threads = _construct_args(sequence_list=s,
+                                               blast_kwargs=blast_kwargs,
+                                               max_query_length=max_query_length,
+                                               num_tries_allowed=num_tries_allowed,
+                                               keep_blast_xml=keep_blast_xml,
+                                               num_threads=num_threads)
 
 
-        print("BLAST query complete.",flush=True)
+
+    hits = threads.thread_manager(kwargs_list,
+                                  _ncbi_blast_thread_function,
+                                  num_threads,
+                                  progress_bar=False,
+                                  pass_lock=True)
+
+    all_hits.extend(hits)
+
+
+    print("BLAST query complete.",flush=True)
     a.stop()
 
     # Combine hits into dataframes, one for each query

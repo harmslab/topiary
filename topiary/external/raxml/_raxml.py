@@ -20,11 +20,12 @@ def run_raxml(algorithm=None,
               model=None,
               dir_name=None,
               seed=None,
-              num_threads=-1,
-              raxml_binary=RAXML_BINARY,
               log_to_stdout=True,
+              suppress_output=False,
               other_args=None,
-              other_files=None):
+              other_files=None,
+              num_threads=-1,
+              raxml_binary=RAXML_BINARY):
     """
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
@@ -44,17 +45,19 @@ def run_raxml(algorithm=None,
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
         that as the seed. (passed via --seed)
-    num_threads : int, default=-1
-        number of threads (passed via --threads). if -1, use all available.
-    raxml_binary : str, default=RAXML_BINARY
-        raxml binary to use
-    log_to_stdout : book, default=True
+    log_to_stdout : bool, default=True
         capture log and write to std out.
+    suppress_output : bool, default=False
+        suppress output entirely. (ignored if log_to_stdout is True)
     other_args : list-like, optional
         list of arguments to pass to raxml
     other_files : list-like, optional
         list of files to copy into working directory (besides tree_file and
         alignment_file)
+    num_threads : int, default=-1
+        number of threads (passed via --threads). if -1, use all available.
+    raxml_binary : str, default=RAXML_BINARY
+        raxml binary to use
 
     Return
     ------
@@ -135,6 +138,9 @@ def run_raxml(algorithm=None,
         log_file = "alignment.phy.raxml.log"
 
     # Run job
-    interface.launch(cmd,dir_name,log_file)
+    interface.launch(cmd,
+                     run_directory=dir_name,
+                     log_file=log_file,
+                     suppress_output=suppress_output)
 
     return " ".join(cmd)

@@ -129,12 +129,13 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
 
 
 def run_generax(run_directory,
-                allow_horizontal_transfer=False,
+                allow_horizontal_transfer=True,
                 seed=None,
-                generax_binary=GENERAX_BINARY,
                 log_to_stdout=True,
+                suppress_output=False,
+                other_args=[],
                 num_threads=1,
-                other_args=[]):
+                generax_binary=GENERAX_BINARY):
 
     """
     Run generax. Creates a working directory, copies in the relevant files, runs
@@ -144,20 +145,23 @@ def run_generax(run_directory,
     ----------
     run_directory : str
         directory in which to do calculation
-    allow_horizontal_transfer : bool, default=False
+    allow_horizontal_transfer : bool, default=True
         whether or not to allow horizontal gene transfer. This corresponds to
         the UndatedDTL (horizontal) vs UndatedDL (no horizontal) models
     seed : bool or int or str, optional
         If true, pass a randomly generated seed to generax. If int or str, use
         that as the seed (passed via --seed).
-    generax_binary : str, optional
-        generax binary to use
     log_to_stdout : bool, default=True
         capture log and write to std out.
-    num_threads : int, default=1
-        number of threads. if > 1, execute by mpirun -np num_threads
+    suppress_output : bool, default=False
+        whether or not to capture generax spew rather than printing to stdout.
+        (ignored if log_to_stdout is True)
     other_args : list, optional
         other arguments to pass to generax
+    num_threads : int, default=1
+        number of threads. if > 1, execute by mpirun -np num_threads
+    generax_binary : str, optional
+        generax binary to use
 
     Returns
     -------
@@ -203,7 +207,7 @@ def run_generax(run_directory,
 
     # Make sure that generax is in the path
     try:
-        subprocess.run([generax_binary])
+        subprocess.run([generax_binary],capture_output=True)
     except FileNotFoundError:
         err = f"\ngenerax binary '{generax_binary}' not found in path\n\n"
         raise ValueError(err)
@@ -234,6 +238,9 @@ def run_generax(run_directory,
         log_file = os.path.join("result","generax.log")
 
     # Launch run
-    interface.launch(cmd,run_directory,log_file)
+    interface.launch(cmd,
+                     run_directory=run_directory,
+                     log_file=log_file,
+                     suppress_output=suppress_output)
 
     return " ".join(cmd)

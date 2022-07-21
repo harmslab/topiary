@@ -45,6 +45,7 @@ def _generate_parsimony_tree(alignment_file,
               num_threads=num_threads,
               raxml_binary=raxml_binary,
               log_to_stdout=False,
+              suppress_output=True,
               other_args=["--tree","pars{1}"])
 
 
@@ -257,7 +258,8 @@ def find_best_model(df,
                               "dir_name":dir_name,
                               "num_threads":1, # single thread per calc
                               "raxml_binary":raxml_binary,
-                              "log_to_stdout":False}
+                              "log_to_stdout":False,
+                              "suppress_output":True}
                     kwargs_list.append({"kwargs":kwargs})
                     models.append(model)
 
