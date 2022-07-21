@@ -7,9 +7,19 @@ and then infers ancestral proteins.
 import topiary
 from topiary.external.raxml import RAXML_BINARY
 from topiary.external.generax import GENERAX_BINARY
-from topiary._private import installed, software_requirements
+from topiary._private import installed, software_requirements, check
 
 import os, random, string, shutil
+
+def _check_restart(output,restart):
+
+    run_calc = True
+    if restart:
+        json_file = os.path.join(output,"output","run_parameters.json")
+        if os.path.isfile(json_file):
+            run_calc = False
+    
+    return run_calc
 
 def alignment_to_ancestors(df,
                            out_dir=None,
@@ -25,6 +35,7 @@ def alignment_to_ancestors(df,
                            model_rates=["","G8"],
                            model_freqs=["","FC","FO"],
                            model_invariant=["","IC","IO"],
+                           restart=False,
                            overwrite=False,
                            num_threads=-1,
                            raxml_binary=RAXML_BINARY,
@@ -71,8 +82,11 @@ def alignment_to_ancestors(df,
         ways to treat invariant alignment columns. If calling from command line, these
         can be specified directly (:code:`--model_invariant IC IO ...`) or by specifying
         a file with invariants on each line (:code:`--model_invariant SOME_FILE`)
+    restart : bool, default=False
+        restart job from where it stopped in output directory. incompatible with
+        overwrite
     overwrite : bool, default=False
-        whether or not to overwrite existing output
+        whether or not to overwrite existing output. incompatible with restart
     threads : int, default=-1
         number of threads to use. if -1 use all available
     raxml_binary : str, optional
@@ -80,6 +94,9 @@ def alignment_to_ancestors(df,
     generax_binary : str, optional
         what generax binary to use
     """
+
+    no_bootstrap = check.check_bool(no_bootstrap,"no_bootstrap")
+    no_reconcile = check.check_bool(no_reconcile,"no_reconcile")
 
     # Flip logic from user interface (where flags turn off bootstrap and
     # reconcilation) to more readable flags that turn on (do_bootstrap,
@@ -93,6 +110,13 @@ def alignment_to_ancestors(df,
         do_reconcile = False
     else:
         do_reconcile = True
+    
+    overwrite = check.check_bool(overwrite,"overwrite")
+    restart = check.check_bool(restart,"restart")
+
+    if overwrite and restart:
+        err = "overwrite and restart flags are incompatible.\n"
+        raise ValueError(err)
 
     to_validate = [{"program":"raxml-ng",
                               "min_version":software_requirements["raxml-ng"],
@@ -112,27 +136,34 @@ def alignment_to_ancestors(df,
 
     # If no output directory is specified, make up a name
     if out_dir is None:
+        if restart:
+            err = "To use restart, you must specify an out_dir\n"
+            raise ValueError(err)
         rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
         out_dir = f"alignment_to_ancestors_{rand}"
 
-    # If output directory already exists
-    if os.path.exists(out_dir):
+    # Make output directory
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+    else:
 
         # See if it is overwritable
-        cannot_overwrite = True
+        cannot_proceed = True
         if os.path.isdir(out_dir):
             if overwrite:
                 shutil.rmtree(out_dir)
-                cannot_overwrite = False
+                os.mkdir(out_dir)
+                cannot_proceed = False
+
+        # If restart, do some checking
+        if restart:
+            cannot_proceed = False
 
         # Throw error if not overwritable (overwrite = False or not dir)
-        if cannot_overwrite:
+        if cannot_proceed:
             err = f"\nout_dir '{out_dir}' exists. To proceed, delete or set\n"
             err += "overwrite = True.\n\n"
             raise FileExistsError(err)
-
-    # Make output directory
-    os.mkdir(out_dir)
 
     # If a dataframe was specified as a string, copy it in to output directory
     if issubclass(type(df),str):
@@ -142,7 +173,8 @@ def alignment_to_ancestors(df,
 
         df_base = os.path.split(df)[-1]
         out_df = os.path.join(out_dir,df_base)
-        shutil.copy(df,out_df)
+        if not os.path.isfile(out_df):
+            shutil.copy(df,out_df)
         df = df_base
 
     # If tree is specified as a string, copy it in to output directory
@@ -154,9 +186,9 @@ def alignment_to_ancestors(df,
 
             tree_base = os.path.split(df)[-1]
             out_tree = os.path.join(out_dir,tree_base)
-            shutil.copy(starting_tree,out_tree)
+            if not os.path.isfile(out_tree):
+                shutil.copy(starting_tree,out_tree)
             starting_tree = tree_base
-
 
     # Go into output directory
     current_dir = os.getcwd()
@@ -165,28 +197,33 @@ def alignment_to_ancestors(df,
 
     counter = 0
 
-
     # Find best phylogenetic model
     output = f"{counter:02d}_find-model"
-    topiary.find_best_model(df,
-                            tree_file=starting_tree,
-                            model_matrices=model_matrices,
-                            model_rates=model_rates,
-                            model_freqs=model_freqs,
-                            model_invariant=model_invariant,
-                            output=output,
-                            num_threads=num_threads,
-                            raxml_binary=raxml_binary)
+
+    run_calc = _check_restart(output,restart)
+    if run_calc:
+        topiary.find_best_model(df,
+                                tree_file=starting_tree,
+                                model_matrices=model_matrices,
+                                model_rates=model_rates,
+                                model_freqs=model_freqs,
+                                model_invariant=model_invariant,
+                                output=output,
+                                num_threads=num_threads,
+                                raxml_binary=raxml_binary)
     counter += 1
 
     # Generate the maximum likelihood tree without bootstraps
     previous_dir = output
     output = f"{counter:02d}_ml-tree"
-    topiary.generate_ml_tree(previous_dir=previous_dir,
-                             output=output,
-                             num_threads=num_threads,
-                             raxml_binary=raxml_binary,
-                             bootstrap=False)
+
+    run_calc = _check_restart(output,restart)
+    if run_calc:
+        topiary.generate_ml_tree(previous_dir=previous_dir,
+                                 output=output,
+                                 num_threads=num_threads,
+                                 raxml_binary=raxml_binary,
+                                 bootstrap=False)
     counter += 1
 
     # If reconciling...
@@ -195,19 +232,23 @@ def alignment_to_ancestors(df,
         # Reconcile without bootstrap.
         previous_dir = output
         output = f"{counter:02d}_reconciliation"
-        topiary.reconcile(previous_dir=previous_dir,
-                          output=output,
-                          allow_horizontal_transfer=allow_horizontal_transfer,
-                          generax_binary=generax_binary,
-                          bootstrap=False)
+        run_calc = _check_restart(output,restart)
+        if run_calc:
+            topiary.reconcile(previous_dir=previous_dir,
+                              output=output,
+                              allow_horizontal_transfer=allow_horizontal_transfer,
+                              generax_binary=generax_binary,
+                              bootstrap=False)
         counter += 1
 
     # Generate ancestors
     previous_dir = output
     output = f"{counter:02d}_ancestors"
-    topiary.generate_ancestors(previous_dir=previous_dir,
-                               output=output,
-                               alt_cutoff=alt_cutoff)
+    run_calc = _check_restart(output,restart)
+    if run_calc:
+        topiary.generate_ancestors(previous_dir=previous_dir,
+                                   output=output,
+                                   alt_cutoff=alt_cutoff)
     counter += 1
 
     # If we're doing bootstrap, reconcile all bootstrap replicates and
@@ -215,32 +256,38 @@ def alignment_to_ancestors(df,
     if do_bootstrap:
 
         # Generate bootstrap replicates for the tree
-        previous_dir = output
+        previous_dir = "01_ml-tree"
         output = f"{counter:02d}_bootstraps"
-        topiary.generate_bootstraps(previous_dir=previous_dir,
-                                    output=output,
-                                    num_threads=num_threads,
-                                    raxml_binary=raxml_binary)
+        run_calc = _check_restart(output,restart)
+        if run_calc:
+            topiary.generate_bootstraps(previous_dir=previous_dir,
+                                        output=output,
+                                        num_threads=num_threads,
+                                        raxml_binary=raxml_binary)
         counter += 1
 
         # Generate bootstraps for reconciliation
         if do_reconcile:
             previous_dir = output
             output = f"{counter:02d}_reconciliation-bootstraps"
-            topiary.reconcile(previous_dir=previous_dir,
-                              output=output,
-                              allow_horizontal_transfer=allow_horizontal_transfer,
-                              generax_binary=generax_binary,
-                              bootstrap=do_bootstrap)
+            run_calc = _check_restart(output,restart)
+            if run_calc:
+                topiary.reconcile(previous_dir=previous_dir,
+                                  output=output,
+                                  allow_horizontal_transfer=allow_horizontal_transfer,
+                                  generax_binary=generax_binary,
+                                  use_mpi=True,
+                                  bootstrap=do_bootstrap)
             counter += 1
 
         # Generate final ancestors on tree with branch supports
         previous_dir = output
         output = f"{counter:02d}_ancestors_with_branch_supports"
-        topiary.generate_ancestors(previous_dir=previous_dir,
-                                   output=output,
-                                   alt_cutoff=alt_cutoff)
-
+        run_calc = _check_restart(output,restart)
+        if run_calc:
+            topiary.generate_ancestors(previous_dir=previous_dir,
+                                       output=output,
+                                       alt_cutoff=alt_cutoff)
 
 
     os.chdir(current_dir)

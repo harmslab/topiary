@@ -251,20 +251,8 @@ class PrettyTree:
         # Get all edges
         edges = self._tT.get_edges()
 
-        # Create a dictionary chaining edges backwards
-        backwards = dict(zip(edges[:,1],edges[:,0]))
-
-        # Get number of nodes between longest branch length protein and the
-        # ancestor.
-        chain = [max_x_idx]
-        while chain[-1] != min_x_idx:
-            chain.append(backwards[chain[-1]])
-
         # Get total length of tree
         self._total_length = self._max_x - self._min_x
-
-        # Average branch length for longest overall branch
-        self._x_step = (self._max_x - self._min_x)/len(chain)
 
         # Separation between tips
         self._y_step = -self._font_size*1.333*self._y_px_to_tree #(self._max_y - self._min_y)/self._tT.ntips
@@ -328,16 +316,29 @@ class PrettyTree:
         node_idx = start_idx
         while node_idx != end_idx:
 
+            # If y displacement is 0, make very low...
             diff = np.abs(node_coord[node_idx,:] - corner)
-            if diff[1] != 0:
-                aspect = (diff[0]/diff[1])/self._pixel_aspect
-                aspect_diff = np.abs(1 - aspect)
-                if aspect_diff < best_aspect_diff:
-                    best_aspect_diff = aspect_diff
-                    best_aspect_node = node_coord[node_idx,:]
+            if diff[1] == 0:
+                diff[1] = 1e-6
+            
+            aspect = (diff[0]/diff[1])/self._pixel_aspect
+            aspect_diff = np.abs(1 - aspect)
+            if aspect_diff < best_aspect_diff:
+                best_aspect_diff = aspect_diff
+                best_aspect_node = node_coord[node_idx,:]
 
-            # Move back a node
-            node_idx = edge_dict[node_idx]
+            # Move back a node. If KeyError, tree is in strange configuration
+            # and cannot be parsed visually this way
+            try:
+                node_idx = edge_dict[node_idx]
+            except KeyError:
+                break
+
+        # If we did not find best_aspect_node
+        if best_aspect_node is None:
+            x = (self._max_x - self._min_x)/8 + self._min_x
+            y = (self._max_y - self._min_y)/8 + self._min_y
+            best_aspect_node = [x,y]
 
         box_width = np.abs(corner[0] - best_aspect_node[0])
         box_height = np.abs(corner[1] - best_aspect_node[1])

@@ -107,7 +107,6 @@ def generate_bootstraps(previous_dir=None,
                      dir_name="combine-bootstraps",
                      other_files=[bs_file],
                      other_args=["--bs-trees","alignment.phy.raxml.bootstraps","--redo"])
-    os.chdir(starting_dir)
 
     outdir = "output"
     os.mkdir(outdir)
