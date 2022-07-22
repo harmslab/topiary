@@ -517,13 +517,12 @@ def generate_ancestors(previous_dir=None,
     output = result["output"]
     existing_trees = result["existing_trees"]
 
-    # Read clean tree file from previous run
-    T = ete3.Tree(tree_file)
-
     alt_cutoff = check.check_float(alt_cutoff,
                                    "alt_cutoff",
                                    minimum_allowed=0,
                                    maximum_allowed=1)
+
+    print("Reconstructing ancestral states.\n",flush=True)
 
     # Do reconstruction on the tree
     cmd = run_raxml(algorithm="--ancestral",
@@ -532,6 +531,8 @@ def generate_ancestors(previous_dir=None,
                     model=model,
                     seed=True,
                     dir_name="working_inference",
+                    log_to_stdout=False, 
+                    suppress_output=True,
                     num_threads=num_threads,
                     raxml_binary=raxml_binary)
 
@@ -564,10 +565,10 @@ def generate_ancestors(previous_dir=None,
         shutil.copy(t,os.path.join("output",tree_filename))
 
     # Copy ancestors with labels and posterior probabilities
-    shutil.copy(os.path.join("working_analysis","ancestors_label.newick",
-                os.path.join("output","tree_anc-label.newick")))
-    shutil.copy(os.path.join("working_analysis","ancestors_pp.newick",
-                os.path.join("output","tree_anc-pp.newick")))
+    shutil.copy(os.path.join("working_analysis","ancestors_label.newick"),
+                os.path.join("output","tree_anc-label.newick"))
+    shutil.copy(os.path.join("working_analysis","ancestors_pp.newick"),
+                os.path.join("output","tree_anc-pp.newick"))
 
     # Copy ancestor files into an ancestors directory
     files_to_grab = glob.glob(os.path.join("working_analysis","*.*"))

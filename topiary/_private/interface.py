@@ -454,7 +454,8 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
 
     # Print command
     full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'",flush=True)
+    if not suppress_output:
+        print(f"Running '{full_cmd}'",flush=True)
 
     # If no log file specified, run directly
     if log_file is None:
