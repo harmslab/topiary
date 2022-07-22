@@ -7,7 +7,7 @@ from topiary._private import check
 
 import pandas as pd
 
-import subprocess, os, sys, time, random, string, shutil, copy, json
+import subprocess, os, sys, time, random, string, shutil, copy, json, glob
 import multiprocessing as mp
 
 def gen_seed():
@@ -176,6 +176,9 @@ def read_previous_run_dir(previous_dir):
     tree_file = os.path.abspath(os.path.join(out_dir,"tree.newick"))
     if os.path.exists(tree_file):
         previous["tree_file"] = tree_file
+
+    all_trees = glob.glob(os.path.abspath(os.path.join(out_dir,"*.newick")))
+    previous["existing_trees"] = all_trees
 
     return previous
 
@@ -508,7 +511,7 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
     # Leave working directory
     os.chdir(cwd)
 
-def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
+def write_run_information(outdir,df,calc_type,model,cmd):
     """
     Write information from the run in a standard way.
 
@@ -524,8 +527,6 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
         phylogenetic model
     cmd : str
         invoked raxml or generax command
-    outgroup : list, optional
-        length 2 list with two sets of outgroups
 
     Return
     ------
@@ -539,8 +540,7 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
     out_dict = {"calc_type":calc_type,
                 "model":model,
                 "cmd":cmd,
-                "version":topiary.__version__,
-                "outgroup":outgroup}
+                "version":topiary.__version__}
 
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)

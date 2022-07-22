@@ -106,6 +106,7 @@ def reconcile(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
     output = result["output"]
+    existing_trees = result["existing_trees"]
 
     required = [df,model,tree_file]
     for r in required:
@@ -129,37 +130,38 @@ def reconcile(previous_dir=None,
                       generax_binary=generax_binary)
 
     # Make output directory to hold final outputs
-    outdir = "output"
-    os.mkdir(outdir)
+    os.mkdir("output")
+
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="reconciliation",
+                          model=model,
+                          cmd=cmd)
+
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in existing_trees:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
 
     # Copy in tree.newick
     shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
                 os.path.join("output","tree.newick"))
 
-    # Get outgroups (e.g. leaves descending from each half after root)
-    reconcile_file = os.path.join("working","result","reconciliations","reconcile_events.newick")
-    reconcile_tree = ete3.Tree(reconcile_file,format=1)
-    root = reconcile_tree.get_tree_root()
-    root_children = root.get_children()
-    outgroup = [[n.name for n in r.get_leaves()] for r in root_children]
-
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="reconciliation",
-                          model=model,
-                          cmd=cmd,
-                          outgroup=outgroup)
-
     # Copy reconcilation information
     shutil.copytree(os.path.join("working","result","reconciliations"),
                     os.path.join("output","reconcilations"))
+    shutil.copy(os.path.join("output","reconcilations","reconcile_events.newick",
+                os.path.join("output","tree_events.newick")))
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
-    # Write out a summary tree.
-    return topiary.draw.reconciliation_tree(run_dir=output,
-                                            output_file=os.path.join(output,outdir,"summary-tree.pdf"))
+    # # Write out a summary tree.
+    # return topiary.draw.reconciliation_tree(run_dir=output,
+    #                                         output_file=os.path.join(output,
+    #                                                                  "output",
+    #                                                                  "summary-tree.pdf"))

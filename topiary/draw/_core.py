@@ -442,8 +442,7 @@ def construct_sizemap(size,prop,prop_span=None):
 def load_trees(prev_run_dir,
                tree_base_path,
                tree_names,
-               tree_fmt=None,
-               outgroup=None):
+               tree_fmt=None):
     """
     Load trees and tree formatting information from a previous run directory.
 
@@ -490,19 +489,6 @@ def load_trees(prev_run_dir,
 
         # read tree
         T = topiary.io.read_tree(tree_path,fmt=tree_fmt[i])
-
-        # If outgroup specified
-        if outgroup is not None:
-
-            # Root tree. We have to try with both the left and right
-            # descendants of the previous root.
-            try:
-                common_anc = T.get_common_ancestor(outgroup[0])
-                T.set_outgroup(common_anc)
-            except ete3.coretype.tree.TreeError:
-                common_anc = T.get_common_ancestor(outgroup[1])
-                T.set_outgroup(common_anc)
-
         T_list.append(T)
 
     if len(T_list) == 1:
@@ -599,6 +585,159 @@ def create_name_dict(df,tip_columns=None,separator="|"):
                 uid_to_name[uid] = separator.join([uid_to_name[uid],uid])
 
     return uid_to_name
+
+def parse_span_color(span_color,color):
+    """
+    Decide how to treat span_color (bs_color or pp_color), returning output that
+    can feed into PrettyTree.draw_nodes().
+
+    Parameters
+    ----------
+    span_color :
+        putative bs_color or pp_color dictionary passed in by user
+    color :
+        putative color passed in by user
+
+    Returns
+    -------
+    plot_nodes : bool
+        whether or not we're plotting support nodes
+    value_span : list or None
+        top and bottom values for color map
+    color_span : list or None
+        top and bottom colors for color map. if "color" is specified, just
+        return this.
+    """
+
+    # color takes precedence over span_color
+    if color is not None:
+        return False, None, color
+
+    # if span_color is None,  return nothing. PrettyTree will do default color
+    if span_color is None:
+        return False, None, None
+
+    bad_span_color = False
+    if not issubclass(type(span_color),dict):
+        bad_span_color = True
+    else:
+
+        keys = list(span_color.keys())
+        try:
+            min_value = float(keys[0])
+            max_value = float(keys[1])
+            if len(keys) != 2:
+                raise IndexError
+        except (KeyError,IndexError):
+            bad_span_color = True
+
+    if bad_span_color:
+        err = "bs_color and pp_color must be dictionaries with two elements. The\n"
+        err += "keys should be minimum and maximum support values for the color\n"
+        err += "map. The values should be the bottom and top colors.\n"
+        raise ValueError(err)
+
+    span_span = (min_value,max_value)
+    span_color = tuple(span_color.values())
+
+    return True, span_span, span_color
+
+def draw_bs_nodes(T,pt,bs_color,bs_label,color,size):
+    """
+    Draw branch supports on a tree.
+
+    Parameters
+    ----------
+    T : et3.Tree
+        ete3 tree object with supports
+    pt : topiary.PrettyTree
+        tree on which to plot supports
+    bs_color : dict
+        set min/max values for branch support color map. First key is min,
+        second is max. Values are colors. Colors can be RGBA tuples, named
+        colors, or hexadecimal strings. See the toyplot documentation for
+        allowed values. If color (below) is defined, it takes precedence over
+        bs_color.
+    bs_label : bool
+        whether or not to plot bootstrap labels on nodes
+    color : str or tuple or dict, optional
+        set node color. If a single value, color all nodes that color. If
+        list-like and length 2, treat as colors for minimum and maximum of a
+        color gradient.  If dict, map property keys to color values. Colors
+        can be RGBA tuples, named colors, or hexadecimal strings. See the
+        toyplot documentation for allowed values.
+    size : float or tuple or dict, optional
+        set node size. If a single value, make all nodes that size. If
+        list-like and length 2, treat as sizes for minimum and maximum of a
+        size gradient. If dict, map property keys to size values. Sizes must
+        be float >= 0.
+
+    Returns
+    -------
+    added_supports : bool
+        whether or not we drew supports on the tree
+    size : float or tuple or dict
+        size scaled down in case user plans to plot another set of nodes on
+        top
+    """
+
+    # Keep track of whether we added supports
+    added_supports = False
+
+    # Grab supports
+    supports = []
+    for n in T.traverse():
+        if not n.is_leaf():
+            supports.append(n.support)
+
+    # Figure out if the tree has supports. If the tree did not have supports,
+    # ete3 will load it in with a support value of 1.0 for all nodes. This would
+    # be very unlikely for a tree with real supports, so use that to look for
+    # trees without supports
+    supports_seen = list(set(supports))
+    if len(supports_seen) == 1 and supports_seen[0] == 1:
+        has_supports = False
+    else:
+        has_supports = True
+
+    # Figure out how to deal with color
+    draw_bs, bs_span, bs_color = parse_span_color(bs_color,color)
+
+    # Draw supports
+    if has_supports and draw_bs:
+
+        added_supports = True
+
+        pt.draw_nodes(property_label="support",
+                      prop_span=bs_span,
+                      color=bs_color,
+                      size=size)
+
+        # Size can be None, a dictionary, list of two, or float. It is validated
+        # by the draw_nodes call above, so we can assume it is one of these.
+        # Scale size down by 0.6 so we draw in the middle of the current node.
+        if size is None:
+            size = pt.default_size*0.6
+
+        # Dictionary
+        elif issubclass(type(size),dict):
+            for k in size:
+                size[k] = size[k]*0.6
+
+        else:
+            # Float
+            try:
+                size = size*0.6
+
+            # array-like
+            except (ValueError,TypeError):
+                size = np.array(size)*0.6
+
+    if has_supports and bs_label:
+        pt.draw_node_labels(property_labels="support")
+
+
+    return added_supports, size
 
 
 def final_render(pt,output_file=None,default_file="tree.pdf"):

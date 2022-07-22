@@ -317,12 +317,8 @@ def _combine_results(prep_output):
     """
 
     # Get base output directory for the calculation
-    base_dir = prep_output["output"]
+    base_dir = os.path.abspath(prep_output["output"])
     base_rep = os.path.join(base_dir,"replicates")
-
-    # output directory
-    outdir = os.path.join(base_dir,"output")
-    os.mkdir(outdir)
 
     # combine-bootstraps directory
     combine_dir = os.path.join(base_dir,"combine-bootstraps")
@@ -365,7 +361,7 @@ def _combine_results(prep_output):
                 os.path.join(combine_dir,"ml-tree.newick"))
 
     # Combine bootstrap replicates in combine_dir using raxmls
-    starting_dir = os.getcwd()
+
     os.chdir(combine_dir)
 
     cmd = run_raxml(algorithm="--support",
@@ -376,42 +372,55 @@ def _combine_results(prep_output):
                     dir_name="combine_with_raxml",
                     other_files=["bs-trees.newick"],
                     other_args=["--bs-trees","bs-trees.newick","--redo"])
-    os.chdir(starting_dir)
 
-    # Copy ml-tree with supports into output directory
-    shutil.copy(os.path.join(combine_dir,
-                             "combine_with_raxml",
-                             "tree.newick.raxml.support"),
-                os.path.join(outdir,"tree.newick"))
+    os.chdir(base_dir)
 
-    # Copy reconcilation directory into output directory
-    shutil.copytree(os.path.join(base_rep,"ml",reconcile_path),
-                    os.path.join(outdir,"reconcilations"))
-
-    # Get outgroups (e.g. leaves descending from each half after root)
-    reconcile_file = os.path.join(base_rep,
-                                  "ml",reconcile_path,
-                                  "reconcile_events.newick")
-    reconcile_tree = ete3.Tree(reconcile_file,format=1)
-    root = reconcile_tree.get_tree_root()
-    root_children = root.get_children()
-    outgroup = [[n.name for n in r.get_leaves()] for r in root_children]
+    # output directory
+    outdir = os.path.join("output")
+    os.mkdir(outdir)
 
     # Write run information
     write_run_information(outdir=outdir,
                           df=prep_output["df"],
                           calc_type="reconciliation_bootstrap",
                           model=prep_output["model"],
-                          cmd=None,
-                          outgroup=outgroup)
+                          cmd=None)
+
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in prep_output["existing_trees"]:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
+
+    # Copy in ml-tree, no supports
+    shutil.copy(os.path.join(combine_dir,"ml-tree.newick"),
+                os.path.join(outdir,"tree.newick"))
+
+    # Copy ml-tree with supports into output directory
+    shutil.copy(os.path.join(combine_dir,
+                             "combine_with_raxml",
+                             "tree.newick.raxml.support"),
+                os.path.join(outdir,"tree_supports.newick"))
+
+    # Copy reconcilation directory into output directory
+    shutil.copytree(os.path.join(base_rep,"ml",reconcile_path),
+                    os.path.join(outdir,"reconcilations"))
+
+    # Copy events tree into output directory
+    shutil.copy(os.path.join(base_rep,
+                                  "ml",reconcile_path,
+                                  "reconcile_events.newick"),
+                os.path.join(outdir,"tree_events.newick"))
 
     print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 
-    # Write out a summary tree.
-    return topiary.draw.reconciliation_tree(run_dir=base_dir,
-                                            output_file=os.path.join(base_dir,
-                                                                     "output",
-                                                                     "summary-tree.pdf"))
+    os.chdir(prep_output["starting_dir"])
+
+    # # Write out a summary tree.
+    # return topiary.draw.reconciliation_tree(run_dir=base_dir,
+    #                                         output_file=os.path.join(base_dir,
+    #                                                                  "output",
+    #                                                                  "summary-tree.pdf"))
 
 def reconcile_bootstrap(previous_dir=None,
                         df=None,

@@ -14,10 +14,13 @@ import ete3
 
 def ancestor_tree(run_dir,
                   output_file=None,
+                  pp_color={0.5:"#ffffff",1.0:"#D16A16"},
+                  bs_color={50:"#ffffff",100:"#D16A16"},
+                  pp_label=False,
+                  bs_label=False,
                   tip_columns=["species","nickname"],
                   tip_name_separator="|",
-                  support_span=(0.5,1.0),
-                  color=("#ffffff","#D16A16"),
+                  color=None,
                   size=None,
                   font_size=15,
                   stroke_width=2,
@@ -89,8 +92,7 @@ def ancestor_tree(run_dir,
                                tree_base_path=os.path.join("output","ancestors"),
                                tree_names=["ancestors_label.newick",
                                            "ancestors_pp.newick"],
-                               tree_fmt=[1,1],
-                               outgroup=prev_run["outgroup"])
+                               tree_fmt=[1,1])
 
 
 
@@ -153,13 +155,14 @@ def ancestor_tree(run_dir,
                     **kwargs)
     pt.draw_scale_bar()
 
+
     # Draw supports
-    pt.draw_nodes(property_label="pp",
-                  prop_span=support_span,
-                  plot_root=False,
-                  color=color,
-                  size=size)
+    # pt.draw_nodes(property_label="pp",
+    #               prop_span=support_span,
+    #               plot_root=False,
+    #               color=color,
+    #               size=size)
     pt.draw_node_labels(property_labels="name")
-    pt.draw_node_legend(label_renamer={"pp":"post. prob."})
+    #pt.draw_node_legend(label_renamer={"pp":"post. prob."})
 
     return final_render(pt,output_file=output_file,default_file="ancestor-tree.pdf")

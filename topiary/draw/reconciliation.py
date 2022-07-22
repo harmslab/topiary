@@ -4,19 +4,27 @@ whether they are speciations, duplications, or losses.
 """
 
 import topiary
+
 from topiary._private.interface import read_previous_run_dir
+from ._core import load_trees, create_name_dict, final_render, map_tree_to_tree
+from ._core import draw_bs_nodes
+from ._prettytree import PrettyTree
+
+import numpy as np
 
 import os
 
-from ._core import load_trees, create_name_dict, final_render, map_tree_to_tree
-from ._prettytree import PrettyTree
-import ete3
 
 def reconciliation_tree(run_dir,
                         output_file=None,
+                        event_color={"D":"#64007F","L":"#BAD316","S":"#D16A16","T":"#407E98"},
+                        bs_color={50:"#ffffff",100:"#155677"},
+                        event_label=False,
+                        bs_label=False,
                         tip_columns=["species","nickname"],
                         tip_name_separator="|",
-                        event_color_map={"D":"#64007F","L":"#BAD316","S":"#D16A16","T":"#407E98"},
+                        color=None,
+                        size=None,
                         font_size=15,
                         stroke_width=2,
                         vertical_pixels_per_taxon=20,
@@ -48,6 +56,11 @@ def reconciliation_tree(run_dir,
         map between evolutionary events and colors. Keys should be D,L,S, and T.
         color values can be RGBA, named colors, or hexadecimal strings. See the
         toyplot documentation for allowed values.
+    size : float or tuple or dict, optional
+        set node size. If a single value, make all nodes that size. If
+        list-like and length 2, treat as sizes for minimum and maximum of a
+        size gradient. If dict, map property keys to size values. Sizes must
+        be float >= 0.
     font_size : float, default=15
         font size in points for labels
     stroke_width : int, default=2
@@ -119,6 +132,7 @@ def reconciliation_tree(run_dir,
             m = shared[i][1]
             if m.name != "":
                 n.support = float(m.name)
+            n.add_feature("event",n.name)
 
     # Create tree
     pt = PrettyTree(T_event,
@@ -128,19 +142,27 @@ def reconciliation_tree(run_dir,
                     vertical_pixels_per_taxon=vertical_pixels_per_taxon,
                     min_height=min_height,
                     **kwargs)
-
-    current_width = stroke_width*6
-    if plot_supports:
-        pt.draw_nodes(property_label="support",
-                      color=("#ffffff","#D16A16"),#"#155677"),
-                      size=current_width)
-        current_width *= 0.6
-
-    pt.draw_nodes(property_label="name",
-                  color=event_color_map,
-                  size=7)
-
     pt.draw_scale_bar()
+
+    added_supports = False
+    if plot_supports:
+        added_supports, size = draw_bs_nodes(T_event,
+                                             pt,
+                                             bs_color,
+                                             bs_label,
+                                             color,
+                                             size)
+
+    # color takes precedence over event_color.
+    if color is not None:
+        event_color = color
+
+    # if event_color is defined (either by "color" or by event_color argument)
+    if event_color is not None:
+        pt.draw_nodes(property_label="event",
+                      color=event_color,
+                      size=size)
+
     pt.draw_node_legend()
 
     return final_render(pt,output_file=output_file,default_file="reconcilation-tree.pdf")

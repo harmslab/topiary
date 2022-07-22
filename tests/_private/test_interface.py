@@ -341,8 +341,7 @@ def write_run_information(tmpdir,test_dataframes):
                           df=df,
                           calc_type="my_calc",
                           model="my_model",
-                          cmd="my_command",
-                          outgroup=[["A","B"],["C","D"]])
+                          cmd="my_command")
 
     csv_file = os.path.join(outdir,"dataframe.csv")
     assert os.path.isfile(csv_file)
@@ -356,8 +355,3 @@ def write_run_information(tmpdir,test_dataframes):
     assert out["model"] == "my_model"
     assert out["cmd"] == "my_command"
     assert out["version"] == topiary.__version__
-    outgroup = out["outgroup"]
-    assert outgroup[0][0] == "A"
-    assert outgroup[0][1] == "B"
-    assert outgroup[1][0] == "C"
-    assert outgroup[1][1] == "D"

@@ -320,7 +320,7 @@ class PrettyTree:
             diff = np.abs(node_coord[node_idx,:] - corner)
             if diff[1] == 0:
                 diff[1] = 1e-6
-            
+
             aspect = (diff[0]/diff[1])/self._pixel_aspect
             aspect_diff = np.abs(1 - aspect)
             if aspect_diff < best_aspect_diff:
@@ -424,9 +424,8 @@ class PrettyTree:
                 for i in idx[mask]:
                     node = self._tT.idx_dict[i]
                     if p_label not in node.features:
+                        prop.append(None)
                         continue
-                        #err = f"\ntoytree node {node} does not have a feature {p_label}\n\n"
-                        #raise ValueError(err)
 
                     try:
                         prop.append(self._tT.idx_dict[i].__dict__[f"_{p_label}"])
@@ -530,6 +529,13 @@ class PrettyTree:
         if len(prop) == 0:
             return self
 
+        # Do not plot anything with "None" entry
+        good_mask = np.array([p is not None for p in prop],dtype=bool)
+        prop = np.array(prop)
+        x = x[good_mask]
+        y = y[good_mask]
+        prop = prop[good_mask]
+
         # Check the property span arg
         if prop_span is not None:
 
@@ -562,10 +568,9 @@ class PrettyTree:
 
         # Construct size map
         if size is None:
-            size = self._stroke_width*6
+            size = self.default_size
 
         sm, sm_span = construct_sizemap(size,prop,prop_span)
-
 
         # Construct size and color lists for each node
         sizes = []
@@ -581,7 +586,6 @@ class PrettyTree:
                              "mstyle":{"stroke": "black",
                                        "stroke-width":stroke_width}}
 
-        # Plot the nodes
         self._axes.scatterplot(x,y,size=sizes,color=colors,**scatter_style)
 
         # If there was a property label, record that we plotted it for legend
@@ -954,3 +958,10 @@ class PrettyTree:
         toytree object used to generate the plot.
         """
         return self._tT
+
+    @property
+    def default_size(self):
+        """
+        Default size for nodes.
+        """
+        return self._stroke_width*6

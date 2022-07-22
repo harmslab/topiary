@@ -4,17 +4,18 @@ Draw a maximum likelihood tree with nodes colored by their bootstrap support.
 
 import topiary
 from topiary._private.interface import read_previous_run_dir
-from ._core import load_trees, create_name_dict, final_render
+from ._core import load_trees, create_name_dict, final_render, draw_bs_nodes
 from ._prettytree import PrettyTree
 
-import ete3
+import numpy as np
 
 def ml_tree(run_dir,
             output_file=None,
+            bs_color={50:"#ffffff",100:"#155677"},
+            bs_label=False,
             tip_columns=["species","nickname"],
             tip_name_separator="|",
-            support_span=(50,100),
-            color=("#ffffff","#155677"),
+            color=None,
             size=None,
             font_size=15,
             stroke_width=2,
@@ -34,6 +35,14 @@ def ml_tree(run_dir,
         notebook and write to this file. If running in a notebook but not
         specified, do not write to a file. If not in a notebook and not
         specified, will write out ancestor-tree.pdf.
+    bs_color : dict, default={50:"#ffffff",100:"#155677"}
+        set min/max values for branch support color map. First key is min,
+        second is max. Values are colors. Colors can be RGBA tuples, named
+        colors, or hexadecimal strings. See the toyplot documentation for
+        allowed values. If color (below) is defined, it takes precedence over
+        bs_color.
+    bs_label : bool, default=False
+        whether or not to write bootstrap values on the tree
     tip_columns: list, default=["species","nickname"]
         label the tree tips as "|".join(tip_columns). For example, if
         tip_columns is ["species","nickname"], tips will have names like
@@ -42,16 +51,12 @@ def ml_tree(run_dir,
     tip_name_separator : str, default="|"
         string to separate columns in tip names ("|" in tip_columns example
         above.) Cannot be "#,;:'\")(" as these are used in newick format.
-    support_span : tuple, default=(50,100)
-        set min/max values for support color calculation. First element
-        is min, second is max. If either is None, take min or max from the
-        min/max of the property
-    color : str or tuple or dict, default=("#ffffff","#155677")
+    color : str or tuple or dict, optional
         set node color. If a single value, color all nodes that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
         color gradient.  If dict, map property keys to color values. Colors
         can be RGBA tuples, named colors, or hexadecimal strings. See the
-        toyplot documentation for allowed values.
+        toyplot documentation for allowed values. Note: this overrides bs_color.
     size : float or tuple or dict, optional
         set node size. If a single value, make all nodes that size. If
         list-like and length 2, treat as sizes for minimum and maximum of a
@@ -90,8 +95,7 @@ def ml_tree(run_dir,
     T = load_trees(prev_run_dir=run_dir,
                    tree_base_path="output",
                    tree_names=["tree.newick"],
-                   tree_fmt=[0],
-                   outgroup=prev_run["outgroup"])
+                   tree_fmt=[0])
 
     # If df not specified, get from the previous run
     if df is None:
@@ -101,22 +105,6 @@ def ml_tree(run_dir,
     name_dict = create_name_dict(df=df,
                                  tip_columns=tip_columns,
                                  separator=tip_name_separator)
-
-    # Rename leaves and grab supports
-    supports = []
-    for n in T.traverse():
-        if not n.is_leaf():
-            supports.append(n.support)
-
-    # Figure out if the tree has supports. If the tree did not have supports,
-    # ete3 will load it in with a support value of 1.0 for all nodes. This would
-    # be very unlikely for a tree with real supports, so use that to look for
-    # trees without supports
-    supports_seen = list(set(supports))
-    if len(supports_seen) == 1 and supports_seen[0] == 1:
-        has_supports = False
-    else:
-        has_supports = True
 
     # Create tree
     pt = PrettyTree(T,
@@ -129,12 +117,12 @@ def ml_tree(run_dir,
     pt.draw_scale_bar()
 
     # Draw supports
-    if has_supports:
-        pt.draw_nodes(property_label="support",
-                      prop_span=support_span,
-                      color=color,
-                      size=size)
-        pt.draw_node_labels(property_labels="support")
-        pt.draw_node_legend()
+    added_supports, size = draw_bs_nodes(T,pt,bs_color,bs_label,color,size)
+
+    # If no supports drawn but user passed in size or color, plot the nodes
+    # without mapping back to support
+    if not added_supports:
+        if size is not None or color is not None:
+            pt.draw_nodes(size=size,color=color)
 
     return final_render(pt,output_file=output_file,default_file="ml-tree.pdf")
