@@ -541,7 +541,8 @@ def write_run_information(outdir,df,calc_type,model,cmd):
     out_dict = {"calc_type":calc_type,
                 "model":model,
                 "cmd":cmd,
-                "version":topiary.__version__}
+                "version":topiary.__version__,
+                "end_time":time.time()}
 
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)

@@ -418,7 +418,7 @@ def test_mpi_configuration(num_threads):
     # If mpirun failed,
     if ret.returncode != 0:
 
-        err = "mpirun is not working. See error below. This could because you\n"
+        err = "\n\nmpirun is not working. See error below. This could because you\n"
         err += "set --num_threads to be more than the number of nodes you have\n"
         err += "allocated on your cluster. If you did not set --num_threads\n"
         err += "specifically, try setting it rather than having topiary try to\n"

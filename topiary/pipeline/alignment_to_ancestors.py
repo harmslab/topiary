@@ -9,7 +9,7 @@ from topiary.external.raxml import RAXML_BINARY
 from topiary.external.generax import GENERAX_BINARY
 from topiary._private import installed, software_requirements, check
 
-import os, random, string, shutil
+import os, random, string, shutil, time
 
 def _check_restart(output,restart):
 
@@ -207,6 +207,11 @@ def alignment_to_ancestors(df,
     # Go into output directory
     current_dir = os.getcwd()
     os.chdir(out_dir)
+
+    f = open("start-time-hack.txt","w")
+    f.write(f"{time.time()}\n")
+    f.close()
+    
 
     # This will count step we're on
     counter = 0

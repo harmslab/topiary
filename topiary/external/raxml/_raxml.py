@@ -125,7 +125,7 @@ def run_raxml(algorithm=None,
             raise ValueError(err)
 
     num_threads = threads.get_num_threads(num_threads)
-    cmd.extend(["--threads",f"{num_threads:d}"])
+    cmd.extend(["--threads","auto{" + f"{num_threads:d}" + "}"])
 
     # Put on any custom args
     if other_args is not None:
