@@ -4,8 +4,8 @@ Draw a topiary tree with nodes colored by calculation outputs.
 
 import topiary
 from topiary._private.interface import read_previous_run_dir
-from topiary.draw._core import load_trees, create_name_dict, construct_sizemap
-from topiary.draw._prettytree import PrettyTree
+from topiary.draw.core import load_trees, create_name_dict, construct_sizemap
+from topiary.draw.prettytree import PrettyTree
 
 import toyplot
 import numpy as np
@@ -204,7 +204,7 @@ def tree(run_dir,
         # Plot bootstrap supports
         if bs_color is not None:
 
-            plot_bs, bs_span, bs_color = topiary.draw._core.parse_span_color(bs_color,color)
+            plot_bs, bs_span, bs_color = topiary.draw.core.parse_span_color(bs_color,color)
             pt.draw_nodes(property_label="bs_support",
                           prop_span=bs_span,
                           color=bs_color,
@@ -225,7 +225,7 @@ def tree(run_dir,
 
         # Plot ancestor posterior probailities
         if pp_color is not None:
-            plot_pp, pp_span, pp_color = topiary.draw._core.parse_span_color(pp_color,color)
+            plot_pp, pp_span, pp_color = topiary.draw.core.parse_span_color(pp_color,color)
             pt.draw_nodes(property_label="anc_pp",
                           prop_span=pp_span,
                           color=pp_color,

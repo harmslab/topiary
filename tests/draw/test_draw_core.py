@@ -2,11 +2,11 @@
 import pytest
 
 import topiary
-from topiary.draw._core import ete3_to_toytree
-from topiary.draw._core import construct_colormap, construct_sizemap
-from topiary.draw._core import create_name_dict
-from topiary.draw._core import _protect_name, _deprotect_name, color_to_css
-from topiary.draw._core import get_round_to
+from topiary.draw.core import ete3_to_toytree
+from topiary.draw.core import construct_colormap, construct_sizemap
+from topiary.draw.core import create_name_dict
+from topiary.draw.core import _protect_name, _deprotect_name, color_to_css
+from topiary.draw.core import get_round_to
 
 import ete3
 import toyplot

@@ -2,7 +2,7 @@
 import pytest
 
 import topiary
-import topiary.draw._prettytree as prettytree
+import topiary.draw.prettytree as prettytree
 import ete3
 
 import toytree

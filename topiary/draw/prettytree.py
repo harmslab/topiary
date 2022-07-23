@@ -3,8 +3,8 @@ Class for drawing formatted phylogenetic trees using toytree.
 """
 
 import topiary
-from topiary.draw._core import construct_colormap, construct_sizemap, get_round_to
-from topiary.draw._core import ete3_to_toytree, parse_position_string, color_to_css
+from topiary.draw.core import construct_colormap, construct_sizemap, get_round_to
+from topiary.draw.core import ete3_to_toytree, parse_position_string, color_to_css
 import topiary._private.check as check
 
 import toytree
