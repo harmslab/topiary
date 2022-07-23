@@ -8,38 +8,6 @@ import ete3
 import toytree
 import numpy as np
 
-def test___get_round_to():
-
-    assert prettytree._get_round_to(1e50,total_requested=3) == 0
-    assert prettytree._get_round_to(0.1,total_requested=3) == 1
-    assert prettytree._get_round_to(0.01,total_requested=3) == 2
-    assert prettytree._get_round_to(0.001,total_requested=3) == 3
-    assert prettytree._get_round_to(0.0011,total_requested=3) == 3
-    assert prettytree._get_round_to(0.0001,total_requested=3) == 4
-    assert prettytree._get_round_to(0.00001,total_requested=3) == 5
-    assert prettytree._get_round_to(1e-5,total_requested=3) == 5
-
-    assert prettytree._get_round_to(1.1,total_requested=3) == 1
-    assert prettytree._get_round_to(1.10,total_requested=3) == 1
-    assert prettytree._get_round_to(1.12,total_requested=3) == 2
-    assert prettytree._get_round_to(1.12,total_requested=2) == 1
-    assert prettytree._get_round_to(1.12,total_requested=1) == 0
-
-    assert prettytree._get_round_to(-1e50,total_requested=3) == 0
-    assert prettytree._get_round_to(-0.1,total_requested=3) == 1
-    assert prettytree._get_round_to(-0.01,total_requested=3) == 2
-    assert prettytree._get_round_to(-0.001,total_requested=3) == 3
-    assert prettytree._get_round_to(-0.0011,total_requested=3) == 3
-    assert prettytree._get_round_to(-0.0001,total_requested=3) == 4
-    assert prettytree._get_round_to(-0.00001,total_requested=3) == 5
-    assert prettytree._get_round_to(-1e-5,total_requested=3) == 5
-
-    assert prettytree._get_round_to(-1.1,total_requested=3) == 1
-    assert prettytree._get_round_to(-1.10,total_requested=3) == 1
-    assert prettytree._get_round_to(-1.12,total_requested=3) == 2
-    assert prettytree._get_round_to(-1.12,total_requested=2) == 1
-    assert prettytree._get_round_to(-1.12,total_requested=1) == 0
-
 
 def test_PrettyTree__init__():
 

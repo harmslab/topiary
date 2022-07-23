@@ -10,7 +10,7 @@ import toyplot
 from toyplot import pdf, svg, png
 
 import numpy as np
-import re, os, copy
+import re, os, copy, glob
 
 def _protect_name(name):
     """
@@ -27,7 +27,7 @@ def _deprotect_name(name):
 
     return re.sub("%20"," ",name).strip("'")
 
-def _color_to_css(color):
+def color_to_css(color):
     """
     Take a color (as hex string, rgb tuple, rgba tuple, named color, or
     toyplot css) and return toyplot css.
@@ -52,6 +52,184 @@ def _color_to_css(color):
         raise ValueError(err)
 
     return toyplot.color.to_css(color)
+
+
+def get_round_to(value,total_requested=2):
+    """
+    Figure out a natural place to round a float for creating useful but pretty
+    strings.
+
+    Parameters
+    ----------
+    value : float
+        value to round
+    total_requested : int, default=3
+        target number of digits for rounding. If value is 1234.23 and
+        total_requested is 3, this would round to 1234. If total_requested
+        is 5, this would give 1234.23.
+
+    Returns
+    -------
+    round_to : int
+        what number to round value to prior to string conversion
+    """
+
+    # Convert value to string, dropping sign
+    value_str = f"{np.abs(value)}"
+
+    # Deal with exponents (1e+50, for example)
+    if re.search("e",value_str):
+
+        # Split on "e"
+        exp_split = value_str.split("e")
+        base = exp_split[0]
+        exponent = int(exp_split[1])
+
+        # Process base
+        base_split = base.split(".")
+        base_whole = list(base_split[0])
+        if len(base_split) == 2:
+            base_decimal = list(base_split[1])
+        else:
+            base_decimal = []
+
+        # Positive exponent
+        if exponent > 0:
+            decimal_out = ["0" for _ in range(int(exponent))]
+            grab = min([len(decimal_out),len(base_decimal)])
+            decimal_out[:grab] = base_decimal[:grab]
+            value_str = "".join(base_whole) + "".join(decimal_out)
+
+        # Negative exponent
+        else:
+            decimal_out = ["0" for _ in range(-exponent)]
+            grab = min([len(decimal_out),len(base_decimal)])
+            for i in range(grab):
+                decimal_out[-(i+1)] = base_decimal[i]
+            decimal_out[-(grab + len(base_whole)):-grab] = base_whole[:]
+
+            value_str = "0." + "".join(decimal_out)
+
+    # Split value on "."
+    value_split = f"{value_str}".split(".")
+
+    # If there is no decimal, round at 0
+    if len(value_split) == 1:
+        round_at = 0
+    else:
+
+        # Consider whole and decimal portions of the float
+        whole = value_split[0]
+        decimal = value_split[1]
+
+        non_zero_num_whole = len(whole.lstrip("0"))
+
+        round_at = 0
+        num_taken = non_zero_num_whole
+        for counter, d in enumerate(decimal):
+
+            # If we've seen at least one non-zero digit and we've reached
+            # requested total digits, break
+            if num_taken >= total_requested:
+                if non_zero_num_whole > 0 or round_at > 0:
+                    break
+
+            num_taken += 1
+            if d != "0":
+                round_at = (counter + 1)
+
+    return round_at
+
+
+def create_name_dict(df,tip_columns=None,separator="|"):
+    """
+    Create a dictionary mapping between uid and pretty names extracted from
+    tip_columns in the dataframe.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary dataframe
+    tip_columns : list, optional
+        columns in dataframe to use to create human-readable names for tips on
+        tree. For example, :code:`tip_columns = ["species","nickname"]` would
+        give names like :code:`"Homo sapiens|LY96"`. If None, try
+        :code:`["species","nickname"]`. If nickname is not in dataframe,
+        fall back to :code:`["species",f"{name[:10]}..."]`.
+    separator : str
+        separator to use between pretty names. Cannot be "#,;:'\")(" as these
+        are used in newick format.
+
+    Return
+    ------
+    name_dict : dict
+        dict mapping between uid and pretty name
+    """
+
+    # Check sanity of tip_name_separator
+    if separator in topiary._private.reserved_characters:
+        err = f"\nseparator cannot be {separator}. Disallowed values are:\n\n"
+        for r in topiary._private.reserved_characters:
+            err += f"    {r}\n"
+        err += "\n\n"
+        raise ValueError(err)
+
+    local_df = df.loc[df.keep,:]
+    if tip_columns is None:
+
+        try:
+            local_df.nickname
+            tip_columns = ["species","nickname"]
+        except AttributeError:
+
+            local_df = df.copy()
+            trunc_name = []
+            for i in range(len(local_df)):
+                if len(local_df["name"].iloc[i]) > 10:
+                    trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
+                else:
+                    trunc_name.append(f"{local_df['name'].iloc[i]}")
+
+            local_df["trunc_name"] = trunc_name
+            tip_columns = ["species","trunc_name"]
+
+    # Make sure the tip columns are sane
+    for c in tip_columns:
+        try:
+            local_df[c]
+        except KeyError:
+            err = f"\ncolumn '{c}' not in dataframe. Please check the\n"
+            err += "tip_columns argument.\n\n"
+            raise ValueError(err)
+
+    # Construct uid_to_name, which will map between the uid on the leaves to a
+    # prettier/more useful name. Store both uid_to_name and name_to_uid. The
+    # second dictionary allows us to look for duplicated names.
+    uid_to_name = {}
+    name_to_uid = {}
+    for i in range(len(local_df)):
+
+        uid = local_df.uid.iloc[i]
+
+        name = []
+        for column in tip_columns:
+            name.append(f"{local_df[column].iloc[i]}")
+        name = separator.join(name)
+
+        uid_to_name[uid] = name
+
+        try:
+            name_to_uid[name].append(uid)
+        except KeyError:
+            name_to_uid[name] = [uid]
+
+    # Look for duplicated names. Append uid to duplicated names to make unique.
+    for name in name_to_uid:
+        if len(name_to_uid[name]) > 1:
+            for uid in name_to_uid[name]:
+                uid_to_name[uid] = separator.join([uid_to_name[uid],uid])
+
+    return uid_to_name
 
 
 def map_tree_to_tree(T1,T2):
@@ -213,6 +391,235 @@ def ete3_to_toytree(T):
 
     return tT
 
+def load_trees(directory=None,
+               T_clean=None,
+               T_support=None,
+               T_anc_label=None,
+               T_anc_pp=None,
+               T_event=None):
+    """
+    Generate an ete3 tree with features 'event', 'anc_pp', 'anc_label',
+    and 'bs_support' on internal nodes. This information is read from the input
+    ete3 trees or the specified topiary output directory. The tree is rooted
+    using T_event. If this tree is not specified, the midpoint root is used.
+    Trees are read from the directory first, followed by any ete3 trees
+    specified as arguments. (This allows the user to override trees from the
+    directory if desired). If no trees are passed in, returns None.
+
+    Warning: this will modify input ete3 trees as it works on the trees
+    rather than copies.
+
+    Parameters
+    ----------
+    directory : str
+        "output" directory from a topiary calculation that has .newick files
+        in it. Function will load all trees in that directory.
+    T_clean : ete3.Tree, optional
+        clean tree (leaf labels and branch lengths, nothing else). Stored as
+        tree.newick in output directories.
+    T_support : ete3.Tree, optional
+        support tree (leaf labels, branch lengths, supports). Stored as
+        tree_supports.newick in output directories.
+    T_anc_label : ete3.Tree, optional
+        ancestor label tree (leaf labels, branch lengths, internal names)
+    T_anc_pp : ete3.Tree, optional
+        ancestor posterior probability tree (leaf labels, branch lengths,
+        posterior probabilities as supports)
+    T_event : ete3.Tree, optional
+        tree with reconciliation events as internal labels (leaf labels,
+        branch lengths, event labels)
+
+    Returns
+    -------
+    merged_tree : ete3.Tree or None
+        rooted tree with features on internal nodes. Return None if no trees
+        are passed in.
+    """
+
+    # Load trees from the directory
+    if directory is not None:
+
+        tree_files = glob.glob(os.path.join(directory,"*.newick"))
+        to_path = dict([(os.path.split(t)[-1],t) for t in tree_files])
+
+        if T_clean is None:
+            try:
+                T_clean = ete3.Tree(to_path["tree.newick"],format=0)
+            except KeyError:
+                pass
+
+        if T_support is None:
+            try:
+                T_support = ete3.Tree(to_path["tree_supports.newick"],format=0)
+            except KeyError:
+                pass
+
+        if T_event is None:
+            try:
+                T_event = ete3.Tree(to_path["tree_events.newick"],format=1)
+            except KeyError:
+                pass
+
+        if T_anc_label is None:
+            try:
+                T_anc_label = ete3.Tree(to_path["tree_anc-label.newick"],format=1)
+            except KeyError:
+                pass
+
+        if T_anc_pp is None:
+            try:
+                T_anc_pp = ete3.Tree(to_path["tree_anc-pp.newick"],format=0)
+            except KeyError:
+                pass
+
+    # This is the order of priority for getting branch lengths from the tree.
+    # The output tree will be copied from the first non-None tree in this
+    # list.
+    T_list = [T_event,T_anc_pp,T_anc_label,T_support,T_clean]
+
+    # Make sure trees were actually passed in. If none were, return None.
+    T_list = [T for T in T_list if T is not None]
+    if len(T_list) == 0:
+        return None
+
+    # Make sure all trees have the same descendants
+    ref_leaves = set(list(T_list[0].get_leaf_names()))
+    for T in T_list[1:]:
+        test_leaves = set(list(T.get_leaf_names()))
+        if len(set(ref_leaves) - set(test_leaves)) != 0:
+            err = "All trees must have the same leaves.\n"
+            raise ValueError(err)
+
+    # If we have an event tree, root all trees on that rooted tree
+    if T_event is not None:
+
+        # Get left and right descendants of the root node
+        root_on = []
+        for n in T_event.get_tree_root().iter_descendants():
+            leaves = n.get_leaf_names()
+            leaves.sort()
+            root_on.append(tuple(leaves))
+            if len(root_on) == 2:
+                break
+
+    # If no event tree, do midpoint rooting using first tree in list.
+    else:
+        root_on = [T_list[0].get_midpoint_outgroup().get_leaf_names()]
+        root_on.append(list(set(T_list[0].get_leaf_names()) - set(root_on[0])))
+
+    # For each tree...
+    for T in T_list:
+
+        # Do not root the event tree as it will wipe out label
+        if T is T_event:
+            continue
+
+        # Get MRCA for descendants of left and right from event root
+        T.unroot()
+        left = T.get_common_ancestor(root_on[0])
+        right = T.get_common_ancestor(root_on[1])
+
+        # If there is only one descendant on one lineage, left and right
+        # will be the exact same node. Set the single descendant, rather
+        # than the MRCA as the outgroup node.
+        if left is right:
+            if len(root_on[0]) == 1:
+                left = root_on[0][0]
+            elif len(root_on[1]) == 1:
+                right = root_on[1][0]
+            else:
+                w = "Should not have gotten here. Weird rooting state possible."
+                print(w)
+
+        # Try setting left, then right outgroup.
+        try:
+            T.set_outgroup(left)
+        except ete3.coretype.tree.TreeError:
+            T.set_outgroup(right)
+
+    # Make new tree from first tree in list. This will be our output tree.
+    out_tree = T_list[0].copy()
+    for n in out_tree.traverse():
+
+        # Create empty features
+        if not n.is_leaf():
+            n.add_feature("event",None)
+            n.add_feature("anc_pp",None)
+            n.add_feature("anc_label",None)
+            n.add_feature("bs_support",None)
+
+
+    # features_to_load maps trees with information to copy (keys) to what
+    # feature we should extract from that tree. Values are (feature_in_tree,
+    # name_of_feature_in_out_tree,whether_to_allow_root_value).
+    features_to_load = {T_event:("name","event",True),
+                        T_anc_pp:("support","anc_pp",False),
+                        T_anc_label:("name","anc_label",False),
+                        T_support:("support","bs_support",False)}
+
+    # Only copy from trees that are not None.
+    trees = [k for k in features_to_load.keys() if k is not None]
+
+    stash_values = {}
+    for T in trees:
+
+        in_feature = features_to_load[T][0]
+        out_feature = features_to_load[T][1]
+        root_allowed = features_to_load[T][2]
+
+        # Since all have the same root and descendants, tree nodes should be
+        # identical between trees and uniquely identified by the
+        shared, T_alone, out_alone = map_tree_to_tree(T,out_tree)
+        if len(T_alone) > 0 or len(out_alone) > 0:
+            err = "Cannot merge trees with different topologies.\n"
+            raise ValueError(err)
+
+        # Map data from features on input tree to the features on the output
+        # tree
+        for s in shared:
+
+            # Node to copy from to
+            in_node = s[0]
+            out_node = s[1]
+
+            # If internal
+            if not out_node.is_leaf():
+
+                # Get value from in
+                try:
+                    value = in_node.__dict__[in_feature]
+                except KeyError:
+                    value = in_node.__dict__[f"_{in_feature}"]
+
+                # small hack --> anc to a
+                if T is T_anc_label:
+                    value = re.sub("anc","a",value)
+
+                # Add value to out
+                out_node.add_feature(out_feature,value)
+
+            # If root node, pull out anc_ if there.
+            if out_node.is_root():
+                if not root_allowed:
+                    if out_feature.startswith("anc_"):
+                        stash_values[out_feature] = value
+                    out_node.add_feature(out_feature,None)
+
+
+    # Copy ancestor to correct node because displayed by rooting
+    if len(stash_values) > 0:
+        if stash_values["anc_label"] != "":
+
+            for n in out_tree.traverse():
+                if n.is_leaf():
+                    continue
+
+                if n.anc_label == "":
+                    n.add_feature("anc_label",stash_values["anc_label"])
+                    n.add_feature("anc_pp",stash_values["anc_pp"])
+
+    return out_tree
+
 def construct_colormap(color,prop,prop_span=None,palette=None):
     """
     Construct a toyplot color map. If value_min == value_max, the cmap will
@@ -250,7 +657,7 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
 
     # color string/hexadecimal
     if issubclass(type(color),str):
-        color = _color_to_css(color)
+        color = color_to_css(color)
         cm = lambda prop: color
         span = []
 
@@ -260,7 +667,7 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
         prop_keys = list(set(prop))
         for k in prop_keys:
             try:
-                color[k] = _color_to_css(color[k])
+                color[k] = color_to_css(color[k])
             except KeyError:
                 err = f"\nproperty value '{k}' not in color dictionary\n\n"
                 raise ValueError(err)
@@ -276,7 +683,7 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
 
         # rgb or rgba
         if len(color) in [3,4]:
-            color = _color_to_css(color)
+            color = color_to_css(color)
             cm = lambda prop: color
             span = []
 
@@ -286,8 +693,6 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
             # Make sure the property is a float
             try:
                 prop = np.array(prop,dtype=float)
-                if np.sum(np.isnan(prop)) > 0:
-                    raise ValueError
             except (ValueError,TypeError):
                 err = "\nProperty is not a float. Using a color\n"
                 err += "gradient requires a float property value."
@@ -298,7 +703,7 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
                 if color is not None:
                     color = list(color)
                     for i in range(len(color)):
-                        color[i] = _color_to_css(color[i])
+                        color[i] = color_to_css(color[i])
 
                 palette = toyplot.color.Palette(colors=color)
 
@@ -438,154 +843,6 @@ def construct_sizemap(size,prop,prop_span=None):
         raise ValueError(err)
 
 
-
-def load_trees(prev_run_dir,
-               tree_base_path,
-               tree_names,
-               tree_fmt=None):
-    """
-    Load trees and tree formatting information from a previous run directory.
-
-    Parameters
-    ----------
-    prev_run_dir : str
-        previous run directory (for example, output from an ML tree inference)
-    tree_base_path : str
-        base directory to look for trees within prev_run_dir. (for example, look
-        in ml_tree/output for output trees for ML tree inference)
-    tree_names : list
-        tree files to look for in tree_base_path
-    tree_fmt : list, default=1
-        ete3 Tree format codes to use for reading trees. Should be ints
-        indiciating which tree format should be applied to read each file in
-        tree_names. Should be the same length as tree_names.
-    df : pandas.DataFramem, optional
-        topiary dataframe to use to interpret tip_columns. overrides the
-        dataframe that is pulled from prev_run_dir.
-
-    Return
-    ------
-    tree : ete3.Tree or list
-        tree instances for each tree requested in tree_names.
-    """
-
-    # If the user did not specify tree formats, make them all 1
-    if tree_fmt is None:
-        tree_fmt = [1 for _ in tree_names]
-
-    # Check tree format and tree names compatibility
-    if len(tree_names) != len(tree_fmt):
-        err = "\ntree_fmt length does not match tree_names length\n\n"
-        raise ValueError(err)
-
-    # Go over all tree names
-    T_list = []
-    for i, t in enumerate(tree_names):
-
-        tree_path = os.path.join(prev_run_dir,tree_base_path,t)
-        if not os.path.exists(tree_path):
-            err = f"\nCould not find tree file '{tree_path}'\n\n"
-            raise FileNotFoundError(err)
-
-        # read tree
-        T = topiary.io.read_tree(tree_path,fmt=tree_fmt[i])
-        T_list.append(T)
-
-    if len(T_list) == 1:
-        return T_list[0]
-
-    return T_list
-
-def create_name_dict(df,tip_columns=None,separator="|"):
-    """
-    Create a dictionary mapping between uid and pretty names extracted from
-    tip_columns in the dataframe.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        topiary dataframe
-    tip_columns : list, optional
-        columns in dataframe to use to create human-readable names for tips on
-        tree. For example, :code:`tip_columns = ["species","nickname"]` would
-        give names like :code:`"Homo sapiens|LY96"`. If None, try
-        :code:`["species","nickname"]`. If nickname is not in dataframe,
-        fall back to :code:`["species",f"{name[:10]}..."]`.
-    separator : str
-        separator to use between pretty names. Cannot be "#,;:'\")(" as these
-        are used in newick format.
-
-    Return
-    ------
-    name_dict : dict
-        dict mapping between uid and pretty name
-    """
-
-    # Check sanity of tip_name_separator
-    if separator in topiary._private.reserved_characters:
-        err = f"\nseparator cannot be {separator}. Disallowed values are:\n\n"
-        for r in topiary._private.reserved_characters:
-            err += f"    {r}\n"
-        err += "\n\n"
-        raise ValueError(err)
-
-    local_df = df.loc[df.keep,:]
-    if tip_columns is None:
-
-        try:
-            local_df.nickname
-            tip_columns = ["species","nickname"]
-        except AttributeError:
-
-            local_df = df.copy()
-            trunc_name = []
-            for i in range(len(local_df)):
-                if len(local_df["name"].iloc[i]) > 10:
-                    trunc_name.append(f"{local_df['name'].iloc[i][:10]}...")
-                else:
-                    trunc_name.append(f"{local_df['name'].iloc[i]}")
-
-            local_df["trunc_name"] = trunc_name
-            tip_columns = ["species","trunc_name"]
-
-    # Make sure the tip columns are sane
-    for c in tip_columns:
-        try:
-            local_df[c]
-        except KeyError:
-            err = f"\ncolumn '{c}' not in dataframe. Please check the\n"
-            err += "tip_columns argument.\n\n"
-            raise ValueError(err)
-
-    # Construct uid_to_name, which will map between the uid on the leaves to a
-    # prettier/more useful name. Store both uid_to_name and name_to_uid. The
-    # second dictionary allows us to look for duplicated names.
-    uid_to_name = {}
-    name_to_uid = {}
-    for i in range(len(local_df)):
-
-        uid = local_df.uid.iloc[i]
-
-        name = []
-        for column in tip_columns:
-            name.append(f"{local_df[column].iloc[i]}")
-        name = separator.join(name)
-
-        uid_to_name[uid] = name
-
-        try:
-            name_to_uid[name].append(uid)
-        except KeyError:
-            name_to_uid[name] = [uid]
-
-    # Look for duplicated names. Append uid to duplicated names to make unique.
-    for name in name_to_uid:
-        if len(name_to_uid[name]) > 1:
-            for uid in name_to_uid[name]:
-                uid_to_name[uid] = separator.join([uid_to_name[uid],uid])
-
-    return uid_to_name
-
 def parse_span_color(span_color,color):
     """
     Decide how to treat span_color (bs_color or pp_color), returning output that
@@ -642,153 +899,42 @@ def parse_span_color(span_color,color):
 
     return True, span_span, span_color
 
-def draw_bs_nodes(T,pt,bs_color,bs_label,color,size):
+def parse_position_string(position,x_offset,y_offset):
     """
-    Draw branch supports on a tree.
+    Get displacement in x and y for label placement. Displacement will be in
+    tree coordinates.
 
     Parameters
     ----------
-    T : et3.Tree
-        ete3 tree object with supports
-    pt : topiary.PrettyTree
-        tree on which to plot supports
-    bs_color : dict
-        set min/max values for branch support color map. First key is min,
-        second is max. Values are colors. Colors can be RGBA tuples, named
-        colors, or hexadecimal strings. See the toyplot documentation for
-        allowed values. If color (below) is defined, it takes precedence over
-        bs_color.
-    bs_label : bool
-        whether or not to plot bootstrap labels on nodes
-    color : str or tuple or dict, optional
-        set node color. If a single value, color all nodes that color. If
-        list-like and length 2, treat as colors for minimum and maximum of a
-        color gradient.  If dict, map property keys to color values. Colors
-        can be RGBA tuples, named colors, or hexadecimal strings. See the
-        toyplot documentation for allowed values.
-    size : float or tuple or dict, optional
-        set node size. If a single value, make all nodes that size. If
-        list-like and length 2, treat as sizes for minimum and maximum of a
-        size gradient. If dict, map property keys to size values. Sizes must
-        be float >= 0.
+    position : str
+        Allowed values are "top-left", "top", "top-right", "right",
+        "bottom-right", "bottom", "bottom-left", and "left".
+    x_offset : float
+        how far to move in x
+    t_offset : float
+        how far to move in t
 
     Returns
-    -------
-    added_supports : bool
-        whether or not we drew supports on the tree
-    size : float or tuple or dict
-        size scaled down in case user plans to plot another set of nodes on
-        top
+    dx : float
+        displacement in x
+    dy : float
+        displacement in y
     """
 
-    # Keep track of whether we added supports
-    added_supports = False
+    axes = {"top":1,"bottom":1,"left":0,"right":0}
+    moves = {"top":1,"bottom":-1,"left":-1,"right":1}
+    entries = position.split("-")
 
-    # Grab supports
-    supports = []
-    for n in T.traverse():
-        if not n.is_leaf():
-            supports.append(n.support)
-
-    # Figure out if the tree has supports. If the tree did not have supports,
-    # ete3 will load it in with a support value of 1.0 for all nodes. This would
-    # be very unlikely for a tree with real supports, so use that to look for
-    # trees without supports
-    supports_seen = list(set(supports))
-    if len(supports_seen) == 1 and supports_seen[0] == 1:
-        has_supports = False
-    else:
-        has_supports = True
-
-    # Figure out how to deal with color
-    draw_bs, bs_span, bs_color = parse_span_color(bs_color,color)
-
-    # Draw supports
-    if has_supports and draw_bs:
-
-        added_supports = True
-
-        pt.draw_nodes(property_label="support",
-                      prop_span=bs_span,
-                      color=bs_color,
-                      size=size)
-
-        # Size can be None, a dictionary, list of two, or float. It is validated
-        # by the draw_nodes call above, so we can assume it is one of these.
-        # Scale size down by 0.6 so we draw in the middle of the current node.
-        if size is None:
-            size = pt.default_size*0.6
-
-        # Dictionary
-        elif issubclass(type(size),dict):
-            for k in size:
-                size[k] = size[k]*0.6
-
-        else:
-            # Float
-            try:
-                size = size*0.6
-
-            # array-like
-            except (ValueError,TypeError):
-                size = np.array(size)*0.6
-
-    if has_supports and bs_label:
-        pt.draw_node_labels(property_labels="support")
-
-
-    return added_supports, size
-
-
-def final_render(pt,output_file=None,default_file="tree.pdf"):
-    """
-    Render tree on screen and/or file. Decides what file type to write to based
-    on extension (svg,png,pdf). This function is a a kludge, but exists so the
-    user-facing functions (like ml_tree) can have output_file=None as their
-    default without making those functions aware of whether this is running in
-    a notebook or not.
-
-    Parameters
-    ----------
-    pt : prettyTree
-        object to render
-    output_file : str, optional
-        write tree to specified output_file. If None and in a notebook,
-        just draw on the screen. If None and *not* in a notebook,
-        write only to default_file
-    default_file : str, default="tree.pdf"
-        write to this file. if None, do not write.
-
-    Returns
-    -------
-    canvas : toytree.canvas or None
-        toytree.canvas (if in a notebook) or None (if not in a notebook)
-    """
-
-    # If output_file is not specified...
-    if output_file is None:
-
-        # If not in a notebook, create a file
-        if not topiary._in_notebook:
-            output_file = default_file
-
-    # If output_file specified, write out
-    if output_file is not None:
-        key = output_file[-3:].lower()
-        render_dict = {"svg":toyplot.svg.render,
-                       "pdf":toyplot.pdf.render,
-                       "png":toyplot.png.render}
+    out = [0,0]
+    for e in entries:
         try:
-            render_fcn = render_dict[key]
+            axis = axes[e]
         except KeyError:
-            print(f"Could not identify render type for file {output_file}.")
-            print("Using pdf.",flush=True)
-            render_fcn = render_dict["pdf"]
+            err = f"position formatter '{e}' not recognized. Should be one of\n"
+            err += "'top', 'bottom', 'left', 'right'.\n"
+            raise ValueError(err)
 
-        render_fcn(pt.canvas,output_file)
+        move = moves[e]
+        out[axis] = move
 
-    # If this is in a notebook, render it and return so it appears
-    if topiary._in_notebook:
-        return pt.canvas
-
-    return None
+    return out[0]*x_offset, out[1]*y_offset

@@ -18,7 +18,7 @@ def _check_restart(output,restart):
         json_file = os.path.join(output,"output","run_parameters.json")
         if os.path.isfile(json_file):
             run_calc = False
-    
+
     return run_calc
 
 def alignment_to_ancestors(df,
@@ -110,7 +110,7 @@ def alignment_to_ancestors(df,
         do_reconcile = False
     else:
         do_reconcile = True
-    
+
     overwrite = check.check_bool(overwrite,"overwrite")
     restart = check.check_bool(restart,"restart")
 
@@ -256,7 +256,7 @@ def alignment_to_ancestors(df,
     if do_bootstrap:
 
         # Generate bootstrap replicates for the tree
-        previous_dir = "01_ml-tree"
+        previous_dir = output
         output = f"{counter:02d}_bootstraps"
         run_calc = _check_restart(output,restart)
         if run_calc:

@@ -3,7 +3,7 @@ Draw a species tree with tips labeled by species name.
 """
 
 import topiary
-from ._core import final_render
+#from ._core import final_render
 from ._prettytree import PrettyTree
 
 import ete3
@@ -64,4 +64,13 @@ def species_tree(species_tree,
                     tip_labels_align=tip_labels_align,
                     **kwargs)
 
-    return final_render(pt,output_file=output_file,default_file="species-tree.pdf")
+    # Figure out plotting to file.
+    if output_file is not None:
+        pt.render(output_file)
+
+    # If this is in a notebook, return it so it appears
+    ret = None
+    if topiary._in_notebook:
+        ret = pt.canvas
+
+    return ret

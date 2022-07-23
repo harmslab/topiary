@@ -4,8 +4,9 @@ import pytest
 import topiary
 from topiary.draw._core import ete3_to_toytree
 from topiary.draw._core import construct_colormap, construct_sizemap
-from topiary.draw._core import create_name_dict, final_render
-from topiary.draw._core import _protect_name, _deprotect_name, _color_to_css
+from topiary.draw._core import create_name_dict
+from topiary.draw._core import _protect_name, _deprotect_name, color_to_css
+from topiary.draw._core import get_round_to
 
 import ete3
 import toyplot
@@ -30,15 +31,47 @@ def test__deprotect_name():
     assert _deprotect_name("'%20te%20st%20'") == " te st "
     assert _deprotect_name("'te,st'") == "te,st"
 
-def test__color_to_css():
+def test_color_to_css():
 
-    assert _color_to_css('rgba(100.0%,0.0%,0.0%,1.000)') == 'rgba(100.0%,0.0%,0.0%,1.000)'
-    assert _color_to_css([1,0,0]) == 'rgba(100.0%,0.0%,0.0%,1.000)'
-    assert _color_to_css([1,0,0,1]) == 'rgba(100.0%,0.0%,0.0%,1.000)'
-    assert _color_to_css("red") == 'rgba(100.0%,0.0%,0.0%,1.000)'
+    assert color_to_css('rgba(100.0%,0.0%,0.0%,1.000)') == 'rgba(100.0%,0.0%,0.0%,1.000)'
+    assert color_to_css([1,0,0]) == 'rgba(100.0%,0.0%,0.0%,1.000)'
+    assert color_to_css([1,0,0,1]) == 'rgba(100.0%,0.0%,0.0%,1.000)'
+    assert color_to_css("red") == 'rgba(100.0%,0.0%,0.0%,1.000)'
 
     with pytest.raises(ValueError):
-        _color_to_css([1,0,0,1,1,1])
+        color_to_css([1,0,0,1,1,1])
+
+def test_get_round_to():
+
+    assert get_round_to(1e50,total_requested=3) == 0
+    assert get_round_to(0.1,total_requested=3) == 1
+    assert get_round_to(0.01,total_requested=3) == 2
+    assert get_round_to(0.001,total_requested=3) == 3
+    assert get_round_to(0.0011,total_requested=3) == 3
+    assert get_round_to(0.0001,total_requested=3) == 4
+    assert get_round_to(0.00001,total_requested=3) == 5
+    assert get_round_to(1e-5,total_requested=3) == 5
+
+    assert get_round_to(1.1,total_requested=3) == 1
+    assert get_round_to(1.10,total_requested=3) == 1
+    assert get_round_to(1.12,total_requested=3) == 2
+    assert get_round_to(1.12,total_requested=2) == 1
+    assert get_round_to(1.12,total_requested=1) == 0
+
+    assert get_round_to(-1e50,total_requested=3) == 0
+    assert get_round_to(-0.1,total_requested=3) == 1
+    assert get_round_to(-0.01,total_requested=3) == 2
+    assert get_round_to(-0.001,total_requested=3) == 3
+    assert get_round_to(-0.0011,total_requested=3) == 3
+    assert get_round_to(-0.0001,total_requested=3) == 4
+    assert get_round_to(-0.00001,total_requested=3) == 5
+    assert get_round_to(-1e-5,total_requested=3) == 5
+
+    assert get_round_to(-1.1,total_requested=3) == 1
+    assert get_round_to(-1.10,total_requested=3) == 1
+    assert get_round_to(-1.12,total_requested=3) == 2
+    assert get_round_to(-1.12,total_requested=2) == 1
+    assert get_round_to(-1.12,total_requested=1) == 0
 
 def test_ete3_to_toytree():
 
@@ -177,7 +210,7 @@ def test_construct_colormap():
     assert np.array_equal(cmap_span, [-1,1])
 
     # bad value_span
-    bad_values = ["test",None,[],float]
+    bad_values = ["test",[],float]
     for b in bad_values:
         print("passing",b)
         with pytest.raises(ValueError):
@@ -336,149 +369,3 @@ def test_create_name_dict(for_real_inference):
     # Make sure it's checking for bad value correctly
     with pytest.raises(ValueError):
         name_dict = create_name_dict(df,tip_columns=["uid"],separator=",")
-
-def test_final_render(tmpdir):
-
-    def _check_file_type(filename):
-
-        if filename[-3:].lower() == "png":
-            r = png.Reader(filename)
-            r.read()
-
-            file_type = "png"
-        else:
-            f = open(filename,"rb")
-            first_line = f.readline()
-            f.close()
-
-            file_type = first_line.decode()[1:4].lower()
-
-        return file_type
-
-
-    tree = "(((A:1.0,B:4.0)99:1.0,((C:1.0,D:0.5)100:1.0,E:1.0)75:1.0)80:1.0,(F:1.0,G:1.0)90)75;"
-    pt = topiary.draw.PrettyTree(tree)
-
-    # test hack -- non notebook case
-    topiary._in_notebook = False
-
-    # Not notebook, no specific output file specified
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert out is None
-    assert os.path.isfile(default_file)
-    assert _check_file_type(default_file) == "pdf"
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render.png")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert out is None
-    assert os.path.isfile(default_file)
-    assert _check_file_type(default_file) == "png"
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render.svg")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert out is None
-    assert os.path.isfile(default_file)
-    assert _check_file_type(default_file) == "svg"
-
-    # no extension -- should revert to pdf
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render.xxx")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert out is None
-    assert os.path.isfile(default_file)
-    assert _check_file_type(default_file) == "pdf"
-
-    # Not notebook, specific output file specified. Should make output_file
-
-    output_file = os.path.join(tmpdir,"test-render-real.pdf")
-    default_file = os.path.join(tmpdir,"test-render-not.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "pdf"
-
-    output_file = os.path.join(tmpdir,"test-render-real.png")
-    default_file = os.path.join(tmpdir,"test-render-not.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "png"
-
-    output_file = os.path.join(tmpdir,"test-render-real.svg")
-    default_file = os.path.join(tmpdir,"test-render-not.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "svg"
-
-    output_file = os.path.join(tmpdir,"test-render-real.xxx")
-    default_file = os.path.join(tmpdir,"test-render-not.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "pdf"
-
-    # test hack -- notebook case
-    topiary._in_notebook = True
-
-    # No output file specified; should not create any files
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render-not-made.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render-not-made.png")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render-not-made.svg")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-
-    output_file = None
-    default_file = os.path.join(tmpdir,"test-render-not-made.xxx")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-
-
-    # output file spcified; should crete file and return for notebook
-
-    output_file = os.path.join(tmpdir,"test-render-made.pdf")
-    default_file = os.path.join(tmpdir,"test-render-not-made.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "pdf"
-
-    output_file = os.path.join(tmpdir,"test-render-made.png")
-    default_file = os.path.join(tmpdir,"test-render-not-made.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "png"
-
-    output_file = os.path.join(tmpdir,"test-render-made.svg")
-    default_file = os.path.join(tmpdir,"test-render-not-made.pdf")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "svg"
-
-    output_file = os.path.join(tmpdir,"test-render-made.xxx")
-    default_file = os.path.join(tmpdir,"test-render-not-made.xxx")
-    out = final_render(pt,output_file=output_file,default_file=default_file)
-    assert issubclass(type(out),type(pt.canvas))
-    assert not os.path.isfile(default_file)
-    assert os.path.isfile(output_file)
-    assert _check_file_type(output_file) == "pdf"

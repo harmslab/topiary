@@ -9,10 +9,17 @@ from ._prettytree import PrettyTree
 
 import numpy as np
 
+import os
+
 def ml_tree(run_dir,
             output_file=None,
             bs_color={50:"#ffffff",100:"#155677"},
+            pp_color={0.5:"#ffffff",1.0:"#D16A16"},
+            event_color={"D":"#64007F","L":"#BAD316","S":"#D16A16","T":"#407E98"},
+            anc_label=True,
             bs_label=False,
+            pp_label=False,
+            event_label=False,
             tip_columns=["species","nickname"],
             tip_name_separator="|",
             color=None,
@@ -24,12 +31,12 @@ def ml_tree(run_dir,
             df=None,
             **kwargs):
     """
-    Draw a maximum likelihood tree with nodes colored by their bootstrap support.
+    Draw a topiary tree with nodes colored by calculation outputs.
 
     Parameters
     ----------
     run_dir : str
-        directory containing an ancestral reconstruction run
+        directory containing an maximum likelihood calculation
     output_file : str, optional
         output file to write tree. If running in a notebook, will return to
         notebook and write to this file. If running in a notebook but not
@@ -90,12 +97,9 @@ def ml_tree(run_dir,
     if output_file is not None:
         output_file = str(output_file)
 
-    # Load the tree and relevant information from the run_dir output
-    # directory.
-    T = load_trees(prev_run_dir=run_dir,
-                   tree_base_path="output",
-                   tree_names=["tree.newick"],
-                   tree_fmt=[0])
+    # Load a tree with current calculation states (will have event, bs_support,
+    # anc_label, anc_pp) on internal nodes. None if not defined.
+    T = load_trees(directory=os.path.join(run_dir,"output"))
 
     # If df not specified, get from the previous run
     if df is None:
@@ -115,6 +119,10 @@ def ml_tree(run_dir,
                     min_height=min_height,
                     **kwargs)
     pt.draw_scale_bar()
+
+
+
+    # First check for supports. If they are there, plot them.
 
     # Draw supports
     added_supports, size = draw_bs_nodes(T,pt,bs_color,bs_label,color,size)

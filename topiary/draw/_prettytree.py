@@ -3,8 +3,8 @@ Class for drawing formatted phylogenetic trees using toytree.
 """
 
 import topiary
-from topiary.draw._core import construct_colormap, construct_sizemap
-from topiary.draw._core import ete3_to_toytree
+from topiary.draw._core import construct_colormap, construct_sizemap, get_round_to
+from topiary.draw._core import ete3_to_toytree, parse_position_string, color_to_css
 import topiary._private.check as check
 
 import toytree
@@ -13,93 +13,6 @@ import toyplot
 import numpy as np
 
 import re, copy
-
-
-def _get_round_to(value,total_requested=3):
-    """
-    Figure out a natural place to round a float for creating useful but pretty
-    strings.
-
-    Parameters
-    ----------
-    value : float
-        value to round
-    total_requested : int, default=3
-        target number of digits for rounding. If value is 1234.23 and
-        total_requested is 3, this would round to 1234. If total_requested
-        is 5, this would give 1234.23.
-
-    Returns
-    -------
-    round_to : int
-        what number to round value to prior to string conversion
-    """
-
-    # Convert value to string, dropping sign
-    value_str = f"{np.abs(value)}"
-
-    # Deal with exponents (1e+50, for example)
-    if re.search("e",value_str):
-
-        # Split on "e"
-        exp_split = value_str.split("e")
-        base = exp_split[0]
-        exponent = int(exp_split[1])
-
-        # Process base
-        base_split = base.split(".")
-        base_whole = list(base_split[0])
-        if len(base_split) == 2:
-            base_decimal = list(base_split[1])
-        else:
-            base_decimal = []
-
-        # Positive exponent
-        if exponent > 0:
-            decimal_out = ["0" for _ in range(int(exponent))]
-            grab = min([len(decimal_out),len(base_decimal)])
-            decimal_out[:grab] = base_decimal[:grab]
-            value_str = "".join(base_whole) + "".join(decimal_out)
-
-        # Negative exponent
-        else:
-            decimal_out = ["0" for _ in range(-exponent)]
-            grab = min([len(decimal_out),len(base_decimal)])
-            for i in range(grab):
-                decimal_out[-(i+1)] = base_decimal[i]
-            decimal_out[-(grab + len(base_whole)):-grab] = base_whole[:]
-
-            value_str = "0." + "".join(decimal_out)
-
-    # Split value on "."
-    value_split = f"{value_str}".split(".")
-
-    # If there is no decimal, round at 0
-    if len(value_split) == 1:
-        round_at = 0
-    else:
-
-        # Consider whole and decimal portions of the float
-        whole = value_split[0]
-        decimal = value_split[1]
-
-        non_zero_num_whole = len(whole.lstrip("0"))
-
-        round_at = 0
-        num_taken = non_zero_num_whole
-        for counter, d in enumerate(decimal):
-
-            # If we've seen at least one non-zero digit and we've reached
-            # requested total digits, break
-            if num_taken >= total_requested:
-                if non_zero_num_whole > 0 or round_at > 0:
-                    break
-
-            num_taken += 1
-            if d != "0":
-                round_at = (counter + 1)
-
-    return round_at
 
 
 class PrettyTree:
@@ -127,8 +40,21 @@ class PrettyTree:
         :code:`aspect_ratio_parameters[0]*num_taxa + aspect_ratio_parameters[1]`
     min_height : float, default=300
         minimum height for figure (pixels)
+    height : float, optional
+        height in pixels. If specified, overrides vertical_pixels_per_taxon,
+        aspect_ratio_parameters, and min_height.
+    width : float, optional
+        width in pixels. if specified, overrides aspect_ratio_parameters
+    padding : float, optional
+        padding in pixels.
+    edge_style : dict, optional
+        dictionary of css key/value pairs defining how the tree edge style is
+        drawn
+    draw_debug_points : bool, default=False
+        draw points on the plot that validate relative x-scale of two plot
+        areas.
     **kwargs : dict
-        pass any other keyword arguments directly to toytree.tree.draw
+        pass any other keyword arguments directly to toytree.tree.draw.
     """
 
     def __init__(self,
@@ -139,12 +65,21 @@ class PrettyTree:
                  vertical_pixels_per_taxon=20,
                  aspect_ratio_parameters=(0.02,0.47),
                  min_height=300,
+                 height=None,
+                 width=None,
+                 padding=None,
+                 edge_style=None,
+                 tip_labels_style=None,
+                 draw_debug_points=False,
                  **kwargs):
         """
         Initialize PrettyTree class.
         """
 
-        # Read into an ete3 tree
+        # ----------------------------------------------------------------------
+        # Load tree and give pretty tip names
+
+        # Convert tree into a toytree tree from ete3,
         if issubclass(type(T),toytree.tree):
             self._tT = T.copy()
         else:
@@ -153,6 +88,11 @@ class PrettyTree:
 
         # Rename tree.name entries according to name_dict
         if name_dict is not None:
+            if not issubclass(type(name_dict),dict):
+                err = "name_dict shouold be a dictionary mapping uid to pretty\n"
+                err += "tip names.\n"
+                raise ValueError(err)
+
             for idx in self._tT.idx_dict:
                 name = self._tT.idx_dict[idx].name
                 try:
@@ -160,7 +100,9 @@ class PrettyTree:
                 except KeyError:
                     pass
 
+        # ----------------------------------------------------------------------
         # Artwork parameters
+
         self._font_size = check.check_float(font_size,
                                             "font_size",
                                             minimum_allowed=0)
@@ -185,169 +127,175 @@ class PrettyTree:
                                        "min_height",
                                        minimum_allowed=0)
 
+        # ----------------------------------------------------------------------
         # If height not passed directly, figure out
-        if "height" not in kwargs:
+
+        if height is None:
             num_nodes = self._tT.ntips
             self._height = num_nodes*self._vertical_pixels_per_taxon
             if self._height < min_height:
                 self._height = min_height
-            kwargs["height"] = f"{self._height}px"
-        else:
-            self._height = kwargs["height"]
 
+        else:
+            self._height = check.check_float(height,
+                                             "height",
+                                             minimum_allowed=0,
+                                             minimum_inclusive=False)
+
+        # ----------------------------------------------------------------------
         # If width not passed directly, figure out
-        if "width" not in kwargs:
+
+        if width is None:
             ratio = aspect_ratio_parameters[0]*num_nodes + aspect_ratio_parameters[1]
             self._width = self._height/ratio
-            kwargs["width"] = f"{self._width}px"
         else:
-            self._width = kwargs["width"]
+            self._width = check.check_float(width,
+                                            "width",
+                                            minimum_allowed=0,
+                                            minimum_inclusive=False)
 
+        # ----------------------------------------------------------------------
         # If padding not passsed directly, figure out
-        if "padding" not in kwargs:
-            kwargs["padding"] = 4*self._vertical_pixels_per_taxon
 
+        if padding is None:
+            self._padding = self._vertical_pixels_per_taxon
+        else:
+            self._padding = check.check_float(padding,
+                                              "padding",
+                                              minimum_allowed=0)
+
+        # ----------------------------------------------------------------------
         # set stroke and stroke-width in edge_style
-        if "edge_style" not in kwargs:
-            kwargs["edge_style"] = {}
-        kwargs["edge_style"]["stroke-width"] = self._stroke_width
-        if "stroke" not in kwargs["edge_style"]:
-            kwargs["edge_style"]["stroke"] = "black"
 
-        # set font-size in tip_labels_style
-        if "tip_labels_style" not in kwargs:
-            kwargs["tip_labels_style"] = {}
-        kwargs["tip_labels_style"]["font-size"] = f"{self._font_size}px"
+        if edge_style is None:
+            edge_style = {}
 
-        # Get final kwargs
+        if not issubclass(type(edge_style),dict):
+            err = "edge_style should be a dictionary of css key/value pairs\n"
+            raise ValueError(err)
+
+        if "stroke_width" not in edge_style:
+            edge_style["stroke-width"] = self._stroke_width
+
+        if "stroke" not in edge_style:
+            edge_style["stroke"] = "black"
+
+        kwargs["edge_style"] = edge_style
+
+        # ----------------------------------------------------------------------
+        # set tip_labels_style
+
+        if tip_labels_style is None:
+            tip_labels_style = {}
+
+        if not issubclass(type(tip_labels_style),dict):
+            err = "tip_labels_style should be a dictionary of css key/value pairs\n"
+            raise ValueError(err)
+
+        if "font-size" not in tip_labels_style:
+            tip_labels_style["font-size"] = f"{self._font_size}px"
+
+        kwargs["tip_labels_style"] = tip_labels_style
+
+        # ----------------------------------------------------------------------
+        # Create canvas and axes on which to draw tree
+
+        # figure out legend dimensions
+        legend_height = min_height*0.167
+
+        # Create canvas
+        total_height = self._height + 3*self._padding + legend_height
+        total_width = self._width + 2*self._padding
+        self._canvas = toyplot.Canvas(height=f"{total_height}px",
+                                      width=f"{total_width}px")
+
+        # Create tree axis
+        x1 = self._padding
+        x2 = self._width - self._padding
+        y1 = self._padding
+        y2 = self._height - self._padding/2
+
+        tree_del_x_range = x2 - x1
+        tree_del_y_range = y2 - y1
+
+        # Create toyplot axes for tree itself
+        self._tree_ax = self._canvas.cartesian(bounds=(x1,x2,y1,y2))
+        self._tree_ax.x.ticks.show = False
+        self._tree_ax.y.ticks.show = False
+        self._tree_ax.show = False
+
+        # ----------------------------------------------------------------------
+        # Draw tree skeleton and make preliminary render so we can calculate
+        # conversions between domain (tree) coordinates and range (pixel)
+        # coordinates
+
         self._draw_kwargs = kwargs
-
-        # Draw the first draft of the tree
-        self._canvas, self._axes, self._mark = self._tT.draw(**self._draw_kwargs)
-
-        # Dictionary to hold named nodes added
-        self._named_node_series = {}
-
-        # Get drawing attributes we'll need
-        self._get_pixel_aspect_ratio()
-        self._get_dimensions()
-        self._get_legend_location()
-
-    def _get_dimensions(self):
-        """
-        Get the plot/tree dimensions.
-        """
-
-        # Size in tree coordinates
-        self._min_x, self._max_x = self._mark.domain("x")
-        self._min_y, self._max_y = self._mark.domain("y")
-
-        node_coord = self._tT.get_node_coordinates()
-
-        # Get indexes for furthest left and furthest right nodes
-        min_x_idx = np.argmin(node_coord[:,0])
-        max_x_idx = np.argmax(node_coord[:,0])
-
-        # Get all edges
-        edges = self._tT.get_edges()
-
-        # Get total length of tree
-        self._total_length = self._max_x - self._min_x
-
-        # Separation between tips
-        self._y_step = -self._font_size*1.333*self._y_px_to_tree #(self._max_y - self._min_y)/self._tT.ntips
-
-
-    def _get_pixel_aspect_ratio(self):
-        """
-        Get the aspect ratio of each pixel (toyplot domain) in terms of the
-        tree coordinate (toyplot range).
-        """
-
-        # Draw nodes of size zero and render to allow domain (pixel) calcs
-        # to work
-        node_coord = self._tT.get_node_coordinates()
-        self._axes.scatterplot(node_coord[:,0],node_coord[:,1],size=0)
+        _, self._tree_ax, self._tree_mark = self._tT.draw(axes=self._tree_ax,
+                                                           **self._draw_kwargs)
         _ = toyplot.html.render(self.canvas)
 
-        # Get map between domain and range in x
-        x_domain = np.array(self._mark.domain("x"))
-        x_range = self._axes.project("x",x_domain)
-        x_domain_to_range = (x_domain[1] - x_domain[0])/(x_range[1] - x_range[0])
-        self._x_px_to_tree = x_domain_to_range
-        self._x_tree_to_px = 1/x_domain_to_range
+        # Get domain (tree) to range (px) interconversion factors
+        x_domain = np.array(self._tree_mark.domain("x"))
+        x_range = self._tree_ax.project("x",x_domain)
+        self._x_tree_to_px = np.abs((x_range[1] - x_range[0])/(x_domain[1] - x_domain[0]))
+        self._x_px_to_tree = 1/self._x_tree_to_px
 
-        # Get map between domain and range in y
-        y_domain = np.array(self._mark.domain("y"))
-        y_range = self._axes.project("y",y_domain)
-        y_domain_to_range = (y_domain[1] - y_domain[0])/(y_range[1] - y_range[0])
-        self._y_px_to_tree = y_domain_to_range
-        self._y_tree_to_px = 1/y_domain_to_range
+        y_domain = np.array(self._tree_mark.domain("y"))
+        y_range = self._tree_ax.project("y",y_domain)
+        self._y_tree_to_px = np.abs((y_range[1] - y_range[0])/(y_domain[1] - y_domain[0]))
+        self._y_px_to_tree = 1/self._y_tree_to_px
 
-        self._pixel_aspect = np.abs(x_domain_to_range/y_domain_to_range)
+        # By number of pixels we gave the tree (tree_del_x_range) and
+        # conversion factor (_x_range_to_domain) we can calculate the dimensions
+        # of the plot in tree space.
+        self._x_total_domain = tree_del_x_range*self._x_px_to_tree
+        self._x_min = x_domain[0]
+        self._x_max = self._x_min + self._x_total_domain
+
+        # Same for y
+        self._y_total_domain = tree_del_y_range*self._y_px_to_tree
+        self._y_min = y_domain[0]
+        self._y_max = self._y_min + self._y_total_domain
+
+        # Natural step in y in tree coordinates
+        self._y_step = self._font_size*1.333*self._y_px_to_tree
+        self._pixel_aspect = self._x_tree_to_px/self._y_tree_to_px
+
+        # ----------------------------------------------------------------------
+        # Create axes on which to draw legend
+
+        # Since we set legened to be 0 to 10, 10 is top
+        self._legend_y = 10
+        self._legend_width = (x_domain[0]+self._x_total_domain)/2
+
+        x1 = self._padding
+        x2 = self._width - self._padding
+        y1 = self._height + self._padding/2
+        y2 = y1 + legend_height
+        self._legend_ax = self._canvas.cartesian(bounds=(x1,x2,y1,y2),
+                                                 xmin=x_domain[0],
+                                                 xmax=x_domain[0]+self._x_total_domain,
+                                                 ymin=0,
+                                                 ymax=self._legend_y)
+
+        self._legend_ax.x.ticks.show = False
+        self._legend_ax.y.ticks.show = False
+        self._legend_ax.show = False
+
+        if draw_debug_points:
+            self._tree_ax.scatterplot((x_domain[0],x_domain[1]),(0,0))
+            self._legend_ax.scatterplot((x_domain[0],x_domain[1]),(10,10))
 
 
-    def _get_legend_location(self):
-        """
-        Get the location to place legend based on tree topology.
-        """
+        # Dictionary to hold named nodes added
+        self._plotted_nodes = {}
 
-        # get node coordinates
-        node_coord = self._tT.get_node_coordinates()
 
-        # Create a dictionary chaining edges backwards
-        edges = self._tT.get_edges()
-        edge_dict = dict(zip(edges[:,1],edges[:,0]))
-
-        # Node at bottom of graph (lowest y) -- will be a leaf
-        start_idx = np.argmin(node_coord[:,1])
-
-        # Node at left of graph (lowest x) -- also ancestor
-        end_idx = np.argmin(node_coord[:,0])
-
-        # Bottom left corner of the graph
-        corner = np.array([self._min_x,self._min_y])
-
-        best_aspect_node = None
-        best_aspect_diff = np.inf
-
-        # Walk through the chain of nodes starting at min_y, finding node that
-        # draws the closest thing to a square with the bottom left corner
-        node_idx = start_idx
-        while node_idx != end_idx:
-
-            # If y displacement is 0, make very low...
-            diff = np.abs(node_coord[node_idx,:] - corner)
-            if diff[1] == 0:
-                diff[1] = 1e-6
-
-            aspect = (diff[0]/diff[1])/self._pixel_aspect
-            aspect_diff = np.abs(1 - aspect)
-            if aspect_diff < best_aspect_diff:
-                best_aspect_diff = aspect_diff
-                best_aspect_node = node_coord[node_idx,:]
-
-            # Move back a node. If KeyError, tree is in strange configuration
-            # and cannot be parsed visually this way
-            try:
-                node_idx = edge_dict[node_idx]
-            except KeyError:
-                break
-
-        # If we did not find best_aspect_node
-        if best_aspect_node is None:
-            x = (self._max_x - self._min_x)/8 + self._min_x
-            y = (self._max_y - self._min_y)/8 + self._min_y
-            best_aspect_node = [x,y]
-
-        box_width = np.abs(corner[0] - best_aspect_node[0])
-        box_height = np.abs(corner[1] - best_aspect_node[1])
-
-        self._legend_x = (corner[0] + best_aspect_node[0])/2
-        self._legend_y = corner[1] + self._y_step
-        self._legend_width = box_width
-
-    def _get_node_values(self,get_ancestors,get_leaves,get_root=True,property_label=None):
+    def _get_node_values(self,
+                         get_ancestors,
+                         get_leaves,
+                         get_root=True,
+                         property_labels=None):
         """
         Get the x,y coordinates and properties of nodes.
 
@@ -359,7 +307,7 @@ class PrettyTree:
             whether or not to get leaves
         get_root : bool, default=True
             whether or not to get the root node
-        property_label : str or list-like
+        property_labels : str or list-like
             list of property labels to grab, in order. can take a single string
             as equivalent to a length-1 list.
 
@@ -370,8 +318,8 @@ class PrettyTree:
         y : numpy.ndarray
             y coordinates of nodes
         all_props : dict or None
-            dictionary keying property_label to an np.ndarray of that property
-            value. if property_label is None, return None.
+            dictionary keying property_labels to an np.ndarray of that property
+            value. if property_labels is None, return None.
         """
 
         # Create mask with nodes to get
@@ -410,18 +358,19 @@ class PrettyTree:
 
         # Get property(s) of interest
         all_props = {}
-        if property_label is not None:
+        if property_labels is not None:
 
             # If passed in as a single string, put in a list to allow iteration
             # over single label
-            if issubclass(type(property_label),str):
-                property_label = [property_label]
+            if issubclass(type(property_labels),str):
+                property_labels = [property_labels]
 
             # Iterate over all labels
-            for p_label in property_label:
+            for p_label in property_labels:
 
                 prop = []
                 for i in idx[mask]:
+
                     node = self._tT.idx_dict[i]
                     if p_label not in node.features:
                         prop.append(None)
@@ -432,20 +381,7 @@ class PrettyTree:
                     except KeyError:
                         prop.append(self._tT.idx_dict[i].__dict__[f"{p_label}"])
 
-                # Figure out how to round value
-                if len(prop) > 0:
-                    prop = np.array(prop)
-                    if np.issubdtype(type(prop[0]), np.floating):
-                        min_round_to = _get_round_to(np.min(prop))
-                        max_round_to = _get_round_to(np.max(prop))
-                        round_to = np.max([min_round_to,max_round_to])
-
-                        if round_to == 0:
-                            prop = np.array(np.round(prop,0),dtype=int)
-                        else:
-                            prop = np.round(prop,round_to)
-
-                all_props[p_label] = prop
+                all_props[p_label] = np.array(prop)
 
         else:
             all_props = None
@@ -531,10 +467,13 @@ class PrettyTree:
 
         # Do not plot anything with "None" entry
         good_mask = np.array([p is not None for p in prop],dtype=bool)
-        prop = np.array(prop)
         x = x[good_mask]
         y = y[good_mask]
         prop = prop[good_mask]
+
+        # Don't plot if there are no nodes to plot
+        if len(x) == 0:
+            return self
 
         # Check the property span arg
         if prop_span is not None:
@@ -564,6 +503,14 @@ class PrettyTree:
         if color is None:
             color = "gray"
 
+        # If color is a dictionary, drop any nodes that do not have that key
+        if issubclass(type(color),dict):
+            keys = list(color.keys())
+            good_mask = np.array([p in keys for p in prop],dtype=bool)
+            x = x[good_mask]
+            y = y[good_mask]
+            prop = prop[good_mask]
+
         cm, cm_span = construct_colormap(color,prop,prop_span,palette)
 
         # Construct size map
@@ -572,12 +519,28 @@ class PrettyTree:
 
         sm, sm_span = construct_sizemap(size,prop,prop_span)
 
-        # Construct size and color lists for each node
+        # Construct size and color lists for each node. If there is no color or
+        # size for this value, drop them from the plot
         sizes = []
         colors = []
         for p in prop:
-            sizes.append(sm(p))
-            colors.append(cm(p))
+            try:
+                sizes.append(sm(p))
+            except (KeyError,ValueError):
+                sizes.append(None)
+
+            try:
+                colors.append(cm(p))
+            except (KeyError,ValueError):
+                colors.append(None)
+
+        keep_mask = np.logical_and(np.array([s is not None for s in sizes],dtype=bool),
+                                   np.array([c is not None for c in colors],dtype=bool))
+
+        x = x[keep_mask]
+        y = y[keep_mask]
+        sizes = np.array(sizes)[keep_mask]
+        colors = np.array(colors)[keep_mask]
 
         # Default scatter style dictionary
         if scatter_style is None:
@@ -586,24 +549,24 @@ class PrettyTree:
                              "mstyle":{"stroke": "black",
                                        "stroke-width":stroke_width}}
 
-        self._axes.scatterplot(x,y,size=sizes,color=colors,**scatter_style)
+        self._tree_ax.scatterplot(x,y,size=sizes,color=colors,**scatter_style)
 
         # If there was a property label, record that we plotted it for legend
         # construction.
         if property_label is not None and property_label.strip() != "":
-            self._named_node_series[property_label] = (cm,cm_span,sm,sm_span,scatter_style)
+            self._plotted_nodes[property_label] = (cm,cm_span,sm,sm_span,scatter_style)
 
         return self
 
     def draw_node_labels(self,
                          property_labels,
                          fmt_string=None,
+                         position="right",
+                         position_offset=None,
                          plot_ancestors=True,
                          plot_leaves=False,
                          plot_root=True,
-                         text_style=None,
-                         node_size=None,
-                         draw_below=False):
+                         text_style=None):
         """
         Draw labels on nodes on tree.
 
@@ -624,6 +587,13 @@ class PrettyTree:
               :code:`property_labels = ["label_a","label_b"]`.
             Mixed format strings (i.e. :code:`"{}{label_a}"`) are not
             permitted, but all other python formatting should be supported.
+        position : str, default="right"
+            where to put label relative to node. allowed values are: top-left",
+            "top", "top-right", "right", "bottom-right", "bottom", "bottom-left",
+            and "left".
+        position_offset : float, optional
+            how far to diplace the labels off the nodes, in px. If not specified,
+            will be 0.75*node_size
         plot_ancestors : bool, default=True
             draw ancestral nodes
         plot_leaves : bool, default=False
@@ -633,44 +603,73 @@ class PrettyTree:
         text_style : dict, optional
             dictionary specifying how to draw the text labels. toyplot Text
             documentation for description of allowable values.
-        node_size : float, optional
-            draw label assuming a node of size node_size. if None, use the
-            default node size (stroke_width*6)
-        draw_below : bool, default=False
-            draw label below the branch. otherwise, draw above.
         """
 
-        # Make property_label into a list-like if single string
+        # If passed in as a string, make into a list of strings
         if issubclass(type(property_labels),str):
             property_labels = [property_labels]
 
+        # Check input bools
         plot_ancestors = check.check_bool(plot_ancestors,"plot_ancestors")
         plot_leaves = check.check_bool(plot_leaves,"plot_leaves")
-        draw_below = check.check_bool(draw_below,"draw_below")
 
-        x, y, prop_dict = self._get_node_values(plot_ancestors,
-                                                plot_leaves,
-                                                plot_root,
-                                                property_labels)
-
-        if node_size is None:
-            node_size = self._stroke_width*6
-        node_size = check.check_float(node_size,"node_size",minimum_allowed=0)
-
-        # Offset x
-        x = x - self._x_px_to_tree*node_size*0.5
-
-        # Offset y
-        if draw_below:
-            y = y - self._y_step*0.35
+        # Get position and position_offset
+        position = str(position)
+        if position_offset is not None:
+            # Convert from px to tree coordinates.
+            position_offset = check.check_float(position_offset,"position_offset")
+            x_offset = np.abs(position_offset*self._x_px_to_tree)
+            y_offset = np.abs(position_offset*self._y_px_to_tree)
         else:
-            y = y + self._y_step*0.35
+            x_offset = np.abs(self.default_size*self._x_px_to_tree)
+            y_offset = np.abs(self.default_size*self._y_px_to_tree)
+
+        # small hack -- displace a bit more in y than x because it almost always
+        # looks saner.
+        y_offset = y_offset*1.25
+
+        # Get displacement from node positions in x and y
+        dx, dy = parse_position_string(position,x_offset,y_offset)
+
+        # ----------------------------------------------------------------------
+        # Deal with text style
 
         # Create text style dictionary
         if text_style is None:
-            text_style = {"font-size":f"{self._font_size*0.75}px",
-                          "text-anchor":"end", # right-justify
-                          "fill":"black"}
+            text_style = {}
+
+        # Make sure text_style is sane
+        if not issubclass(type(text_style),dict):
+            err = "text_style should be a dictionary of css key/values\n"
+            raise ValueError(err)
+
+        # Load in defaults if user has not specified things like font-size
+        try:
+            text_style["font-size"]
+        except KeyError:
+            text_style["font-size"] = f"{self._font_size*0.75}px"
+
+        try:
+            text_style["text-anchor"]
+        except KeyError:
+
+            if np.isclose(dx,0):
+                text_anchor = "middle"
+            else:
+                if dx < 0:
+                    text_anchor = "end"
+                else:
+                    text_anchor = "start"
+
+            text_style["text-anchor"] = text_anchor
+
+        try:
+            text_style["fill"]
+        except KeyError:
+            text_style["fill"] = color_to_css("#023E55")
+
+        # ----------------------------------------------------------------------
+        # Deal with fmt_string argument
 
         # Create default {label_a},{label_b},... style format string
         if fmt_string is None:
@@ -678,17 +677,41 @@ class PrettyTree:
             fmt_string = ",".join(fmt_string)
 
         # Look for {xxx} patterns in the fmt_string and try to match
-        # them to property_label values.
+        # them to property_label values. var_list holds variables to load in at
+        # which position. cast_from holds the type from which this is being cast.
         var_list = []
+        cast_from = []
         for m in re.finditer("{.*?}",fmt_string):
 
             # Get variable name from either {var_name} or {var_name:}
             v = m.string[m.start():m.end()]
-            var_name = v.strip("{").split("}")[0].split(":")[0]
+            inside = v.strip("{").split("}")[0]
+
+            # Get variable name
+            fmt_bits = inside.split(":")
+            var_name = fmt_bits[0]
+
+            # See if this is numeric (has d or f in format)
+            if len(fmt_bits) == 1:
+                var_type = ""
+            else:
+                var_type = fmt_bits[1]
+
+            number_fmt = re.search("[df]",var_type,flags=re.IGNORECASE)
+            if number_fmt:
+                match = number_fmt.group(0)
+                if match == "d":
+                    cast_from.append(int)
+                else:
+                    cast_from.append(float)
+            else:
+                cast_from.append(str)
+
             var_list.append(var_name)
 
             # Update fmt_string, wiping out var_name we just found
             fmt_string = re.sub(var_name,"",fmt_string)
+
 
         # no variable specified explicitly. if sane, will have exactly
         # len(property_labels) "" entries.
@@ -704,20 +727,77 @@ class PrettyTree:
             err += "of fields as requested property_labels.\n\n"
             raise ValueError(err)
 
+        # Actually pull out x, y, and properties
+        x, y, prop_dict = self._get_node_values(plot_ancestors,
+                                                plot_leaves,
+                                                plot_root,
+                                                property_labels)
+
+        # Offset in x and y
+        x = x + dx
+        y = y + dy
+
+        good_mask = []
+
         # Apply formatting string to the property values extracted
         to_write = []
         to_zip = [prop_dict[var] for var in var_list]
         for v in zip(*to_zip):
-            to_write.append(fmt_string.format(*v))
+
+            num_none = sum([value is None for value in v])
+            if len(v) == num_none:
+                good_mask.append(False)
+                to_write.append(None)
+                continue
+
+            # Try to format
+            try:
+                new_string = fmt_string.format(*v)
+
+            # If we hit a type error, problem with int or float. Turn float
+            # into np.nan. Serious hack. Turn into '999999' and remove immediately
+            # with re.sub. Ugly, but can't get custom formatter in here without
+            # a huge refactor...
+            except TypeError:
+
+                # Go through each value in the vector
+                v = list(v)
+                for i in range(len(v)):
+
+                    # see if cast_from works. If so, this is not problem value
+                    try:
+                        cast_from[i](v[i])
+
+                    # If here, sub bad float with np.nan. sub bad int with
+                    # 999999
+                    except TypeError:
+                        if issubclass(cast_from[i],float):
+                            v[i] = np.nan
+                        else:
+                            v[i] = 999999
+
+                # Format and get rid of wacky "999999" we added.
+                new_string = fmt_string.format(*v)
+                new_string = re.sub("999999","",new_string)
+
+            good_mask.append(True)
+
+            to_write.append(new_string)
+
+        good_mask = np.array(good_mask,dtype=bool)
+        to_write = np.array(to_write)
 
         # Actually write labels
-        self._axes.text(x,y,to_write,style=text_style)
+        self._tree_ax.text(x[good_mask],
+                           y[good_mask],
+                           to_write[good_mask],
+                           style=text_style)
 
         return self
 
 
     def draw_scale_bar(self,
-                       bar_length=0.3,
+                       bar_length=0.2,
                        units="subs/site"):
         """
         Draw a scale bar on the tree plot.
@@ -738,32 +818,39 @@ class PrettyTree:
                                        maximum_allowed=1)
 
         # Get length of bar
-        target_length = self._total_length*bar_length
+        target_length = self._x_total_domain*bar_length
         if target_length > self._legend_width:
             target_length = self._legend_width
 
         # Round the branch length in a pretty fashion
-        round_to = _get_round_to(target_length)
+        round_to = get_round_to(target_length)
         bar_length = np.round(target_length,round_to)
         if round_to == 0:
             bar_length = int(bar_length)
 
+
+
+        bar_center = self._x_min + self._x_total_domain*0.15
+        bar_y = 6
+
         # Plot scale bar
-        bar_x_coord = (self._legend_x - bar_length/2,self._legend_x + bar_length/2)
-        bar_y_coord = (self._legend_y,self._legend_y)
-        bar_tick_y = (self._legend_y-self._y_step*0.2,self._legend_y+self._y_step*0.2)
-        self._axes.plot(bar_x_coord,
-                        bar_y_coord,
-                        stroke_width=self._stroke_width*0.5,
-                        color="black")
-        self._axes.plot((bar_x_coord[0],bar_x_coord[0]),
-                        bar_tick_y,
-                        stroke_width=self._stroke_width*0.5,
-                        color="black")
-        self._axes.plot((bar_x_coord[1],bar_x_coord[1]),
-                        bar_tick_y,
-                        stroke_width=self._stroke_width*0.5,
-                        color="black")
+        bar_x_coord = (bar_center - bar_length/2,
+                       bar_center + bar_length/2)
+        bar_y_coord = (bar_y,bar_y)
+        bar_tick_y = (bar_y-0.5,bar_y+0.5)
+
+        self._legend_ax.plot(bar_x_coord,
+                             bar_y_coord,
+                             stroke_width=self._stroke_width*0.7,
+                             color="black")
+        self._legend_ax.plot((bar_x_coord[0],bar_x_coord[0]),
+                             bar_tick_y,
+                             stroke_width=self._stroke_width*0.7,
+                             color="black")
+        self._legend_ax.plot((bar_x_coord[1],bar_x_coord[1]),
+                             bar_tick_y,
+                             stroke_width=self._stroke_width*0.7,
+                             color="black")
 
         # Label scale bar
         if round_to > 0:
@@ -773,22 +860,19 @@ class PrettyTree:
 
         bar_label = f"{fmt.format(bar_length)} {units}"
         bar_label = bar_label.strip()
-        bar_label_x = self._legend_x
-        bar_label_y = self._legend_y - 0.7*self._y_step
-        self._axes.text(bar_label_x,
-                        bar_label_y,
-                        bar_label,
-                        color="black",
-                        style=self._draw_kwargs["tip_labels_style"])
-
-        # Move legend_y down for next legend element.
-        self._legend_y -= 2*self._y_step
+        bar_label_x = bar_center
+        bar_label_y = bar_y - 2
+        self._legend_ax.text(bar_label_x,
+                             bar_label_y,
+                             bar_label,
+                             color="black",
+                             style=self._draw_kwargs["tip_labels_style"])
 
         return self
 
     def draw_node_legend(self,
                          label_renamer=None,
-                         max_label_len=15):
+                         max_label_len=25):
         """
         Add a node legend to the tree plot.
 
@@ -809,14 +893,18 @@ class PrettyTree:
 
         max_label_len = check.check_int(max_label_len,minimum_allowed=1)
 
+        # Don't do anything if we don't have any named series
+        if len(self._plotted_nodes) == 0:
+            return self
+
         # Get label and node sizes for min and max of all nodes with plotted
         # properties.
         label_sizes = []
         spans = {}
-        for node in self._named_node_series:
+        for node in self._plotted_nodes:
 
             # Get drawing information for the node series
-            cm, cm_span, sm, sm_span, scatter_style = self._named_node_series[node]
+            cm, cm_span, sm, sm_span, scatter_style = self._plotted_nodes[node]
 
             # Combine span for both cm and sm
             span = cm_span[:]
@@ -838,7 +926,7 @@ class PrettyTree:
 
             spans[node] = span
 
-        # Overall legend node size will be the max seen across tree * 1.5 for
+        # Overall legend node size will be the max seen across tree * 1.2 for
         # clarity.
         legend_node_size = self._font_size*1.2
 
@@ -850,7 +938,7 @@ class PrettyTree:
 
         # Get labels for all series, formatted correctly
         series_labels = []
-        for node in self._named_node_series:
+        for node in self._plotted_nodes:
             label = label_renamer[node]
             if len(label) > label_len:
                 series_labels.append(label_fmt.format(f"{label[:(label_len-3)]}..."))
@@ -858,10 +946,10 @@ class PrettyTree:
                 series_labels.append(label_fmt.format(label))
 
         # Now go through all plotted features
-        for node_counter, node in enumerate(self._named_node_series):
+        for node_counter, node in enumerate(self._plotted_nodes):
 
             # Get node properties for plotting
-            cm, _, sm, _, scatter_style = self._named_node_series[node]
+            cm, _, sm, _, scatter_style = self._plotted_nodes[node]
 
             span = spans[node]
 
@@ -875,7 +963,7 @@ class PrettyTree:
             # Figure out level at which to round value for marker label
             try:
                 value = float(span[0])
-                round_at = _get_round_to(value)
+                round_at = get_round_to(value)
             except (ValueError,TypeError):
                 round_at = None
 
@@ -915,19 +1003,52 @@ class PrettyTree:
             else:
                 sep = " &#8594; "
 
-            m_str = sep.join(m_list)
-            txt_str = f"{series_labels[node_counter]}: {m_str}"
+            marker_str = sep.join(m_list)
+            marker_style = {"font-size":self._font_size,
+                            "text-anchor":"start"}
+            marker_x = self._x_min + self._x_total_domain*0.67
+            self._legend_ax.text(marker_x,
+                                 self._legend_y,
+                                 marker_str,
+                                 style=marker_style,
+                                 color="black")
 
-            style = {"font-size":self._font_size}
-            self._axes.text(self._legend_x,
-                            self._legend_y,
-                            txt_str,
-                            style=style,
-                            color="black")
+            label_style = {"font-size":self._font_size,
+                            "text-anchor":"end"}
+            label_str = f"{series_labels[node_counter]}:"
+            label_x  = self._x_min + self._x_total_domain*0.65
+            self._legend_ax.text(label_x,
+                                 self._legend_y,
+                                 label_str,
+                                 style=label_style,
+                                 color="black")
 
-            self._legend_y -= 1.5*self._y_step
+            self._legend_y -= 5
 
         return self
+
+    def render(self,output_file):
+        """
+        Render a the tree out as a file.
+
+        Parameters
+        ----------
+        output_file : str
+            output file. should be .svg, .pdf, or .png
+        """
+
+        key = output_file[-3:].lower()
+        render_dict = {"svg":toyplot.svg.render,
+                       "pdf":toyplot.pdf.render,
+                       "png":toyplot.png.render}
+        try:
+            render_fcn = render_dict[key]
+        except KeyError:
+            print(f"Could not identify render type for file {output_file}.")
+            print("Using pdf.",flush=True)
+            render_fcn = render_dict["pdf"]
+
+        render_fcn(self.canvas,output_file)
 
 
     @property
@@ -938,19 +1059,27 @@ class PrettyTree:
         return self._canvas
 
     @property
-    def axes(self):
+    def tree_ax(self):
         """
         toyplot axes holding tree.
         """
 
-        return self._axes
+        return self._tree_ax
 
     @property
-    def mark(self):
+    def legend_ax(self):
+        """
+        toyplot axes holding legend.
+        """
+
+        return self._legend_ax
+
+    @property
+    def tree_mark(self):
         """
         tree object (a toyplot mark)
         """
-        return self._mark
+        return self._tree_mark
 
     @property
     def tT(self):
@@ -965,3 +1094,11 @@ class PrettyTree:
         Default size for nodes.
         """
         return self._stroke_width*6
+
+    @property
+    def plotted_properties(self):
+        """
+        Return list of named node series that have been plotted.
+        """
+
+        return list(self._plotted_nodes.keys())
