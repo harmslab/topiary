@@ -152,8 +152,8 @@ def reconcile(previous_dir=None,
     # Copy reconcilation information
     shutil.copytree(os.path.join("working","result","reconciliations"),
                     os.path.join("output","reconcilations"))
-    shutil.copy(os.path.join("output","reconcilations","reconcile_events.newick",
-                os.path.join("output","tree_events.newick")))
+    shutil.copy(os.path.join("output","reconcilations","reconcile_events.newick"),
+                os.path.join("output","tree_events.newick"))
 
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 

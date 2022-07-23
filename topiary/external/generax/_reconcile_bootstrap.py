@@ -18,6 +18,7 @@ import os
 import glob
 import shutil
 import copy
+import tarfile
 
 def _prepare_for_bootstrap(previous_dir=None,
                            df=None,
@@ -85,10 +86,11 @@ def _prepare_for_bootstrap(previous_dir=None,
             raise ValueError(err)
 
     # Read previous run directory
-    if calc_type != "ml_tree":
-        err = f"\nPrevious dir calc_type is '{calc_type}' but should be 'ml_tree'.\n"
-        err += "Bootstrap reconciliation must have a maximum-likelihood tree\n"
-        err += "calculation directory as its input.\n\n"
+    if calc_type not in ["ml_tree","ml_bootstrap"]:
+        err = f"\nPrevious dir calc_type is '{calc_type}' but should be 'ml_tree'\n"
+        err += "or ml_bootstrap. Bootstrap reconciliation must have a\n"
+        err +  "maximum-likelihood tree calculation directory with bootstraps\n"
+        err += "as its input.\n\n"
         raise ValueError(err)
 
     # Make sure bootstrap directory exists
@@ -376,11 +378,10 @@ def _combine_results(prep_output):
     os.chdir(base_dir)
 
     # output directory
-    outdir = os.path.join("output")
-    os.mkdir(outdir)
+    os.mkdir("output")
 
     # Write run information
-    write_run_information(outdir=outdir,
+    write_run_information(outdir="output",
                           df=prep_output["df"],
                           calc_type="reconciliation_bootstrap",
                           model=prep_output["model"],
@@ -394,25 +395,32 @@ def _combine_results(prep_output):
 
     # Copy in ml-tree, no supports
     shutil.copy(os.path.join(combine_dir,"ml-tree.newick"),
-                os.path.join(outdir,"tree.newick"))
+                os.path.join("output","tree.newick"))
 
     # Copy ml-tree with supports into output directory
     shutil.copy(os.path.join(combine_dir,
                              "combine_with_raxml",
                              "tree.newick.raxml.support"),
-                os.path.join(outdir,"tree_supports.newick"))
+                os.path.join("output","tree_supports.newick"))
 
     # Copy reconcilation directory into output directory
     shutil.copytree(os.path.join(base_rep,"ml",reconcile_path),
-                    os.path.join(outdir,"reconcilations"))
+                    os.path.join("output","reconcilations"))
 
     # Copy events tree into output directory
     shutil.copy(os.path.join(base_rep,
-                                  "ml",reconcile_path,
-                                  "reconcile_events.newick"),
-                os.path.join(outdir,"tree_events.newick"))
+                             "ml",reconcile_path,
+                             "reconcile_events.newick"),
+                os.path.join("output","tree_events.newick"))
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    # Compress big, complicated replicates directory and delete 
+    print("\nCompressing replicates.\n",flush=True) 
+    f = tarfile.open("replicates.tar.gz","w:gz")
+    f.add("replicates")
+    f.close()
+    shutil.rmtree("replicates")
+
+    print(f"\nWrote results to {os.path.abspath('output')}\n",flush=True)
 
     os.chdir(prep_output["starting_dir"])
 
@@ -476,7 +484,7 @@ def reconcile_bootstrap(previous_dir=None,
         None.
     """
 
-    print("Creating bootstrap directories.",flush=True)
+    print("Creating reconciliation bootstrap directories.\n",flush=True)
 
     # Create stack of directories
     prep_output, calc_dirs = _prepare_for_bootstrap(previous_dir=previous_dir,
@@ -486,8 +494,11 @@ def reconcile_bootstrap(previous_dir=None,
                                                     output=output,
                                                     overwrite=overwrite)
 
+    print("\nGenerating reconciliation bootstraps.\n",flush=True)
+
     # Construct keyword arguments to pass to thread
     kwargs_list, num_threads = _construct_args(calc_dirs,
+                                               use_mpi=use_mpi,
                                                num_threads=num_threads,
                                                manual_num_cores=num_cores)
 

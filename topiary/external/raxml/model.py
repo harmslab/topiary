@@ -225,6 +225,8 @@ def find_best_model(df,
 
     seed = gen_seed()
 
+    print("Constructing set of possible models.")
+
     # Go over all combos of the requested matrices, rates, freqs, invariant and
     # create kwargs for run_raxml calls
     kwargs_list = []
@@ -264,6 +266,8 @@ def find_best_model(df,
                     models.append(model)
 
 
+    print(f"Testing {len(kwargs_list)} models.\n",flush=True)
+   
     out_list = threads.thread_manager(kwargs_list,
                                       _model_thread_function,
                                       num_threads)

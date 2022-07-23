@@ -15,9 +15,15 @@ def _check_restart(output,restart):
 
     run_calc = True
     if restart:
+
+        # See if json file is there. If so, assume done.
         json_file = os.path.join(output,"output","run_parameters.json")
         if os.path.isfile(json_file):
             run_calc = False
+        else:
+            # Nuke partial directory
+            if os.path.isdir(output):
+                shutil.rmtree(output)
 
     return run_calc
 
@@ -238,6 +244,8 @@ def alignment_to_ancestors(df,
                               output=output,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
+                              num_threads=num_threads,
+                              use_mpi=False, #### HACK HACK HACK
                               bootstrap=False)
         counter += 1
 
@@ -248,6 +256,7 @@ def alignment_to_ancestors(df,
     if run_calc:
         topiary.generate_ancestors(previous_dir=previous_dir,
                                    output=output,
+                                   num_threads=num_threads,
                                    alt_cutoff=alt_cutoff)
     counter += 1
 
@@ -276,7 +285,8 @@ def alignment_to_ancestors(df,
                                   output=output,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   generax_binary=generax_binary,
-                                  use_mpi=True,
+                                  num_threads=num_threads,
+                                  use_mpi=False,
                                   bootstrap=do_bootstrap)
             counter += 1
 
@@ -287,6 +297,7 @@ def alignment_to_ancestors(df,
         if run_calc:
             topiary.generate_ancestors(previous_dir=previous_dir,
                                        output=output,
+                                       num_threads=num_threads,
                                        alt_cutoff=alt_cutoff)
 
 
