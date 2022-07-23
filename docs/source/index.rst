@@ -126,6 +126,7 @@ spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
 | LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Danio rerio   | MKTYFNM... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 
+
 Protocol for preparing the table
 --------------------------------
 

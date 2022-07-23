@@ -12,6 +12,14 @@ topiary.external.raxml.ancestors module
    :undoc-members:
    :show-inheritance:
 
+topiary.external.raxml.bootstrap module
+---------------------------------------
+
+.. automodule:: topiary.external.raxml.bootstrap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.external.raxml.model module
 -----------------------------------
 

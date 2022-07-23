@@ -579,12 +579,14 @@ class PrettyTree:
         fmt_string : str, optional
             format for labels. If not specified, spit out as {},{},... for each
             property_label entry. If specified, must have one of two formats.
+
             + exactly the same number of *unnamed* fields as (i.e. "{}") as the
               number of properties. For example, :code:`"{}|{}"` for
               :code:`property_labels = ["label_a","label_b"]`).
             + an arbitrary number of *named* fields (e.g. "{label_a"). For
               example :code:`"{label_b}|{label_a}|{label_a}"` for
               :code:`property_labels = ["label_a","label_b"]`.
+              
             Mixed format strings (i.e. :code:`"{}{label_a}"`) are not
             permitted, but all other python formatting should be supported.
         position : str, default="right"

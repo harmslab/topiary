@@ -21,7 +21,7 @@ def tree(run_dir,
          pp_label=False,
          event_label=False,
          anc_label=True,
-         tip_columns=["species","nickname"],
+         tip_columns=["species","recip_paralog"],
          tip_name_separator="|",
          color=None,
          size=None,
@@ -69,9 +69,9 @@ def tree(run_dir,
         whether or not to write events as text on the tree
     anc_label : bool, default=True
         whether or not to write ancestor names as text on the tree
-    tip_columns: list, default=["species","nickname"]
+    tip_columns: list, default=["species","recip_paralog"]
         label the tree tips as "|".join(tip_columns). For example, if
-        tip_columns is ["species","nickname"], tips will have names like
+        tip_columns is ["species","recip_paralog"], tips will have names like
         'Homo sapiens|LY96'. If the name is not unique, the uid will be
         appended to the name.
     tip_name_separator : str, default="|"
