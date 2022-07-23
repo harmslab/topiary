@@ -531,7 +531,7 @@ def generate_ancestors(previous_dir=None,
                     model=model,
                     seed=True,
                     dir_name="working_inference",
-                    log_to_stdout=False, 
+                    log_to_stdout=False,
                     suppress_output=True,
                     num_threads=num_threads,
                     raxml_binary=raxml_binary)
@@ -550,13 +550,6 @@ def generate_ancestors(previous_dir=None,
                             alt_cutoff=alt_cutoff)
 
     os.mkdir("output")
-
-    # Write run information
-    write_run_information(outdir="output",
-                          df=df,
-                          calc_type="ancestors",
-                          model=model,
-                          cmd=cmd)
 
     # Copy trees from previous calculation in. This will preserve any that our
     # new calculation did not wipe out.
@@ -577,14 +570,20 @@ def generate_ancestors(previous_dir=None,
     for f in files_to_grab:
         shutil.copy(f,os.path.join(anc_out,os.path.split(f)[-1]))
 
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="ancestors",
+                          model=model,
+                          cmd=cmd)
+
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
     # Create a plot of the tree
-    # ret = topiary.draw.ancestor_tree(run_dir=output,
-    #                                  output_file=os.path.join(output,
-    #                                                           "output",
-    #                                                           "summary-tree.pdf"))
-    # return ret
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

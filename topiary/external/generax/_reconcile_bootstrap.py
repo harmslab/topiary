@@ -380,13 +380,6 @@ def _combine_results(prep_output):
     # output directory
     os.mkdir("output")
 
-    # Write run information
-    write_run_information(outdir="output",
-                          df=prep_output["df"],
-                          calc_type="reconciliation_bootstrap",
-                          model=prep_output["model"],
-                          cmd=None)
-
     # Copy trees from previous calculation in. This will preserve any that our
     # new calculation did not wipe out.
     for t in prep_output["existing_trees"]:
@@ -413,22 +406,32 @@ def _combine_results(prep_output):
                              "reconcile_events.newick"),
                 os.path.join("output","tree_events.newick"))
 
-    # Compress big, complicated replicates directory and delete 
-    print("\nCompressing replicates.\n",flush=True) 
+
+    # Write run information
+    write_run_information(outdir="output",
+                          df=prep_output["df"],
+                          calc_type="reconciliation_bootstrap",
+                          model=prep_output["model"],
+                          cmd=None)
+
+    # Compress big, complicated replicates directory and delete
+    print("\nCompressing replicates.\n",flush=True)
     f = tarfile.open("replicates.tar.gz","w:gz")
     f.add("replicates")
     f.close()
     shutil.rmtree("replicates")
 
+
+
     print(f"\nWrote results to {os.path.abspath('output')}\n",flush=True)
 
     os.chdir(prep_output["starting_dir"])
 
-    # # Write out a summary tree.
-    # return topiary.draw.reconciliation_tree(run_dir=base_dir,
-    #                                         output_file=os.path.join(base_dir,
-    #                                                                  "output",
-    #                                                                  "summary-tree.pdf"))
+    # Write out a summary tree.
+    return topiary.draw.tree(run_dir=base_dir,
+                             output_file=os.path.join(base_dir,
+                                                      "output",
+                                                      "summary-tree.pdf"))
 
 def reconcile_bootstrap(previous_dir=None,
                         df=None,

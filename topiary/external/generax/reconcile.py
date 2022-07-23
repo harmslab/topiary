@@ -132,13 +132,6 @@ def reconcile(previous_dir=None,
     # Make output directory to hold final outputs
     os.mkdir("output")
 
-    # Write run information
-    write_run_information(outdir="output",
-                          df=df,
-                          calc_type="reconciliation",
-                          model=model,
-                          cmd=cmd)
-
     # Copy trees from previous calculation in. This will preserve any that our
     # new calculation did not wipe out.
     for t in existing_trees:
@@ -155,13 +148,20 @@ def reconcile(previous_dir=None,
     shutil.copy(os.path.join("output","reconcilations","reconcile_events.newick"),
                 os.path.join("output","tree_events.newick"))
 
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="reconciliation",
+                          model=model,
+                          cmd=cmd)
+
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
-    # # Write out a summary tree.
-    # return topiary.draw.reconciliation_tree(run_dir=output,
-    #                                         output_file=os.path.join(output,
-    #                                                                  "output",
-    #                                                                  "summary-tree.pdf"))
+    # Write out a summary tree.
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

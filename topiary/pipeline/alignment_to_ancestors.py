@@ -16,7 +16,7 @@ def _check_restart(output,restart):
     run_calc = True
     if restart:
 
-        # See if json file is there. If so, assume done.
+        # See if json file is there. If so, the run is done.
         json_file = os.path.join(output,"output","run_parameters.json")
         if os.path.isfile(json_file):
             run_calc = False
@@ -125,12 +125,14 @@ def alignment_to_ancestors(df,
         raise ValueError(err)
 
     to_validate = [{"program":"raxml-ng",
-                              "min_version":software_requirements["raxml-ng"],
-                              "must_pass":True}]
+                    "binary":raxml_binary,
+                    "min_version":software_requirements["raxml-ng"],
+                    "must_pass":True}]
 
     if do_reconcile:
 
         to_validate.append({"program":"generax",
+                            "binary":generax_binary,
                             "min_version":software_requirements["generax"],
                             "must_pass":True})
         to_validate.append({"program":"mpirun",
@@ -140,10 +142,15 @@ def alignment_to_ancestors(df,
     # Make sure the software stack is valid before doing anything
     installed.validate_stack(to_validate)
 
+    # If we got here, reconciliation software is ready to go. Now check to
+    # whether we can really grab the number of threads requested.
+    if do_reconcile:
+        installed.test_mpi_configuration(num_threads)
+
     # If no output directory is specified, make up a name
     if out_dir is None:
         if restart:
-            err = "To use restart, you must specify an out_dir\n"
+            err = "To use restart, you must specify an out_dir.\n"
             raise ValueError(err)
         rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
         out_dir = f"alignment_to_ancestors_{rand}"
@@ -151,6 +158,7 @@ def alignment_to_ancestors(df,
     # Make output directory
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
+
     else:
 
         # See if it is overwritable
@@ -161,7 +169,7 @@ def alignment_to_ancestors(df,
                 os.mkdir(out_dir)
                 cannot_proceed = False
 
-        # If restart, do some checking
+        # If restart, we're okay having this directory around
         if restart:
             cannot_proceed = False
 
@@ -200,7 +208,7 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
-
+    # This will count step we're on
     counter = 0
 
     # Find best phylogenetic model
@@ -245,7 +253,7 @@ def alignment_to_ancestors(df,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
                               num_threads=num_threads,
-                              use_mpi=False, #### HACK HACK HACK
+                              use_mpi=True,
                               bootstrap=False)
         counter += 1
 

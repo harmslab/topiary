@@ -113,13 +113,6 @@ def generate_bootstraps(previous_dir=None,
 
     os.mkdir("output")
 
-    # Write run information
-    write_run_information(outdir="output",
-                          df=df,
-                          calc_type="ml_bootstrap",
-                          model=model,
-                          cmd=f"{cmd1}; {cmd2}")
-
     # Copy trees from previous calculation in. This will preserve any that our
     # new calculation did not wipe out.
     for t in existing_trees:
@@ -144,14 +137,21 @@ def generate_bootstraps(previous_dir=None,
     shutil.copy(os.path.join("combine-bootstraps","alignment.phy.raxml.bootstraps"),
                 os.path.join("output","bootstrap_replicates","bootstraps.newick"))
 
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="ml_bootstrap",
+                          model=model,
+                          cmd=f"{cmd1}; {cmd2}")
+
+
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
     # Create plot holding tree
-    # ret = topiary.draw.ml_tree(run_dir=output,
-    #                            output_file=os.path.join(output,
-    #                                                     "output",
-    #                                                     "summary-tree.pdf"))
-    # return ret
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

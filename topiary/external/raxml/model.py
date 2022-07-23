@@ -267,7 +267,7 @@ def find_best_model(df,
 
 
     print(f"Testing {len(kwargs_list)} models.\n",flush=True)
-   
+
     out_list = threads.thread_manager(kwargs_list,
                                       _model_thread_function,
                                       num_threads)
@@ -297,13 +297,6 @@ def find_best_model(df,
     outdir = "output"
     os.mkdir(outdir)
 
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="find_best_model",
-                          model=final_df.model.iloc[0],
-                          cmd=None)
-
     # Write dataframe comparing models
     final_df.to_csv(os.path.join(outdir,"model-comparison.csv"))
 
@@ -314,6 +307,13 @@ def find_best_model(df,
         if i >= len(final_df):
             break
         print(f"{final_df.model.iloc[i]:>20s}{final_df.p.iloc[i]:>20.3f}",flush=True)
+
+    # Write run information
+    write_run_information(outdir=outdir,
+                          df=df,
+                          calc_type="find_best_model",
+                          model=final_df.model.iloc[0],
+                          cmd=None)
 
     print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 
