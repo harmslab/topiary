@@ -297,20 +297,64 @@ def completeness_crawler(code_dir,test_dir,bin_dir=None):
 
     return missing_tests
 
+def write_test_file(filename,functions):
+
+    chunks = filename[:-3].split(os.path.sep)[1:]
+    chunks[-1] = "_".join(chunks[-1].split("_")[1:])
+    to_import = ".".join(chunks)
+
+    import_functions = []
+    for test_function in functions:
+        import_functions.append(re.sub("test_","",test_function))
+
+    if not os.path.exists(filename):
+
+        print(f"Create --> {filename}")
+
+        out = []
+        out.append("import pytest")
+        out.append("import topiary")
+        out.append("")
+        for f in import_functions:
+            out.append(f"from topiary.{to_import} import {f}")
+        out.append("")
+
+        f = open(filename,'w')
+        f.write("\n".join(out))
+        f.close()
+
+    f = open(filename,'a')
+    for fcn in functions:
+        f.write(f"def {fcn}():\n\n    pass\n\n")
+    f.close()
+
+
 def template_tests(missing_tests):
 
     missing_tests = list(missing_tests)
     missing_tests.sort()
 
-
-
+    to_write = {}
     for m in missing_tests:
         chunks = m.split(".")
+
+        if re.search("[" + string.ascii_uppercase + "]",chunks[-2]):
+            chunks[-2] = f"test_{chunks[-2]}_{chunks[-1]}"
+            chunks.pop(-1)
+
         function = chunks[-1]
+        filename = f"{os.path.sep.join(chunks[:-1])}.py"
 
-        #if re.search(string.ascii_uppercase,chunks[-2]):
+        try:
+            to_write[filename].append(function)
+        except KeyError:
+            to_write[filename] = [function]
 
-        filename = os.path.sep.join(chunks[:-1])
+        #print(filename,function)
+
+    for filename in to_write:
+        write_test_file(filename,to_write[filename])
+
 
         #print("TEMPLATE",filename,function)
 
