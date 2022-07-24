@@ -76,7 +76,10 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
     if species_tree is None:
         species_tree, dropped = topiary.get_species_tree(df)
     else:
-        species_tree = topiary.io.load_tree(species_tree,fmt=5)
+        species_tree = topiary.io.read_tree(species_tree,fmt=5)
+        for n in species_tree.traverse():
+            if n.is_leaf():
+                n.add_feature("ott",n.name)
 
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()

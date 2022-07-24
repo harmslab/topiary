@@ -97,6 +97,12 @@ def generate_ml_tree(previous_dir=None,
 
     os.mkdir("output")
 
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in existing_trees:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
+
     # Grab the final tree and store as tree.newick
     shutil.copy(os.path.join("working","alignment.phy.raxml.bestTree"),
                 os.path.join("output","tree.newick"))

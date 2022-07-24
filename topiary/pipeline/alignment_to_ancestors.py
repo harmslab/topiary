@@ -240,22 +240,6 @@ def alignment_to_ancestors(df,
     # This will count step we're on
     counter = 0
 
-    output = f"{counter:02d}_input"
-    if not os.path.exists(output):
-
-        os.mkdir(output)
-
-        # Write dataframe
-        df_file = os.path.join(output,"dataframe.csv")
-        topiary.write_dataframe(df,df_file)
-
-        # Write species tree
-        if do_reconcile:
-            species_tree_file = os.path.abspath(os.path.join(output,"species_tree.newick"))
-            species_tree.write(outfile=species_tree_file,format=5)
-
-    counter += 1
-
     # Find best phylogenetic model
     output = f"{counter:02d}_find-model"
 
@@ -295,7 +279,6 @@ def alignment_to_ancestors(df,
         if run_calc:
             topiary.reconcile(previous_dir=previous_dir,
                               output=output,
-                              species_tree_file=species_tree_file,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
                               num_threads=num_threads,
@@ -337,7 +320,6 @@ def alignment_to_ancestors(df,
             if run_calc:
                 topiary.reconcile(previous_dir=previous_dir,
                                   output=output,
-                                  species_tree_file=species_tree_file,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   generax_binary=generax_binary,
                                   num_threads=num_threads,

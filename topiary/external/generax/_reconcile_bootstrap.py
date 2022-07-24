@@ -198,12 +198,8 @@ def _prepare_for_bootstrap(previous_dir=None,
 
         os.chdir(replicate_dir)
 
-    # Create directory for maximum likelihood reconcilation
-    os.chdir(starting_dir)
-    ml_dir = os.path.abspath(os.path.join(replicate_dir,"ml"))
-    calc_dirs.append(ml_dir)
 
-    setup_generax(df,tree_file,model,ml_dir,species_tree=species_tree)
+    os.chdir(starting_dir)
 
     return result, calc_dirs
 
@@ -324,6 +320,8 @@ def _combine_results(prep_output):
         dictionary output from prep_calc (called by _prepare_for_bootstrap).
     """
 
+    ml_tree = prep_output["tree_file"]
+
     # Get base output directory for the calculation
     base_dir = os.path.abspath(prep_output["output"])
     base_rep = os.path.join(base_dir,"replicates")
@@ -364,16 +362,12 @@ def _combine_results(prep_output):
         for key in bs_keys:
             f.write(f"{tree_stack[key]}\n")
 
-    # Copy ml tree into combine dir
-    shutil.copy(os.path.join(base_rep,"ml",gene_tree_path),
-                os.path.join(combine_dir,"ml-tree.newick"))
-
     # Combine bootstrap replicates in combine_dir using raxmls
 
     os.chdir(combine_dir)
 
     cmd = run_raxml(algorithm="--support",
-                    tree_file="ml-tree.newick",
+                    tree_file=ml_tree,
                     num_threads=1,
                     log_to_stdout=False,
                     suppress_output=True,
@@ -386,8 +380,14 @@ def _combine_results(prep_output):
     # output directory
     os.mkdir("output")
 
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in prep_output["existing_trees"]:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
+
     # Copy in ml-tree, no supports
-    shutil.copy(os.path.join(combine_dir,"ml-tree.newick"),
+    shutil.copy(ml_tree,
                 os.path.join("output","tree.newick"))
 
     # Copy ml-tree with supports into output directory
