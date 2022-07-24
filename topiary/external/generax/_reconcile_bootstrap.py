@@ -210,7 +210,7 @@ def _construct_args(calc_dirs,
                     other_args=[],
                     use_mpi=True,
                     num_threads=-1,
-                    manual_num_cores=None):
+                    num_cores=None):
     """
     Construct arguments to pass to each thread in the pool.
 
@@ -232,21 +232,21 @@ def _construct_args(calc_dirs,
         whether or not to use mpirun
     num_threads : int, default=-1
         number of threads. if -1, use all available
-    manual_num_cores : int, optional
-        for the number of cores to be manual_num_cores (for testing)
+    num_cores : int, optional
+        for the number of cores to be num_cores (for testing and mpi)
 
     Returns
     ------
         list of args to pass for each calculation, number of threads
     """
 
-    # If using MPI and have a specified number of threads, set manual_num_cores
+    # If using MPI and have a specified number of threads, set num_cores
     # to num_threads. (Don't rely on os.cpu_count and friends for MPI)
-    if use_mpi and num_threads > 0 and manual_num_cores is None:
-        manual_num_cores = num_threads
+    if use_mpi and num_threads > 0 and num_cores is None:
+        num_cores = num_threads
 
     # Get number of threads available
-    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
+    num_threads = threads.get_num_threads(num_threads,num_cores)
 
     # If mpi, each generax calc will get num_threads. python will run each
     # calcualation in series on a single thread
@@ -506,7 +506,7 @@ def reconcile_bootstrap(previous_dir=None,
     kwargs_list, num_threads = _construct_args(calc_dirs,
                                                use_mpi=use_mpi,
                                                num_threads=num_threads,
-                                               manual_num_cores=num_cores)
+                                               num_cores=num_cores)
 
     # Run multi-threaded generax--one reconciliation per thread
     threads.thread_manager(kwargs_list,

@@ -318,11 +318,19 @@ def alignment_to_ancestors(df,
             output = f"{counter:02d}_reconciliation-bootstraps"
             run_calc = _check_restart(output,restart)
             if run_calc:
+
+                # set mpi to false because we are going to run each calculation
+                # on it's own thread. But send in num_cores = num_threads to
+                # cause python to launch num_threads `mpirun -np 1 generax`
+                # jobs. If we did not pass in num_cores, python would detect
+                # it only had num_threads on whatever core the main job was
+                # running on and not send jobs out to other cores. 
                 topiary.reconcile(previous_dir=previous_dir,
                                   output=output,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   generax_binary=generax_binary,
                                   num_threads=num_threads,
+                                  num_cores=num_threads,
                                   use_mpi=False,
                                   bootstrap=do_bootstrap)
             counter += 1
