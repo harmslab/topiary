@@ -386,12 +386,6 @@ def _combine_results(prep_output):
     # output directory
     os.mkdir("output")
 
-    # Copy trees from previous calculation in. This will preserve any that our
-    # new calculation did not wipe out.
-    for t in prep_output["existing_trees"]:
-        tree_filename = os.path.split(t)[-1]
-        shutil.copy(t,os.path.join("output",tree_filename))
-
     # Copy in ml-tree, no supports
     shutil.copy(os.path.join(combine_dir,"ml-tree.newick"),
                 os.path.join("output","tree.newick"))
