@@ -174,10 +174,8 @@ def run_generax(run_directory,
     generax_cmd : str
         string representation of command passed to generax
     """
-    if num_threads > 1:
-        cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
-    else:
-        cmd = ["generax"]
+    
+    cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
 
     cmd.extend(["--families","control.txt"])
     cmd.extend(["--species-tree","species_tree.newick"])

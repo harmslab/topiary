@@ -165,7 +165,7 @@ def get_ott_id(df,
         This is a unique species, but can't be placed on a bifurcating species
         tree.
 
-        If you are able to find a name for the spieces that successfully resolves
+        If you are able to find a name for the species that successfully resolves
         on the opentreeoflife database, you can update the dataframe. For the
         example of Apteryx mantelli mantellii above, you could fix this error
         by running the following code. (Note we set `keep = True` because the

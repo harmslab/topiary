@@ -396,16 +396,15 @@ def _combine_results(prep_output):
                              "tree.newick.raxml.support"),
                 os.path.join("output","tree_supports.newick"))
 
-    # Copy reconcilation directory into output directory
-    shutil.copytree(os.path.join(base_rep,"ml",reconcile_path),
-                    os.path.join("output","reconcilations"))
+    # Write message indicating where to look for further output
+    msg = "For more information on the reconcilation events (orthgroups,\n"
+    msg += "event counts, full nhx files, etc.) please see the maximum\n"
+    msg += "likelihood reconciliation output directory that was used as\n"
+    msg += "input for this bootstrap calcultion.\n"
 
-    # Copy events tree into output directory
-    shutil.copy(os.path.join(base_rep,
-                             "ml",reconcile_path,
-                             "reconcile_events.newick"),
-                os.path.join("output","tree_events.newick"))
-
+    f = open(os.path.join("output","reconciliations.txt"),"w")
+    f.write(msg)
+    f.close()
 
     # Write run information
     write_run_information(outdir="output",

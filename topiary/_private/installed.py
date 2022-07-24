@@ -402,7 +402,7 @@ def validate_stack(to_check):
         err += "\n"
         raise RuntimeError(err)
 
-def test_mpi_configuration(num_threads):
+def test_mpi_configuration(num_threads,test_binary):
     """
     Make sure mpi configuration allows the requested number of threads.
     """
@@ -412,7 +412,7 @@ def test_mpi_configuration(num_threads):
         num_threads = topiary._private.threads.get_num_threads(num_threads)
 
     # Run ls on num_threads.
-    cmd = ["mpirun","-np",f"{num_threads}","ls"]
+    cmd = ["mpirun","-np",f"{num_threads}",test_binary]
     ret = subprocess.run(cmd,capture_output=True)
 
     # If mpirun failed,
