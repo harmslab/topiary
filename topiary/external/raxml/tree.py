@@ -58,7 +58,6 @@ def generate_ml_tree(previous_dir=None,
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
-
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
@@ -74,6 +73,7 @@ def generate_ml_tree(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
     existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     other_args = []
 
@@ -126,7 +126,8 @@ def generate_ml_tree(previous_dir=None,
                           df=df,
                           calc_type="ml_tree",
                           model=model,
-                          cmd=cmd)
+                          cmd=cmd,
+                          start_time=start_time)
 
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 

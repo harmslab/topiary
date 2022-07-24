@@ -84,7 +84,7 @@ def test_main(test_dataframes,tmpdir):
     assert os.path.isfile(out_file)
     out_df = topiary.read_dataframe(out_file)
     assert pd.isna(out_df.loc[out_df.index[0],"alignment"])
-    assert not out_df.loc[out_df.index[0],"keep"] 
+    assert not out_df.loc[out_df.index[0],"keep"]
     for i in range(1,len(out_df)):
         assert out_df.loc[out_df.index[i],"alignment"] == "QQQQQQ"
         assert out_df.loc[out_df.index[i],"keep"]

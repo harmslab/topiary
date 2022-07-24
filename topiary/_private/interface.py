@@ -342,6 +342,7 @@ def prep_calc(previous_dir=None,
     out["starting_dir"] = starting_dir
     out["output"] = output
     out["other_files"] = final_files
+    out["start_time"] = time.time()
 
     return out
 
@@ -512,7 +513,7 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
     # Leave working directory
     os.chdir(cwd)
 
-def write_run_information(outdir,df,calc_type,model,cmd):
+def write_run_information(outdir,df,calc_type,model,cmd=None,start_time=None):
     """
     Write information from the run in a standard way.
 
@@ -528,6 +529,8 @@ def write_run_information(outdir,df,calc_type,model,cmd):
         phylogenetic model
     cmd : str
         invoked raxml or generax command
+    start_time : float, optional
+        output of time.time() from start of the run
 
     Return
     ------
@@ -543,6 +546,9 @@ def write_run_information(outdir,df,calc_type,model,cmd):
                 "cmd":cmd,
                 "version":topiary.__version__,
                 "end_time":time.time()}
+
+    if start_time is not None:
+        out_dict["start_time"] = start_time
 
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)

@@ -8,7 +8,7 @@ from topiary.external.ncbi.blast.merge import _check_merge, merge_blast_df
 import numpy as np
 import pandas as pd
 
-def test___check_merge():
+def test__check_merge():
 
     to_merge = [None,None,None]
     index = 1

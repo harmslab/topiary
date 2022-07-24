@@ -516,6 +516,7 @@ def generate_ancestors(previous_dir=None,
     starting_dir = result["starting_dir"]
     output = result["output"]
     existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     alt_cutoff = check.check_float(alt_cutoff,
                                    "alt_cutoff",
@@ -575,7 +576,8 @@ def generate_ancestors(previous_dir=None,
                           df=df,
                           calc_type="ancestors",
                           model=model,
-                          cmd=cmd)
+                          cmd=cmd,
+                          start_time=start_time)
 
     print(f"\nWrote results to {os.path.abspath('output')}\n")
 

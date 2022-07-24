@@ -74,6 +74,7 @@ def generate_bootstraps(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
     existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     other_args = []
 
@@ -142,7 +143,8 @@ def generate_bootstraps(previous_dir=None,
                           df=df,
                           calc_type="ml_bootstrap",
                           model=model,
-                          cmd=f"{cmd1}; {cmd2}")
+                          cmd=f"{cmd1}; {cmd2}",
+                          start_time=start_time)
 
 
     print(f"\nWrote results to {os.path.abspath('output')}\n")

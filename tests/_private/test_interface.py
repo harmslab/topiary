@@ -291,7 +291,7 @@ def test_prep_calc(xml_to_anc_output,tmpdir):
 
     os.chdir(current_dir)
 
-def test__subproc_wrapper():
+def test__follow_log_subproc_wrapper():
     # Super simple function that would require lots of test infrastructure to
     # run.
     pass
@@ -331,17 +331,18 @@ def test_launch(tmpdir,programs):
     assert len(lines[0].split(";")) == 3
     assert len(lines[1].split(";")) == 3
 
-def write_run_information(tmpdir,test_dataframes):
+def test_write_run_information(tmpdir,test_dataframes):
 
     df = test_dataframes["good-df"]
     outdir = os.path.join(tmpdir,"stupid")
     os.mkdir(outdir)
 
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="my_calc",
-                          model="my_model",
-                          cmd="my_command")
+    interface.write_run_information(outdir=outdir,
+                                    df=df,
+                                    calc_type="my_calc",
+                                    model="my_model",
+                                    cmd="my_command",
+                                    start_time="my_start")
 
     csv_file = os.path.join(outdir,"dataframe.csv")
     assert os.path.isfile(csv_file)
@@ -355,3 +356,7 @@ def write_run_information(tmpdir,test_dataframes):
     assert out["model"] == "my_model"
     assert out["cmd"] == "my_command"
     assert out["version"] == topiary.__version__
+    assert out["start_time"] == "my_start"
+
+    # Don't check end_time, just make sure it is present
+    out["end_time"]

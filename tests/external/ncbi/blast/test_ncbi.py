@@ -14,7 +14,7 @@ import pandas as pd
 import copy
 import multiprocessing as mp
 
-def test__prepare_blast(test_dataframes):
+def test__prepare_for_blast(test_dataframes):
 
     default_kwargs = get_public_param_defaults(ncbi_blast,_pfb)
     default_kwargs["kwargs"] = {}

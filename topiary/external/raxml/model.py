@@ -179,6 +179,7 @@ def find_best_model(df,
     alignment_file = result["alignment_file"]
     tree_file = result["tree_file"]
     starting_dir = result["starting_dir"]
+    start_time = result["start_time"]
 
     # Generate a parsimony tree if not was specified
     if tree_file is None:
@@ -313,7 +314,8 @@ def find_best_model(df,
                           df=df,
                           calc_type="find_best_model",
                           model=final_df.model.iloc[0],
-                          cmd=None)
+                          cmd=None,
+                          start_time=start_time)
 
     print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 

@@ -208,11 +208,6 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
-    f = open("start-time-hack.txt","w")
-    f.write(f"{time.time()}\n")
-    f.close()
-    
-
     # This will count step we're on
     counter = 0
 
@@ -312,6 +307,5 @@ def alignment_to_ancestors(df,
                                        output=output,
                                        num_threads=num_threads,
                                        alt_cutoff=alt_cutoff)
-
 
     os.chdir(current_dir)

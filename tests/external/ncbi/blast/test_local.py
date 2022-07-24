@@ -17,7 +17,7 @@ import copy, os
 import multiprocessing as mp
 
 
-def test__prepare_blast(test_dataframes,tmpdir):
+def test__prepare_for_blast(test_dataframes,tmpdir):
 
     # Make a fake blast db so code passes "file exists" check
     f = open(os.path.join(tmpdir,"GRCh38.psq"),"w")
