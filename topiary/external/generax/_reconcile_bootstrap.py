@@ -24,6 +24,7 @@ def _prepare_for_bootstrap(previous_dir=None,
                            df=None,
                            model=None,
                            tree_file=None,
+                           species_tree_file=None,
                            output=None,
                            overwrite=False):
     """
@@ -45,6 +46,8 @@ def _prepare_for_bootstrap(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format
     output: str, optional
         output directory. If not specified, create an output directory with
         form "generax_reconcilation_randomletters"
@@ -64,7 +67,7 @@ def _prepare_for_bootstrap(previous_dir=None,
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
-                       tree_file=model,
+                       tree_file=tree_file,
                        output=output,
                        overwrite=overwrite,
                        output_base="generax_bootstrap_reconcilation")
@@ -103,9 +106,12 @@ def _prepare_for_bootstrap(previous_dir=None,
 
     bs_df = df.loc[df.keep,:]
 
-    # Load species tree from opentree
-    species_tree = topiary.get_species_tree(bs_df)
-    species_tree.resolve_polytomy()
+    # Read species tree
+    if species_tree_file is not None:
+        species_tree = species_tree_file
+    else:
+        species_tree, dropped = topiary.get_species_tree(bs_df,strict=True)
+        species_tree.resolve_polytomy()
 
     # Create replicate directory
     replicate_dir = os.path.abspath(os.path.join("replicates"))
@@ -437,6 +443,7 @@ def reconcile_bootstrap(previous_dir=None,
                         df=None,
                         model=None,
                         tree_file=None,
+                        species_tree_file=None,
                         allow_horizontal_transfer=True,
                         output=None,
                         overwrite=False,
@@ -463,6 +470,8 @@ def reconcile_bootstrap(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -494,6 +503,7 @@ def reconcile_bootstrap(previous_dir=None,
                                                     df=df,
                                                     model=model,
                                                     tree_file=tree_file,
+                                                    species_tree_file=species_tree_file,
                                                     output=output,
                                                     overwrite=overwrite)
 

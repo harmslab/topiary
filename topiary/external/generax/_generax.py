@@ -28,8 +28,9 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
         phylogenetic model to use (should match model used to generate gene_tree)
     out_dir : str
         output directory
-    species_tree : ete3.Tree, optional
-        file with species tree. if not specified, download from opentree
+    species_tree : ete3.Tree or dendropy.Tree or str, optional
+        species tree as a tree or newick file. if not specified, download from
+        opentree
     """
 
     # -------------------------------------------------------------------------
@@ -73,7 +74,9 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
 
     # Get species tree corresponding to uid seen
     if species_tree is None:
-        species_tree = topiary.get_species_tree(df)
+        species_tree, dropped = topiary.get_species_tree(df)
+    else:
+        species_tree = topiary.io.load_tree(species_tree,fmt=5)
 
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()

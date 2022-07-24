@@ -101,21 +101,54 @@ def alignment_to_ancestors(df,
         what generax binary to use
     """
 
-    no_bootstrap = check.check_bool(no_bootstrap,"no_bootstrap")
-    no_reconcile = check.check_bool(no_reconcile,"no_reconcile")
+    # Read dataframe if string.
+    if issubclass(type(df),str):
+        df = topiary.read_dataframe(df)
 
+    # Validate dataframe
+    df = check.check_topiary_dataframe(df)
+
+    # Validate starting_tree
+    if starting_tree is not None:
+        starting_tree = str(starting_tree)
+        if not os.path.isfile(starting_tree):
+            err = f"starting_tree '{starting_tree}' not found.\n"
+            raise FileNotFoundError(err)
+
+    # --------------------------------------------------------------------------
     # Flip logic from user interface (where flags turn off bootstrap and
     # reconcilation) to more readable flags that turn on (do_bootstrap,
     # do_reconcile)
+
+    no_bootstrap = check.check_bool(no_bootstrap,"no_bootstrap")
     if no_bootstrap:
         do_bootstrap = False
     else:
         do_bootstrap = True
 
+    no_reconcile = check.check_bool(no_reconcile,"no_reconcile")
     if no_reconcile:
         do_reconcile = False
     else:
         do_reconcile = True
+
+
+    # --------------------------------------------------------------------------
+    # Validate calculation arguments
+
+    allow_horizontal_transfer = check.check_bool(allow_horizontal_transfer,
+                                                 "allow_horizontal_transfer")
+    alt_cutoff = check.check_float(alt_cutoff,
+                                   "alt_cutoff",
+                                   minimum_allowed=0,
+                                   maximum_allowed=1)
+
+    # model_matrices, model_freqs, model_rates, model_invariant go into
+    # the first calculation (find_best_model) and have complicated validation.
+    # Rely on that code to check.
+
+    # --------------------------------------------------------------------------
+    # Check sanity of overwrite, restart, and combination
 
     overwrite = check.check_bool(overwrite,"overwrite")
     restart = check.check_bool(restart,"restart")
@@ -123,6 +156,17 @@ def alignment_to_ancestors(df,
     if overwrite and restart:
         err = "overwrite and restart flags are incompatible.\n"
         raise ValueError(err)
+
+    num_threads = check.check_int(num_threads,
+                                  "num_threads",
+                                  minimum_allowed=-1)
+    if num_threads == 0:
+        err = "num_threads should be -1 (use all available) or a integer > 0\n"
+        err += "indicating the number of threads to use.\n"
+        raise ValueError(err)
+
+    # --------------------------------------------------------------------------
+    # Validate software stack required for this pipeline
 
     to_validate = [{"program":"raxml-ng",
                     "binary":raxml_binary,
@@ -139,13 +183,23 @@ def alignment_to_ancestors(df,
                             "min_version":software_requirements["mpirun"],
                             "must_pass":True})
 
-    # Make sure the software stack is valid before doing anything
     installed.validate_stack(to_validate)
 
     # If we got here, reconciliation software is ready to go. Now check to
-    # whether we can really grab the number of threads requested.
+    # whether mpi can really grab the number of threads requested.
     if do_reconcile:
         installed.test_mpi_configuration(num_threads)
+
+    # --------------------------------------------------------------------------
+    # Final sanity checks
+
+    # If we're doing a reconciliation, make sure we can actually get placement
+    # of all species on the tree.
+    if do_reconcile:
+        species_tree, dropped = topiary.get_species_tree(df,strict=True)
+
+    # --------------------------------------------------------------------------
+    # Deal with output directory
 
     # If no output directory is specified, make up a name
     if out_dir is None:
@@ -179,37 +233,28 @@ def alignment_to_ancestors(df,
             err += "overwrite = True.\n\n"
             raise FileExistsError(err)
 
-    # If a dataframe was specified as a string, copy it in to output directory
-    if issubclass(type(df),str):
-        if not os.path.exists(df):
-            err = f"\ndataframe '{df}' does not exist.\n\n"
-            raise FileNotFoundError(err)
-
-        df_base = os.path.split(df)[-1]
-        out_df = os.path.join(out_dir,df_base)
-        if not os.path.isfile(out_df):
-            shutil.copy(df,out_df)
-        df = df_base
-
-    # If tree is specified as a string, copy it in to output directory
-    if starting_tree is not None:
-        if issubclass(type(starting_tree),str):
-            if not os.path.exists(starting_tree):
-                err = f"\starting_tree '{starting_tree}' does not exist.\n\n"
-                raise FileNotFoundError(err)
-
-            tree_base = os.path.split(df)[-1]
-            out_tree = os.path.join(out_dir,tree_base)
-            if not os.path.isfile(out_tree):
-                shutil.copy(starting_tree,out_tree)
-            starting_tree = tree_base
-
     # Go into output directory
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
     # This will count step we're on
     counter = 0
+
+    output = f"{counter:02d}_input"
+    if not os.path.exists(output):
+
+        os.mkdir(output)
+
+        # Write dataframe
+        df_file = os.path.join(output,"dataframe.csv")
+        topiary.write_dataframe(df,df_file)
+
+        # Write species tree
+        if do_reconcile:
+            species_tree_file = os.path.abspath(os.path.join(output,"species_tree.newick"))
+            species_tree.write(outfile=species_tree_file,format=5)
+
+    counter += 1
 
     # Find best phylogenetic model
     output = f"{counter:02d}_find-model"
@@ -250,6 +295,7 @@ def alignment_to_ancestors(df,
         if run_calc:
             topiary.reconcile(previous_dir=previous_dir,
                               output=output,
+                              species_tree_file=species_tree_file,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
                               num_threads=num_threads,
@@ -291,6 +337,7 @@ def alignment_to_ancestors(df,
             if run_calc:
                 topiary.reconcile(previous_dir=previous_dir,
                                   output=output,
+                                  species_tree_file=species_tree_file,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   generax_binary=generax_binary,
                                   num_threads=num_threads,

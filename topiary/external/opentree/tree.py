@@ -14,7 +14,7 @@ import numpy as np
 
 import re, copy
 
-def get_species_tree(df):
+def get_species_tree(df,strict=False):
     """
     Return an ete3 cladogram of species in tree. The leaves on the tree will
     have the following features:
@@ -29,12 +29,16 @@ def get_species_tree(df):
     df : pandas.DataFrame
         topiary dataframe that has an ott column with Open Tree of Life taxon
         ids
+    strict : bool, default=False
+        if strict, throw ValueError if a species cannot be found on opentree
 
     Returns
     -------
     species_tree : ete3.Tree
         An ete3 tree with branch lengths of 1, supports of 1, and only
         tip labels. Note: any polytomies are arbirarily resolved.
+    dropped : list
+        list of ott corresponding to dropped sequences
     """
 
     # Make sure this is a clean topiary dataframe
@@ -75,6 +79,7 @@ def get_species_tree(df):
             ott_to_df_columns[k][o] = tuple(ott_to_df_columns[k][o])
 
     # Get only rows with unique ott
+    all_kept_df = df.copy()
     df = df.loc[df.loc[:,"ott"].drop_duplicates().index,:]
 
     # Make sure every species has an ott
@@ -126,6 +131,7 @@ def get_species_tree(df):
     final_tree.resolve_polytomy()
 
     # Give every node a support of 1 and a branch length of 1
+    ott_seen = []
     for n in final_tree.traverse():
         if n.dist != 1:
             n.dist = 1
@@ -143,4 +149,30 @@ def get_species_tree(df):
 
             n.name = copy.deepcopy(n.ott)
 
-    return final_tree
+            ott_seen.append(n.ott)
+
+    dropped = list(set(df.loc[:,"ott"]) - set(ott_seen))
+
+    if len(dropped) > 0:
+
+        bad_rows = all_kept_df.loc[all_kept_df.ott.isin(dropped),:]
+
+        err = ["\n\nNot all species could be placed on the species tree!\n"]
+
+        for idx in bad_rows.index:
+            uid = bad_rows.loc[idx,"uid"]
+            species = bad_rows.loc[idx,"species"]
+            ott = bad_rows.loc[idx,"ott"]
+            err.append(f"    {uid}: {species} ({ott})")
+
+        err.append("\n\n")
+
+        err = "\n".join(err)
+
+        if strict:
+            raise ValueError(err)
+        else:
+            print(err)
+
+
+    return final_tree, dropped

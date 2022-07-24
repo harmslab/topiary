@@ -19,6 +19,7 @@ def reconcile(previous_dir=None,
               df=None,
               model=None,
               tree_file=None,
+              species_tree_file=None,
               allow_horizontal_transfer=True,
               output=None,
               overwrite=False,
@@ -45,6 +46,8 @@ def reconcile(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format.
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -79,6 +82,7 @@ def reconcile(previous_dir=None,
                                   df=df,
                                   model=model,
                                   tree_file=tree_file,
+                                  species_tree_file=species_tree_file,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   output=output,
                                   overwrite=overwrite,
@@ -94,7 +98,7 @@ def reconcile(previous_dir=None,
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
-                       tree_file=model,
+                       tree_file=tree_file,
                        output=output,
                        overwrite=overwrite,
                        output_base="generax_reconcilation")
@@ -117,7 +121,11 @@ def reconcile(previous_dir=None,
             raise ValueError(err)
 
     # Set up generax directory
-    setup_generax(df,tree_file,model,"working")
+    setup_generax(df,
+                  tree_file,
+                  model,
+                  "working",
+                  species_tree=species_tree_file)
 
     # Get number of threads to use. If no mpi, use only one thread
     num_threads = get_num_threads(num_threads,num_cores)

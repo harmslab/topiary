@@ -15,7 +15,7 @@ def test__prep_species_tree(test_dataframes):
     df = test_dataframes["good-df"].copy()
     df["recip_paralog"] = "LY96"
 
-    T = tx._prep_species_tree(df,paralog_column="recip_paralog")
+    df, T = tx._prep_species_tree(df,paralog_column="recip_paralog")
     assert type(T) is ete3.Tree
     for leaf in T.get_leaves():
         assert np.array_equal(list(leaf.paralogs.keys()),["LY96"])
@@ -23,7 +23,7 @@ def test__prep_species_tree(test_dataframes):
         assert leaf.uid[0] == leaf.paralogs["LY96"][0] # Make sure we're not mixing up uid
 
     with pytest.raises(ValueError):
-        T = tx._prep_species_tree(df,paralog_column="not_a_column")
+        df, T = tx._prep_species_tree(df,paralog_column="not_a_column")
 
     df = test_dataframes["good-df"].copy()
     second_df = test_dataframes["good-df"].copy()
@@ -33,7 +33,7 @@ def test__prep_species_tree(test_dataframes):
     df["recip_paralog"] = "LY96"
     df.loc[0:4,"recip_paralog"] = "LY86"
 
-    T = tx._prep_species_tree(df,paralog_column="recip_paralog")
+    df, T = tx._prep_species_tree(df,paralog_column="recip_paralog")
     for leaf in T.get_leaves():
         assert np.array_equal(list(leaf.paralogs.keys()),["LY86","LY96"])
         assert len(leaf.paralogs["LY96"]) == 1

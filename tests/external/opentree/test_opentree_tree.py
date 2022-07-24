@@ -3,15 +3,18 @@ import pytest
 
 import topiary
 import numpy as np
+import pandas as pd
 
-def test_get_species_tree(test_dataframes):
+import ete3
+
+def test_get_species_tree(test_dataframes,df_with_species_not_resolvable):
 
     df = test_dataframes["good-df"]
 
     expected_num_leaves = len(np.unique(df.species))
 
     # make sure the uid, ott, and species loaded correctly
-    T = topiary.opentree.tree.get_species_tree(df)
+    T, dropped = topiary.opentree.tree.get_species_tree(df)
     assert len(T.get_leaves()) == expected_num_leaves
     tips = [n.ott for n in T.get_leaves()]
     tips.sort()
@@ -36,7 +39,20 @@ def test_get_species_tree(test_dataframes):
     from_df.sort()
     assert np.array_equal(tips,from_df)
 
+    # nothing should have been dropped.
+    assert len(dropped) == 0
+
     # Make sure the check for ott is working
     bad_df = df.drop(columns=["ott"])
     with pytest.raises(ValueError):
-        T = topiary.opentree.tree.get_species_tree(bad_df)
+        T, dropped = topiary.opentree.tree.get_species_tree(bad_df)
+
+    # Test for resolvability check and for dropping keep = False
+    T, dropped = topiary.opentree.tree.get_species_tree(df_with_species_not_resolvable)
+
+    assert len(dropped) == 1
+    assert len(list(T.get_leaves())) == 357
+
+    with pytest.raises(ValueError):
+        T, dropped = topiary.opentree.tree.get_species_tree(df_with_species_not_resolvable,
+                                                            strict=True)

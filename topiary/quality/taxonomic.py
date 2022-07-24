@@ -25,6 +25,9 @@ def _prep_species_tree(df,paralog_column):
 
     Returns
     -------
+    df : pandas.DataFrame
+        dataframe with organisms who cannot be placed on the current synthetic
+        tree set to keep = False
     annotated_species_tree : ete3.Tree
     """
 
@@ -36,8 +39,16 @@ def _prep_species_tree(df,paralog_column):
     if "ott" not in df.columns:
         df = topiary.opentree.get_ott_id(df)
 
-    # Get rid of almost identical sequences within each species
-    species_tree = topiary.opentree.get_species_tree(df)
+    # Get species tree
+    species_tree, dropped = topiary.opentree.get_species_tree(df)
+
+    # Drop sequences for species that cannot be resolved on the tree
+    df = df.loc[np.logical_not(df.ott.isin(dropped)),:]
+
+    # If everything is dropped, complain
+    if len(df) == 0:
+        err = "Could not place any species onto a species tree.\n"
+        raise ValueError(err)
 
     all_paralogs = list(np.unique(df.loc[:,paralog_column]))
     paralogs_seen = dict([(p,[]) for p in all_paralogs])
@@ -49,7 +60,7 @@ def _prep_species_tree(df,paralog_column):
             idx = this_df.index[i]
             leaf.paralogs[this_df.loc[idx,paralog_column]].append(this_df.loc[idx,"uid"])
 
-    return species_tree
+    return df, species_tree
 
 def _even_paralog_budgeting(T,overall_budget):
     """
@@ -531,11 +542,11 @@ def taxonomic_sample(df,
         df.loc[paralog_mask,"sparse_run_length"] = this_df["sparse_run_length"]
         df.loc[paralog_mask,"fx_missing_dense"] = this_df["fx_missing_dense"]
 
+    # Construct species tree annotated with paralogs at tips. If there are
+    # species we can't resolve on the tree, drop them from the dataframe
+    df, species_tree = _prep_species_tree(df,paralog_column=paralog_column)
 
     print(f"\nInitial sequence quality control: {starting_keep} --> {np.sum(df.keep)} sequences.\n",flush=True)
-
-    # Construct species tree annotated with paralogs at tips
-    species_tree = _prep_species_tree(df,paralog_column=paralog_column)
 
     # Get the sequence budget for all paralogs
     if even_paralog_split:

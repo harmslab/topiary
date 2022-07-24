@@ -249,3 +249,12 @@ def for_real_inference():
         out_dict[key] = f
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def df_with_species_not_resolvable():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    df_file = os.path.abspath(os.path.join(dir,"data","df-with-species-not-resolvable.csv"))
+    df = pd.read_csv(df_file)
+
+    return df
