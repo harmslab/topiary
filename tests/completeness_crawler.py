@@ -277,21 +277,33 @@ def completeness_crawler(code_dir,test_dir,bin_dir=None):
     extra_fake_tests = fake_tests - expected_tests
     missing_fake_tests = fake_tests.intersection(missing_tests)
 
+    good_tests = list(good_tests)
+    good_tests.sort()
     for g in good_tests:
         print("FOUND",g)
 
+    integration_tests = list(integration_tests)
+    integration_tests.sort()
     for i in integration_tests:
         print("FOUND & INTEGRATION",i)
 
+    missing_tests = list(missing_tests)
+    missing_tests.sort()
     for m in missing_tests:
         print("MISSING",m)
 
+    missing_fake_tests = list(missing_fake_tests)
+    missing_fake_tests.sort()
     for f in missing_fake_tests:
         print("DUMMY",f)
 
+    truly_extra_tests = list(truly_extra_tests)
+    truly_extra_tests.sort()
     for e in truly_extra_tests:
         print("FOUND & EXTRA",e)
 
+    extra_fake_tests = list(extra_fake_tests)
+    extra_fake_tests.sort()
     for e in extra_fake_tests:
         print("EXTRA & DUMMY",e)
 
