@@ -4,8 +4,10 @@ import pytest
 import topiary
 from topiary.quality.alignment import _get_sparse_columns, _rle, _drop_gaps_only
 from topiary.quality.alignment import _find_too_many_sparse, _find_too_few_dense
-from topiary.quality.alignment import _find_long_insertions, clean_alignment
+from topiary.quality.alignment import _find_long_insertions
 from topiary.quality.alignment import AA_TO_INT, INT_TO_AA
+from topiary.quality.alignment import score_alignment
+from topiary.quality.alignment import clean_alignment
 
 import numpy as np
 import pandas as pd
@@ -238,5 +240,9 @@ def test__find_long_insertions():
     assert np.array_equal(new_cum_keep,cumulative_keep[new_keep_mask])
 
 def test_clean_alignment(test_dataframes):
+
+    pass
+
+def test_score_alignment():
 
     pass

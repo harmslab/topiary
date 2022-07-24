@@ -11,8 +11,7 @@ def test__grab_line_meta_data(ncbi_lines):
     # This function is implicitly and rigorously tested by test_parse_ncbi_line.
     # I'd have to make separate test data manually, so I'll rely on
     # test_parse_ncbi_line.
-
-    pass
+    return True
 
 
 def test_parse_ncbi_line(ncbi_lines):
@@ -43,5 +42,3 @@ def test_parse_ncbi_line(ncbi_lines):
     for k in line_dict:
         print(k)
         assert line_dict[k] == expected[k]
-
-

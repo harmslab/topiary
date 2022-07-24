@@ -17,3 +17,15 @@ def test_WaitingAnimation():
     w.start()
     time.sleep(2)
     w.stop()
+def test_WaitingAnimation__iterate():
+
+    pass
+
+def test_WaitingAnimation_start():
+
+    pass
+
+def test_WaitingAnimation_stop():
+
+    pass
+

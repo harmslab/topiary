@@ -87,3 +87,55 @@ def test_integrated_categories():
     pt.draw_node_labels("test_feature")
     pt.draw_scale_bar()
     pt.draw_node_legend()
+    
+def test_PrettyTree__get_node_values():
+
+    pass
+
+def test_PrettyTree_canvas():
+
+    pass
+
+def test_PrettyTree_default_size():
+
+    pass
+
+def test_PrettyTree_draw_node_labels():
+
+    pass
+
+def test_PrettyTree_draw_node_legend():
+
+    pass
+
+def test_PrettyTree_draw_nodes():
+
+    pass
+
+def test_PrettyTree_draw_scale_bar():
+
+    pass
+
+def test_PrettyTree_legend_ax():
+
+    pass
+
+def test_PrettyTree_plotted_properties():
+
+    pass
+
+def test_PrettyTree_render():
+
+    pass
+
+def test_PrettyTree_tT():
+
+    pass
+
+def test_PrettyTree_tree_ax():
+
+    pass
+
+def test_PrettyTree_tree_mark():
+
+    pass

@@ -5,6 +5,7 @@ import topiary
 from topiary.quality import remove_redundancy, find_cutoff
 from topiary.quality.redundancy.redundancy import _get_quality_scores, _reduce_redundancy_thread_manager
 from topiary.quality.redundancy.redundancy import _EXPECTED_COLUMNS
+from topiary.quality.redundancy.redundancy import _DummyTqdm
 
 import numpy as np
 import pandas as pd
@@ -304,3 +305,15 @@ def test_find_cutoff(test_dataframes):
     for i in range(5):
         cutoff = find_cutoff(df,min_cutoff=0.5,max_cutoff=1.0,target_number=(i+1))
         new_df = remove_redundancy(df,cutoff=cutoff)
+
+def test__DummyTqdm():
+
+    pass
+
+def test__DummyTqdm___enter__():
+
+    pass
+
+def test__FakeLock():
+
+    pass

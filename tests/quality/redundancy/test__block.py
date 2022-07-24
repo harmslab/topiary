@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 
 from topiary.quality.redundancy._block import _compare_seqs
+from topiary.quality.redundancy._block import _check_block_redundancy
 from topiary.quality.redundancy.redundancy import _EXPECTED_COLUMNS
 
 def test__compare_seqs(test_dataframes):
@@ -79,3 +80,7 @@ def test__compare_seqs(test_dataframes):
     a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
     assert a1 is True
     assert a2 is True
+
+def test__check_block_redundancy():
+
+    pass

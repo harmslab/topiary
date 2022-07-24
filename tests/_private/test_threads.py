@@ -75,5 +75,5 @@ def test_thread_manager():
         assert np.array_equal(output,[4,12,6,18])
 
 def test__thread():
-    # tested implicitly in test_thread_manager. 
-    pass
+    # tested implicitly in test_thread_manager.
+    return True

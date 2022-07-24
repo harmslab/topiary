@@ -7,6 +7,10 @@ from topiary.draw.core import construct_colormap, construct_sizemap
 from topiary.draw.core import create_name_dict
 from topiary.draw.core import _protect_name, _deprotect_name, color_to_css
 from topiary.draw.core import get_round_to
+from topiary.draw.core import load_trees
+from topiary.draw.core import map_tree_to_tree
+from topiary.draw.core import parse_position_string
+from topiary.draw.core import parse_span_color
 
 import ete3
 import toyplot
@@ -369,3 +373,19 @@ def test_create_name_dict(for_real_inference):
     # Make sure it's checking for bad value correctly
     with pytest.raises(ValueError):
         name_dict = create_name_dict(df,tip_columns=["uid"],separator=",")
+
+def test_load_trees():
+
+    pass
+
+def test_map_tree_to_tree():
+
+    pass
+
+def test_parse_position_string():
+
+    pass
+
+def test_parse_span_color():
+
+    pass

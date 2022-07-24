@@ -7,6 +7,8 @@ from topiary.external.ncbi.blast.ncbi import ncbi_blast
 from topiary.external.ncbi.blast.ncbi import _prepare_for_blast as _pfb
 from topiary.external.ncbi.blast.ncbi import _construct_args as _ca
 from topiary.external.ncbi.blast.ncbi import _combine_hits
+from topiary.external.ncbi.blast.ncbi import _ncbi_blast_thread_function
+from topiary.external.ncbi.blast.ncbi import ncbi_blast
 
 import numpy as np
 import pandas as pd
@@ -547,3 +549,11 @@ def test__combine_hits(ncbi_blast_server_output):
     df_list = _combine_hits(single_hit,return_singleton=False)
     assert type(df_list) is list
     assert len(df_list) == 1
+
+def test__ncbi_blast_thread_function():
+
+    pass
+
+def test_ncbi_blast():
+
+    pass

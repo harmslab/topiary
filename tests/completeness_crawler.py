@@ -309,8 +309,6 @@ def write_test_file(filename,functions):
 
     if not os.path.exists(filename):
 
-        print(f"Create --> {filename}")
-
         out = []
         out.append("import pytest")
         out.append("import topiary")
@@ -350,15 +348,8 @@ def template_tests(missing_tests):
         except KeyError:
             to_write[filename] = [function]
 
-        #print(filename,function)
-
-    for filename in to_write:
-        write_test_file(filename,to_write[filename])
-
-
-        #print("TEMPLATE",filename,function)
-
-        #print("ROCK",m)
+    # for filename in to_write:
+    #     write_test_file(filename,to_write[filename])
 
 
 def main(argv=None):

@@ -4,6 +4,7 @@ import pytest
 
 import topiary
 from topiary.external.ncbi.blast.util import _standard_blast_args_checker as _sbac
+from topiary.external.ncbi.blast.util import read_blast_xml
 
 import copy
 
@@ -107,3 +108,7 @@ def test__standard_blast_args_checker():
         print("passing bad gapcosts:",b)
         with pytest.raises(ValueError):
             sequence_list, hitlist_size, e_value_cutoff, gapcosts, return_singleton = _sbac(**kwargs)
+
+def test_read_blast_xml():
+
+    pass

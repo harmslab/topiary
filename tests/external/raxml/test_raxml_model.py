@@ -3,16 +3,14 @@ import pytest
 
 import topiary
 from topiary.external.raxml.model import find_best_model
+from topiary.external.raxml.model import _generate_parsimony_tree
+from topiary.external.raxml.model import _model_thread_function
+from topiary.external.raxml.model import _parse_raxml_info_for_aic
 
 import pandas as pd
 
 import os, json
 
-def test__parse_raxml_info_for_aic():
-    pass
-
-def test__generate_parsimony_tree():
-    pass
 
 def test_find_best_model(tmpdir,test_dataframes):
 
@@ -61,3 +59,15 @@ def test_find_best_model(tmpdir,test_dataframes):
     # Make sure best model is recorded properly in output json
     best_model = out_df["model"].iloc[0]
     assert out_json["model"] == best_model
+
+def test__generate_parsimony_tree():
+
+    pass
+
+def test__model_thread_function():
+
+    pass
+
+def test__parse_raxml_info_for_aic():
+
+    pass

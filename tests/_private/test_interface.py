@@ -294,12 +294,12 @@ def test_prep_calc(xml_to_anc_output,tmpdir):
 def test__follow_log_subproc_wrapper():
     # Super simple function that would require lots of test infrastructure to
     # run.
-    pass
+    return True
 
 def test__follow_log_generator():
     # Function that would require lots of test infrastructure to
     # run. Logging not critical to results, so skipping for now.
-    pass
+    return True
 
 
 def test_launch(tmpdir,programs):

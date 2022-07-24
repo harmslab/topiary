@@ -2,6 +2,8 @@ import pytest
 from conftest import get_public_param_defaults
 
 from topiary.external.ncbi.blast import recip
+from topiary.external.ncbi.blast.recip import _run_blast
+from topiary.external.ncbi.blast.recip import recip_blast
 
 import numpy as np
 import pandas as pd
@@ -332,3 +334,11 @@ def test__make_recip_blast_calls(test_dataframes,recip_blast_hit_dfs):
         assert np.all(out_df["recip_found_paralog"])
         assert np.array_equal(np.array(out_df["recip_paralog"]),
                               np.array(["LY86","LY96","LY96","LY96","LY96"]))
+
+def test__run_blast():
+
+    pass
+
+def test_recip_blast():
+
+    pass

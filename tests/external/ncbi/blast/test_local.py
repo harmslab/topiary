@@ -7,6 +7,7 @@ from topiary.external.ncbi.blast.local import local_blast
 from topiary.external.ncbi.blast.local import _prepare_for_blast as _pfb
 from topiary.external.ncbi.blast.local import _construct_args as _ca
 from topiary.external.ncbi.blast.local import _combine_hits
+from topiary.external.ncbi.blast.local import _local_blast_thread_function
 
 import Bio.Blast.Applications as apps
 
@@ -464,3 +465,11 @@ def test__combine_hits(local_blast_output):
     df_list = _combine_hits(single_hit,return_singleton=False)
     assert type(df_list) is list
     assert len(df_list) == 1
+
+def test__local_blast_thread_function():
+
+    pass
+
+def test_local_blast():
+
+    pass
