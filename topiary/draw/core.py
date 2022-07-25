@@ -601,8 +601,7 @@ def load_trees(directory=None,
             # If root node, pull out anc_ if there.
             if out_node.is_root():
                 if not root_allowed:
-                    if out_feature.startswith("anc_"):
-                        stash_values[out_feature] = value
+                    stash_values[out_feature] = value
                     out_node.add_feature(out_feature,None)
 
 
