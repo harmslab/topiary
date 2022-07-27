@@ -171,6 +171,6 @@ def df_from_blast_xml(xml_input):
 
     # Get ott id for all sequences, setting False for those that can't be
     # found/resolved
-    df = topiary.get_ott_id(df)
+    df = topiary.get_ott(df)
 
     return df

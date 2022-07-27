@@ -37,7 +37,7 @@ def _prep_species_tree(df,paralog_column):
 
     # Make sure df has ott
     if "ott" not in df.columns:
-        df = topiary.opentree.get_ott_id(df)
+        df = topiary.opentree.get_ott(df)
 
     # Get species tree
     species_tree, dropped = topiary.opentree.get_species_tree(df)

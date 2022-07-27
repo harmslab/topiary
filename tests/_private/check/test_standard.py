@@ -1,6 +1,7 @@
 
 import topiary
-from topiary._private.check import check_bool, check_float, check_int, check_iter
+from topiary._private.check.standard import check_bool, check_float, check_int, check_iter
+from topiary._private.check.standard import column_to_bool
 
 import pytest
 import numpy as np
@@ -161,3 +162,27 @@ def test_check_iter():
         check_iter([1,2],is_not_type=[str,list])
 
     check_iter(tuple([1,2]),is_not_type=[str,list])
+
+def test_column_to_bool():
+
+    df = pd.DataFrame({"test":[True,False,
+                               "True","False",
+                               1,0,
+                               "1","0",
+                               "yes","no",
+                               "T","F",
+                               "Y","N"]})
+
+    expected = np.array((1,0,1,0,1,0,1,0,1,0,1,0,1,0),dtype=bool)
+    out = column_to_bool(df["test"],"test")
+    assert np.array_equal(out,expected)
+
+    df = pd.DataFrame({"test":[True,False,
+                               "True","False",
+                               1,0,
+                               "1","0",
+                               "yes","no",
+                               "T","F",
+                               "X","N"]})
+    with pytest.raises(ValueError):
+        out = column_to_bool(df["test"],"test")

@@ -7,8 +7,6 @@ import ete3
 import toytree
 import toyplot
 
-from toyplot import pdf, svg, png
-
 import numpy as np
 import re, os, copy, glob
 

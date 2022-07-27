@@ -18,6 +18,7 @@ def seed_to_alignment(seed_df,
                       target_seq_number=500,
                       ncbi_blast_db="nr",
                       local_blast_db=None,
+                      blast_xml=None,
                       local_recip_blast_db=None,
                       within_species_redundancy_cutoff=0.95,
                       sparse_column_cutoff=0.95,
@@ -50,6 +51,13 @@ def seed_to_alignment(seed_df,
     local_blast_db : str, optional
         Local blast database to use. If None, use an NCBI database. Incompatible
         with ncbi_blast_db.
+    blast_xml : str or list, optional
+        previously generated blast xml files to load. This argument can be:
+
+         + single xml file (str)
+         + list of xml files (list of str)
+         + directory (str). Code will grab all .xml files in the directory.
+
     local_recip_blast_db : str, optional
         Local blast database to use for reciprocal blast. If None, construct a
         reciprocal blast database by downloading the proteomes of the key
@@ -80,7 +88,7 @@ def seed_to_alignment(seed_df,
     overwrite : bool, default=False
         overwrite out_dir if it already exists
     keep_blast_xml : bool, default=False
-        whether or not to keep raw blast xml outpu
+        whether or not to keep raw blast xml output
     verbose : bool, default=False
         verbosity of output
 
@@ -139,6 +147,7 @@ def seed_to_alignment(seed_df,
     kwargs = {"seed_df":seed_df,
               "ncbi_blast_db":ncbi_blast_db,
               "local_blast_db":local_blast_db,
+              "blast_xml":blast_xml,
               "hitlist_size":hitlist_size,
               "e_value_cutoff":e_value_cutoff,
               "gapcosts":gapcosts,

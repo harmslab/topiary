@@ -54,7 +54,14 @@ def test__get_alias_regex():
 
 def test_load_seed_dataframe(seed_dataframes):
 
-    def _validate_output(df, phylo_context, key_species, paralog_patterns):
+    def _validate_output(df):
+
+        key_species = np.unique(seed_df.loc[seed_df.loc[:,"key_species"],"species"])
+        key_species.sort()
+
+        paralog_patterns = {}
+        for i, k in enumerate(seed_df.loc[:,"name"]):
+            paralog_patterns[k] = seed_df.loc[seed_df.index[i],"aliases"]
 
         # check output dataframe
         assert len(df) == 8
@@ -75,9 +82,6 @@ def test_load_seed_dataframe(seed_dataframes):
         # Make sure it's a good topiary dataframe
         check.check_topiary_dataframe(df)
 
-        # Test phylo context
-        assert phylo_context == "Vertebrates"
-
         # Test key species
         assert np.array_equal(key_species,("Danio rerio",
                                            "Gallus gallus",
@@ -90,34 +94,32 @@ def test_load_seed_dataframe(seed_dataframes):
             "LY86":"ly[\ \-_\.]*86|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*86|md[\ \-_\.]*1|mmd[\ \-_\.]*1|rp[\ \-_\.]*105[\ \-_\.]*associated[\ \-_\.]*3"
         }
         for k in paralog_patterns:
-            assert paralog_patterns[k].pattern == expected_patterns[k]
-
-
+            assert paralog_patterns[k] == expected_patterns[k]
 
     # csv
     df_file = seed_dataframes["good-seed-df.csv"]
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(df_file)
-    _validate_output(df, phylo_context, key_species, paralog_patterns)
+    seed_df = load_seed_dataframe(df_file)
+    _validate_output(seed_df)
 
     # Make sure we can read the dataframe as a dataframe object
     df_as_df = pd.read_csv(df_file)
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(df_as_df)
-    _validate_output(df, phylo_context, key_species, paralog_patterns)
+    seed_df = load_seed_dataframe(df_as_df)
+    _validate_output(seed_df)
 
     # tsv
     df_file = seed_dataframes["good-seed-df.tsv"]
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(df_file)
-    _validate_output(df, phylo_context, key_species, paralog_patterns)
+    seed_df = load_seed_dataframe(df_file)
+    _validate_output(seed_df)
 
     # xlsx
     df_file = seed_dataframes["good-seed-df.xlsx"]
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(df_file)
-    _validate_output(df, phylo_context, key_species, paralog_patterns)
+    seed_df = load_seed_dataframe(df_file)
+    _validate_output(seed_df)
 
     # csv with .txt extension
     df_file = seed_dataframes["good-seed-df.txt"]
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(df_file)
-    _validate_output(df, phylo_context, key_species, paralog_patterns)
+    seed_df = load_seed_dataframe(df_file)
+    _validate_output(seed_df)
 
     # bad df passes
     with pytest.raises(FileNotFoundError):
@@ -141,12 +143,8 @@ def test_load_seed_dataframe(seed_dataframes):
     with pytest.raises(ValueError):
         load_seed_dataframe(bad_df)
 
-    # Change up species being sent in and make sure phylo_context changes
-    hacked_df = good_df.copy()
-    hacked_df.loc[0,"species"] = "Escherichia coli"
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(hacked_df)
-    assert phylo_context == "All life"
-
-    hacked_df.loc[:,"species"] = "Homo sapiens"
-    df, phylo_context, key_species, paralog_patterns = load_seed_dataframe(hacked_df)
-    assert phylo_context == "Mammals"
+    # species that is findable but not resolvable
+    bad_df = good_df.copy()
+    bad_df.loc[:,"species"] = "Bos indicus x Bos taurus"
+    with pytest.raises(ValueError):
+        load_seed_dataframe(bad_df)

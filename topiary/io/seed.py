@@ -5,6 +5,7 @@ ancestral sequence reconstruction calculation.
 
 import topiary
 from topiary._private import check
+from topiary.external.opentree import species_to_ott, ott_resolvable
 
 import numpy as np
 import pandas as pd
@@ -120,10 +121,9 @@ def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
     return re.compile("|".join(all_names),flags=re.IGNORECASE)
 
 
-def load_seed_dataframe(df):
+def load_seed_dataframe(df,):
     """
-    Load a seed data frame and extract information needed to set up the
-    ancestral sequence reconstruction calculation.
+    Load a seed data frame and extract alias patterns and key species.
 
     Parameters
     ----------
@@ -134,27 +134,24 @@ def load_seed_dataframe(df):
     Returns
     -------
     topiary_dataframe : pandas.DataFrame
-        new topiary dataframe build from the seed dataframe
-    phylo_context : str
-        string descriptor of the phylogenetic context on opentreeoflife.org
-        (i.e. "Animals" or "All life")
-    key_species : list
-        list if key species to keep during the analysis
-    paralog_patterns : list
-        list of compiled regular expressions (extracted from aliases) to use to
-        try to match paralogs.
+        new topiary dataframe built from the seed dataframe
 
     Notes
     -----
 
     The seed dataframe is expected to have at least four columns:
 
-    + `species`: species names for seed sequences in binomial format (i.e.
+    + :code:`species`: species names for seed sequences in binomial format (i.e.
       Homo sapiens or Mus musculus)
-    + `name`: name of each sequence (i.e. LY96)
-    + `aliases`: other names for this sequence found in different
+    + :code:`name`: name of each sequence (i.e. LY96)
+    + :code:`aliases`: other names for this sequence found in different
       databases/species, separated by ; (i.e. LY96;MD2;ESOP1)
-    + `sequence`: amino acid sequences for these proteins.
+    + :code:`sequence`: amino acid sequences for these proteins.
+
+    It may have one other optional column:
+
+    + :code:`recip_blast`: True/False. Indicates whether or not this species
+      should be used as a key species for reciprocal BLASTing.
 
     Other columns in the dataframe are kept but not used by topiary.
     """
@@ -191,13 +188,49 @@ def load_seed_dataframe(df):
             err += "\n"
             raise ValueError(err)
 
+    # Make sure all input species are found in the OTT database
+    bad_species = []
+    ott_list, species_list, _ = species_to_ott(np.unique(df.loc[:,"species"]))
+    for i in range(len(species_list)):
+        if ott_list[i] is None:
+            bad_species.append(species_list[i])
+
+    if len(bad_species) > 0:
+        err = "\nNot all input species were found in the Open Tree of Life\n"
+        err += "database. To troubleshoot the problem, you can visit\n"
+        err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
+        err += "the following species manually:\n\n"
+        for b in bad_species:
+            err += f"    {b}\n"
+        raise ValueError(err)
+
+    # Make sure all input species can be resolved on the OTT synthetic tree
+    resolved = ott_resolvable(ott_list)
+    unresolvable_species = []
+    for i in range(len(resolved)):
+        if not resolved[i]:
+            unresolvable_species.append((species_list[i],ott_list[i]))
+
+    if len(unresolvable_species) > 0:
+        err = "\nNot all input species can be resolved on the latest Open Tree of\n"
+        err += "Life synthetic tree. To troubleshoot the problem, you can visit\n"
+        err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
+        err += "the OTT accession numbers of these species:\n"
+
+        for b in unresolvable_species:
+            err += f"    {b[0]} (OTT {b[1]})\n"
+        raise ValueError(err)
+
     # -----------------------------------------------------------------------
-    # Get key_species and phylogenetic context
+    # Get key_species
 
-    key_species = list(np.unique(df.loc[:,"species"]))
-    key_species.sort() # sort alphabetically
-
-    phylo_context = topiary.opentree.get_phylo_context(key_species)
+    # Look for key_species. If present, make sure it is bool. If not, add it
+    # as all True
+    if "key_species" in df.columns:
+        df.loc[:,"key_species"] = check.column_to_bool(df.loc[:,"key_species"],
+                                                       "key_species")
+    else:
+        df["key_species"] = True
 
     # -----------------------------------------------------------------------
     # Construct paralog_patterns
@@ -251,4 +284,4 @@ def load_seed_dataframe(df):
 
     df = check.check_topiary_dataframe(df)
 
-    return df, phylo_context, key_species, paralog_patterns
+    return df

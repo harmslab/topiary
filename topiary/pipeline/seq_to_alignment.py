@@ -317,7 +317,7 @@ def rockit(xml_input,
 
     # Get ott id. We do this early on in case we can't find a species ott. This
     # will set those sequences to False
-    df, step_counter = _run_and_print(function=topiary.get_ott_id,
+    df, step_counter = _run_and_print(function=topiary.get_ott,
                                       kwargs={"df":df,"phylo_context":phylo_context},
                                       step_counter=step_counter,
                                       out_file_string="ott",

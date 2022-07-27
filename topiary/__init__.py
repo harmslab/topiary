@@ -46,7 +46,7 @@ from .external import raxml
 from .quality import remove_redundancy, clean_alignment, taxonomic_sample
 from .pipeline import seed_to_alignment
 from .util import create_nicknames
-from .external import get_ott_id, get_species_tree
+from .external import get_ott, get_species_tree
 from .external import recip_blast
 from .external import run_muscle
 from .external import find_best_model, generate_ml_tree, generate_ancestors, generate_bootstraps
