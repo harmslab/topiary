@@ -7,7 +7,7 @@ import re, copy
 def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
     """
     Process a `parlog_patterns` argument and do error checking. Compiles
-    regular expressions and returns in a standard format. 
+    regular expressions and returns in a standard format.
 
     Parameters
     ----------
@@ -74,13 +74,16 @@ def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
     for k in paralog_patterns:
 
         # Make sure the key is a string
-        if type(k) is not str:
+        if not issubclass(type(k),str):
             err = f"\nparalog key '{k}' not recognized.\n\n{generic_pp_error}\n\n"
             raise ValueError(err)
 
         # If value is a naked regular expression pattern or string, wrap it in a
         # list so the code can iterate over it.
-        if type(pp[k]) in [re.Pattern,str]:
+        if issubclass(type(pp[k]),re.Pattern):
+            pp[k] = [pp[k]]
+
+        if issubclass(type(pp[k]),str):
             pp[k] = [pp[k]]
 
         # Make sure value is an iterable
@@ -95,9 +98,9 @@ def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
             to_compile = []
             for a in pp[k]:
 
-                if type(a) is str:
+                if issubclass(type(a),str):
                     to_compile.append(re.escape(a))
-                elif type(a) is re.Pattern:
+                elif issubclass(type(a),re.Pattern):
                     # NOTE: if user passes multiple compiled patterns with
                     # different flags, this will only use the flags for the
                     # last pattern on *all* regex passed in.

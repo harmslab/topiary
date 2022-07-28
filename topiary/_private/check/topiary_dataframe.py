@@ -60,7 +60,7 @@ def check_topiary_dataframe(df):
     """
 
     # Make sure type is right
-    if type(df) is not pd.DataFrame:
+    if not issubclass(type(df),pd.DataFrame):
         err = "\ndf must be a pandas dataframe.\n\n"
         raise ValueError(err)
 
@@ -91,7 +91,7 @@ def check_topiary_dataframe(df):
             for n in not_null:
 
                 # If an empty string, this is basically a null.
-                if type(n) is str and n.strip() == "":
+                if issubclass(type(n),str) and n.strip() == "":
                     continue
 
                 # If we get here, we have some kind of non-empty cell. Break out
@@ -189,7 +189,7 @@ def check_topiary_dataframe(df):
         for u in uid:
 
             # Force to be a spring
-            if type(u) is not str:
+            if not issubclass(type(u),str):
                 u = str(u)
 
             # Disallowed character(s) in uid or uid not right length
@@ -249,7 +249,7 @@ def check_topiary_dataframe(df):
             # If there is an ott that is not a null, make sure it is sane and
             # reasable.
             failed = False
-            if type(o) is str and o[:3] == "ott":
+            if issubclass(type(o),str) and o[:3] == "ott":
                 try:
                     int(o[3:])
                 except ValueError:
