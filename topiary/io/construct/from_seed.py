@@ -8,6 +8,8 @@ from topiary._private import check
 import numpy as np
 import pandas as pd
 
+import re
+
 def df_from_seed(seed_df,
                  ncbi_blast_db="nr",
                  local_blast_db=None,
@@ -96,7 +98,8 @@ def df_from_seed(seed_df,
 
     paralog_patterns = {}
     for i, k in enumerate(seed_df.loc[:,"name"]):
-        paralog_patterns[k] = seed_df.loc[seed_df.index[i],"aliases"]
+        paralog_patterns[k] = re.compile(seed_df.loc[seed_df.index[i],"aliases"],
+                                         flags=re.IGNORECASE)
 
     # Validate blast database arguments
     if ncbi_blast_db is not None and local_blast_db is not None and blast_xml is None:
@@ -112,7 +115,7 @@ def df_from_seed(seed_df,
     if ncbi_blast_db is not None:
 
         # Infer phylogenetic context from key species
-        phylo_context = topiary.opentree.get_mrca(key_species,
+        phylo_context = topiary.opentree.ott_mrca(species_list=key_species,
                                                   move_up_by=move_mrca_up_by)
         try:
             taxid = phylo_context["taxid"]
@@ -226,7 +229,7 @@ def df_from_seed(seed_df,
 
     # Get ott id for all sequences, setting False for those that can't be
     # found/resolved
-    df = topiary.get_ott(df,phylo_context=phylo_context,verbose=False)
+    df = topiary.get_ott(df,verbose=False)
 
     # Create nicknames for sequences in dataframe
     df = topiary.create_nicknames(df,paralog_patterns)

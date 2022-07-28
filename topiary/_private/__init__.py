@@ -13,7 +13,7 @@ reserved_characters = ["(",")",";","#",":",",","'","\""]
 # External (non-python) software version requirements
 software_requirements = {"blastp":(2,0),
                          "makeblastdb":(2,0),
-                         "muscle":(3,8),
+                         "muscle":(5,0),
                          "generax":(2,0),
                          "raxml-ng":(1,1),
                          "mpirun":(0,0)}

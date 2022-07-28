@@ -188,6 +188,10 @@ def load_seed_dataframe(df,):
             err += "\n"
             raise ValueError(err)
 
+        # Strip extra leading/trailing white space
+        df.loc[:,c] = df.loc[:,c].str.strip()
+
+
     # Make sure all input species are found in the OTT database
     bad_species = []
     ott_list, species_list, _ = species_to_ott(np.unique(df.loc[:,"species"]))
@@ -201,7 +205,7 @@ def load_seed_dataframe(df,):
         err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
         err += "the following species manually:\n\n"
         for b in bad_species:
-            err += f"    {b}\n"
+            err += f"    '{b}'\n"
         raise ValueError(err)
 
     # Make sure all input species can be resolved on the OTT synthetic tree
@@ -218,7 +222,7 @@ def load_seed_dataframe(df,):
         err += "the OTT accession numbers of these species:\n"
 
         for b in unresolvable_species:
-            err += f"    {b[0]} (OTT {b[1]})\n"
+            err += f"    '{b[0]}' (OTT '{b[1]}')\n"
         raise ValueError(err)
 
     # -----------------------------------------------------------------------

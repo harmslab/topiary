@@ -191,11 +191,11 @@ def _run_muscle(input_fasta,
         # This bit of trickery makes it so the muscle output counts up to 100%
         # on a single line, rather than spewing out over 100s of lines over the
         # course of the alignment
-        if re.search("100.0%",line):
-            endl = "\n"
-        else:
-            print(90*" ",end="\r")
-            endl = "\r"
+        endl = "\n"
+        if topiary._in_notebook:
+            if not re.search("100.0%",line):
+                print(90*" ",end="\r")
+                endl = "\r"
         print(line.strip(),end=endl,flush=True)
 
     popen.stdout.close()

@@ -264,6 +264,7 @@ def check_topiary_dataframe(df):
 
     # -------------------------------------------------------------------------
     # Check alignment column
+    
     try:
         alignment = df.loc[:,"alignment"]
     except KeyError:

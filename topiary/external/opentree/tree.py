@@ -95,7 +95,7 @@ def get_species_tree(df,strict=False):
     for i in range(len(ott_ids)):
         ott_species_dict[ott_ids[i]] = species[i]
 
-    ott_as_int = [o[3:] for o in ott_ids]
+    ott_as_int = [int(o[3:]) for o in ott_ids]
 
     final_tree, results = ott_species_tree(ott_list=ott_as_int)
 

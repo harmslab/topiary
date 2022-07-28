@@ -334,9 +334,26 @@ def check_iter(value,
         if len(value) > 0:
 
             types = list(set([type(v) for v in value]))
-            if len(types) != 1 or not issubclass(types[0],required_value_type):
+            if len(types) != 1:
                 err = err_base + f"all entries must have type {required_value_type}\n"
                 raise ValueError(err)
+
+            # If not a subclass
+            if not issubclass(types[0],required_value_type):
+
+                # Do two numpy checks (not perfect, but avoids unexpected
+                # behavior when int or float numpy arrays go in).
+                if required_value_type is int and np.issubdtype(types[0],np.integer):
+                    is_bad = False
+                elif required_value_type is float and np.issubdtype(types[0],np.floating):
+                    is_bad = False
+                else:
+                    is_bad = True
+
+                if is_bad:
+                    err = err_base + f"all entries must have type {required_value_type}\n"
+                    raise ValueError(err)
+
 
     # If requested, make sure the iterable has appropriate dimensions
     try:

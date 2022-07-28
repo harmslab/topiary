@@ -332,7 +332,7 @@ def validate_stack(to_check):
             binary = None
 
         out.append(70*"-")
-        out.append(f"Checking {binary}")
+        out.append(f"Checking {program}")
         out.append(70*"-")
         out.append("")
 

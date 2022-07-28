@@ -27,7 +27,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
     -------
     None
     """
-    
+
     print("\nCreating blast database.\n",flush=True)
 
     # If the user passes in a string for input_files, make it into a list
@@ -60,7 +60,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
 
     # Make sure that makeblastdb is in the path
     try:
-        subprocess.run([makeblastdb_binary])
+        subprocess.run([makeblastdb_binary],capture_output=True)
     except FileNotFoundError:
         err = f"\makeblastdb_binary binary '{makeblastdb_binary}' not found in path\n\n"
         raise ValueError(err)

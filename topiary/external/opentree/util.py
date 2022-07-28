@@ -15,6 +15,42 @@ import numpy as np
 
 import re, copy, time
 
+def _validate_ott_vs_species(ott_list=None,species_list=None):
+    """
+    Take the ott_list and species_list input, validate, and return an ott_list.
+
+    Parameters
+    ----------
+    ott_list : list or None
+        input ott_list to check
+    species_list : list or None
+        input species_list to check
+
+    Returns
+    -------
+    ott_list : list
+        validated ott list
+    """
+
+    failed_combo = False
+
+    if ott_list is None and species_list is None:
+        failed_combo = True
+
+    if ott_list is not None and species_list is not None:
+        failed_combo = True
+
+    if failed_combo:
+        err = "\nEither ott_list or species_list must be specified, but not both.\n\n"
+        raise ValueError(err)
+
+    if species_list is not None:
+        ott_list = species_to_ott(species_list)[0]
+
+    ott_list = check.check_iter(ott_list,"ott_list",required_value_type=int)
+
+    return ott_list
+
 
 def species_to_ott(species):
     """
@@ -65,6 +101,7 @@ def species_to_ott(species):
 
     # Get unique species.
     unique_species = list(set(species))
+    unique_species = [s.strip() for s in species]
 
     # Grab species names
     ot_matches = OT.tnrs_match(unique_species,do_approximate_matching=True)
@@ -145,14 +182,16 @@ def species_to_ott(species):
 
     return ott_list, species_list, results
 
-def ott_species_tree(ott_list):
+def ott_species_tree(ott_list=None,species_list=None):
     """
     Get a species tree from a list of ott.
 
     Parameters
     ----------
-    ott_list : list
-        list of otts as integers
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
 
     Returns
     -------
@@ -163,7 +202,7 @@ def ott_species_tree(ott_list):
         ott.
     """
 
-    ott_list = check.check_iter(ott_list,"ott_list")
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
 
     # Check type of ott list
     try:
@@ -264,14 +303,16 @@ def ott_species_tree(ott_list):
     return final_tree, results
 
 
-def ott_resolvable(ott_list):
+def ott_resolvable(ott_list=None,species_list=None):
     """
     Get whether or not taxa are resolvable on the synthetic ott tree.
 
     Parameters
     ----------
-    ott_list : list-like
-        list of ott as integers
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
 
     Returns
     -------
@@ -280,7 +321,7 @@ def ott_resolvable(ott_list):
     """
 
     # Check ott list
-    ott_list = check.check_iter(ott_list,"ott_list")
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
 
     try:
         ott_list = [int(o) for o in ott_list]
@@ -308,15 +349,17 @@ def ott_resolvable(ott_list):
     return resolvable
 
 
-def ott_mrca(ott_list,move_up_by=0,avoid_all_life=True):
+def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
     """
     Get the most recent common ancestor given a list of ott. Unrecognized ott
     are dropped with a warning.
 
     Parameters
     ----------
-    ott_list : list
-        list of ott ids (integers)
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
     move_up_by : int, default=0
         starting at actual MRCA, move up by this number of ranks. For
         example, if the MRCA for a set of OTT was a kingdom and
@@ -331,9 +374,8 @@ def ott_mrca(ott_list,move_up_by=0,avoid_all_life=True):
         dictionary with keys ott_name, ott_id, ott_rank, lineage, and taxid.
     """
 
-    ott_list = check.check_iter(ott_list,
-                                "ott",
-                                required_value_type=int)
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
+
     avoid_all_life = check.check_bool(avoid_all_life,
                                       "avoid_all_life")
     move_up_by = check.check_int(move_up_by,

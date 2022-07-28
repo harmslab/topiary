@@ -1,5 +1,6 @@
 import pytest
 import topiary
+from topiary.external.opentree.util import _validate_ott_vs_species
 from topiary.external.opentree.util import ott_mrca, ott_resolvable
 from topiary.external.opentree.util import species_to_ott, ott_species_tree
 
@@ -9,6 +10,45 @@ import pandas as pd
 import numpy as np
 
 import re
+
+def test__validate_ott_vs_species():
+
+    # Nothing in
+    with pytest.raises(ValueError):
+        _validate_ott_vs_species(None,None)
+
+    # Both in
+    with pytest.raises(ValueError):
+        _validate_ott_vs_species([],[])
+
+    # Bad ott
+    with pytest.raises(ValueError):
+        _validate_ott_vs_species(ott_list=["Homo sapiens","Gallus gallus"])
+
+    # Bad species
+    with pytest.raises(ValueError):
+        _validate_ott_vs_species(species_list=[111,222])
+
+    # Good ott
+    ott_list = _validate_ott_vs_species(ott_list=[111,222])
+    assert len(ott_list) == 2
+    assert ott_list[0] == 111
+    assert ott_list[1] == 222
+
+    # Good species
+    ott_list = _validate_ott_vs_species(species_list=["Homo sapiens"])
+    assert len(ott_list) == 1
+    assert ott_list[0] == 770315
+
+    # empty ott
+    ott_list = _validate_ott_vs_species(ott_list=[])
+    assert len(ott_list) == 0
+
+    # empty species
+    ott_list = _validate_ott_vs_species(species_list=[])
+    assert len(ott_list) == 0
+
+
 
 
 def test_species_to_ott():
