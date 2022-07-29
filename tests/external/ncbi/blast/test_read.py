@@ -1,10 +1,30 @@
 import pytest
 
 from topiary.external.ncbi.blast.read import _xml_file_to_records
+from topiary.external.ncbi.blast.read import _clean_xml
+from topiary.external.ncbi.blast.read import check_for_cpu_limit
 from topiary.external.ncbi.blast.read import records_to_df
 from topiary.external.ncbi.blast.read import read_blast_xml
 
-import os, shutil
+import os, shutil, re
+
+def test__clean_xml(user_xml_files):
+
+    for f in user_xml_files:
+        if os.path.split(f)[-1] == "ZO1_vertebrate_nr-clustered.xml":
+            test_file = f
+            break
+
+    g = open(test_file)
+    lines = g.readlines()
+    g.close()
+
+    # assert this is a bad xml file
+    assert re.search("CREATE_VIEW","".join(lines)) is not None
+
+    cleaned = _clean_xml(f)
+    assert re.search("CREATE_VIEW",cleaned) is None
+
 
 def test__xml_file_to_records(user_xml_files):
 
@@ -20,6 +40,15 @@ def test__xml_file_to_records(user_xml_files):
         # length is for first query
         for o in out[:1]:
             assert len(list(o.alignments)) == expected_length
+
+def test_check_for_cpu_limit(xml):
+
+    with pytest.raises(FileNotFoundError):
+        check_for_cpu_limit("stupid")
+
+    assert not check_for_cpu_limit(xml["good.xml"])
+    assert check_for_cpu_limit(xml["cpu-limit.xml"])
+    assert not check_for_cpu_limit(xml["nr_clustered.xml"])
 
 def test_records_to_df(user_xml_files):
 
@@ -90,3 +119,19 @@ def test_read_blast_xml(xml,tmpdir,user_xml_files):
     # Test read of some basic examples
     df, xml_files = read_blast_xml(user_xml_files)
     assert len(df) == len(user_xml_files)
+
+    # Validate do_cpu_check flag by sending in something that hit a cpu limit
+    # (cpu-limit.xml) and then something that did not (good.xml). If we set
+    # do_cpu_check AND the file has a cpu-limit, we should see df is None.
+    # Otherwise, it should not be None. 
+    df, xml_files = read_blast_xml([xml["cpu-limit.xml"]],do_cpu_check=False)
+    assert df is not None
+
+    df, xml_files = read_blast_xml([xml["cpu-limit.xml"]],do_cpu_check=True)
+    assert df is None
+
+    df, xml_files = read_blast_xml([xml["good.xml"]],do_cpu_check=False)
+    assert df is not None
+
+    df, xml_files = read_blast_xml([xml["good.xml"]],do_cpu_check=True)
+    assert df is not None

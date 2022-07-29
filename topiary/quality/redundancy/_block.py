@@ -17,18 +17,22 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
 
     Parameters
     ----------
-        A_seq: sequence A
-        B_seq: sequence B
-        A_qual: quality scores for A
-        B_qual: quality scores for B
-        cutoff: cutoff for sequence comparison (~seq identity. between 0 and 1)
-        discard_key: whether or not to discard key species, regardless of their
-                     qualities.
+    A_seq : array
+        sequence A
+    B_seq : array
+        sequence B
+    A_qual : array
+        quality scores for A
+    B_qual : array
+        quality scores for B
+    cutoff : float
+        cutoff for sequence comparison (~seq identity. between 0 and 1)
+    discard_key : bool
+        whether or not to discard key species, regardless of their qualities.
 
-    Return
-    ------
-        bool, bool
-
+    Returns
+    -------
+    bool, bool
         True, True: keep both
         True, False: keep A
         False, True: keep B
@@ -56,12 +60,6 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
                 return True, True
 
         # Compare two vectors. Identify first element that differs.
-
-        # Return
-        #   True, False if A is smaller
-        #   False, True if B is smaller
-        #   True, False if equal
-
         comp = np.zeros(A_qual.shape[0],dtype=np.int8)
         comp[B_qual > A_qual] = 1
         comp[B_qual < A_qual] = -1
@@ -72,23 +70,29 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
             return True, False
 
         # B > A at first difference, keep A
-        elif comp[diffs[0]] > 0:
+        elif comp[diffs[0]] == 1:
             return True, False
 
         # B < A at first difference, keep B
         else:
             return False, True
 
-def _check_block_redundancy(args):
+def _check_block_redundancy(i_block,
+                            j_block,
+                            sequence_array,
+                            quality_array,
+                            keep_array,
+                            cutoff,
+                            discard_key,
+                            lock):
     """
     Check for redundancy within a block of the sequence by sequence matrix.
-    Updates keep_array in a thread-safe manner. Should be called by
-    _reduce_redundancy_thread_manager.
+    Updates keep_array in a thread-safe manner. Generally should be called by
+    threads.thread_manager.
 
 
     Parameters
     ----------
-        args: iterable of arguments. Expanded to:
 
         i_block: tuple holding indexes over which to iterate in i
         j_block: tuple holding indexes over which to interate in j
@@ -109,27 +113,11 @@ def _check_block_redundancy(args):
         None. Updates keep_array in place.
     """
 
-    i_block = args[0]
-    j_block = args[1]
-    sequence_array = args[2]
-    quality_array = args[3]
-    keep_array = args[4]
-    cutoff = args[5]
-    discard_key = args[6]
-    lock = args[7]
-
-    # Lock keep_array and make a local copy
-    lock.acquire()
-    try:
-        local_keep = keep_array.copy()
-    finally:
-        lock.release()
-
     # Loop over block in i
     for i in range(i_block[0],i_block[1]):
 
         # Skip if we already know we're not keeping i
-        if not local_keep[i]:
+        if not keep_array[i]:
             continue
 
         # Loop over block in j
@@ -140,7 +128,7 @@ def _check_block_redundancy(args):
                 continue
 
             # Skip if we already know we're not keeping j
-            if not local_keep[j]:
+            if not keep_array[j]:
                 continue
 
             # Make comparison
@@ -151,18 +139,34 @@ def _check_block_redundancy(args):
                                            cutoff,
                                            discard_key=discard_key)
 
-            # Record results
-            local_keep[i] = i_keep
-            local_keep[j] = j_keep
+            # Both false
+            if not i_keep and not j_keep:
+                lock.acquire()
+                try:
+                    keep_array[i] = False
+                    keep_array[j] = False
+                finally:
+                    lock.release()
+
+            # i false
+            elif not i_keep:
+                lock.acquire()
+                try:
+                    keep_array[i] = False
+                finally:
+                    lock.release()
+
+            # j false
+            elif not j_keep:
+                lock.acquire()
+                try:
+                    keep_array[j] = False
+                finally:
+                    lock.release()
+
+            else:
+                pass
 
             # Not keeping i, we don't need to keep going
-            if not i_keep:
+            if not keep_array[i]:
                 break
-
-    # Lock keep_array and update with what we learned in local_keep. This is
-    # an "and" operation. Only keep if keep_array AND local_keep are still True.
-    lock.acquire()
-    try:
-        keep_array[:] = np.logical_and(keep_array,local_keep)
-    finally:
-        lock.release()

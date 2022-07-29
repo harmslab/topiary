@@ -4,6 +4,8 @@ Remove redundancy for datasets in a semi-intelligent way.
 
 import topiary
 from topiary._private import check
+from topiary._private import threads
+from topiary._private import interface
 
 from ._block import _check_block_redundancy
 
@@ -17,36 +19,6 @@ import multiprocessing as mp
 # Columns to check in order
 _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
                      "precursor","hypothetical","isoform","diff_from_median"]
-
-class _DummyTqdm():
-    """
-    Fake tqdm progress bar so we don't have to show a status bar if we don't
-    want to. Can be substituted wherever we would use tqdm (i.e.
-    tqdm(range(10)) --> DummyTqdm(range(10)).
-    """
-
-    def __init__(self,*args,**kwargs):
-        pass
-    def __enter__(self):
-        return self
-    def __exit__(self, type, value, traceback):
-        pass
-
-    def update(self,value):
-        pass
-
-class _FakeLock():
-    """
-    Fake multiprocessing.Lock instance.
-    """
-    def __init__(self):
-        pass
-
-    def acquire(self):
-        pass
-
-    def release(self):
-        pass
 
 def _get_quality_scores(row,key_species={}):
     """
@@ -87,125 +59,93 @@ def _get_quality_scores(row,key_species={}):
 
     return np.array(values,dtype=float)
 
-def _reduce_redundancy_thread_manager(sequence_array,
-                                      quality_array,
-                                      keep_array,
-                                      cutoff,
-                                      discard_key,
-                                      num_threads=-1,
-                                      progress_bar=True):
+def _construct_args(sequence_array,
+                    quality_array,
+                    keep_array,
+                    cutoff,
+                    discard_key,
+                    num_threads=-1,
+                    progress_bar=True):
     """
     Break sequence_array into a rational number of blocks given the number of
-    threads and then run _check_block_redundancy on the sequence array on
-    multiple threads. Updates keep_array in place.
+    threads and construct a list of keyword arguments to pass to
+    _check_block_redundancy, one entry per block.
 
     Parameters
     ----------
-        sequence_array: array holding sequences to compare.
-        quality_array: array holding vectors of quality scores, one vector for
-                       each sequence
-        keep_array: array holding whether or not to keep each sequence. boolean.
-                    This array is updated and is the primary output of this
-                    function.
-        cutoff: float cutoff between 0 and 1 indicating the fractional similarity
-                between two sequences above which they are considered redundant.
-        discard_key: if discard_key is False, a redundant sequence will be tossed
-                     even if it is from a key species
-        num_threads: number of threads to use. if -1 use all available
-        progress_bar: whether or not to show a progress bar
+    sequence_array : numpy.ndarray
+        array holding sequences to compare.
+    quality_array : numpy.ndarray
+        array holding vectors of quality scores, one vector for each sequence
+    keep_array : numpy.ndarray
+        array holding whether or not to keep each sequence. boolean.
+        This array is updated and is the primary output of this function.
+    cutoff : float
+        cutoff between 0 and 1 indicating the fractional similarity between two
+        sequences above which they are considered redundant.
+    discard_key : bool
+        if discard_key is False, a redundant sequence will be tossed even if it
+        is from a key species
+    num_threads : int, default=-1
+        number of threads to use. if -1 use all available
+    progress_bar : bool, default=True
+        whether or not to show a progress bar
 
-    Return
-    ------
-        num_threads and all_args. This is for testing/debugging purposes.
-        Usually ignored. Updates keep_array in place -- this is the main output.
+    Returns
+    -------
+    kwargs_list : list
+        list of dictionaries of keyword arguments to pass to
+        _check_block_redundancy, one entry per block
+    num_threads : int
+        number of threads to use for the calculation
     """
 
-
-    # Try to figure out how many cores are available
-    try:
-        num_machine_threads = mp.cpu_count()
-    except NotImplementedError:
-        num_machine_threads = os.cpu_count()
-
-    # If we can't figure it out, revert to 1
-    if num_machine_threads is None:
-        print("Could not determine number of cpus. Using single thread.\n")
-        num_machine_threads = 1
+    # Get number of threads from machine
+    num_threads = threads.get_num_threads(num_threads)
 
     # Determine number of threads useful for this problem. It's not worth
     # chopping up a super small set of comparisons
     max_useful_threads = len(sequence_array)//50
     if max_useful_threads < 1:
         max_useful_threads = 1
-    if max_useful_threads > num_machine_threads:
-        max_useful_threads = num_machine_threads
 
     # Set number of threads
-    if num_threads == -1 or num_threads > max_useful_threads:
+    if num_threads > max_useful_threads:
         num_threads = max_useful_threads
-
-    # If only using one thread, don't waste overhead of making pool
-    if num_threads == 1:
-        block = (0,len(sequence_array))
-        args = (block,block,
-                sequence_array,quality_array,keep_array,
-                cutoff,discard_key,_FakeLock())
-        _check_block_redundancy(args)
-        return 1, (args,)
-
 
     num_blocks = (num_threads**2 - num_threads)//2 + num_threads
     block_size = len(sequence_array)//num_threads
 
-    print(f"Calculating redundancy for {num_blocks} blocks of ~{block_size} x {block_size} sequences.",flush=True)
+    # Calculate window sizes to cover whole L x L array, where L is number
+    # of sequences
+    windows = np.zeros(num_threads,dtype=int)
+    windows[:] = len(sequence_array)//num_threads
 
-    # Lock allowing threads to safely update keep_array
-    manager = mp.Manager()
-    lock =  manager.Lock()
-    with mp.Pool(num_threads) as pool:
+    # This call spreads remainder of L/num_threads evenly across first
+    # remainder windows
+    windows[:(len(sequence_array) % num_threads)] += 1
 
-        # Calculate window sizes to cover whole L x L array, where L is number
-        # of sequences
-        windows = np.zeros(num_threads,dtype=int)
-        windows[:] = len(sequence_array)//num_threads
+    # Blocks will allow us to tile over whole redundancy matrix
+    kwargs_list = []
+    for i in range(num_threads):
+        for j in range(i,num_threads):
 
-        # This call spreads remainder of L/num_threads evenly across first
-        # remainder windows
-        windows[:(len(sequence_array) % num_threads)] += 1
+            i_block = (np.sum(windows[:i]),np.sum(windows[:i+1]))
+            j_block = (np.sum(windows[:j]),np.sum(windows[:j+1]))
 
-        # Blocks will allow us to tile over whole redundancy matrix
-        all_args = []
-        for i in range(num_threads):
-            for j in range(i,num_threads):
+            kwargs_list.append({"i_block":i_block,
+                                "j_block":j_block,
+                                "sequence_array":sequence_array,
+                                "quality_array":quality_array,
+                                "keep_array":keep_array,
+                                "cutoff":cutoff,
+                                "discard_key":discard_key})
 
-                i_block = (np.sum(windows[:i]),np.sum(windows[:i+1]))
-                j_block = (np.sum(windows[:j]),np.sum(windows[:j+1]))
-
-                all_args.append((i_block,
-                                 j_block,
-                                 sequence_array,
-                                 quality_array,
-                                 keep_array,
-                                 cutoff,
-                                 discard_key,
-                                 lock))
-
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _check_block_redundancy
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        if progress_bar:
-            list(tqdm(pool.imap(_check_block_redundancy,all_args),total=len(all_args)))
-        else:
-            pool.imap(_check_block_redundancy,all_args)
-
-    return num_threads, all_args
+    return kwargs_list, num_threads
 
 
 def remove_redundancy(df,
                       cutoff=0.95,
-                      key_species=[],
                       silent=False,
                       only_in_species=False,
                       num_threads=-1):
@@ -231,8 +171,6 @@ def remove_redundancy(df,
         topiary data frame with sequences
     cutoff : float, default=0.95
         %identity cutoff for combining removing sequences (between 0 and 1)
-    key_species : list, default=[]
-        key species to preferentially keep
     silent : bool, default=False
         whether to print output and use status bars
     only_in_species : bool, default=False
@@ -250,17 +188,19 @@ def remove_redundancy(df,
     # Process arguments
     df = check.check_topiary_dataframe(df)
     cutoff = check.check_float(cutoff,
-                                           "cutoff",
-                                           minimum_allowed=0,
-                                           maximum_allowed=1)
-    key_species = check.check_iter(key_species,
-                                               "key_species",
-                                               required_value_type=str,
-                                               is_not_type=[str,dict])
+                               "cutoff",
+                               minimum_allowed=0,
+                               maximum_allowed=1)
     silent = check.check_bool(silent,"silent")
 
-    # Encode key species as a dictionary for fast look up
-    key_species = dict([(k,None) for k in key_species])
+    # Extract key species from dataframe and encode as dictionary for fast
+    # lookup
+    try:
+        key_mask = df.loc[:,"key_species"] == True
+        key_species = np.unique(df.loc[key_mask,"species"])
+        key_species = dict([(k,None) for k in key_species])
+    except KeyError:
+        key_species = {}
 
     starting_keep_number = np.sum(df.keep)
 
@@ -269,7 +209,8 @@ def remove_redundancy(df,
         return df
 
     # Make sure the dataframe has the columns needed for this comparison. If
-    # the dataframe does not have the column, simply set to False
+    # the dataframe does not have the column, simply set to False. If the
+    # dataframe has the column with an unexpected type, die.
     for e in _EXPECTED_COLUMNS:
 
         try:
@@ -310,7 +251,7 @@ def remove_redundancy(df,
         P = tqdm
         print("Removing redundancy within species.",flush=True)
     else:
-        P = _DummyTqdm
+        P = interface.DummyTqdm
 
     with P(total=np.sum(df.keep)) as pbar:
 
@@ -327,13 +268,18 @@ def remove_redundancy(df,
             quality_array = all_quality_array[species_mask]
             keep_array = np.ones(len(sequence_array),dtype=bool)
 
-            _reduce_redundancy_thread_manager(sequence_array=sequence_array,
-                                              quality_array=quality_array,
-                                              keep_array=keep_array,
-                                              cutoff=cutoff,
-                                              discard_key=True,
-                                              num_threads=num_threads,
-                                              progress_bar=False)
+            kwargs_list, num_threads = _construct_args(sequence_array=sequence_array,
+                                                       quality_array=quality_array,
+                                                       keep_array=keep_array,
+                                                       cutoff=cutoff,
+                                                       discard_key=True,
+                                                       num_threads=num_threads)
+
+            threads.thread_manager(kwargs_list,
+                                   _check_block_redundancy,
+                                   num_threads,
+                                   progress_bar=False,
+                                   pass_lock=True)
 
             # Update keep in dataframe
             df.loc[species_mask,"keep"] = keep_array
@@ -350,21 +296,26 @@ def remove_redundancy(df,
         return df
 
 
-    sequence_array = np.array(df.loc[df.keep,"sequence"])
-    quality_array = all_quality_array[df.keep]
-    keep_array = np.ones(len(sequence_array),dtype=bool)
-
     progress_bar = not silent
     if not silent:
         print("Removing redundancy in all-on-all comparison.",flush=True)
 
-    _reduce_redundancy_thread_manager(sequence_array=sequence_array,
-                                      quality_array=quality_array,
-                                      keep_array=keep_array,
-                                      cutoff=cutoff,
-                                      discard_key=False,
-                                      num_threads=num_threads,
-                                      progress_bar=progress_bar)
+    sequence_array = np.array(df.loc[df.keep,"sequence"])
+    quality_array = all_quality_array[df.keep]
+    keep_array = np.ones(len(sequence_array),dtype=bool)
+
+    kwargs_list, num_threads = _construct_args(sequence_array=sequence_array,
+                                               quality_array=quality_array,
+                                               keep_array=keep_array,
+                                               cutoff=cutoff,
+                                               discard_key=False,
+                                               num_threads=num_threads)
+
+    threads.thread_manager(kwargs_list,
+                           _check_block_redundancy,
+                           num_threads,
+                           progress_bar=progress_bar,
+                           pass_lock=True)
 
     # Update keep array
     df.loc[df.keep,"keep"] = keep_array
@@ -381,8 +332,7 @@ def find_cutoff(df,
                 max_cutoff=1.00,
                 try_n_values=8,
                 target_number=500,
-                sample_size=200,
-                key_species=[]):
+                sample_size=200):
     """
     Find a sequence identity cutoff that yields approximately `target_number`
     sequences.
@@ -399,8 +349,6 @@ def find_cutoff(df,
         find a cutoff that gets approximately this number of sequences
     sample_size : int, default=200
         grab this number of sequences from the dataframe to find the cutoff
-    key_species : list, default=[]
-        key species to pass to remove_redundancy
 
     Returns
     -------
@@ -426,10 +374,6 @@ def find_cutoff(df,
     sample_size = check.check_int(sample_size,
                                               "sample_size",
                                               minimum_allowed=1)
-    key_species = check.check_iter(key_species,
-                                               "key_species",
-                                               required_value_type=str,
-                                               is_not_type=[str,dict])
 
     # Deal with cutoffs
     if min_cutoff > max_cutoff:
@@ -447,6 +391,7 @@ def find_cutoff(df,
     if sample_size > len(df.index):
         sample_size = len(df.index)
 
+
     # Create reduced dataframe to play with
     to_take = np.random.choice(df.index,sample_size,replace=False)
     small_df = df.loc[to_take,:]
@@ -456,7 +401,6 @@ def find_cutoff(df,
         for c in cutoffs:
             lower_df = remove_redundancy(small_df,
                                          cutoff=c,
-                                         key_species=key_species,
                                          silent=True)
             fx_kept = np.sum(lower_df.keep)/np.sum(small_df.keep)
             predicted_keep.append(fx_kept*np.sum(df.keep))

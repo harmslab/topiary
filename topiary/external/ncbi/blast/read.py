@@ -7,14 +7,41 @@ import pandas as pd
 
 from Bio.Blast import NCBIXML
 
-import io, os, glob
+import io, os, glob, re
+import xml.etree.ElementTree as ET
 
+def _clean_xml(xml_file):
+    """
+    This function cleans up the "CREATE_VIEW" mangling that ncbi sometimes
+    injects into xml.
+
+    Parameters
+    ----------
+    xml_file : str
+        xml file to load
+
+    Returns
+    -------
+    file_contents : str
+        xml contents as a single string
+    """
+
+    # Read xml file, stripping mangled blank lines and CREATE_VIEW
+    # that NCBI sometimes injects into otherwise valid xml
+    lines = []
+    with open(xml_file) as f:
+        for line in f:
+            if line.strip() not in ["","CREATE_VIEW"]:
+                lines.append(line)
+
+    file_contents = "".join(lines)
+
+    return file_contents
 
 def _xml_file_to_records(xml_file):
     """
     Convert the contents of an xml file into a list of blast records. There will
-    be one record per query. This function cleans up the "CREATE_VIEW" mangling
-    that ncbi sometimes injects into xml.
+    be one record per query.
 
     Parameters
     ----------
@@ -27,14 +54,7 @@ def _xml_file_to_records(xml_file):
         list of blast records, one per query in xml file
     """
 
-    # Read xml file, stripping mangled blank lines and CREATE_VIEW
-    # that NCBI sometimes injects into otherwise valid xml
-    lines = []
-    with open(xml_file) as f:
-        for line in f:
-            if line.strip() not in ["","CREATE_VIEW"]:
-                lines.append(line)
-    file_contents = "".join(lines)
+    file_contents = _clean_xml(xml_file)
 
     # Now use Biopython to parse blast records
     blast_records = []
@@ -43,6 +63,40 @@ def _xml_file_to_records(xml_file):
             blast_records.append(rec)
 
     return blast_records
+
+def check_for_cpu_limit(xml_file):
+    """
+    Check to see if an ncbi server rejected the request because it hit a CPU
+    limit.
+
+    Parameters
+    ----------
+    xml_file : str
+        xml file that came off server
+
+    Returns
+    -------
+    result : bool
+        True if the cpu limit was hit, False otherwise.
+    """
+
+    xml_file = str(xml_file)
+    if not os.path.isfile(xml_file):
+        err = f"\nxml_file '{xml_file}' does not exist.\n\n"
+        raise FileNotFoundError(err)
+
+    # This text is passed out as an <Iteration_message>
+    fail_pattern = re.compile("CPU usage limit was exceeded")
+
+    # Load file contents, making sure xml is not mangled by NCBI server
+    file_contents = _clean_xml(xml_file)
+
+    root = ET.fromstring(file_contents)
+    for msg in root.iter("Iteration_message"):
+        if fail_pattern.search(msg.text):
+            return True
+
+    return False
 
 def records_to_df(blast_records):
     """
@@ -112,7 +166,7 @@ def records_to_df(blast_records):
 
     return out_df
 
-def read_blast_xml(xml_input):
+def read_blast_xml(xml_input,do_cpu_check=False):
     """
     Load blast xml file(s) and convert to pandas dataframe(s).
 
@@ -125,12 +179,17 @@ def read_blast_xml(xml_input):
         2) list of xml files
         3) directory (str). topiary will grab all .xml in that directory.
 
+    do_cpu_check : bool, default=False
+        check files to see if they indicate cpu limit exceeded. if True and
+        this is seen, return None, xml_files.
+
     Returns
     -------
-    all_df : list
-        pandas dataframes constructed from the blast xml files.
+    all_df : list or None
+        pandas dataframes constructed from the blast xml files. Will be None
+        if cpu_limit_check == True and the cpu limit was observed.
     xml_files : list
-        list of xml files parsed
+        list of xml files parsed.
     """
 
     xml_files = []
@@ -168,6 +227,13 @@ def read_blast_xml(xml_input):
             else:
                 err = f"\nxml file '{x}' not found\n"
                 raise ValueError(err)
+
+    # If do_cpu_check requested, check for failed files before parsing. If we
+    # indeed have a cpu failure, return None and list of xml files
+    if do_cpu_check:
+        for x in xml_files:
+            if check_for_cpu_limit(x):
+                return None, xml_files
 
     # Actually parse xml files
     all_df = []
