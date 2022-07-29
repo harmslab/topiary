@@ -58,30 +58,37 @@ def _get_string_variants(some_string,spacers):
         else:
             pass
 
-    # Go through sequence and build pattern character by character
-    pattern = []
+    # Go through sequence and build pattern character by character. Each block
+    # separated by space will end up in its own list within the lists
+    pattern = [[]]
     for i in range(len(lower)-1):
 
         # If we hit a spacer, put in non-greedy match
         if is_spacer[i]:
-            pattern.append(spacer_re)
+            pattern.append([])
             continue
 
         # Append the letter/digit we saw
-        pattern.append(lower[i])
+        pattern[-1].append(lower[i])
 
         # Digit followed by letter
         if is_digit[i] and is_letter[i+1]:
-            pattern.append(spacer_re)
+            pattern.append([])
 
         # Letter followed by digit
         if is_letter[i] and is_digit[i+1]:
-            pattern.append(spacer_re)
+            pattern.append([])
 
     # Last letter
-    pattern.append(lower[-1])
+    pattern[-1].append(lower[-1])
 
-    return "".join(pattern)
+    # Join letters within blocks and escape any regex symbols lurking in there
+    pattern = [re.escape("".join(p)) for p in pattern if len(p) != 0]
+
+    # Join pattern on spacer regular expression
+    pattern = spacer_re.join(pattern)
+
+    return pattern
 
 
 def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
@@ -105,8 +112,6 @@ def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
     # Make unique set of names
     list_of_names = list(set(list_of_names))
 
-
-
     # Make regular expression for each name
     all_names = []
     for n in list_of_names:
@@ -121,9 +126,9 @@ def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
     return re.compile("|".join(all_names),flags=re.IGNORECASE)
 
 
-def load_seed_dataframe(df,):
+def read_seed(df,):
     """
-    Load a seed data frame and extract alias patterns and key species.
+    Read a seed data frame and extract alias patterns and key species.
 
     Parameters
     ----------

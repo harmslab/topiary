@@ -9,6 +9,7 @@ import topiary._private.check as check
 
 import toytree
 import toyplot
+from toyplot import svg, pdf, png
 
 import numpy as np
 

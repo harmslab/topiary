@@ -7,7 +7,8 @@ from topiary._private import check
 from topiary._private import animation
 from topiary._private import threads
 
-from .util import read_blast_xml, _standard_blast_args_checker
+from .read import read_blast_xml
+from .util import _standard_blast_args_checker
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
@@ -330,6 +331,7 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
     # While we haven't run out of tries...
     tries = 0
+    tmp_file = None
     while tries < num_tries_allowed:
 
         # Try to read output.
@@ -347,44 +349,20 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
             result = NCBIWWW.qblast(**this_query)
 
-            # Write output to an xml file. NCBI can spit out trashed XML
-            # with CREATE_VIEW\n\n\n randomly injected between <hit> entries.
-            # biopython chokes on the input. To fix this, pull down the XML,
-            # clean up, write to a file, then pass the file handle back to
-            # biopython.
-
-            # Get rid of nastiness if present.
-            contents = result.readlines()
-            contents = [c for c in contents if c.strip() not in ["","CREATE_VIEW"]]
-
             # Write temporary file
             tmp_root = "".join([random.choice(string.ascii_letters)
                                 for _ in range(10)])
             tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
             f = open(tmp_file,"w")
-            f.write("".join(contents))
+            f.write(result.read())
             f.close()
-
-            # Read output xml file and parse
-            f = open(tmp_file,"r")
-
-            # Clean up
-            p = NCBIXML.parse(f)
-            out = []
-            for r in p:
-                out.append(r)
-            f.close()
-
-            # If parsing successful, nuke temporary file
-            if not keep_blast_xml:
-                os.remove(tmp_file)
 
         # If some kind of http error or timeout, set out to None
         except (urllib.error.URLError,urllib.error.HTTPError,http.client.IncompleteRead):
-            out = None
+            tmp_file = None
 
         # If out is None, try again. If not, break out of loop--success!
-        if out is None:
+        if tmp_file is None:
             tries += 1
             continue
         else:
@@ -392,16 +370,20 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
     # We didn't get result even after num_tries_allowed tries. Throw
     # an error.
-    if out is None:
+    if tmp_file is None:
         err = "\nProblem accessing with NCBI server. We got no output after\n"
         err += f"{num_tries_allowed} attempts. This is likely due to a server\n"
         err += "timeout. Try again at a later time.\n"
         raise RuntimeError(err)
 
     # Parse output
-    out_df = read_blast_xml(out)
+    out_dfs, xml_files = read_blast_xml(tmp_file)
 
-    return out_df
+    # If parsing successful, nuke temporary file
+    if not keep_blast_xml:
+        os.remove(xml_files[0])
+
+    return out_dfs[0]
 
 
 def _combine_hits(hits,return_singleton):

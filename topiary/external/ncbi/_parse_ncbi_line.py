@@ -78,6 +78,7 @@ def parse_ncbi_line(line,accession=None):
     -------
     out : dict
         dictionary describing line. Has the following keys:
+
         + *raw_line* unprocessed line (input)
         + *line* processed line (remove multiple titles)
         + *name* protein name

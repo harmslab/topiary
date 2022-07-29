@@ -4,7 +4,7 @@ import pytest
 import topiary
 from topiary._private import check
 from topiary.io.seed import _get_string_variants, _get_alias_regex
-from topiary.io.seed import load_seed_dataframe
+from topiary.io.seed import read_seed
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,9 @@ def test__get_string_variants():
                     "ABC1" :"abc[\ \-_\.]*1",
                     "1ABc" :"1[\ \-_\.]*abc",
                     " ABC ":"abc",
-                    "AB C" :"ab[\ \-_\.]*c"}
+                    "AB C" :"ab[\ \-_\.]*c",
+                    "(ABC)":"\(abc\)",
+                    "[AB C]" :"\[ab[\ \-_\.]*c\]"}
     spacers = [" ","-","_","."]
     for t in test_strings:
         assert _get_string_variants(t,spacers) == test_strings[t]
@@ -27,7 +29,7 @@ def test__get_string_variants():
                     "ABC1" :"abc[,]*1",
                     "1ABC" :"1[,]*abc",
                     " aBC ":"abc",
-                    "AB C" :"ab c"}
+                    "AB C" :"ab\\ c"}
     spacers = [","]
     for t in test_strings:
         assert _get_string_variants(t,spacers) == test_strings[t]
@@ -52,7 +54,7 @@ def test__get_alias_regex():
         expected = re.compile(test_names[t],flags=re.IGNORECASE)
         assert observed.pattern == expected.pattern
 
-def test_load_seed_dataframe(seed_dataframes):
+def test_read_seed(seed_dataframes,user_seed_dataframes):
 
     def _validate_output(df):
 
@@ -98,53 +100,76 @@ def test_load_seed_dataframe(seed_dataframes):
 
     # csv
     df_file = seed_dataframes["good-seed-df.csv"]
-    seed_df = load_seed_dataframe(df_file)
+    seed_df = read_seed(df_file)
     _validate_output(seed_df)
 
     # Make sure we can read the dataframe as a dataframe object
     df_as_df = pd.read_csv(df_file)
-    seed_df = load_seed_dataframe(df_as_df)
+    seed_df = read_seed(df_as_df)
     _validate_output(seed_df)
 
     # tsv
     df_file = seed_dataframes["good-seed-df.tsv"]
-    seed_df = load_seed_dataframe(df_file)
+    seed_df = read_seed(df_file)
     _validate_output(seed_df)
 
     # xlsx
     df_file = seed_dataframes["good-seed-df.xlsx"]
-    seed_df = load_seed_dataframe(df_file)
+    seed_df = read_seed(df_file)
     _validate_output(seed_df)
 
     # csv with .txt extension
     df_file = seed_dataframes["good-seed-df.txt"]
-    seed_df = load_seed_dataframe(df_file)
+    seed_df = read_seed(df_file)
     _validate_output(seed_df)
 
     # bad df passes
     with pytest.raises(FileNotFoundError):
-        load_seed_dataframe("not-really-a-file")
+        read_seed("not-really-a-file")
 
     bad_df = [pd.DataFrame,None,1,[],{},1.5,str,int,float]
     for b in bad_df:
         print(f"passing bad_df {b}")
         with pytest.raises(ValueError):
-            load_seed_dataframe(b)
+            read_seed(b)
 
     # required column check
     good_df = pd.read_csv(seed_dataframes["good-seed-df.csv"])
     bad_df = good_df.drop(columns=["species"])
     with pytest.raises(ValueError):
-        load_seed_dataframe(bad_df)
+        read_seed(bad_df)
 
     # bad species
     bad_df = good_df.copy()
     bad_df.loc[:,"species"] = "not a species"
     with pytest.raises(ValueError):
-        load_seed_dataframe(bad_df)
+        read_seed(bad_df)
 
     # species that is findable but not resolvable
     bad_df = good_df.copy()
     bad_df.loc[:,"species"] = "Bos indicus x Bos taurus"
     with pytest.raises(ValueError):
-        load_seed_dataframe(bad_df)
+        read_seed(bad_df)
+
+    # Read in a collection of user-generated dataframes
+    for s in user_seed_dataframes:
+
+        df = topiary.io.read_seed(user_seed_dataframes[s])
+        check_read = pd.read_excel(user_seed_dataframes[s])
+        check_read.columns = [c.lower().strip() for c in check_read.columns]
+
+        assert len(df) == len(check_read)
+        for idx in df.index:
+            assert df.loc[idx,"species"] == check_read.loc[idx,"species"].strip()
+            assert df.loc[idx,"name"] == check_read.loc[idx,"name"].strip()
+
+            this_seq = "".join(check_read.loc[idx,"sequence"].split())
+            assert df.loc[idx,"sequence"] == this_seq
+
+        assert np.array_equal(df.keep,np.ones(len(df),dtype=bool))
+        assert np.array_equal(df.key_species,np.ones(len(df),dtype=bool))
+        assert np.array_equal(df.always_keep,np.ones(len(df),dtype=bool))
+        assert len(df.uid) == len(np.unique(df.uid))
+
+        for a in df.aliases:
+            re.compile(a,flags=re.IGNORECASE)

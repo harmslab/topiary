@@ -4,6 +4,7 @@ Construct a topiary dataframe from a seed dataframe.
 
 import topiary
 from topiary._private import check
+from topiary.external.ncbi.blast import merge_and_annotate
 
 import numpy as np
 import pandas as pd
@@ -88,7 +89,7 @@ def df_from_seed(seed_df,
     """
 
     # Load the seed dataframe
-    seed_df = topiary.io.load_seed_dataframe(seed_df)
+    seed_df = topiary.io.read_seed(seed_df)
 
     # -----------------------------------------------------------------------
     # Get key_species and paralog_patterns dict
@@ -112,6 +113,7 @@ def df_from_seed(seed_df,
 
     # ncbi blast
     blast_df = []
+    blast_source = []
     if ncbi_blast_db is not None:
 
         # Infer phylogenetic context from key species
@@ -123,7 +125,7 @@ def df_from_seed(seed_df,
             taxid = None
 
         tmp_blast_df = topiary.ncbi.ncbi_blast(seed_df.sequence,
-                                               db="nr",
+                                               db=ncbi_blast_db,
                                                taxid=taxid,
                                                hitlist_size=hitlist_size,
                                                e_value_cutoff=e_value_cutoff,
@@ -131,7 +133,22 @@ def df_from_seed(seed_df,
                                                num_threads=num_threads,
                                                keep_blast_xml=keep_blast_xml,
                                                **kwargs)
+
+        for i in range(len(tmp_blast_df)):
+            if len(tmp_blast_df[i]) == 0:
+                seed_name = seed_df.loc[seed_df.index[i],"name"]
+                seed_species = seed_df.loc[seed_df.index[i],"species"]
+
+                w = f"\nThere were no hits from the ncbi {ncbi_blast_db} database\n"
+                w += f"using {seed_name} from {seed_species}.\n\n"
+                print(w,flush=True)
+
         blast_df.extend(tmp_blast_df)
+        for idx in seed_df.index:
+            db = ncbi_blast_db
+            name = seed_df.loc[idx,"name"]
+            species = seed_df.loc[idx,"species"]
+            blast_source.append(f"ncbi {db}|{name}|{species}")
 
     # local blast
     if local_blast_db is not None:
@@ -144,74 +161,34 @@ def df_from_seed(seed_df,
                                                 num_threads=num_threads,
                                                 keep_blast_xml=keep_blast_xml,
                                                 **kwargs)
+
+        for i in range(len(tmp_blast_df)):
+            if len(tmp_blast_df[i]) == 0:
+                seed_name = seed_df.loc[seed_df.index[i],"name"]
+                seed_species = seed_df.loc[seed_df.index[i],"species"]
+
+                w = f"\nThere were no hits from the local {local_blast_db} database\n"
+                w += f"using {seed_name} from {seed_species}.\n\n"
+                print(w,flush=True)
+
         blast_df.extend(tmp_blast_df)
+        for idx in seed_df.index:
+            db = local_blast_db
+            name = seed_df.loc[idx,"name"]
+            species = seed_df.loc[idx,"species"]
+            blast_source.append(f"local {db}|{name}|{species}")
 
     # Load blast xml
     if blast_xml is not None:
-        err = "Not implemented\n"
-        raise NotImplementedError(err)
 
+        tmp_blast_df, xml_files = topiary.io.read_blast_xml(blast_xml)
 
-    print("Parsing BLAST output",flush=True)
+        blast_df.extend(tmp_blast_df)
+        for x in xml_files:
+            blast_source.append(f"xml {x}")
 
-    # blast_df is a list of dataframes, one for each query in seed_df.sequence
-    for i, d in enumerate(blast_df):
-        d.to_csv(f"blast_{i}.csv")
-
-    # Go through each blast dataframe
-    for i in range(len(blast_df)):
-
-        if len(blast_df[i]) == 0:
-            seed_name = seed_df.loc[seed_df.index[i],"name"]
-            seed_species = seed_df.loc[seed_df.index[i],"species"]
-            print(f"There were no BLAST hits for {seed_name} from {seed_species}",
-                  flush=True)
-            continue
-
-        # Assign the blast query to a useful name (i.e. LY96|Homo sapiens)
-        blast_df[i].loc[:,"query"] = f"{seed_df.name.iloc[i]}|{seed_df.species.iloc[i]}"
-
-        # Parse the blast output from each line to extract the features useful
-        # for downstream analyses -- structure, partial, etc.
-        # out_dict will be a dictionary keyed to the new columns we want
-        # (structure, etc.) with lists of values as long as the dataframe.
-        keep = []
-        out_dict = None
-        for idx in blast_df[i].index:
-            parsed = topiary.external.ncbi.parse_ncbi_line(blast_df[i].loc[idx,"title"])
-
-            if parsed is None:
-                keep.append(False)
-                continue
-
-            if out_dict is None:
-                out_dict = {}
-                for k in parsed:
-                    out_dict[k] = [parsed[k]]
-            else:
-                for k in parsed:
-                    out_dict[k].append(parsed[k])
-
-            keep.append(True)
-
-        # Create mask of goodness
-        keep = np.array(keep,dtype=bool)
-
-        # Load newly extracted column into the dataframe
-        for k in out_dict:
-            blast_df[i][k] = pd.NA
-            blast_df[i].loc[keep,k] = out_dict[k]
-
-        # Drop empty columns
-        blast_df[i] = blast_df[i].loc[keep,:]
-
-    # Drop completely empty blast returns
-    blast_df = [b for b in blast_df if len(b) > 0]
-    if len(blast_df) == 0:
-        err = "BLAST did not return any hits\n"
-        raise RuntimeError(err)
-
-    df = topiary.ncbi.merge_blast_df(blast_df)
+    # Merge and annotate the blast input from all sources
+    df = merge_and_annotate(blast_df,blast_source)
 
     # Append uid (to prevent user-visible topiary warnings) and then
     # convert to a topiary dataframe

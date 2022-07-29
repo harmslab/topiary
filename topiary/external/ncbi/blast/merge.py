@@ -4,6 +4,7 @@ Merge dataframes from multiple BLAST queries.
 
 import topiary
 from topiary._private import check
+from topiary.external.ncbi.entrez.sequences import get_sequences
 
 import numpy as np
 import pandas as pd
@@ -196,3 +197,86 @@ def merge_blast_df(blast_df_list):
 
 
     return df.loc[keep_mask,:].reset_index().drop(columns=["index"])
+
+
+def merge_and_annotate(blast_df_list,blast_source_list=None):
+    """
+    Merge a list of blast output dataframes into a single non-redundant
+    dataframe. (See merge_blast_df documentation for details on merge). Grabs
+    meta data (isoform, structure, etc.). Converts the "seuqence" column to
+    "subject_sequence" and downloads full sequence for that accession from ncbi.
+
+    Parameters
+    ----------
+    blast_df_list : list
+        list of pandas dataframes containing blast output from local_blast,
+        ncbi_blast, or read_blast_xml.
+    blast_source_list : list, optional
+        list of values to put into a "blast_source" column that name where the
+        dataframes from blast_df_list came from. Must be the same length as
+        blast_df_list. if None, do not populate the "blast_source" column.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        merged blast dataframe
+    """
+
+    ### VALIDATE BLAST_SOURCE_LIST XXX
+
+    # Go through each blast dataframe
+    for i in range(len(blast_df_list)):
+
+        # Blast source
+        if blast_source_list is not None:
+            blast_df_list[i].loc[:,"blast_source"] = blast_source_list[i]
+
+        # Parse the blast output from each line to extract the features useful
+        # for downstream analyses -- structure, partial, etc.
+        # out_dict will be a dictionary keyed to the new columns we want
+        # (structure, etc.) with lists of values as long as the dataframe.
+        keep = []
+        out_dict = None
+        for idx in blast_df_list[i].index:
+            parsed = topiary.external.ncbi.parse_ncbi_line(blast_df_list[i].loc[idx,"title"])
+
+            if parsed is None:
+                keep.append(False)
+                continue
+
+            if out_dict is None:
+                out_dict = {}
+                for k in parsed:
+                    out_dict[k] = [parsed[k]]
+            else:
+                for k in parsed:
+                    out_dict[k].append(parsed[k])
+
+            keep.append(True)
+
+        # Create mask of goodness
+        keep = np.array(keep,dtype=bool)
+
+        # Load newly extracted column into the dataframe
+        for k in out_dict:
+            blast_df_list[i][k] = pd.NA
+            blast_df_list[i].loc[keep,k] = out_dict[k]
+
+        # Drop empty columns
+        blast_df_list[i] = blast_df_list[i].loc[keep,:]
+
+    # Drop completely empty blast returns
+    blast_df_list = [b for b in blast_df_list if len(b) > 0]
+    if len(blast_df_list) == 0:
+        err = "BLAST did not return any hits\n"
+        raise RuntimeError(err)
+
+    # Merge the dataframes
+    df = merge_blast_df(blast_df_list)
+
+    # Download full subject sequences
+    downloaded_seq = get_sequences(df.loc[:,"accession"])
+    df["subject_sequence"] = df.loc[:,"sequence"]
+    df.loc[:,"sequence"] = [s[1] for s in downloaded_seq]
+
+    return df

@@ -5,16 +5,15 @@ Run BLAST against a local database.
 import topiary
 from topiary._private import check
 from topiary._private import threads
-from .util import read_blast_xml, _standard_blast_args_checker
+from .util import _standard_blast_args_checker
+from .read import read_blast_xml
 
 import Bio.Blast.Applications as apps
 
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
 
-import sys, os, string, random, subprocess, copy
-import multiprocessing as mp
+import os, string, random, subprocess, copy
 
 def _prepare_for_blast(sequence,
                        db,
@@ -235,18 +234,18 @@ def _local_blast_thread_function(sequence_list,
 
     # Parse output
     try:
-        out_df = read_blast_xml(out_file)
+        out_dfs, xml_files = read_blast_xml(out_file)
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
         raise RuntimeError(err)
 
-    # Delete temporary files
+    # If parsing successful, nuke temporary file
     if not keep_blast_xml:
         os.remove(input_file)
         os.remove(out_file)
 
-    return out_df
+    return out_dfs[0]
 
 
 

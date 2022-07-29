@@ -53,7 +53,7 @@ from .external import find_best_model, generate_ml_tree, generate_ancestors, gen
 from .external import reconcile
 
 # Input/output functions
-from .io import df_from_blast_xml, df_from_seed
+from .io import df_from_seed
 from .io import write_dataframe, read_dataframe
 from .io import read_fasta_into, write_fasta, write_phy
 

@@ -3,7 +3,6 @@ import pytest
 from conftest import get_public_param_defaults
 
 import topiary
-from topiary.external.ncbi.blast.ncbi import ncbi_blast
 from topiary.external.ncbi.blast.ncbi import _prepare_for_blast as _pfb
 from topiary.external.ncbi.blast.ncbi import _construct_args as _ca
 from topiary.external.ncbi.blast.ncbi import _combine_hits
