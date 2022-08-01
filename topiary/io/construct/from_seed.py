@@ -97,6 +97,26 @@ def df_from_seed(seed_df,
     key_species = np.unique(seed_df.loc[seed_df.loc[:,"key_species"],"species"])
     key_species.sort()
 
+    no_proteome_key = []
+    for k in key_species:
+        proteome_id, err = topiary.ncbi.entrez.get_proteome_ids(species=k)
+        if proteome_id is None:
+            no_proteome_key.append((k,err))
+
+    if len(no_proteome_key) > 0:
+        err = "\nCould not download proteomes from the NCBI assemblies database\n"
+        err += "for all key species in the seed dataframe. Proteomes are required\n"
+        err += "for reciprocal BLAST. Please check the spelling of your species\n"
+        err += "and/or select species with avaiable proteomes. The species that\n"
+        err += "raised errors are:\n\n"
+        for n in no_proteome_key:
+            err += f"{n[0]} ({n[1].strip()})\n"
+        err += "\n"
+
+        raise RuntimeError(err)
+
+
+
     paralog_patterns = {}
     for i, k in enumerate(seed_df.loc[:,"name"]):
         paralog_patterns[k] = re.compile(seed_df.loc[seed_df.index[i],"aliases"],

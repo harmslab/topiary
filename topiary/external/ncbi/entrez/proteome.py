@@ -64,6 +64,72 @@ def _get_genome_url(record):
 
     return None
 
+def get_proteome_ids(taxid=None,species=None):
+    """
+    Query entrez to get a list of proteome ids that match a taxid or species.
+    This will not raise an error on failure, but will instead return None with
+    an error string.
+
+    Parameters
+    ----------
+    taxid: int or str, optional
+        NCBI taxid (integer or string version of the integer). Incompatible with
+        `species` argument. At least taxid or species must be specified.
+    species : str, optional
+        bionomial name of species (i.e. Mus musculus). Incompatible with `taxid`
+        argument. At least taxid or species must be specified.
+
+    Returns
+    -------
+    returned_ids : list or None
+        list of proteome ids. None if no ids found/error.
+    err: str or None
+        descriptive error if no returned_ids. None if no error.
+    """
+
+    if species is None and taxid is None:
+        err = "\nYou must specify either species or taxid, but not both.\n\n"
+        raise ValueError(err)
+
+    if species is not None and taxid is not None:
+        err = "\nYou must specify either species or taxid, but not both.\n\n"
+        raise ValueError(err)
+
+    # Do query using taxid. This will throw an error if species is not sane,
+    # so is a helpful check before querying ncbi.
+    if species:
+
+        try:
+            taxid = topiary.ncbi.get_taxid(species)
+        except RuntimeError:
+            err = f"\nCould not find taxid for species '{species}'\n\n"
+            return None, err
+
+    # Make sure the taxid is sane
+    taxid = check.check_int(taxid,"taxid")
+
+    # Look for assembly ids for this taxid
+    query_text = f"(txid{taxid}[ORGN])"
+    esearch_handle = Entrez.esearch(db="assembly",
+                                    retmax=1000,
+                                    term=query_text,
+                                    idtype="acc")
+    search_record = Entrez.read(esearch_handle)
+
+    # Get assembly ids
+    try:
+        returned_ids = list(search_record["IdList"])
+    except KeyError:
+        err = "\nThe Entrez.esearch query failed.\n\n"
+        return None, err
+
+    # Make sure something came back
+    if len(returned_ids) == 0:
+        err = f"\nThe Entrez.eserch query '{query_text}' returned no assemblies.\n\n"
+        return None, err
+
+    return returned_ids, None
+
 def get_proteome(taxid=None,species=None,output_dir="."):
     """
     Use entrez to download a proteome from the NCBI.
@@ -85,49 +151,22 @@ def get_proteome(taxid=None,species=None,output_dir="."):
         the file we downloaded or None if no file downloaded
     """
 
-    if species is None and taxid is None:
-        err = "\nYou must specify either species or taxid, but not both.\n\n"
-        raise ValueError(err)
-
-    if species is not None and taxid is not None:
-        err = "\nYou must specify either species or taxid, but not both.\n\n"
-        raise ValueError(err)
 
     output_dir = str(output_dir)
     if not os.path.isdir(output_dir) or not os.access(output_dir,os.W_OK):
         err = "\nlocal_path must exist and be writable.\n\n"
         raise ValueError(err)
 
-    # Do query using taxid. This will throw an error if species is not sane,
-    # so is a helpful check before querying ncbi.
-    if species:
+    # Get proteome ids to download. Validate taxid and species arguments via
+    # this function
+    returned_ids, err = get_proteome_ids(taxid=taxid,species=species)
+    if returned_ids is None:
+        raise RuntimeError(err)
+
+    if species is not None:
         print(f"Downloading proteome for species '{species}'",flush=True)
-        taxid = topiary.ncbi.get_taxid(species)
     else:
         print(f"Downloading proteome for taxid '{taxid}'",flush=True)
-
-    # Make sure the taxid is sane
-    taxid = check.check_int(taxid,"taxid")
-
-    # Look for assembly ids for this taxid
-    query_text = f"(txid{taxid}[ORGN])"
-    esearch_handle = Entrez.esearch(db="assembly",
-                                    retmax=1000,
-                                    term=query_text,
-                                    idtype="acc")
-    search_record = Entrez.read(esearch_handle)
-
-    # Get assembly ids
-    try:
-        returned_ids = list(search_record["IdList"])
-    except KeyError:
-        err = "\nThe Entrez.esearch query failed.\n\n"
-        raise RuntimeError(err)
-
-    # Make sure something came back
-    if len(returned_ids) == 0:
-        err = f"\nThe query '{query_text}' returned no assemblies.\n\n"
-        raise RuntimeError(err)
 
     # Now get summary data for these records.
     esummary_query = ",".join(returned_ids)
