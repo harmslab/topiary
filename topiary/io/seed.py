@@ -140,6 +140,10 @@ def read_seed(df,):
     -------
     topiary_dataframe : pandas.DataFrame
         new topiary dataframe built from the seed dataframe
+    key_species : numpy.array
+        list if key species to keep during the analysis
+    paralog_patterns : list
+        list of compiled regular expressions to use to try to match paralogs.
 
     Notes
     -----
@@ -241,6 +245,9 @@ def read_seed(df,):
     else:
         df["key_species"] = True
 
+    key_species = np.unique(df.loc[df.loc[:,"key_species"],"species"])
+    key_species.sort()
+
     # -----------------------------------------------------------------------
     # Construct paralog_patterns
 
@@ -293,4 +300,4 @@ def read_seed(df,):
 
     df = check.check_topiary_dataframe(df)
 
-    return df
+    return df, key_species, paralog_patterns

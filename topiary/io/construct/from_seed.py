@@ -72,14 +72,6 @@ def df_from_seed(seed_df,
     -------
     topiary_dataframe : pandas.DataFrame
         topiary dataframe with sequences found from seed sequence.
-    phylo_context : str
-        string descriptor of the phylogenetic context on opentreeoflife.org
-        (i.e. "Animals" or "All life")
-    key_species : numpy.array
-        list if key species to keep during the analysis
-    paralog_patterns : list
-        list of compiled regular expressions (extracted from aliases) to use to
-        try to match paralogs.
 
     Notes
     -----
@@ -89,14 +81,9 @@ def df_from_seed(seed_df,
     """
 
     # Load the seed dataframe
-    seed_df = topiary.io.read_seed(seed_df)
+    seed_df, key_species, paralog_patterns = topiary.io.read_seed(seed_df)
 
-    # -----------------------------------------------------------------------
-    # Get key_species and paralog_patterns dict
-
-    key_species = np.unique(seed_df.loc[seed_df.loc[:,"key_species"],"species"])
-    key_species.sort()
-
+    # Validate proteome
     no_proteome_key = []
     for k in key_species:
         proteome_id, err = topiary.ncbi.entrez.get_proteome_ids(species=k)
@@ -114,13 +101,6 @@ def df_from_seed(seed_df,
         err += "\n"
 
         raise RuntimeError(err)
-
-
-
-    paralog_patterns = {}
-    for i, k in enumerate(seed_df.loc[:,"name"]):
-        paralog_patterns[k] = re.compile(seed_df.loc[seed_df.index[i],"aliases"],
-                                         flags=re.IGNORECASE)
 
     # Validate blast database arguments
     if ncbi_blast_db is not None and local_blast_db is not None and blast_xml is None:
@@ -231,4 +211,4 @@ def df_from_seed(seed_df,
     # Create nicknames for sequences in dataframe
     df = topiary.create_nicknames(df,paralog_patterns)
 
-    return df, phylo_context, key_species, paralog_patterns
+    return df, key_species, paralog_patterns

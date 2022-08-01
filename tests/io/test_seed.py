@@ -56,14 +56,11 @@ def test__get_alias_regex():
 
 def test_read_seed(seed_dataframes,user_seed_dataframes):
 
-    def _validate_output(df):
+    def _validate_output(out):
 
-        key_species = np.unique(seed_df.loc[seed_df.loc[:,"key_species"],"species"])
-        key_species.sort()
-
-        paralog_patterns = {}
-        for i, k in enumerate(seed_df.loc[:,"name"]):
-            paralog_patterns[k] = seed_df.loc[seed_df.index[i],"aliases"]
+        df = out[0]
+        key_species = out[1]
+        paralog_patterns = out[2]
 
         # check output dataframe
         assert len(df) == 8
@@ -96,32 +93,32 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
             "LY86":"ly[\ \-_\.]*86|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*86|md[\ \-_\.]*1|mmd[\ \-_\.]*1|rp[\ \-_\.]*105[\ \-_\.]*associated[\ \-_\.]*3"
         }
         for k in paralog_patterns:
-            assert paralog_patterns[k] == expected_patterns[k]
+            assert paralog_patterns[k].pattern == expected_patterns[k]
 
     # csv
     df_file = seed_dataframes["good-seed-df.csv"]
-    seed_df = read_seed(df_file)
-    _validate_output(seed_df)
+    out = read_seed(df_file)
+    _validate_output(out)
 
     # Make sure we can read the dataframe as a dataframe object
     df_as_df = pd.read_csv(df_file)
-    seed_df = read_seed(df_as_df)
-    _validate_output(seed_df)
+    out = read_seed(df_as_df)
+    _validate_output(out)
 
     # tsv
     df_file = seed_dataframes["good-seed-df.tsv"]
-    seed_df = read_seed(df_file)
-    _validate_output(seed_df)
+    out = read_seed(df_file)
+    _validate_output(out)
 
     # xlsx
     df_file = seed_dataframes["good-seed-df.xlsx"]
-    seed_df = read_seed(df_file)
-    _validate_output(seed_df)
+    out = read_seed(df_file)
+    _validate_output(out)
 
     # csv with .txt extension
     df_file = seed_dataframes["good-seed-df.txt"]
-    seed_df = read_seed(df_file)
-    _validate_output(seed_df)
+    out = read_seed(df_file)
+    _validate_output(out)
 
     # bad df passes
     with pytest.raises(FileNotFoundError):
@@ -154,11 +151,14 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
     # Read in a collection of user-generated dataframes
     for s in user_seed_dataframes:
 
-        df = topiary.io.read_seed(user_seed_dataframes[s])
+        print(f"Testing read of {s}")
+
+        df, key_species, paralog_patterns = topiary.io.read_seed(user_seed_dataframes[s])
         check_read = pd.read_excel(user_seed_dataframes[s])
         check_read.columns = [c.lower().strip() for c in check_read.columns]
 
         assert len(df) == len(check_read)
+
         for idx in df.index:
             assert df.loc[idx,"species"] == check_read.loc[idx,"species"].strip()
             assert df.loc[idx,"name"] == check_read.loc[idx,"name"].strip()
