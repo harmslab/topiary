@@ -11,7 +11,6 @@ from topiary._private import interface
 import numpy as np
 
 import subprocess, os, sys, time, random, string, shutil, copy
-import multiprocessing as mp
 
 def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
     """
@@ -174,7 +173,7 @@ def run_generax(run_directory,
     generax_cmd : str
         string representation of command passed to generax
     """
-    
+
     cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
 
     cmd.extend(["--families","control.txt"])

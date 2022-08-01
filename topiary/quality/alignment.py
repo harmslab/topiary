@@ -21,9 +21,10 @@ def _get_sparse_columns(seqs,sparse_column_cutoff=0.5):
 
     Parameters
     ----------
-        seqs: 2D numpy array holding sequences represented as integers
-        sparse_column_cutoff: column is sparse if it has > sparse_column_cutoff
-                              fraction gap
+    seqs : numpy.ndarray
+        2D numpy array holding sequences represented as integers
+    sparse_column_cutoff : float, default=0.5
+        column is sparse if it has > sparse_column_cutoff fraction gap
 
     Return
     ------
@@ -41,19 +42,24 @@ def _get_sparse_columns(seqs,sparse_column_cutoff=0.5):
 
 def _rle(input_array):
     """
-    Get run-length encoding of an array. For input_array, extract runs of
-    identical values.
+    Get run-length encoding of an array.
 
     Parameters
     ----------
-        input_array: numpy input array
-        get_only_true: if set to True, return only runs of "True" from
-                       input_array.
+    input_array : numpy.ndarray
+        numpy input array
 
-    Return
-    ------
-        run lengths, run start_positions, run values
+    Returns
+    -------
+    lengths : numpy.ndarray
+        length of each run
+    start_positions : numpy.ndarray
+        indexes in array where runs start
+    run_values : numpy.ndarray
+        values of each run
 
+    Notes
+    -----
     This is a cleaned up version of a solution posted here:
     https://stackoverflow.com/questions/1066758/find-length-of-sequences-of-identical-values-in-a-numpy-array-run-length-encodi
     """
@@ -91,10 +97,12 @@ def _drop_gaps_only(seqs):
 
     Parameters
     ----------
-        seqs: 2D numpy array holding sequences represented as integers
+    seqs : numpy.ndarray
+        2D numpy array holding sequences represented as integers
 
-    Return
-    ------
+    Returns
+    -------
+    seqs : numpy.ndarray
         Copy of seqs array with gaps-only columns removed.
     """
 
@@ -125,18 +133,26 @@ def _find_too_many_sparse(seqs,
 
     Parameters
     ----------
-        seqs: array of sequences
-        cumulative_keep: array of indexes to be passed on for further analyses
-        force_keep: array of bool forcing specific columns to be kept
-        sparse_column_cutoff: a column is called sparse if it has
-                              > sparse_column_cutoff gaps
-        maximum_sparse_allowed: only keep sequences where less than
-                                maximum_sparse_allowed of the sequence (fraction)
-                                is a sparse column. Between 0 and 1.
+    seqs : numpy.ndarray
+        array of sequences
+    cumulative_keep : numpy.ndarray
+        array of indexes to be passed on for further analyses
+    force_keep : numpy.ndarray
+        array of bool forcing specific columns to be kept
+    sparse_column_cutoff : float
+        a column is called sparse if it has > sparse_column_cutoff gaps
+    maximum_sparse_allowed : float
+        only keep sequences where less than maximum_sparse_allowed of the
+        sequence (fraction) is a sparse column. Between 0 and 1.
 
-    Return
-    ------
-        kept sequences, updated cumulative_keep, updated force_keep
+    Returns
+    -------
+    kept : numpy.ndarray
+        copy of sequences containing only kept sequences
+    cumulative_keep : numpy.ndarray
+        copy of cumulative_keep containing only kept sequences
+    force_keep : numpy.ndarray
+        copy of force_keep containing only kept sequences
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
@@ -163,18 +179,26 @@ def _find_too_few_dense(seqs,
 
     Parameters
     ----------
-        seqs: array of sequences
-        cumulative_keep: array of indexes to be passed on for further analyses
-        force_keep: array of bool forcing specific columns to be kept
-        sparse_column_cutoff: a column is called sparse if it has
-                              > sparse_column_cutoff gaps
-        minimum_dense_required: only keep sequences that have sequence covering
-                                >= than minimum_dense_required of the
-                                dense columns. Between 0 and 1.
+    seqs : numpy.ndarray
+        array of sequences
+    cumulative_keep : numpy.ndarray
+        array of indexes to be passed on for further analyses
+    force_keep : numpy.ndarray
+        array of bool forcing specific columns to be kept
+    sparse_column_cutoff : float
+        a column is called sparse if it has > sparse_column_cutoff gaps
+    minimum_dense_required: float
+        only keep sequences that have sequence covering >= than
+        minimum_dense_required of the dense columns. Between 0 and 1.
 
-    Return
-    ------
-        kept sequences, updated cumulative_keep, updated force_keep
+    Returns
+    -------
+    kept : numpy.ndarray
+        copy of sequences containing only kept sequences
+    cumulative_keep : numpy.ndarray
+        copy of cumulative_keep containing only kept sequences
+    force_keep : numpy.ndarray
+        copy of force_keep containing only kept sequences
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
@@ -204,21 +228,29 @@ def _find_long_insertions(seqs,
 
     Parameters
     ----------
-        seqs: array of sequences
-        cumulative_keep: array of indexes to be passed on for further analyses
-        force_keep: array of bool forcing specific columns to be kept
-        sparse_column_cutoff: a column is called sparse if it has
-                              > sparse_column_cutoff gaps
-        long_insertion_length: look at sequences that participate in an insertion
-                               with >= than long_insertion_length contiguous
-                               sparse columns.
-        long_insertion_fx_cutoff: remove sequences that have sequence covering
-                                  >= than long_insertion_fx_cutof of the
-                                  insertion. Between 0 and 1. Default: 0.8.
+    seqs : numpy.ndarray
+        array of sequences
+    cumulative_keep : numpy.ndarray
+        array of indexes to be passed on for further analyses
+    force_keep : numpy.ndarray
+        array of bool forcing specific columns to be kept
+    sparse_column_cutoff : float
+        a column is called sparse if it has > sparse_column_cutoff gaps
+    long_insertion_length: int
+        look at sequences that participate in an insertion with >= than
+        long_insertion_length contiguous sparse columns.
+    long_insertion_fx_cutoff: float
+        remove sequences that have sequence covering >= than
+        long_insertion_fx_cutoff of the insertion. Between 0 and 1.
 
-    Return
-    ------
-        kept sequences, updated cumulative_keep, updated force_keep
+    Returns
+    -------
+    kept : numpy.ndarray
+        copy of sequences containing only kept sequences
+    cumulative_keep : numpy.ndarray
+        copy of cumulative_keep containing only kept sequences
+    force_keep : numpy.ndarray
+        copy of force_keep containing only kept sequences
     """
 
     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
@@ -273,12 +305,12 @@ def score_alignment(df,
 
     The three calculated scores are:
 
-    + `fx_in_sparse`: fraction of columns from the sequence that have no gap
-      where most other sequences have a gap.
-    + `fx_missing_dense`: fraction of columns from the sequence that have a gap
-      where most other sequences have no gap.
-    + `sparse_run_length`: length of longest insertion in the sequence. The
-      insertion does not have to be continuous in sequence. Instead, this
+    + :code:`fx_in_sparse`: fraction of columns from the sequence that have no
+      gap where most other sequences have a gap.
+    + :code:`fx_missing_dense`: fraction of columns from the sequence that have
+      a gap where most other sequences have no gap.
+    + :code:`sparse_run_length`: length of longest insertion in the sequence.
+      The insertion does not have to be continuous in sequence. Instead, this
       function finds runs of sparse_columns and then counts how many columns
       within each run come from this sequence. If, for example, there are ten
       sparse columns in a row and a sequence has eight non-gap characters

@@ -19,7 +19,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 import sys, urllib, http, copy, os, time, random, string
-import multiprocessing as mp
 
 def _prepare_for_blast(sequence,
                        db,
@@ -310,7 +309,7 @@ def _construct_args(sequence_list,
 def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
-    Put results in a multiprocessing queue.
+    Return parsed output as a dataframe. 
 
     Parameters
     ----------

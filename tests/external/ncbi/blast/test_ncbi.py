@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 
 import copy
-import multiprocessing as mp
 
 def test__prepare_for_blast(test_dataframes):
 

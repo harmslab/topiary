@@ -14,7 +14,6 @@ import numpy as np
 from tqdm.auto import tqdm
 
 import os
-import multiprocessing as mp
 
 # Columns to check in order
 _EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
@@ -202,8 +201,6 @@ def remove_redundancy(df,
     except KeyError:
         key_species = {}
 
-    starting_keep_number = np.sum(df.keep)
-
     # If not more than one seq, don't do anything
     if len(df) < 2:
         return df
@@ -247,11 +244,10 @@ def remove_redundancy(df,
 
     unique_species = np.unique(df.species)
 
-    if not silent:
-        P = tqdm
-        print("Removing redundancy within species.",flush=True)
-    else:
+    if silent:
         P = interface.DummyTqdm
+    else:
+        P = tqdm
 
     with P(total=np.sum(df.keep)) as pbar:
 
@@ -261,7 +257,6 @@ def remove_redundancy(df,
             if np.sum(species_mask) < 2:
                 pbar.update(np.sum(species_mask))
                 continue
-
 
             # List of all sequences with keep = True as integers
             sequence_array = np.array(df.loc[species_mask,"sequence"])
@@ -288,17 +283,10 @@ def remove_redundancy(df,
 
 
     if only_in_species:
-        if not silent:
-            final_keep_number = np.sum(df.keep)
-            print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
-            print("Done.",flush=True)
-
         return df
 
 
     progress_bar = not silent
-    if not silent:
-        print("Removing redundancy in all-on-all comparison.",flush=True)
 
     sequence_array = np.array(df.loc[df.keep,"sequence"])
     quality_array = all_quality_array[df.keep]
@@ -319,11 +307,6 @@ def remove_redundancy(df,
 
     # Update keep array
     df.loc[df.keep,"keep"] = keep_array
-
-    if not silent:
-        final_keep_number = np.sum(df.keep)
-        print(f"Reduced {starting_keep_number} --> {final_keep_number} sequences.",flush=True)
-        print("Done.",flush=True)
 
     return df
 
@@ -358,22 +341,22 @@ def find_cutoff(df,
 
     df = check.check_topiary_dataframe(df)
     min_cutoff = check.check_float(min_cutoff,
-                                               "min_cutoff",
-                                               minimum_allowed=0,
-                                               maximum_allowed=1)
+                                   "min_cutoff",
+                                   minimum_allowed=0,
+                                   maximum_allowed=1)
     max_cutoff = check.check_float(max_cutoff,
-                                               "max_cutoff",
-                                               minimum_allowed=0,
-                                               maximum_allowed=1)
+                                   "max_cutoff",
+                                   minimum_allowed=0,
+                                   maximum_allowed=1)
     try_n_values = check.check_int(try_n_values,
-                                               "try_n_values",
-                                               minimum_allowed=2)
+                                   "try_n_values",
+                                   minimum_allowed=2)
     target_number = check.check_int(target_number,
-                                                "target_number",
-                                                minimum_allowed=1)
+                                    "target_number",
+                                    minimum_allowed=1)
     sample_size = check.check_int(sample_size,
-                                              "sample_size",
-                                              minimum_allowed=1)
+                                  "sample_size",
+                                  minimum_allowed=1)
 
     # Deal with cutoffs
     if min_cutoff > max_cutoff:
