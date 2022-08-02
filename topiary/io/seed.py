@@ -13,9 +13,24 @@ import pandas as pd
 import re, itertools
 from string import ascii_lowercase, digits
 
-def _get_string_variants(some_string,spacers):
+compile_err = \
+"""
+Could not compile regular expression '{}'. Topiary uses regular expressions
+constructed from user aliases to create human-readable sequence names and to
+identify reciprocal blast hits. Topiary is struggling to create a valid, unique
+regular expression for protein '{}'. Please make sure that none of the aliases
+are the same between this protein and other proteins in the seed dataframe.
+Also check that the aliases are not complete subsets of one another. For
+example: one protein has the alias 'S100' and another 'S100A5'. Such alias
+subsets usually work; however, because regular expression construction is
+failing for this case, try avoiding such aliases (at least for troubleshooting).
+Finally, try removing parentheses, backslashes and other special characters
+from your aliases.
+"""
+
+def _get_alias_regex(some_string,spacers=[" ","-","_","."]):
     """
-    Get regular expressions describing strings with variable spacers. For
+    Get regular expressions describing a string with variable spacers. For
     example LY96, LY-96, LY 96, LY_96. This function looks for elements in
     spacers or transitions between letters and numbers and builds regular
     expressions to match those patterns. It makes all letters lowercase
@@ -29,8 +44,10 @@ def _get_string_variants(some_string,spacers):
 
     Parameters
     ----------
-    some_string : string to process
-        spacers: list of characters to recognize as spacers
+    some_string : str
+        string to process
+    spacers: list, default=[" ","-","_","."]
+        list of characters to recognize as spacers
 
     Return
     ------
@@ -91,42 +108,199 @@ def _get_string_variants(some_string,spacers):
     return pattern
 
 
-def _get_alias_regex(list_of_names,spacers=[" ","-","_","."]):
+def _build_alias_regex(alias_dict,spacers=[" ","-","_","."]):
     """
-    Produce a regular expression that matches all patterns in list of names,
-    expanding all spacers characters to look for all possiblities at that
-    site. For example, names might be ["LY96", "MD2", "ESOP1"]. These will be
-    put into _get_string_variants, yielding a final regular expression:
-        "ly[\ \-_.]*96|md[\ \-_.]*2|esop[\ \-_.]*1"
+    Build regex to look for aliases when assigning proteins names from raw
+    NCBI description strings and/or doing reciprocal blast.
 
     Parameters
     ----------
-        list_of_names: list of strings from which to build the regex.
-        spacers: list of characters to recognize as spacers
+    alias_dict : dict
+        dictionary keying protein names to aliases extracted from seed
+        dataframe.
+    spacers: list, default=[" ","-","_","."]
+        list of characters to recognize as spacers
 
-    Return
-    ------
-        compiled regular expression instance
+    Returns
+    -------
+    paralog_patterns : dict
+        dictionary of compiled regular expressions to use to try to match
+        paralogs. Keys are paralog names; values are regular expressions.
     """
 
-    # Make unique set of names
-    list_of_names = list(set(list_of_names))
+    # List of unique, sorted names
+    names = list(set(alias_dict.keys()))
+    names.sort()
 
-    # Make regular expression for each name
-    all_names = []
-    for n in list_of_names:
-        all_names.append(_get_string_variants(n,spacers))
+    # --------------------------------------------------------------------------
+    # Create sorted list of unique alias names, including name itself as one of
+    # the aliases.
 
-    # Unique set of regex
-    all_names = list(set(all_names))
+    alias_regex = {}
+    full_regex = {}
+    for name in alias_dict:
 
-    # sort for testing purposes so regex has predictable order
-    all_names.sort()
+        alias_dict[name].append(name.lower())
+        alias_dict[name] = list(set(alias_dict[name]))
+        alias_dict[name].sort()
 
-    return re.compile("|".join(all_names),flags=re.IGNORECASE)
+        alias_regex[name] = []
+        for alias in alias_dict[name]:
+            alias_regex[name].append(_get_alias_regex(alias,spacers))
+
+        # Get rid of any regex that are duplicated after this (ly96 vs ly-96,
+        # for example)
+        alias_regex[name] = list(set(alias_regex[name]))
+        alias_regex[name].sort()
+
+        full_regex[name] = "|".join(alias_regex[name])
+
+    # --------------------------------------------------------------------------
+    # Look for identical aliases for more than one proteins
+
+    bad_overlap = []
+    for i in range(len(alias_dict)):
+        ni = names[i]
+        ai = set(alias_dict[ni])
+        for j in range(i+1,len(alias_dict)):
+            nj = names[j]
+            aj = set(alias_dict[nj])
+
+            overlap = ai.intersection(aj)
+            if len(overlap) > 0:
+                for ovp in overlap:
+                    bad_overlap.append((ni,nj,ovp))
+
+    if len(bad_overlap) > 0:
+        err = f"\n\nDifferent proteins have have identical aliases. (Note that\n"
+        err += "aliases are case-insensitive). The following proteins have\n"
+        err += "identical aliases:\n\n"
+        for bad in bad_overlap:
+            err += f"    '{bad[0]}' & '{bad[1]}' --> '{bad[2]}'\n"
+        err += "\n\n"
+        raise ValueError(err)
+
+    # --------------------------------------------------------------------------
+    # Add negative matching to prevent cross-matching. Check to see if the regex
+    # for each protein picks up aliases from other protein(s). If so, put a
+    # *negative* match  against that alias. For example, if the regex looks for
+    # "ly96" for protein A it would match alias "ly96-2" for protein B. To
+    # prevent this cross-match, this code will build a regex like this:
+    # ^(?!.*(ly96-2)).*(ly96), which says "look for strings that do not match
+    # ly96-2 but DO match ly96.
+
+    neg_match_added = []
+    negative_match = {}
+    for name in names:
+
+        negative_match[name] = []
+        try:
+            pattern = re.compile(full_regex[name],flags=re.IGNORECASE)
+        except re.error:
+            err = compile_err.format(full_regex[name],name)
+            raise RuntimeError(err)
+
+        for other_name in names:
+
+            if name == other_name:
+                continue
+
+            for i in range(len(alias_regex[other_name])):
+
+                other_alias = alias_dict[other_name][i]
+                if pattern.search(other_alias):
+                    negative_match[name].append(alias_regex[other_name][i])
+                    neg_match_added.append((name,other_alias,other_name))
+
+        negative_match[name] = list(set(negative_match[name]))
+        negative_match[name].sort()
+        negative_match[name] = "|".join(negative_match[name])
+
+        if negative_match[name] != "":
+            neg = negative_match[name]
+            pos = full_regex[name]
+            full_regex[name] = f"^(?!.*({neg})).*({pos})"
+
+    if len(neg_match_added) > 0:
+
+        w = ["\nRegular expression built from aliases from one protein match aliases"]
+        w.append("from another protein. These are listed below. Topiary will now")
+        w.append("modify the regular expression to attempt to prevent this cross-matching.\n")
+        w.append("Cross-matches are:")
+        for n in neg_match_added:
+            w.append(f"The protein '{n[0]}' aliases match alias '{n[1]}' for protein '{n[2]}'")
+        w.append("\n")
+        w = "\n".join(w)
+
+        print(w)
+
+    # --------------------------------------------------------------------------
+    # compile final regular expressions
+
+    for name in names:
+        try:
+            full_regex[name] = re.compile(full_regex[name],flags=re.IGNORECASE)
+        except re.error:
+            err = compile_err.format(full_regex[name],name)
+            raise RuntimeError(err)
 
 
-def read_seed(df,):
+    # --------------------------------------------------------------------------
+    # Validate final regexes, making sure they match aliases for self but non-
+    # self.
+
+    correct_match = []
+    incorrect_match = []
+    correct_missing = []
+    incorrect_missing = []
+
+    for name in names:
+
+        pattern = full_regex[name]
+        for other_name in names:
+
+            for other_alias in alias_dict[other_name]:
+
+                matches = not (pattern.search(other_alias) is None)
+
+                if matches:
+                    if name == other_name:
+                        correct_match.append((name,other_alias,other_name))
+                    else:
+                        incorrect_match.append((name,other_alias,other_name))
+
+                else:
+                    if name == other_name:
+                        incorrect_missing.append((name,other_alias,other_name))
+                    else:
+                        correct_missing.append((name,other_alias,other_name))
+
+    if len(incorrect_match) > 0 or len(incorrect_missing) > 0:
+        err = "\nAliases are ambiguous and cannot be used to ..."
+
+        if len(incorrect_match) > 0:
+            err += "Regular expressions that match more than one protein:\n\n"
+            for m in incorrect_match:
+                err += f"    '{m[0]}' regex matches alias '{m[1]}' for protein '{m[2]}'\n"
+            err += "\n\n"
+
+        if len(incorrect_missing) > 0:
+            err += "Regular expressions that do not match aliases for their own protein:\n\n"
+            for m in incorrect_missing:
+                err += f"    '{m[0]}' regex does not match alias '{m[1]}'\n"
+            err += "\n\n"
+
+        raise ValueError(err)
+
+    if len(neg_match_added) > 0:
+        print("Success. Topiary was able to modify the regular expressions to")
+        print("prevent cross-matching between protein aliases.")
+        print("",flush=True)
+
+    return full_regex
+
+
+def read_seed(df):
     """
     Read a seed data frame and extract alias patterns and key species.
 
@@ -249,15 +423,14 @@ def read_seed(df,):
     key_species.sort()
 
     # -----------------------------------------------------------------------
-    # Construct paralog_patterns
+    # Get regular expression for searching for paralogs
 
-    # Build a paralog_patterns dictionary
     alias_dict = {}
     for idx in df.index:
 
         # Construct list of all aliases given by the user for a given name
-        key = str(df.loc[idx,"name"])
-        values = [v.strip() for v in df.loc[idx,"aliases"].split(";")]
+        key = str(df.loc[idx,"name"]).strip()
+        values = [v.strip().lower() for v in df.loc[idx,"aliases"].split(";")]
 
         # Get rid of ""
         values = [v for v in values if v != ""]
@@ -267,23 +440,16 @@ def read_seed(df,):
         except KeyError:
             alias_dict[key] = values[:]
 
-    paralog_patterns = {}
-    for a in alias_dict:
-
-        # Put name itself in as an alias
-        alias_dict[a].append(a)
-
-        # Get regular expression representations of these patterns
-        paralog_patterns[a] = _get_alias_regex(alias_dict[a])
+    paralog_patterns = _build_alias_regex(alias_dict)
 
     # Load newly created paralog patterns into aliases column
     new_aliases = []
     for idx in df.index:
 
-        name = df.loc[idx,"name"]
+        name = str(df.loc[idx,"name"]).strip()
         new_aliases.append(paralog_patterns[name].pattern)
 
-    df.loc[:,"aliases"] = new_aliases
+    df.loc[:,"aliases_regex"] = new_aliases
 
 
     # -----------------------------------------------------------------------
