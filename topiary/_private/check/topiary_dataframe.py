@@ -3,6 +3,7 @@ Function to check/process topiary dataframes.
 """
 
 from topiary import _private
+from .standard import column_to_bool
 
 import pandas as pd
 import numpy as np
@@ -59,7 +60,7 @@ def check_topiary_dataframe(df):
     """
 
     # Make sure type is right
-    if type(df) is not pd.DataFrame:
+    if not issubclass(type(df),pd.DataFrame):
         err = "\ndf must be a pandas dataframe.\n\n"
         raise ValueError(err)
 
@@ -90,7 +91,7 @@ def check_topiary_dataframe(df):
             for n in not_null:
 
                 # If an empty string, this is basically a null.
-                if type(n) is str and n.strip() == "":
+                if issubclass(type(n),str) and n.strip() == "":
                     continue
 
                 # If we get here, we have some kind of non-empty cell. Break out
@@ -161,58 +162,8 @@ def check_topiary_dataframe(df):
 
     if keep is not None:
 
-        # Do a pass trying to infer the datatype of keep. (This is useful if we
-        # dropped empty rows that made the original pandas read this column in
-        # as a mix of bool and object).
-        df.loc[:,"keep"] = df.keep.infer_objects()
-
-        # If it's not a boolean column, try to turn into one
-        if not np.dtype(keep.dtypes) is np.dtype(bool):
-
-            # Base message. If everything works great, let user know what
-            # happened as warning. If things go awry, use as start of error
-            # message
-            w = "\n\n"
-            w += "The 'keep' column must be boolean (True/False). pandas did\n"
-            w += "not recognize the column as boolean, so we're parsing it\n"
-            w += "manually by looking for 0/1, yes/no, true/false, etc.\n\n"
-
-            new_keep = []
-            look_for_true = re.compile("[1yt]",re.IGNORECASE)
-            look_for_false = re.compile("[0nf]",re.IGNORECASE)
-            for k in df.keep:
-                if type(k) is bool:
-                    is_true = True and k
-                    is_false = not is_true
-                    looks_like_a = "bool"
-                elif type(k) is str:
-                    is_true = look_for_true.search(k) is not None
-                    is_false = look_for_false.search(k) is not None
-                    looks_like_a = "string"
-                elif type(k) is int:
-                    is_true = (k != 0)
-                    is_false = (k == 0)
-                    looks_like_a = "int"
-                elif type(k) is float:
-                    is_true = np.logical_not(np.isclose(k,0))
-                    is_false = np.isclose(k,0)
-                    looks_like_a = "float"
-                else:
-                    w += f"Could not figure out how to parse '{k}'\n\n"
-                    raise ValueError(w)
-
-                if (is_true and is_false) or (not is_true and not is_false):
-                    w += f"Trying to parse '{k}' as a {looks_like_a}, but\n"
-                    w += f"could not figure out whether true or false.\n\n"
-                    raise ValueError(w)
-                else:
-                    new_keep.append(is_true)
-
-            # Record newly boolean-ized values
-            df.loc[:,"keep"] = np.array(new_keep,dtype=bool)
-
-            # Let user know we manually parsed the keep column...
-            print(w)
+        # Validate this as a boolean column
+        df.loc[:,"keep"] = column_to_bool(df.loc[:,"keep"],"keep")
 
     # -------------------------------------------------------------------------
     # Process uid column
@@ -238,7 +189,7 @@ def check_topiary_dataframe(df):
         for u in uid:
 
             # Force to be a spring
-            if type(u) is not str:
+            if not issubclass(type(u),str):
                 u = str(u)
 
             # Disallowed character(s) in uid or uid not right length
@@ -298,7 +249,7 @@ def check_topiary_dataframe(df):
             # If there is an ott that is not a null, make sure it is sane and
             # reasable.
             failed = False
-            if type(o) is str and o[:3] == "ott":
+            if issubclass(type(o),str) and o[:3] == "ott":
                 try:
                     int(o[3:])
                 except ValueError:
@@ -313,6 +264,7 @@ def check_topiary_dataframe(df):
 
     # -------------------------------------------------------------------------
     # Check alignment column
+    
     try:
         alignment = df.loc[:,"alignment"]
     except KeyError:

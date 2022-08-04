@@ -2,6 +2,7 @@
 import pytest
 
 import topiary
+from topiary.external.opentree.tree import get_species_tree
 import numpy as np
 import pandas as pd
 
@@ -14,7 +15,7 @@ def test_get_species_tree(test_dataframes,df_with_species_not_resolvable):
     expected_num_leaves = len(np.unique(df.species))
 
     # make sure the uid, ott, and species loaded correctly
-    T, dropped = topiary.opentree.tree.get_species_tree(df)
+    T, dropped = get_species_tree(df)
     assert len(T.get_leaves()) == expected_num_leaves
     tips = [n.ott for n in T.get_leaves()]
     tips.sort()
@@ -45,14 +46,14 @@ def test_get_species_tree(test_dataframes,df_with_species_not_resolvable):
     # Make sure the check for ott is working
     bad_df = df.drop(columns=["ott"])
     with pytest.raises(ValueError):
-        T, dropped = topiary.opentree.tree.get_species_tree(bad_df)
+        T, dropped = get_species_tree(bad_df)
 
     # Test for resolvability check and for dropping keep = False
-    T, dropped = topiary.opentree.tree.get_species_tree(df_with_species_not_resolvable)
+    T, dropped = get_species_tree(df_with_species_not_resolvable)
 
     assert len(dropped) == 1
     assert len(list(T.get_leaves())) == 357
 
     with pytest.raises(ValueError):
-        T, dropped = topiary.opentree.tree.get_species_tree(df_with_species_not_resolvable,
+        T, dropped = get_species_tree(df_with_species_not_resolvable,
                                                             strict=True)

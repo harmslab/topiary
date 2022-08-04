@@ -6,6 +6,9 @@ import time, random
 
 import numpy as np
 
+def test_FakeLock():
+
+    pass
 
 def test_get_num_threads():
 
@@ -46,7 +49,7 @@ def _function_to_thread(rocking,usa=False,lock=None):
         rocking = 3*rocking
 
     # Sleep for a random time to knock multithreaded-order out of sync
-    time.sleep(random.choice([0,0.25,0.5,0.75,1.0]))
+    time.sleep(random.choice([0,0.2,0.4,0.6,0.8]))
 
     return rocking
 
@@ -57,12 +60,27 @@ def test_thread_manager():
                    {"rocking":3,"usa":False},
                    {"rocking":3,"usa":True}]
 
+    # Run on single thread. (This will not use pool)
+    output = threads.thread_manager(kwargs_list,
+                                    _function_to_thread,
+                                    num_threads=1,
+                                    progress_bar=False)
+    assert np.array_equal(output,[2,6,3,9])
 
-    # Run five times to make sure order is preserved
+    # Run on single thread. (This will not use pool; make sure progress bar at
+    # least accepted).
+    output = threads.thread_manager(kwargs_list,
+                                    _function_to_thread,
+                                    num_threads=1,
+                                    progress_bar=True)
+    assert np.array_equal(output,[2,6,3,9])
+
+    # Run five times on two threads to make sure order is preserved
     for i in range(5):
         output = threads.thread_manager(kwargs_list,
                                         _function_to_thread,
-                                        num_threads=4,
+                                        num_threads=2,
+                                        progress_bar=True,
                                         pass_lock=False)
         assert np.array_equal(output,[2,6,3,9])
 
@@ -70,7 +88,8 @@ def test_thread_manager():
     for i in range(5):
         output = threads.thread_manager(kwargs_list,
                                         _function_to_thread,
-                                        num_threads=4,
+                                        num_threads=2,
+                                        progress_bar=False,
                                         pass_lock=True)
         assert np.array_equal(output,[4,12,6,18])
 

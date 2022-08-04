@@ -8,6 +8,14 @@ import pandas as pd
 
 import warnings, os, shutil, glob, json, sys
 
+def test_DummyTqdm():
+
+    pass
+
+def test_DummyTqdm___enter__():
+
+    pass
+
 def test_gen_seed():
 
     seed = interface.gen_seed()

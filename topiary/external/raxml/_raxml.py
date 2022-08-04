@@ -10,8 +10,6 @@ import topiary
 from topiary._private import interface
 from topiary._private import threads
 
-import pandas as pd
-import multiprocessing as mp
 import os
 
 def run_raxml(algorithm=None,

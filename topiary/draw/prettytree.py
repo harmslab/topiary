@@ -9,6 +9,7 @@ import topiary._private.check as check
 
 import toytree
 import toyplot
+from toyplot import svg, pdf, png
 
 import numpy as np
 
@@ -586,7 +587,7 @@ class PrettyTree:
             + an arbitrary number of *named* fields (e.g. "{label_a"). For
               example :code:`"{label_b}|{label_a}|{label_a}"` for
               :code:`property_labels = ["label_a","label_b"]`.
-              
+
             Mixed format strings (i.e. :code:`"{}{label_a}"`) are not
             permitted, but all other python formatting should be supported.
         position : str, default="right"

@@ -8,6 +8,21 @@ import os
 import multiprocessing as mp
 from tqdm.auto import tqdm
 
+class FakeLock():
+    """
+    Fake multiprocessing.Lock instance. Used when a function expects a lock but,
+    for resource optimization purposes, we drop to one thread.
+    """
+    def __init__(self):
+        pass
+
+    def acquire(self):
+        pass
+
+    def release(self):
+        pass
+
+
 def get_num_threads(num_threads,manual_num_cores=None):
     """
     Get the number of cores availble for a multithreaded calculation.
@@ -78,6 +93,27 @@ def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False
     out : list
         list of outputs from the function calls, sorted by order in kwargs
     """
+
+    # If only using one thread, don't waste overhead by making pool
+    if num_threads == 1:
+
+        if pass_lock:
+            lock = FakeLock()
+
+        results = []
+        if progress_bar:
+            for kwargs in tqdm(kwargs_list):
+                if pass_lock:
+                    kwargs["lock"] = lock
+                results.append(fcn(**kwargs))
+        else:
+            for kwargs in kwargs_list:
+                if pass_lock:
+                    kwargs["lock"] = lock
+                results.append(fcn(**kwargs))
+
+        return results
+
 
     manager = mp.Manager()
     queue = manager.Queue()

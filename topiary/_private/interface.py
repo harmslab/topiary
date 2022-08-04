@@ -10,6 +10,23 @@ import pandas as pd
 import subprocess, os, sys, time, random, string, shutil, copy, json, glob
 import multiprocessing as mp
 
+class DummyTqdm():
+    """
+    Fake tqdm progress bar so we don't have to show a status bar if we don't
+    want to. Can be substituted wherever we would use tqdm (i.e.
+    tqdm(range(10)) --> DummyTqdm(range(10)).
+    """
+
+    def __init__(self,*args,**kwargs):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, type, value, traceback):
+        pass
+
+    def update(self,value):
+        pass
+
 def gen_seed():
     """
     Generate a random string of 10 integers and return as a string.

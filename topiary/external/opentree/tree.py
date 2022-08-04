@@ -4,6 +4,7 @@ Get a species tree given a topiary dataframe.
 
 import topiary
 from topiary._private import check
+from .util import ott_species_tree
 
 from opentree import taxonomy_helpers
 import dendropy as dp
@@ -13,6 +14,7 @@ import pandas as pd
 import numpy as np
 
 import re, copy
+
 
 def get_species_tree(df,strict=False):
     """
@@ -45,7 +47,7 @@ def get_species_tree(df,strict=False):
     df = check.check_topiary_dataframe(df)
     if "ott" not in df.columns:
         err = "\ndataframe must contain an ott column. This can be generated\n"
-        err += "using topiary.opentree.get_ott_id\n\n"
+        err += "using topiary.opentree.get_ott\n\n"
         raise ValueError(err)
 
     # Only get keep = True
@@ -93,50 +95,13 @@ def get_species_tree(df,strict=False):
     for i in range(len(ott_ids)):
         ott_species_dict[ott_ids[i]] = species[i]
 
-    ott_as_int = [o[3:] for o in ott_ids]
-    ret = taxonomy_helpers.labelled_induced_synth(ott_ids=ott_as_int,
-                                                  label_format="name_and_id",
-                                                  inc_unlabelled_mrca=False)
+    ott_as_int = [int(o[3:]) for o in ott_ids]
 
-    # Write out without all the ancestor junk returned by opentree
-    t = ret["labelled_tree"].as_string(schema="newick",
-                                       suppress_leaf_taxon_labels=False,
-                                       suppress_leaf_node_labels=True,
-                                       suppress_internal_taxon_labels=True,
-                                       suppress_internal_node_labels=True,
-                                       suppress_edge_lengths=True,
-                                       suppress_rooting=False,
-                                       suppress_annotations=True,
-                                       suppress_item_comments=True)
+    final_tree, results = ott_species_tree(ott_list=ott_as_int)
 
-    # Read in new tree
-    stripped_tree = dp.Tree.get(data=t,schema="newick")
-    taxon_names = [s.label for s in stripped_tree.taxon_namespace]
-
-    # Extract tree with labels.  This will remove all of the empty singleton
-    # entries that otl brings down.
-    clean_tree = stripped_tree.extract_tree_with_taxa_labels(taxon_names)
-
-    # Rename labels on tree so they are ott
-    for n in clean_tree.taxon_namespace:
-        label = n.label.split("ott")[-1]
-        n.label = f"ott{label}"
-
-    # Convert tree to ete3 tree.
-    final_tree = ete3.Tree(clean_tree.as_string(schema="newick",
-                                                suppress_rooting=True),
-                           format=9)
-
-    # Arbitrarily resolve any polytomies
-    final_tree.resolve_polytomy()
-
-    # Give every node a support of 1 and a branch length of 1
+    # Clean up the tree
     ott_seen = []
     for n in final_tree.traverse():
-        if n.dist != 1:
-            n.dist = 1
-        if n.support != 1:
-            n.support = 1
 
         # Give leaves species name as a feature
         if n.is_leaf():
@@ -151,11 +116,10 @@ def get_species_tree(df,strict=False):
 
             ott_seen.append(n.ott)
 
-    dropped = list(set(df.loc[:,"ott"]) - set(ott_seen))
+    missing = results["not_resolved"]
+    if len(missing) > 0:
 
-    if len(dropped) > 0:
-
-        bad_rows = all_kept_df.loc[all_kept_df.ott.isin(dropped),:]
+        bad_rows = all_kept_df.loc[all_kept_df.ott.isin(missing),:]
 
         err = ["\n\nNot all species could be placed on the species tree!\n"]
 
@@ -174,5 +138,4 @@ def get_species_tree(df,strict=False):
         else:
             print(err)
 
-
-    return final_tree, dropped
+    return final_tree, missing

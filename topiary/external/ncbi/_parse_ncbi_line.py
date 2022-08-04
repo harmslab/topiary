@@ -8,17 +8,7 @@ from topiary._private import check
 import pandas as pd
 import numpy as np
 
-# Modules for blasting, etc.
-from Bio import SeqIO, Entrez
-from Bio.Seq import Seq
-from Bio.Blast import NCBIXML, NCBIWWW
-import Bio.Blast.Applications as apps
-from Bio import pairwise2
-
-from tqdm.auto import tqdm
-
-import re, sys, os, string, random, pickle, io, urllib, http, subprocess
-import multiprocessing as mp
+import re
 
 def _grab_line_meta_data(line):
     """
@@ -78,6 +68,7 @@ def parse_ncbi_line(line,accession=None):
     -------
     out : dict
         dictionary describing line. Has the following keys:
+
         + *raw_line* unprocessed line (input)
         + *line* processed line (remove multiple titles)
         + *name* protein name

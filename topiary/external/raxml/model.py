@@ -13,8 +13,7 @@ from topiary._private import threads
 import pandas as pd
 import numpy as np
 
-import os, re, shutil, sys, random, string
-import multiprocessing as mp
+import os, re, shutil, random, string
 from tqdm.auto import tqdm
 
 

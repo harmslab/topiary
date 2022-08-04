@@ -334,7 +334,7 @@ def test__get_sequence_budgets():
     assert T.get_common_ancestor(("D","H","C","B","A")).budget == 2
     assert T.get_common_ancestor(("D","H","C","B","A","E","F")).budget == 3
 
-def test__identify_merge_blocks():
+def test__taxonomic_merge_blocks():
 
     some_tree = "(((A,B),(C,(D,H))),(E,F));"
 
@@ -348,7 +348,7 @@ def test__identify_merge_blocks():
     # Keep everyone
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,7)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A",):1,("B",):1,("C",):1,("D",):1,("H",):1,("E",):1,("F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -359,7 +359,7 @@ def test__identify_merge_blocks():
     # Only keep 5
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,5)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A","B"):1,("C",):1,("D","H",):1,("E",):1,("F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -370,7 +370,7 @@ def test__identify_merge_blocks():
     # Only keep 3
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,3)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A","B"):1,("C","D","H",):1,("E","F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -381,7 +381,7 @@ def test__identify_merge_blocks():
     # Only keep 1
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,1)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A","B","C","D","E","F","H",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -404,7 +404,7 @@ def test__identify_merge_blocks():
     # Keep everyone
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,8)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A",):1,("B",):1,("C",):1,("D",):1,("H",):1,("E",):2,("F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -415,7 +415,7 @@ def test__identify_merge_blocks():
     # Keep everyone but one
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,7)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A",):1,("B",):1,("C",):1,("D","H",):1,("E",):2,("F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -428,7 +428,7 @@ def test__identify_merge_blocks():
     # Keep everyone but one
     T = T_bak.copy()
     T = tx._get_sequence_budgets(T,3)
-    merge_blocks = tx._identify_merge_blocks(T)
+    merge_blocks = tx._taxonomic_merge_blocks(T)
     expected_merges = {("A","B",):1,("C","D","H",):1,("E","F",):1}
     for m in merge_blocks:
         leaves = [leaf.name for leaf in m[2].get_leaves()]
@@ -436,74 +436,9 @@ def test__identify_merge_blocks():
         leaves = tuple(leaves)
         assert m[0] == expected_merges[leaves]
 
-def test_taxonomic_sample(for_real_inference,tmpdir):
+def test__even_merge_blocks():
+    pass
 
-    # Skip test of windows because muscle cannot be installed by conda
-    if os.name == "nt":
-        return
 
-    df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])
-
-    # Runs with default
-    out = tx.taxonomic_sample(df)
-
-    # no easy way to check that this *works* but at least this should not die
-    # when other strings will
-    out = tx.taxonomic_sample(df,paralog_column="nickname")
-
-    # bad paralog_column values
-    bad_paralog_column = ["not_a_column",None,14.2,str]
-    for b in bad_paralog_column:
-        print(b)
-        with pytest.raises(ValueError):
-            tx.taxonomic_sample(df,paralog_column=b)
-
-    out = tx.taxonomic_sample(df,target_seq_number=1)
-    assert np.sum(out.keep) == 1
-
-    out = tx.taxonomic_sample(df,target_seq_number=5)
-    assert np.sum(out.keep) == 5
-
-    out = tx.taxonomic_sample(df,target_seq_number=9)
-    assert np.sum(out.keep) == 9
-
-    bad_target_seq_number = [-1,0,"test",int,14.2]
-    for b in bad_target_seq_number:
-        print(b)
-        with pytest.raises(ValueError):
-            tx.taxonomic_sample(df,target_seq_number=b)
-
-    out = tx.taxonomic_sample(df,even_paralog_split=True,target_seq_number=5)
-    assert np.sum(out.keep) == 5
-
-    out = tx.taxonomic_sample(df,even_paralog_split=False,target_seq_number=5)
-    assert np.sum(out.keep) == 5
-
-    bad_even_paralog_split = [[],"test",int,14.2]
-    for b in bad_even_paralog_split:
-        print("sending paralog split",b,flush=True)
-        with pytest.raises(ValueError):
-            tx.taxonomic_sample(df,even_paralog_split=b)
-
-    # Get rid of everything within species
-    out = tx.taxonomic_sample(df,within_species_redundancy_cutoff=0.1,target_seq_number=1000)
-    assert np.sum(out.keep) == 11
-
-    # Don't get rid of anything within species
-    out = tx.taxonomic_sample(df,within_species_redundancy_cutoff=1.0,target_seq_number=1000)
-    assert np.sum(out.keep) == 19
-
-    bad_redund = [-1,2,"stupid",None]
-    for b in bad_redund:
-        print("sending bad redundancy",b)
-        with pytest.raises(ValueError):
-            tx.taxonomic_sample(df,within_species_redundancy_cutoff=b)
-
-    out = tx.taxonomic_sample(df,verbose=True)
-    out = tx.taxonomic_sample(df,verbose=False)
-
-    bad_verbose = [[],"test",int,14.2]
-    for b in bad_verbose:
-        print("sending verbose",b,flush=True)
-        with pytest.raises(ValueError):
-            tx.taxonomic_sample(df,verbose=b)
+def test_get_merge_blocks():
+    pass
