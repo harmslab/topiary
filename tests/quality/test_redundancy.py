@@ -2,9 +2,12 @@
 import pytest
 
 import topiary
-from topiary.quality import remove_redundancy, find_cutoff
-from topiary.quality.redundancy.redundancy import _get_quality_scores, _construct_args
-from topiary.quality.redundancy.redundancy import _EXPECTED_COLUMNS
+from topiary.quality import remove_redundancy
+from topiary.quality.redundancy import _get_quality_scores
+from topiary.quality.redundancy import _construct_args
+from topiary.quality.redundancy import _compare_seqs
+from topiary.quality.redundancy import _redundancy_thread_function
+from topiary.quality.redundancy import _EXPECTED_COLUMNS
 
 import numpy as np
 import pandas as pd
@@ -93,7 +96,83 @@ def test__construct_args():
     assert np.array_equal(kwargs_list[0]["i_block"],(0,4))
     assert np.array_equal(kwargs_list[0]["j_block"],(0,4))
 
+def test__compare_seqs(test_dataframes):
 
+    A_seq = "TEST"
+    B_seq = "TAST"
+
+    # Identical quals
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+
+    # Neither are always keep sequences
+    A_qual[0] = 1
+    B_qual[0] = 1
+
+    # Neither are key sequences
+    A_qual[1] = 1
+    B_qual[1] = 1
+
+    # Keep both; below cutoff
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.9)
+    assert a1 is True
+    assert a2 is True
+
+    # Keep A arbitrarily
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is True
+    assert a2 is False
+
+    # Now make A_qual score worse than B, so keep B
+    A_qual[2] = 1
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is False
+    assert a2 is True
+
+    # Not set up qual scores so neither are key_species, B has earlier better
+    # score than A
+    A_qual = np.ones(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.ones(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    A_qual[-1] = 0
+    B_qual[-2] = 0
+
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is False
+    assert a2 is True
+
+    # both key species, A worse than B. No always_keep
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    A_qual[0] = 1
+    B_qual[0] = 1
+    A_qual[2] = 1
+
+    # implicit discard_key flag
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is True
+    assert a2 is True
+
+    # Explicit discard_key flag
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5,discard_key=False)
+    assert a1 is True
+    assert a2 is True
+
+    # Check discard_key flag
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5,discard_key=True)
+    assert a1 is False
+    assert a2 is True
+
+    # both always keep, but  beter. Should keep both
+    A_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    B_qual = np.zeros(len(_EXPECTED_COLUMNS) + 2,dtype=float)
+    A_qual[2] = 1
+    a1, a2 = _compare_seqs(A_seq,B_seq,A_qual,B_qual,0.5)
+    assert a1 is True
+    assert a2 is True
+
+def test__redundancy_thread_function():
+
+    pass
 
 
 def test_remove_redundancy(test_dataframes):
@@ -161,17 +240,6 @@ def test_remove_redundancy(test_dataframes):
     assert np.sum(out_df.keep) == 4
     assert out_df.loc[out_df["species"] == species_in_df[0],:].iloc[0].keep == False
 
-    # Now make all the same species -- should get all dropped even if key_species
-    df["key_species"] = True
-    df.species = species_in_df[0]
-    out_df = remove_redundancy(df=df,cutoff=0.50)
-    assert np.sum(out_df.keep) == 1
-
-    # shouldn't matter what is in key_species here
-    df = df.drop(columns=["key_species"])
-    df.species = species_in_df[0]
-    out_df = remove_redundancy(df=df,cutoff=0.50)
-    assert np.sum(out_df.keep) == 1
 
     # -------------------------------------------------------------------------
     # Make sure it takes row with higher quality
@@ -211,58 +279,3 @@ def test_remove_redundancy(test_dataframes):
     # Cut basically all -- only one should survive
     out_df = remove_redundancy(df=df,cutoff=0.2)
     assert np.sum(out_df.keep) == 1
-
-def test_find_cutoff(test_dataframes):
-
-    df = test_dataframes["good-df"].copy()
-
-    # Should work
-    find_cutoff(df=df)
-
-    # -------------------------------------------------------------------------
-    # Test argument parsing
-
-    bad_df = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_df:
-        with pytest.raises(ValueError):
-            find_cutoff(df=b)
-
-    # Bad min_cutoff
-    bad_cutoff = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_cutoff:
-        with pytest.raises(ValueError):
-            find_cutoff(df=df,min_cutoff=b)
-
-    # Bad max_cutoffs
-    bad_cutoff = [None,-1,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_cutoff:
-        with pytest.raises(ValueError):
-            find_cutoff(df=df,max_cutoff=b)
-
-    # Throw error because max smaller than min
-    with pytest.raises(ValueError):
-        find_cutoff(df=df,min_cutoff=0.9,max_cutoff=0.1)
-
-    # Bad try_n_values
-    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_value:
-        with pytest.raises(ValueError):
-            find_cutoff(df=df,try_n_values=b)
-
-    # Bad target_number
-    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_value:
-        with pytest.raises(ValueError):
-            find_cutoff(df=df,target_number=b)
-
-    # Bad sample_size
-    bad_value = [None,-1,0,1.1,"test",int,float,{"test":1},pd.DataFrame({"test":[1,2,3]})]
-    for b in bad_value:
-        with pytest.raises(ValueError):
-            find_cutoff(df=df,sample_size=b)
-
-    # Make sure cutoffs work
-    df = test_dataframes["good-df"].copy()
-    for i in range(5):
-        cutoff = find_cutoff(df,min_cutoff=0.5,max_cutoff=1.0,target_number=(i+1))
-        new_df = remove_redundancy(df,cutoff=cutoff)

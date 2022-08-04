@@ -43,12 +43,14 @@ from .external import opentree
 from .external import raxml
 
 # Core functions for pipeline
-from .quality import remove_redundancy, clean_alignment, taxonomic_sample
-from .pipeline import seed_to_alignment
+
+from .external import run_muscle
+from .quality import shrink_dataset
+from .pipeline import seed_to_alignment, alignment_to_ancestors
 from .util import create_nicknames
 from .external import get_ott, get_species_tree
 from .external import recip_blast
-from .external import run_muscle
+
 from .external import find_best_model, generate_ml_tree, generate_ancestors, generate_bootstraps
 from .external import reconcile
 
