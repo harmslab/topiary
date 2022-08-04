@@ -36,6 +36,14 @@ topiary.external.ncbi.blast.ncbi module
    :undoc-members:
    :show-inheritance:
 
+topiary.external.ncbi.blast.read module
+---------------------------------------
+
+.. automodule:: topiary.external.ncbi.blast.read
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.external.ncbi.blast.recip module
 ----------------------------------------
 

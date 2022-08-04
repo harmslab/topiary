@@ -63,11 +63,13 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_favicon = "_static/img/favicon.ico"
+
 html_css_files = [
-    'css/stylesheet.css',
+    '_static/css/stylesheet.css',
 ]
 
-html_favicon = '_static/img/favicon.ico'
+
 
 # HACK that makes sure we actually run sphinx-apidoc on readthedocs
 os.system("sphinx-apidoc -f ../../topiary -o .")

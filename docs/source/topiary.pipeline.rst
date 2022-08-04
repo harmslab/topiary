@@ -20,14 +20,6 @@ topiary.pipeline.seed\_to\_alignment module
    :undoc-members:
    :show-inheritance:
 
-topiary.pipeline.seq\_to\_alignment module
-------------------------------------------
-
-.. automodule:: topiary.pipeline.seq_to_alignment
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

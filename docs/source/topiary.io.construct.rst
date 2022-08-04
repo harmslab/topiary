@@ -12,14 +12,6 @@ topiary.io.construct.from\_seed module
    :undoc-members:
    :show-inheritance:
 
-topiary.io.construct.from\_xml module
--------------------------------------
-
-.. automodule:: topiary.io.construct.from_xml
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

@@ -9,121 +9,21 @@
 
 .. role:: emph
 
-.. image:: _static/img/logo.svg
-  :width: 150px
-  :align: left
-
-=======
-topiary
-=======
-
-Python framework for doing ancestral sequence reconstruction.
-
-+ Automates sequence database construction, quality control, multiple
-  sequence alignment, tree construction, gene/species tree reconciliation,
-  and ancestral reconstruction.
-+ Spreadsheet centric: users prepare input as as spreadsheet; sequence database
-  and alignments are stored as csv files.
-+ Final outputs are human-readable trees and ancestral sequences.
-+ Use with simple command line tools or do custom analyses using the topiary
-  API.
-
-Quick links
-===========
-
-`API reference`_ | :ref:`Installation` | :ref:`Protocol` | :ref:`How to cite` | :ref:`Data Structures`
-
-.. _Installation:
-
-Installation
-============
-
-------------
-Requirements
-------------
-
-+ Core scientific python libraries:
-
-  + `Python >= 3.8 <https://www.python.org/downloads/>`_
-  + `numpy <https://numpy.org>`_
-  + pandas_
-
-+ Tree manipulation/drawing:
-
-  + `ete3 <http://etetoolkit.org/download/>`_
-  + `toytree <https://toytree.readthedocs.io/en/latest/3-installation.html>`_
-
-+ Packages used for tree/ancestor inferences:
-
-  + `NCBI BLAST+ >= 2.2 <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_
-  + `muscle >= 5.0 <https://github.com/rcedgar/muscle/releases/>`_
-  + `GeneRax >= 2.0 <https://github.com/BenoitMorel/GeneRax/releases/>`_
-  + `RAxML-NG >= 1.1 <https://github.com/amkozlov/raxml-ng/releases/>`_
-  + `pastml >= 1.9 <https://pastml.pasteur.fr>`_
-
-
----------------
-macOS and linux
----------------
-
-We recommend installing topiary via miniconda_.
-
-.. code-block:: shell-session
-
-  conda install -c bioconda topiary-asr
-
-
-On a command line/conda terminal:
-
-.. code-block:: shell-session
-
-  conda install -c bioconda muscle
-  conda install -c bioconda blast
-
-
-If you plan to run generax and raxml-ng, and are on macOS or linux:
-
-.. code-block:: shell-session
-
-  conda install -c bioconda generax
-  conda install -c bioconda raxml-ng
-
-
-Finally:
-
-.. code-block:: shell-session
-
-  git clone https://github.com/harmslab/topiary.git
-  cd topiary
-  python setup.py install
-
-
-To make sure the code installed properly, run:
-
-.. code-block:: shell-session
-
-  conda install pytest
-  pytest
-
-
-.. _Protocol:
-
+=================
 Protocol
-========
-
-There are some steps in phylogenetics that are best done by humans; most steps
-are best done by computers. Our philosophy is to facilitate the human-centric
-steps, then automate the rest.
-
-The most important task in phylogenetics is defining the problem. What
-ancestors do you want to reconstruct? What modern proteins are best
-characterized and most relevant to interpreting results with ancestors?
+=================
 
 
+Generate Alignment
+==================
 
 -------------------------
 1. Prepare seed dataframe
 -------------------------
+
+The most important task in an ASR study is defining the problem. What
+ancestors do you want to reconstruct? What modern proteins are best
+characterized and most relevant to interpreting the results with ancestors?
 
 The first step in a topiary ASR calculation is constructing a
 :ref:`seed dataframe`. This table defines the protein family members
@@ -210,10 +110,12 @@ Protocol for preparing the table
 #. You can put other information about the sequences (accession, citations, etc.)
    as their own columns in the table. topiary will ignore, but keep, those
    columns.
+#. XXX HOW ARE WE GOING TO WRITE ABOUT EXTRA SEQUENCES ... DEFINITELY GOES IN
+   THIS SECTION.
 
---------------------
-2. Seed to alignment
---------------------
+--------------------------------------------------
+Generate a draft alignment from the seed dataframe
+--------------------------------------------------
 
 Generate an alignment on the command line.
 
@@ -226,12 +128,12 @@ Code
 
 .. note::
 
-    The timing for the initial NCBI BLAST step depends on server capacity and
-    may take awhile. If the search hangs for a long time (say, 20 min), you can
-    stop the program (hit ⌘+C or CTRL+C) and try again. Unfortunately, the
-    time required for this search is outside topiary's control. For ~10 seeds
-    generating an alignment of 500 sequences, the topiary code itself takes ~5
-    minutes to run on a 2021 M1 Macbook Pro.
+  The timing for the initial NCBI BLAST step depends on server capacity and
+  may take awhile. If the search hangs for a long time (say, 20 min), you can
+  stop the program (hit ⌘+C or CTRL+C) and try again. Unfortunately, the
+  time required for this search is outside topiary's control. For ~10 seeds
+  generating an alignment of 500 sequences, the topiary code itself takes ~5
+  minutes to run on a 2021 M1 Macbook Pro.
 
 
 .. note::
@@ -253,7 +155,7 @@ This function does the following:
 
 + :emph:`Find paralogs from other species` using the seed sequences as BLAST queries
   against the `nr <https://www.ncbi.nlm.nih.gov/refseq/about/nonredundantproteins/>`_
-  database.
+  database. 
 + :emph:`Perform initial orthology calls` using
   `reciprocal BLAST <https://www.flyrnai.org/RNAi_orthology.html>`_ against the
   proteomes of the species from the seed dataframe.
@@ -294,20 +196,21 @@ Output
 
 This will output a directory with the following files:
 
-+ 00_xx. A copy of the seed sequence file.
++ 00_SEED_FILE_NAME. A copy of the seed sequence file.
 + 01_initial-dataframe.csv. All sequences downloaded from NCBI.
 + 02_recip-blast-dataframe.csv. Results of reciprocal BLAST.
 + 03_sampled-dataframe.csv. Dataframe with sequence redundancy lowered.
-+ 04_aligned-dataframe.csv. Dataframe with final alignment.
-+ 05_alignment.fasta. Dataframe alignment written out to a fasta file.
++ 04_aligned-dataframe.csv. Dataframe with initial alignment.
++ 05_clean-aligned-dataframe.csv. Dataframe with initial alignment.
++ 06_alignment.fasta.fasta. Dataframe alignment written out to a fasta file.
 
 There are other files in this directory (.faa.gz and blast_db.* files). These
 were used for the reciprocal BLAST calculation and may be deleted if desired.
 
 
------------------------------------------------------
-3. Visually inspect and (possibly) edit the alignment
------------------------------------------------------
+--------------------------------------------------
+Visually inspect and (possibly) edit the alignment
+--------------------------------------------------
 
 Alignments aren't always perfect. So we can edit the alignment.
 
@@ -321,7 +224,7 @@ Command line instructions
 
 .. code-block:: shell-session
 
-  topiary-read-fasta-into 04_aligned-dataframe.csv EDITED_FASTA NEW_CSV
+  topiary-read-fasta-into 05_clean-aligned-dataframe.csv EDITED_FASTA NEW_CSV
 
 
 Jupyter instructions
@@ -336,14 +239,25 @@ In a jupyter notebook, run the following:
   df = topiary.read_fasta_into(df,EDITED_FASTA_FILE)
   topiary.write_dataframe(df,NEW_CSV_FILE)
 
-------------------------------------------------
-4. Infer phylogenetic model, tree, and ancestors
-------------------------------------------------
+
+Infer tree and ancestors
+========================
+
+---------------------------------------------
+Infer phylogenetic model, tree, and ancestors
+---------------------------------------------
 
 .. note::
   We highly recommend running the following steps on a computing cluster. To
   prepare the computing environment, please follow the installation steps above on
   the cluster.
+
+Copy the final dataframe up to the cluster.
+
+.. code-block:: shell-session
+
+  scp final_dataframe.csv username@my.cluster.edu:
+
 
 Assuming you are running this on a computing cluster, you'll need to specify
 the resources available for the calculation.
@@ -361,7 +275,10 @@ the resources available for the calculation.
   #SBATCH --ntasks-per-node=1
   #SBATCH --cpus-per-task=28
 
-  ~/topiary/bin/topiary-alignment-to-ancestors 04_aligned-dataframe.csv --out_dir output --num_threads 28
+  module load gcc
+  module load openmpi
+
+  topiary-alignment-to-ancestors 04_aligned-dataframe.csv --out_dir output --num_threads 28
 
 .. code-block:: shell-session
 
@@ -374,9 +291,9 @@ Details
 This pipeline will:
 
 + :emph:`Choose a phylogenetic model` that maximizes the likelihood of observing
-  the sequences in your alignment. Topiary generates a rough tree tree
-  (maximum parsimony) and then optimizes the tree branch lengths using ~300
-  different phylogenetic models implemented in raxml-ng. It then selects between
+  the sequences in your alignment. Topiary uses raxml-ng to generate a maximum
+  parsimony tree and then optimizes the tree branch lengths using ~300
+  different phylogenetic models implemented in raxml-ng. It selects between
   those models using an AIC test.
 + :emph:`Generate a maximum-likelihood phylogenetic tree` with bootstrap
   supports. (Uses RAxML-NG).
@@ -423,6 +340,10 @@ Each of these will have an *output* directory.
   - reconcilations. Directory with output from the reconcilations calculation.
 
 + 03_ancestors. Reconstructed ancestral proteins.
+
+------------------------------------------------
+4. Infer phylogenetic model, tree, and ancestors
+------------------------------------------------
 
 
 .. _How to cite:
