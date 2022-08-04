@@ -127,9 +127,11 @@ def reconcile(previous_dir=None,
                   "working",
                   species_tree=species_tree_file)
 
-    # Get number of threads to use. If no mpi, use only one thread
-    num_threads = get_num_threads(num_threads,num_cores)
-    if not use_mpi:
+    # Figure out number of threads to use
+    if use_mpi:
+        if num_threads is None:
+            num_threads = get_num_threads(num_threads)
+    else:
         num_threads = 1
 
     # Actually run generax
