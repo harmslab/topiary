@@ -139,7 +139,7 @@ def get_round_to(value,total_requested=2):
     return round_at
 
 
-def create_name_dict(df,tip_columns=None,separator="|"):
+def create_name_dict(df,tip_columns=None,separator="|",disambiguate=True):
     """
     Create a dictionary mapping between uid and pretty names extracted from
     tip_columns in the dataframe.
@@ -157,6 +157,10 @@ def create_name_dict(df,tip_columns=None,separator="|"):
     separator : str
         separator to use between pretty names. Cannot be "#,;:'\")(" as these
         are used in newick format.
+    disambiguate : bool, default=True
+        if two tip labels will be the same (for example, two labels will be
+        "Homo sapiens|LY96"), append the uid to those labels so they can be
+        uniquely identified.
 
     Return
     ------
@@ -222,10 +226,11 @@ def create_name_dict(df,tip_columns=None,separator="|"):
             name_to_uid[name] = [uid]
 
     # Look for duplicated names. Append uid to duplicated names to make unique.
-    for name in name_to_uid:
-        if len(name_to_uid[name]) > 1:
-            for uid in name_to_uid[name]:
-                uid_to_name[uid] = separator.join([uid_to_name[uid],uid])
+    if disambiguate:
+        for name in name_to_uid:
+            if len(name_to_uid[name]) > 1:
+                for uid in name_to_uid[name]:
+                    uid_to_name[uid] = separator.join([uid_to_name[uid],uid])
 
     return uid_to_name
 

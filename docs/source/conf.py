@@ -1,8 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
 
@@ -14,6 +11,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
 
+import glob, re
 
 # -- Project information -----------------------------------------------------
 
@@ -62,14 +60,78 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_logo = "_static/img/logo_150x150.png"
 
 html_favicon = "_static/img/favicon.ico"
 
 html_css_files = [
-    '_static/css/stylesheet.css',
+    'css/stylesheet.css',
 ]
 
 
+# Files to exclude from final docs
+exclude_patterns = ['_build', 'links.rst', 'topiary.rst','modules.rst']
 
-# HACK that makes sure we actually run sphinx-apidoc on readthedocs
+# This allows us to put all of the links in a single .rst file
+rst_epilog = ""
+# Read link all targets from file
+with open('links.rst') as f:
+     rst_epilog += f.read()
+
+# Make sure we actually run sphinx-apidoc on readthedocs
 os.system("sphinx-apidoc -f ../../topiary -o .")
+
+# This wackiness cleans up the sphinx-apidoc so it's much cleaner and easier
+# to read
+topiary_rst = glob.glob("../source/topiary.*.rst")
+
+for rst in topiary_rst:
+
+    header = []
+    body = []
+    footer = []
+
+    wipe_out_next = False
+    get_footer = False
+    counter = 0
+    with open(rst) as f:
+        for line in f:
+
+            if counter < 3:
+                header.append(line)
+                counter += 1
+                continue
+
+            if line.startswith("Submodules") or line.startswith("Subpackages"):
+                wipe_out_next = True
+                continue
+
+            if wipe_out_next:
+                wipe_out_next = False
+                continue
+
+            if line.startswith("Module contents"):
+                get_footer = True
+
+            if get_footer:
+                footer.append(line)
+                continue
+
+            line = re.sub(" module","",line)
+            body.append(line)
+
+            #line = re.sub(" package","",line)
+            #body.append(line)
+
+    header[0] = re.sub(" package","",header[0])
+
+    final_out = header[:]
+    final_out.append("\n")
+    final_out.extend(footer[2:])
+    final_out.append("\n")
+    final_out.extend(body)
+    final_out.append("\n")
+
+    g = open(rst,"w")
+    g.writelines(final_out)
+    g.close()

@@ -32,8 +32,8 @@ class PrettyTree:
         font size (pixels)
     stroke_width : float, default=2
         width of lines drawing tree (pixels)
-    vertical_pixels_per_taxon : float, default=20
-        number of pixels to assign to each taxon when calculating figure
+    vertical_pixels_per_tip : float, default=20
+        number of pixels to assign to each tip when calculating figure
         height
     aspect_ratio_parameters : tuple, default=(0.02,0.47)
         these parameters used to relate figure aspect ratio to number of
@@ -42,7 +42,7 @@ class PrettyTree:
     min_height : float, default=300
         minimum height for figure (pixels)
     height : float, optional
-        height in pixels. If specified, overrides vertical_pixels_per_taxon,
+        height in pixels. If specified, overrides vertical_pixels_per_tip,
         aspect_ratio_parameters, and min_height.
     width : float, optional
         width in pixels. if specified, overrides aspect_ratio_parameters
@@ -63,7 +63,7 @@ class PrettyTree:
                  name_dict=None,
                  font_size=15,
                  stroke_width=2,
-                 vertical_pixels_per_taxon=20,
+                 vertical_pixels_per_tip=20,
                  aspect_ratio_parameters=(0.02,0.47),
                  min_height=300,
                  height=None,
@@ -110,8 +110,8 @@ class PrettyTree:
         self._stroke_width = check.check_float(stroke_width,
                                                "stroke_width",
                                                minimum_allowed=0)
-        self._vertical_pixels_per_taxon = check.check_float(vertical_pixels_per_taxon,
-                                                            "vertical_pixels_per_taxon",
+        self._vertical_pixels_per_tip = check.check_float(vertical_pixels_per_tip,
+                                                            "vertical_pixels_per_tip",
                                                             minimum_allowed=0)
 
         aspect_ratio_parameters = check.check_iter(aspect_ratio_parameters,
@@ -133,7 +133,7 @@ class PrettyTree:
 
         if height is None:
             num_nodes = self._tT.ntips
-            self._height = num_nodes*self._vertical_pixels_per_taxon
+            self._height = num_nodes*self._vertical_pixels_per_tip
             if self._height < min_height:
                 self._height = min_height
 
@@ -159,7 +159,7 @@ class PrettyTree:
         # If padding not passsed directly, figure out
 
         if padding is None:
-            self._padding = self._vertical_pixels_per_taxon
+            self._padding = self._vertical_pixels_per_tip
         else:
             self._padding = check.check_float(padding,
                                               "padding",

@@ -1,8 +1,13 @@
-topiary.external package
+topiary.external
 ========================
 
-Subpackages
------------
+
+
+.. automodule:: topiary.external
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 .. toctree::
    :maxdepth: 4
@@ -12,10 +17,8 @@ Subpackages
    topiary.external.opentree
    topiary.external.raxml
 
-Submodules
-----------
 
-topiary.external.muscle module
+topiary.external.muscle
 ------------------------------
 
 .. automodule:: topiary.external.muscle
@@ -23,10 +26,4 @@ topiary.external.muscle module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external
-   :members:
-   :undoc-members:
-   :show-inheritance:

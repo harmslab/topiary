@@ -1,10 +1,15 @@
-topiary.external.ncbi.blast package
+topiary.external.ncbi.blast
 ===================================
 
-Submodules
-----------
 
-topiary.external.ncbi.blast.local module
+
+.. automodule:: topiary.external.ncbi.blast
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.external.ncbi.blast.local
 ----------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.local
@@ -12,7 +17,7 @@ topiary.external.ncbi.blast.local module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.make module
+topiary.external.ncbi.blast.make
 ---------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.make
@@ -20,7 +25,7 @@ topiary.external.ncbi.blast.make module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.merge module
+topiary.external.ncbi.blast.merge
 ----------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.merge
@@ -28,7 +33,7 @@ topiary.external.ncbi.blast.merge module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.ncbi module
+topiary.external.ncbi.blast.ncbi
 ---------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.ncbi
@@ -36,7 +41,7 @@ topiary.external.ncbi.blast.ncbi module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.read module
+topiary.external.ncbi.blast.read
 ---------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.read
@@ -44,7 +49,7 @@ topiary.external.ncbi.blast.read module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.recip module
+topiary.external.ncbi.blast.recip
 ----------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.recip
@@ -52,7 +57,7 @@ topiary.external.ncbi.blast.recip module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.blast.util module
+topiary.external.ncbi.blast.util
 ---------------------------------------
 
 .. automodule:: topiary.external.ncbi.blast.util
@@ -60,10 +65,4 @@ topiary.external.ncbi.blast.util module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external.ncbi.blast
-   :members:
-   :undoc-members:
-   :show-inheritance:

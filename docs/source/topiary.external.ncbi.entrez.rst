@@ -1,10 +1,15 @@
-topiary.external.ncbi.entrez package
+topiary.external.ncbi.entrez
 ====================================
 
-Submodules
-----------
 
-topiary.external.ncbi.entrez.proteome module
+
+.. automodule:: topiary.external.ncbi.entrez
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.external.ncbi.entrez.proteome
 --------------------------------------------
 
 .. automodule:: topiary.external.ncbi.entrez.proteome
@@ -12,7 +17,7 @@ topiary.external.ncbi.entrez.proteome module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.entrez.sequences module
+topiary.external.ncbi.entrez.sequences
 ---------------------------------------------
 
 .. automodule:: topiary.external.ncbi.entrez.sequences
@@ -20,7 +25,7 @@ topiary.external.ncbi.entrez.sequences module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.ncbi.entrez.taxid module
+topiary.external.ncbi.entrez.taxid
 -----------------------------------------
 
 .. automodule:: topiary.external.ncbi.entrez.taxid
@@ -28,10 +33,4 @@ topiary.external.ncbi.entrez.taxid module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external.ncbi.entrez
-   :members:
-   :undoc-members:
-   :show-inheritance:

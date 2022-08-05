@@ -1,18 +1,21 @@
-topiary.io package
+topiary.io
 ==================
 
-Subpackages
------------
+
+
+.. automodule:: topiary.io
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 .. toctree::
    :maxdepth: 4
 
    topiary.io.construct
 
-Submodules
-----------
 
-topiary.io.alignments module
+topiary.io.alignments
 ----------------------------
 
 .. automodule:: topiary.io.alignments
@@ -20,7 +23,7 @@ topiary.io.alignments module
    :undoc-members:
    :show-inheritance:
 
-topiary.io.dataframe module
+topiary.io.dataframe
 ---------------------------
 
 .. automodule:: topiary.io.dataframe
@@ -28,7 +31,7 @@ topiary.io.dataframe module
    :undoc-members:
    :show-inheritance:
 
-topiary.io.seed module
+topiary.io.seed
 ----------------------
 
 .. automodule:: topiary.io.seed
@@ -36,7 +39,7 @@ topiary.io.seed module
    :undoc-members:
    :show-inheritance:
 
-topiary.io.tree module
+topiary.io.tree
 ----------------------
 
 .. automodule:: topiary.io.tree
@@ -44,10 +47,4 @@ topiary.io.tree module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.io
-   :members:
-   :undoc-members:
-   :show-inheritance:

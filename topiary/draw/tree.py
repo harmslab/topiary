@@ -4,6 +4,7 @@ Draw a topiary tree with nodes colored by calculation outputs.
 
 import topiary
 from topiary._private.interface import read_previous_run_dir
+from topiary._private import check
 from topiary.draw.core import load_trees, create_name_dict, construct_sizemap
 from topiary.draw.prettytree import PrettyTree
 
@@ -23,8 +24,9 @@ def tree(run_dir,
          anc_label=True,
          tip_columns=["species","recip_paralog"],
          tip_name_separator="|",
-         color=None,
-         size=None,
+         disambiguate_tip_names=True,
+         node_color=None,
+         node_size=None,
          font_size=15,
          tip_text_style=None,
          label_text_style=None,
@@ -32,12 +34,12 @@ def tree(run_dir,
          label_position_offset=None,
          label_color="gray",
          stroke_width=2,
-         vertical_pixels_per_taxon=25,
+         vertical_pixels_per_tip=25,
          min_height=300,
          df=None,
          **kwargs):
     """
-    Draw a topiary tree with nodes colored by calculation outputs.
+    Draw a tree with annotated with calculation outputs.
 
     Parameters
     ----------
@@ -53,14 +55,14 @@ def tree(run_dir,
     pp_color : dict, default={0.7:"#ffffff",1.0:"#DC801A"}
         set min/max values for posterior probability color map. First key is
         min, second is max. Values are valid topyplot colors (see Notes).
-        If given, color argument takes precedence over pp_color.
+        If given, node_color argument takes precedence over pp_color.
     event_color : dict, default={"D":"#64007F","L":"#BAD316","T":"#407E98"}
         colors for evolutionary events determined by gene/species tree
         reconciliation. Allowed keys are "S" (speciation), "D" (duplication),
         "L" (loss), and "T" (transfer). If a key is not specified, that
         event will not be drawn on the tree. (The default is to *not* show
         speciation). Valuse are any valid topyplot colors (see Notes).
-        If given, color argument takes precedence over event_color.
+        If given, node_color argument takes precedence over event_color.
     bs_label : bool, default=False
         whether or not to write branch support values on the tree
     pp_label : bool, default=False
@@ -77,14 +79,18 @@ def tree(run_dir,
     tip_name_separator : str, default="|"
         string to separate columns in tip names ("|" in tip_columns example
         above.)
-    color : str or tuple or dict, optional
-        intenral node color. If a single value, color all nodes that color. If
+    disambiguate_tip_names : bool, default=True
+        if two tip labels will be the same (for example, two labels will be
+        "Homo sapiens|LY96"), append the uid to those labels so they can be
+        uniquely identified.
+    node_color : str or tuple or dict, optional
+        internal node color. If a single value, color all nodes that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
         color gradient.  If dict, map property keys to color values. This
         will override bs_color, pp_color, and event_color. We recommend
         using this to specify single colors only. Use bs_color, pp_color,
         and event_color to color nodes based on their properties.
-    size : float or tuple or dict, optional
+    node_size : float or tuple or dict, optional
         set node size in pixels. If a single value, make all nodes that size.
         If list-like and length 2, treat as sizes for minimum and maximum of a
         size gradient. If dict, map property keys to size values. Sizes must
@@ -107,8 +113,8 @@ def tree(run_dir,
         how far to displace the internal labels off the nodes in pixels.
     stroke_width : int, default=2
         width of lines drawing tree in pixels
-    vertical_pixels_per_taxon : int, default=20
-        number of pixels to assign to each taxon when calculating figure
+    vertical_pixels_per_tip : int, default=20
+        number of pixels to assign to each tip when calculating figure
         height
     min_height : float, default=300
         minimum height for figure (pixels)
@@ -152,41 +158,42 @@ def tree(run_dir,
     # Create dictionary mapping between uid and pretty name format
     name_dict = create_name_dict(df=df,
                                  tip_columns=tip_columns,
-                                 separator=tip_name_separator)
+                                 separator=tip_name_separator,
+                                 disambiguate=disambiguate_tip_names)
 
     # Create tree
     pt = PrettyTree(T,
                     name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
-                    vertical_pixels_per_taxon=vertical_pixels_per_taxon,
+                    vertical_pixels_per_tip=vertical_pixels_per_tip,
                     min_height=min_height,
                     **kwargs)
 
-    # Set size if not set
-    if size is None:
-        size = pt.default_size
+    # Set node_size if not set
+    if node_size is None:
+        node_size = pt.default_size
 
-    # Color takes precendence over specific entries
-    if color is not None:
-        pt.draw_nodes(color=color,size=size)
+    # node_color takes precendence over specific entries
+    if node_color is not None:
+        pt.draw_nodes(color=node_color,size=node_size)
 
     else:
 
         # Plot events
         if event_color is not None:
 
-            # Make sure size, whatever it is, works fine with event
+            # Make sure node_size, whatever it is, works fine with event
             prop = []
             for n in T.traverse():
                 if not n.is_leaf():
                     prop.append(n.event)
             prop = list(set(prop))
-            sm, sm_span = construct_sizemap(size,prop)
+            sm, sm_span = construct_sizemap(node_size,prop)
 
             # Now update the size so it's slightly bigger than requested for
             # the event
-            this_size = copy.deepcopy(size)
+            this_size = copy.deepcopy(node_size)
             if issubclass(type(this_size),dict):
                 for k in this_size:
                     this_size[k] = this_size[k]*1.5
@@ -204,32 +211,32 @@ def tree(run_dir,
         # Plot bootstrap supports
         if bs_color is not None:
 
-            plot_bs, bs_span, bs_color = topiary.draw.core.parse_span_color(bs_color,color)
+            plot_bs, bs_span, bs_color = topiary.draw.core.parse_span_color(bs_color,node_color)
             pt.draw_nodes(property_label="bs_support",
                           prop_span=bs_span,
                           color=bs_color,
-                          size=size)
+                          size=node_size)
 
-            # If we successfully plotted bootstraps decrease size by factor
+            # If we successfully plotted bootstraps decrease node_size by factor
             # so we can plot next data
             if "bs_support" in pt.plotted_properties:
 
-                if issubclass(type(size),dict):
-                    for k in size:
-                        size[k] = size[k]*0.6
+                if issubclass(type(node_size),dict):
+                    for k in node_size:
+                        node_size[k] = node_size[k]*0.6
                 else:
                     try:
-                        size = size*0.6
+                        node_size = node_size*0.6
                     except (ValueError,TypeError):
-                        size = np.array(size)*0.6
+                        node_size = np.array(node_size)*0.6
 
         # Plot ancestor posterior probailities
         if pp_color is not None:
-            plot_pp, pp_span, pp_color = topiary.draw.core.parse_span_color(pp_color,color)
+            plot_pp, pp_span, pp_color = topiary.draw.core.parse_span_color(pp_color,node_color)
             pt.draw_nodes(property_label="anc_pp",
                           prop_span=pp_span,
                           color=pp_color,
-                          size=size)
+                          size=node_size)
 
     # Deal with property labeling
     property_labels = []

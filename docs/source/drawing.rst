@@ -171,12 +171,6 @@ As of toyplot 1.02, the following css properties can be set:
 For information on each of these css properties, there are css references online
 (i.e. `w3schools <https://www.w3schools.com/css/>`_).
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   topiary
-
 
 Indices and tables
 ==================

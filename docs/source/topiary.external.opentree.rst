@@ -1,10 +1,15 @@
-topiary.external.opentree package
+topiary.external.opentree
 =================================
 
-Submodules
-----------
 
-topiary.external.opentree.ott module
+
+.. automodule:: topiary.external.opentree
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.external.opentree.ott
 ------------------------------------
 
 .. automodule:: topiary.external.opentree.ott
@@ -12,7 +17,7 @@ topiary.external.opentree.ott module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.opentree.tree module
+topiary.external.opentree.tree
 -------------------------------------
 
 .. automodule:: topiary.external.opentree.tree
@@ -20,7 +25,7 @@ topiary.external.opentree.tree module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.opentree.util module
+topiary.external.opentree.util
 -------------------------------------
 
 .. automodule:: topiary.external.opentree.util
@@ -28,10 +33,4 @@ topiary.external.opentree.util module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external.opentree
-   :members:
-   :undoc-members:
-   :show-inheritance:

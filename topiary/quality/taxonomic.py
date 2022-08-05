@@ -565,8 +565,7 @@ def get_merge_blocks(df,
     merge_blocks : dict
         dictionary keyed to paralog names taken from paralog_column. Values are
         lists of blocks to merge with the following form
-        [(budget_for_merge,list_of_uid_to_merge,ete3_leaf_this_came_from),
-         ...]
+        [(budget_for_merge,list_of_uid_to_merge,ete3_leaf_this_came_from),...]
     """
 
     # --------------------------------------------------------------------------

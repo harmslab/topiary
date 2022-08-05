@@ -1,10 +1,15 @@
-topiary.io.construct package
+topiary.io.construct
 ============================
 
-Submodules
-----------
 
-topiary.io.construct.from\_seed module
+
+.. automodule:: topiary.io.construct
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.io.construct.from\_seed
 --------------------------------------
 
 .. automodule:: topiary.io.construct.from_seed
@@ -12,10 +17,4 @@ topiary.io.construct.from\_seed module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.io.construct
-   :members:
-   :undoc-members:
-   :show-inheritance:

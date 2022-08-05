@@ -1,10 +1,15 @@
-topiary.external.generax package
+topiary.external.generax
 ================================
 
-Submodules
-----------
 
-topiary.external.generax.reconcile module
+
+.. automodule:: topiary.external.generax
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.external.generax.reconcile
 -----------------------------------------
 
 .. automodule:: topiary.external.generax.reconcile
@@ -12,10 +17,4 @@ topiary.external.generax.reconcile module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external.generax
-   :members:
-   :undoc-members:
-   :show-inheritance:

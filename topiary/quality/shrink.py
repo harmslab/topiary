@@ -333,6 +333,9 @@ def shrink_dataset(df,
 
     target_seq_number = int(round(target_seq_number,0))
 
+    print(f"Will build final alignment with ~{target_seq_number} sequences.\n",
+          flush=True)
+
     # How many sequences we start with
     starting_keep = np.sum(df.keep)
 

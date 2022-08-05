@@ -325,7 +325,8 @@ def seed_to_alignment(seed_df,
 
         topiary.write_fasta(df,
                             f"{step_counter:02d}_alignment.fasta",
-                            seq_column="alignment")
+                            seq_column="alignment",
+                            label_columns=["species","recip_paralog"])
 
     else:
         print(f"Loading existing file {expected_output}.")

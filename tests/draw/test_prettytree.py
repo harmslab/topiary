@@ -28,8 +28,8 @@ def test_PrettyTree():
     pt = prettytree.PrettyTree(T=tree,stroke_width=20)
     assert pt._stroke_width == 20
 
-    pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_taxon=100)
-    assert pt._vertical_pixels_per_taxon == 100
+    pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_tip=100)
+    assert pt._vertical_pixels_per_tip == 100
 
     # check artwork parameters
     bad_float = [-1,None,int,float,[],(1,)]
@@ -39,7 +39,7 @@ def test_PrettyTree():
         with pytest.raises(ValueError):
             pt = prettytree.PrettyTree(T=tree,stroke_width=b)
         with pytest.raises(ValueError):
-            pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_taxon=b)
+            pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_tip=b)
 
 def test_integrated_single():
     T = toytree.rtree.rtree(50)
