@@ -3,8 +3,10 @@ import pytest
 
 import topiary
 from topiary._private import check
-from topiary.io.seed import _get_alias_regex, _build_alias_regex
+from topiary.io.seed import _get_alias_regex
+from topiary.io.seed import _build_alias_regex
 from topiary.io.seed import read_seed
+from topiary.io.seed import df_from_seed
 
 import numpy as np
 import pandas as pd
@@ -206,3 +208,7 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
         assert np.array_equal(df.key_species,np.ones(len(df),dtype=bool))
         assert np.array_equal(df.always_keep,np.ones(len(df),dtype=bool))
         assert len(df.uid) == len(np.unique(df.uid))
+
+def test_df_from_seed():
+
+    pass

@@ -94,7 +94,7 @@ def test_shrink_redundant(for_real_inference):
     out_df = shrink_redundant(test_df_2,redundancy_cutoff=0.05)
     assert np.array_equal(out_df.keep,np.array([False,True,False,False,False]))
 
-def xtest_shrink_aligners():
+def test_shrink_aligners():
     pass
 
 def test_shrink_dataset(for_real_inference,tmpdir):

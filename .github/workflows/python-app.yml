@@ -30,6 +30,9 @@ jobs:
         repository: harmsm/topiary
         path: topiary
 
+    - name: ghostscript-action
+      uses: jy95/ghostscript-action@v1
+
     - name: Install topiary, run flake8, run pytest
       shell: bash
       run: |

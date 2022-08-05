@@ -1,5 +1,5 @@
 """
-Interface to ete3 for drawing phylogenetic trees.
+Interface for drawing phylogenetic trees and ancestor summaries. 
 """
 
 from .tree import tree
