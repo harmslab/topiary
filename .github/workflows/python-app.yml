@@ -35,9 +35,6 @@ jobs:
       shell: bash
       run: |
 
-        #sudo apt-get update
-        #sudo apt-get install ghostscript -y
-
         cd topiary
 
         $CONDA/bin/conda env create --file environment.yml
@@ -47,7 +44,6 @@ jobs:
 
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest-timeout
-        $CONDA/bin/python -m pip install --upgrade pip
 
         cd ..
 
@@ -56,12 +52,7 @@ jobs:
       run: |
 
         cd topiary
-
-        # stop the build if there are Python syntax errors or undefined names
         $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
         cd ..
 
     - name: run pytest
@@ -69,10 +60,7 @@ jobs:
       run: |
 
         cd topiary
-
-        # test with pytest timeout
         $CONDA/bin/pytest --timeout 300 --timeout_method thread
-
         cd ..
 
   build-macos:
@@ -100,9 +88,6 @@ jobs:
       shell: bash
       run: |
 
-        #brew update
-        #brew install ghostscript
-
         cd topiary
 
         $CONDA/bin/conda env create --file environment.yml
@@ -112,7 +97,6 @@ jobs:
 
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest-timeout
-        $CONDA/bin/python -m pip install --upgrade pip
 
         cd ..
 
@@ -121,12 +105,7 @@ jobs:
       run: |
 
         cd topiary
-
-        # stop the build if there are Python syntax errors or undefined names
         $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
         cd ..
 
     - name: run pytest
@@ -134,10 +113,7 @@ jobs:
       run: |
 
         cd topiary
-
-        # test with pytest timeout
         $CONDA/bin/pytest --timeout 300 --timeout_method thread
-
         cd ..
 
   build-windows:
@@ -164,13 +140,10 @@ jobs:
       shell: powershell
       run: |
 
-        #choco install ghostscript
-
         cd topiary
 
         C:\Miniconda\condabin\conda.bat env create --file environment.yml
         C:\Miniconda\condabin\conda.bat activate topiary
-        C:\Miniconda\python -m pip install --upgrade pip
         C:\Miniconda\python setup.py install
 
         C:\Miniconda\condabin\conda.bat install flake8
@@ -183,12 +156,7 @@ jobs:
       run: |
 
         cd topiary
-
-        # stop the build if there are Python syntax errors or undefined names
         C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        C:\Miniconda\Scripts\flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
         cd ..
 
     - name: run pytest
@@ -196,7 +164,5 @@ jobs:
       run: |
 
         cd topiary
-
         C:\Miniconda\Scripts\pytest.exe
-
         cd ..

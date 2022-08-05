@@ -4,18 +4,21 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - numpy
-  - matplotlib
+  - numpy<1.22
   - pandas
   - xlrd
   - openpyxl
+  - matplotlib
+  - biopython
   - tqdm
   - ete3
   - dendropy
   - toytree
+  # - blast    # [not osx]
+  # - muscle   # [not osx]
+  # - generax  # [not osx]
+  # - raxml-ng # [not osx]
+  - pip
   - pip:
     - pastml
-  - blast # [not win] 
-  - muscle # [not win]
-  - generax # [not win]
-  - raxml-ng # [not win]
+    - opentree
