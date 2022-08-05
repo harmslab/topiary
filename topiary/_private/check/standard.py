@@ -5,6 +5,8 @@ topiary functions.
 
 import numpy as np
 
+import re
+
 def check_bool(value,variable_name=None):
     """
     Process a `bool` argument and do error checking.
@@ -34,7 +36,7 @@ def check_bool(value,variable_name=None):
             raise ValueError
 
         # See if this is a naked type
-        if type(value) is type:
+        if issubclass(type(value),type):
             raise ValueError
 
         if value != 0:
@@ -94,7 +96,7 @@ def check_float(value,
     try:
 
         # Try to cast as string to an integer
-        if type(value) is str:
+        if issubclass(type(value),str):
             value = float(value)
 
         # See if this is an iterable
@@ -102,7 +104,7 @@ def check_float(value,
             raise ValueError
 
         # See if this is a naked type
-        if type(value) is type:
+        if issubclass(type(value),type):
             raise ValueError
 
         value = float(value)
@@ -191,7 +193,7 @@ def check_int(value,
     try:
 
         # Try to cast as string to an integer
-        if type(value) is str:
+        if issubclass(type(value),str):
             value = int(value)
 
         # See if this is an iterable
@@ -199,7 +201,7 @@ def check_int(value,
             raise ValueError
 
         # See if this is a naked type
-        if type(value) is type:
+        if issubclass(type(value),type):
             raise ValueError
 
         # If this is a float to int cast, make sure it does not have decimal
@@ -255,14 +257,14 @@ def check_int(value,
     return value
 
 def check_iter(value,
-                 variable_name=None,
-                 required_iter_type=None,
-                 required_value_type=None,
-                 minimum_allowed=None,
-                 maximum_allowed=None,
-                 minimum_inclusive=True,
-                 maximum_inclusive=True,
-                 is_not_type=None):
+               variable_name=None,
+               required_iter_type=None,
+               required_value_type=None,
+               minimum_allowed=None,
+               maximum_allowed=None,
+               minimum_inclusive=True,
+               maximum_inclusive=True,
+               is_not_type=None):
     """
     Process an iterable argument and do error checking.
 
@@ -315,14 +317,14 @@ def check_iter(value,
         raise ValueError(err)
 
     # See if this is a naked type
-    if type(value) is type:
+    if issubclass(type(value),type):
         err = err_base + "must not be a type\n"
         raise ValueError(err)
 
     # If requested, make sure it's the required type
     if required_iter_type is not None:
-        if type(value) is not required_iter_type:
-            err = err_base + f"must be type {required_iter_type}\n"
+        if not issubclass(type(value),required_iter_type):
+            err = err_base + f"is type {type(value)} must be type {required_iter_type}\n"
             raise ValueError(err)
 
     # If reuqested, make sure the values are of the right type
@@ -331,12 +333,27 @@ def check_iter(value,
         # Skip check for iterable with no values
         if len(value) > 0:
 
-            # Only do check iterables that are not numpy arrays
-            if type(value) is not np.ndarray:
-                types = list(set([type(v) for v in value]))
-                if len(types) != 1 or types[0] is not required_value_type:
+            types = list(set([type(v) for v in value]))
+            if len(types) != 1:
+                err = err_base + f"all entries must have type {required_value_type}\n"
+                raise ValueError(err)
+
+            # If not a subclass
+            if not issubclass(types[0],required_value_type):
+
+                # Do two numpy checks (not perfect, but avoids unexpected
+                # behavior when int or float numpy arrays go in).
+                if required_value_type is int and np.issubdtype(types[0],np.integer):
+                    is_bad = False
+                elif required_value_type is float and np.issubdtype(types[0],np.floating):
+                    is_bad = False
+                else:
+                    is_bad = True
+
+                if is_bad:
                     err = err_base + f"all entries must have type {required_value_type}\n"
                     raise ValueError(err)
+
 
     # If requested, make sure the iterable has appropriate dimensions
     try:
@@ -374,13 +391,87 @@ def check_iter(value,
 
     # Make sure iterable does not have a specified excluded type
     if is_not_type is not None:
-        if type(is_not_type) is type:
+        if issubclass(type(is_not_type),type):
             is_not_type = [is_not_type]
 
-        if type(value) in is_not_type:
-            bad_types = ",".join([f"{v}" for v in is_not_type])
+        for is_not_type_entry in is_not_type:
+            if issubclass(type(value),is_not_type_entry):
+                bad_types = ",".join([f"{v}" for v in is_not_type])
 
-            err = err_base + f"must not be of type {bad_types}\n\n"
-            raise ValueError(err)
+                err = err_base + f"must not be of type {bad_types}\n\n"
+                raise ValueError(err)
 
     return value
+
+def column_to_bool(column,column_name):
+    """
+    Convert a generic pandas column to bool. If already bool, just return. If
+    not, try to convert and return as a numpy bool array.
+
+    Parameters
+    ----------
+    column : pandas.Series
+        column from dataframe that should be boolean
+    column_name : str
+        name of column (for error message)
+
+    Returns
+    -------
+    column : numpy.array
+        boolean numpy array.
+    """
+
+    # Do a pass trying to infer the datatype of the column. (This is useful if
+    # we dropped empty rows that made the original pandas read this column in
+    # as a mix of bool and object).
+    column = column.infer_objects()
+
+    # If it's not a boolean column, try to turn into one
+    if not np.dtype(column.dtypes) is np.dtype(bool):
+
+        # Base message. If everything works great, let user know what
+        # happened as warning. If things go awry, use as start of error
+        # message
+        w = "\n\n"
+        w += f"The '{column_name}' column must be boolean (True/False). pandas\n"
+        w += "did not recognize the column as boolean, so we're parsing it\n"
+        w += "manually by looking for 0/1, yes/no, true/false, etc.\n\n"
+
+        new_column = []
+        look_for_true = re.compile("[1yt]",re.IGNORECASE)
+        look_for_false = re.compile("[0nf]",re.IGNORECASE)
+        for k in column:
+            if issubclass(type(k),bool):
+                is_true = True and k
+                is_false = not is_true
+                looks_like_a = "bool"
+            elif issubclass(type(k),str):
+                is_true = look_for_true.search(k) is not None
+                is_false = look_for_false.search(k) is not None
+                looks_like_a = "string"
+            elif issubclass(type(k),int):
+                is_true = (k != 0)
+                is_false = (k == 0)
+                looks_like_a = "int"
+            elif issubclass(type(k),float):
+                is_true = np.logical_not(np.isclose(k,0))
+                is_false = np.isclose(k,0)
+                looks_like_a = "float"
+            else:
+                w += f"Could not figure out how to parse '{k}'\n\n"
+                raise ValueError(w)
+
+            if (is_true and is_false) or (not is_true and not is_false):
+                w += f"Trying to parse '{k}' as a {looks_like_a}, but\n"
+                w += f"could not figure out whether true or false.\n\n"
+                raise ValueError(w)
+            else:
+                new_column.append(is_true)
+
+        # Record newly boolean-ized values
+        column = np.array(new_column,dtype=bool)
+
+        # Let user know we manually parsed the keep column...
+        print(w)
+
+    return column

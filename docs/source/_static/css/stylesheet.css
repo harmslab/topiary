@@ -349,7 +349,7 @@ ul.auto-toc {
   list-style-type: none }
 
 
-.red { 
+.red {
   color: red;
 }
 
@@ -364,3 +364,10 @@ ul.auto-toc {
   font-style: italic;
 }
 
+.wy-side-nav-search, .wy-nav-top {
+    background: #C8C8C8;
+}
+
+.icon.icon-home {
+  color: #0071BC;
+}

@@ -7,7 +7,8 @@ from topiary._private import check
 from topiary._private import animation
 from topiary._private import threads
 
-from .util import read_blast_xml, _standard_blast_args_checker
+from .read import read_blast_xml, check_for_cpu_limit
+from .util import _standard_blast_args_checker
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
@@ -18,7 +19,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 import sys, urllib, http, copy, os, time, random, string
-import multiprocessing as mp
 
 def _prepare_for_blast(sequence,
                        db,
@@ -309,7 +309,7 @@ def _construct_args(sequence_list,
 def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
-    Put results in a multiprocessing queue.
+    Return parsed output as a dataframe. 
 
     Parameters
     ----------
@@ -330,6 +330,7 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
     # While we haven't run out of tries...
     tries = 0
+    tmp_file = None
     while tries < num_tries_allowed:
 
         # Try to read output.
@@ -347,44 +348,20 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
             result = NCBIWWW.qblast(**this_query)
 
-            # Write output to an xml file. NCBI can spit out trashed XML
-            # with CREATE_VIEW\n\n\n randomly injected between <hit> entries.
-            # biopython chokes on the input. To fix this, pull down the XML,
-            # clean up, write to a file, then pass the file handle back to
-            # biopython.
-
-            # Get rid of nastiness if present.
-            contents = result.readlines()
-            contents = [c for c in contents if c.strip() not in ["","CREATE_VIEW"]]
-
             # Write temporary file
             tmp_root = "".join([random.choice(string.ascii_letters)
                                 for _ in range(10)])
             tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
             f = open(tmp_file,"w")
-            f.write("".join(contents))
+            f.write(result.read())
             f.close()
-
-            # Read output xml file and parse
-            f = open(tmp_file,"r")
-
-            # Clean up
-            p = NCBIXML.parse(f)
-            out = []
-            for r in p:
-                out.append(r)
-            f.close()
-
-            # If parsing successful, nuke temporary file
-            if not keep_blast_xml:
-                os.remove(tmp_file)
 
         # If some kind of http error or timeout, set out to None
         except (urllib.error.URLError,urllib.error.HTTPError,http.client.IncompleteRead):
-            out = None
+            tmp_file = None
 
         # If out is None, try again. If not, break out of loop--success!
-        if out is None:
+        if tmp_file is None:
             tries += 1
             continue
         else:
@@ -392,16 +369,23 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
 
     # We didn't get result even after num_tries_allowed tries. Throw
     # an error.
-    if out is None:
+    if tmp_file is None:
         err = "\nProblem accessing with NCBI server. We got no output after\n"
         err += f"{num_tries_allowed} attempts. This is likely due to a server\n"
         err += "timeout. Try again at a later time.\n"
         raise RuntimeError(err)
 
     # Parse output
-    out_df = read_blast_xml(out)
+    out_dfs, xml_files = read_blast_xml(tmp_file,do_cpu_check=True)
 
-    return out_df
+    # If parsing successful, nuke temporary file
+    if not keep_blast_xml:
+        os.remove(xml_files[0])
+
+    if out_dfs is None:
+        return None
+
+    return out_dfs[0]
 
 
 def _combine_hits(hits,return_singleton):
@@ -544,31 +528,60 @@ def ncbi_blast(sequence,
 
     a = animation.WaitingAnimation()
     a.start()
-    all_hits = []
-    for i in range(0,len(sequence_list),2):
 
-        s = sequence_list[i:i+2]
+    # Get arguments to pass to each thread
+    kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
+                                               blast_kwargs=blast_kwargs,
+                                               max_query_length=max_query_length,
+                                               num_tries_allowed=num_tries_allowed,
+                                               keep_blast_xml=keep_blast_xml,
+                                               num_threads=num_threads)
 
-        # Get arguments to pass to each thread
-        kwargs_list, num_threads = _construct_args(sequence_list=s,
-                                                   blast_kwargs=blast_kwargs,
-                                                   max_query_length=max_query_length,
-                                                   num_tries_allowed=num_tries_allowed,
-                                                   keep_blast_xml=keep_blast_xml,
-                                                   num_threads=num_threads)
-
-
-
-        hits = threads.thread_manager(kwargs_list,
+    all_hits = threads.thread_manager(kwargs_list,
                                       _ncbi_blast_thread_function,
                                       num_threads,
                                       progress_bar=False,
                                       pass_lock=True)
 
-        all_hits.extend(hits)
+    # If all_hits has None, at least one of our queries hit a cpu limit on the
+    # ncbi server. Try again, doing each query one at a time on a single thread.
+    if sum([h is None for h in all_hits]) > 0:
+
+        w = "\nThe initial BLAST query exceed the CPU resource limit on the\n"
+        w += "NCBI server. Switching to slow-and-steady mode, sending each\n"
+        w += "seed sequence individually.\n"
+        print(w,flush=True)
+
+        all_hits = []
+        for i, s in enumerate(sequence_list):
+
+            print(f"    Query {i+1} of {len(sequence_list)}",flush=True)
+
+            kwargs_list, num_threads = _construct_args(sequence_list=[sequence_list[i]],
+                                                       blast_kwargs=blast_kwargs,
+                                                       max_query_length=max_query_length,
+                                                       num_tries_allowed=num_tries_allowed,
+                                                       keep_blast_xml=keep_blast_xml,
+                                                       num_threads=1)
+
+            hits = threads.thread_manager(kwargs_list,
+                                          _ncbi_blast_thread_function,
+                                          num_threads,
+                                          progress_bar=False,
+                                          pass_lock=True)
+
+            if hits[0] is None:
+                err = "\nCPU limit still exceeded. Consider selecting shorter\n"
+                err += "input sequences, fewer input sequences, trying again at\n"
+                err += "a different time (when the NCBI server may be less busy),\n"
+                err += "or running BLAST manually and passing the resulting xml\n"
+                err += "files into topiary via --blast_xml."
+                raise RuntimeError(err)
+
+            all_hits.extend(hits)
 
 
-        print("BLAST query complete.",flush=True)
+    print("BLAST query complete.",flush=True)
     a.stop()
 
     # Combine hits into dataframes, one for each query

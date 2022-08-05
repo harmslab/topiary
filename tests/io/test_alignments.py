@@ -1,19 +1,22 @@
 import pytest
 
 from topiary import io
+from topiary.io.alignments import _validate_seq_writer
+
+
 import numpy as np
 import pandas as pd
 
 import os, shutil, re
 
 
-def _validate_seq_writer():
+def test__validate_seq_writer():
     """
     This function is tested implicitly by test_write_fasta and test_write_phy.
     I'm using those unit tests because I can validate written output.
     """
 
-    pass
+    return True
 
 def test_write_fasta(test_dataframes,tmpdir):
 

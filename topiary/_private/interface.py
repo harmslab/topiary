@@ -7,8 +7,25 @@ from topiary._private import check
 
 import pandas as pd
 
-import subprocess, os, sys, time, random, string, shutil, copy, json
+import subprocess, os, sys, time, random, string, shutil, copy, json, glob
 import multiprocessing as mp
+
+class DummyTqdm():
+    """
+    Fake tqdm progress bar so we don't have to show a status bar if we don't
+    want to. Can be substituted wherever we would use tqdm (i.e.
+    tqdm(range(10)) --> DummyTqdm(range(10)).
+    """
+
+    def __init__(self,*args,**kwargs):
+        pass
+    def __enter__(self):
+        return self
+    def __exit__(self, type, value, traceback):
+        pass
+
+    def update(self,value):
+        pass
 
 def gen_seed():
     """
@@ -177,6 +194,9 @@ def read_previous_run_dir(previous_dir):
     if os.path.exists(tree_file):
         previous["tree_file"] = tree_file
 
+    all_trees = glob.glob(os.path.abspath(os.path.join(out_dir,"*.newick")))
+    previous["existing_trees"] = all_trees
+
     return previous
 
 
@@ -339,6 +359,7 @@ def prep_calc(previous_dir=None,
     out["starting_dir"] = starting_dir
     out["output"] = output
     out["other_files"] = final_files
+    out["start_time"] = time.time()
 
     return out
 
@@ -414,7 +435,7 @@ def _follow_log_generator(f,queue):
             if counter > 200:
                 break
 
-def launch(cmd,run_directory,log_file=None):
+def launch(cmd,run_directory,log_file=None,suppress_output=False):
     """
     Launch an external command in a specific directory. If log_file is
     specified, runs command on its own thread, allowing python to capture output
@@ -431,6 +452,9 @@ def launch(cmd,run_directory,log_file=None):
         log file where command output will be stored. if specified, the
         output of the log file is captured and written to standard output
         (equivalent to `tail -f log_file`).
+    suppress_output : bool, default=False
+        whether or not to capture (and not return) stdout and stderr. Ignored
+        if log_file is specified.
 
     Returns
     -------
@@ -448,11 +472,16 @@ def launch(cmd,run_directory,log_file=None):
 
     # Print command
     full_cmd = " ".join(cmd)
-    print(f"Running '{full_cmd}'",flush=True)
+    if not suppress_output:
+        print(f"Running '{full_cmd}'",flush=True)
 
     # If no log file specified, run directly
     if log_file is None:
-        ret = subprocess.run(cmd)
+        if suppress_output:
+            capture_output = True
+        else:
+            capture_output = False
+        ret = subprocess.run(cmd,capture_output=capture_output)
 
     # Otherwise, run on it's own thread and capture output to standard out
     else:
@@ -501,7 +530,7 @@ def launch(cmd,run_directory,log_file=None):
     # Leave working directory
     os.chdir(cwd)
 
-def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
+def write_run_information(outdir,df,calc_type,model,cmd=None,start_time=None):
     """
     Write information from the run in a standard way.
 
@@ -517,8 +546,8 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
         phylogenetic model
     cmd : str
         invoked raxml or generax command
-    outgroup : list, optional
-        length 2 list with two sets of outgroups
+    start_time : float, optional
+        output of time.time() from start of the run
 
     Return
     ------
@@ -533,7 +562,10 @@ def write_run_information(outdir,df,calc_type,model,cmd,outgroup=None):
                 "model":model,
                 "cmd":cmd,
                 "version":topiary.__version__,
-                "outgroup":outgroup}
+                "end_time":time.time()}
+
+    if start_time is not None:
+        out_dict["start_time"] = start_time
 
     f = open(os.path.join(outdir,"run_parameters.json"),"w")
     json.dump(out_dict,f)

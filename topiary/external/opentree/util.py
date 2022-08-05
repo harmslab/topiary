@@ -1,111 +1,208 @@
 """
-Basic interface to opentree.
+Functions to interact directly with opentree database
 """
 
 import topiary
 from topiary._private import check
 
+import opentree
 from opentree import OT, taxonomy_helpers
+import dendropy as dp
+import ete3
 
 import pandas as pd
 import numpy as np
 
 import re, copy, time
 
-def is_allowed_phylo_context(phylo_context):
+def _validate_ott_vs_species(ott_list=None,species_list=None):
     """
-    See if a phylo_context is recognizable in opentree database.
+    Take the ott_list and species_list input, validate, and return an ott_list.
 
     Parameters
     ----------
-    phylo_context : str
-        string holding query phylognetic context
+    ott_list : list or None
+        input ott_list to check
+    species_list : list or None
+        input species_list to check
 
     Returns
     -------
-    phylo_context : str
-        validated phylo_context as a string
+    ott_list : list
+        validated ott list
     """
 
-    phylo_context = str(phylo_context)
+    failed_combo = False
 
-    # Make sure the phylo_context can be recognized by the by OT
-    allowed_context = OT.tnrs_contexts().response_dict
-    all_allowed = []
-    for k in allowed_context:
-        all_allowed.extend(allowed_context[k])
+    if ott_list is None and species_list is None:
+        failed_combo = True
 
-    if phylo_context not in all_allowed:
-        err = f"\n\nphylo_context '{phylo_context}' not recognized. Should be one of:\n\n"
-        for a in all_allowed:
-            err += f"    {a}\n"
-        err += "\n\n"
+    if ott_list is not None and species_list is not None:
+        failed_combo = True
+
+    if failed_combo:
+        err = "\nEither ott_list or species_list must be specified, but not both.\n\n"
         raise ValueError(err)
 
-    return phylo_context
+    if species_list is not None:
+        ott_list = species_to_ott(species_list)[0]
 
-def get_phylo_context(species_list):
+    ott_list = check.check_iter(ott_list,"ott_list",required_value_type=int)
+
+    return ott_list
+
+
+def species_to_ott(species):
     """
-    Get phylogenetic context (i.e. 'All life', 'Mammals') given a list of
-    species names.
+    Return ott ids (and other information) given a list of species.
 
     Parameters
     ----------
+    species : list
+        list of species in binomial format
+
+    Returns
+    -------
+    ott_list : list
+        list of ott as integer for all species in the order they were passed.
+        If species not found, set to None.
     species_list : list
-        list of binomial species names as strings (i.e. ["Homo sapiens",
-        "Mus musculus"])
+        list of species found for each species. If not found, return the input
+        species name.
+    results : dict
+        dictionary of information about species keyed to input species name
 
-    Returns
-    -------
-    phylo_context : str
-        string giving phylogenetic context
+    Notes
+    -----
+    For all species, whether matched or not, the results dictionary will have
+    following fields keyed to input species name.
+
+     + matched: whether or not this gave an unambiguous match
+     + num_matches: number of matched hits
+     + msg: message describing information about match
+     + ret: match tuple from opentree.OT.tnrs_match
+     + ott_id: integer ott id
+     + ott_name: found name corresponding to ott_id
+     + taxid: NCBI taxid or None if no NCBI taxid associated with record
+     + resolved: bool. whether or not species is resolved on synthetic tree
+
+    The opentree tnrs_match api is smart enough to infer context from
+    the species you pass in. If you pass in an ambiguous species name, it
+    will select the species based on the other species in the list. If the
+    species cannot be inferred from the other species context, this function
+    will return no ott for the ambiguous species.
     """
 
-    # Clean up species list
-    species_list = check.check_iter(species_list,
-                                    "species_list",
-                                    required_value_type=str)
+    # Make sure species list is sane
+    species = topiary._private.check.check_iter(species,
+                                                "species",
+                                                required_value_type=str,
+                                                is_not_type=str)
 
-    # No species, return all life
-    if len(species_list) == 0:
-        return "All life"
+    # Get unique species.
+    unique_species = list(set(species))
+    unique_species = [s.strip() for s in species]
 
-    # Make sure we can get an ott for all sequences in sequence list
-    ott, not_resolved = species_to_ott(species_list,phylo_context="All life")
-    for k in ott:
-        if ott[k][0] is None:
-            err = f"\nCould not find species '{k}' in opentree database.\n"
-            err += "We cannot reliably find phylogenetic context as a result.\n\n"
-            raise ValueError(err)
+    # Grab species names
+    ot_matches = OT.tnrs_match(unique_species,do_approximate_matching=True)
 
-    # Infer the phylogenetic context from this set of species
-    ot_matches = OT.tnrs_infer_context(species_list)
+    results = {}
+    for i, result in enumerate(ot_matches.response_dict["results"]):
 
-    # Return context
-    return ot_matches.response_dict["context_name"]
+        s = unique_species[i]
 
-def get_resolvable(ott_list,chunk_size=100):
+        # Parse matches: 0, 1, or many
+        matches = result["matches"]
+        if len(matches) == 0:
+            msg = f"Not match for '{s}'.\n"
+            results[s] = {"matched":False,
+                          "num_matches":0,
+                          "msg":msg,
+                          "ret":matches,
+                          "ott_id":None,
+                          "ott_name":None,
+                          "taxid":None}
+            continue
+
+        elif len(matches) == 1:
+            taxon = matches[0]["taxon"]
+            results[s] = {"matched":not matches[0]["is_approximate_match"],
+                          "num_matches":1,
+                          "msg":"success",
+                          "ret":matches}
+        else:
+            taxon = matches[0]["taxon"]
+
+            msg = "success"
+            if matches[0]["is_approximate_match"]:
+                msg = f"No exact match for '{s}'. Approximate matches:\n"
+
+                for m in matches:
+                    msg += f"    {m['matched_name']}\n"
+                msg += "\n"
+
+            results[s] = {"matched":not matches[0]["is_approximate_match"],
+                          "num_matches":len(matches),
+                          "msg":msg,
+                          "ret":matches}
+
+        results[s]["ott_id"] = taxon["ott_id"]
+        results[s]["ott_name"] = taxon["name"]
+
+        # Try to get taxid from the ott taxon entry
+        taxid = None
+        try:
+            tax_sources = taxon["tax_sources"]
+            for t in tax_sources:
+                if t.startswith("ncbi"):
+                    taxid = int(t.split(":")[1])
+                    break
+        except KeyError:
+            pass
+
+        if taxid is None:
+            try:
+                taxid = topiary.ncbi.entrez.get_taxid(s)
+            except RuntimeError:
+                pass
+
+        results[s]["taxid"] = taxid
+
+    # Create list of ott from these results
+    ott_list = []
+    species_list = []
+    for s in species:
+        m = results[s]
+        if m["msg"] == "success":
+            ott_list.append(m["ott_id"])
+            species_list.append(m["ott_name"])
+        else:
+            ott_list.append(None)
+            species_list.append(s)
+
+    return ott_list, species_list, results
+
+def ott_species_tree(ott_list=None,species_list=None):
     """
-    Get whether or not taxa are resolvable on the syntehtic ott tree.
+    Get a species tree from a list of ott.
 
     Parameters
     ----------
-    ott_list : list-like
-        list of ott as integers
-    chunk_size : int, default=100
-        break query into N chunk_size chunks to avoid slamming ott server with
-        request for a huge synthetic tree
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
 
     Returns
     -------
-    resolved : list
-        list of ott that can be resolved
-    not_resolved : list
-        list of ott that cannot be resolved
+    species_tree : ete3.Tree or None
+        species tree. None if tree cannot be pulled down.
+    results : dict
+        dictionary with resolved, missing, not_resolved, and not_monophyletic
+        ott.
     """
 
-    ott_list = check.check_iter(ott_list,"ott_list")
-    chunk_size = check.check_int(chunk_size,"chunk_size",minimum_allowed=1)
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
 
     # Check type of ott list
     try:
@@ -114,132 +211,245 @@ def get_resolvable(ott_list,chunk_size=100):
         err = "\nott_list should be a list of integer ott values\n\n"
         raise ValueError(err)
 
+    # If length of ott_list is zero
+    if len(ott_list) == 0:
+
+        results = {"resolved":[],
+                   "not_resolved":[],
+                   "unknown_ids":[],
+                   "not_monophyletic":[]}
+
+        return None, results
+
     # Make unique
     ott_list = list(set(ott_list))
 
-    # Nothing passed in, don't do anything else
-    if len(ott_list) == 0:
-        return [], []
+    # Pull down the synthetic tree from the ott server
+    try:
+        ret = taxonomy_helpers.labelled_induced_synth(ott_ids=ott_list,
+                                                      label_format="name_and_id",
+                                                      inc_unlabelled_mrca=False)
 
-    not_resolved = []
-    ott_broken_up = [ott_list[i:i + chunk_size]
-                     for i in range(0, len(ott_list), chunk_size)]
-    for query in ott_broken_up:
-
-        try:
-            # Get tree
-            ret = taxonomy_helpers.labelled_induced_synth(ott_ids=query,
-                                                          label_format="name_and_id")
-            # Taxa unresolvable in synthetic tree
-            for bad in ret["unknown_ids"].keys():
-                ott_id = ret["unknown_ids"][bad]["ott_id"]
-                not_resolved.append(ott_id)
-
-        except ValueError:
-            # opentree throws a ValueError if none of the ott can be placed on
-            # on the tree. They're all bad.
-            not_resolved.extend(query)
-
-        # Pause briefly. No DOS attack here. :)
-        time.sleep(0.5)
-
-    resolved = list(set(ott_list) - set(not_resolved))
-
-    return resolved, not_resolved
+    # Value error if *all* otts are bad.
+    except ValueError:
+        results = {"resolved":[],
+                   "not_resolved":ott_list[:],
+                   "unknown_ids":ott_list[:],
+                   "not_monophyletic":[]}
+        return None, results
 
 
+    # Taxa unresolvable in synthetic tree
+    unknown_ids = []
+    for bad in ret["unknown_ids"].keys():
+        unknown_ids.append(int(bad[3:]))
 
-def species_to_ott(species_list,phylo_context="All life"):
+    # Non-monophyletic taxa
+    not_monophyletic = []
+    for bad in ret["non-monophyletic_taxa"].keys():
+        ott_id = ret["non-monophyletic_taxa"][bad]["ott_id"]
+        not_monophyletic.append(ott_id)
+
+    # Write out without all the ancestor junk returned by opentree
+    t = ret["labelled_tree"].as_string(schema="newick",
+                                       suppress_leaf_taxon_labels=False,
+                                       suppress_leaf_node_labels=True,
+                                       suppress_internal_taxon_labels=True,
+                                       suppress_internal_node_labels=True,
+                                       suppress_edge_lengths=True,
+                                       suppress_rooting=False,
+                                       suppress_annotations=True,
+                                       suppress_item_comments=True)
+
+    # Read in the tree
+    stripped_tree = dp.Tree.get(data=t,schema="newick")
+    taxon_names = [s.label for s in stripped_tree.taxon_namespace]
+
+    # Extract tree with labels.  This will remove all of the empty singleton
+    # entries that otl brings down.
+    clean_tree = stripped_tree.extract_tree_with_taxa_labels(taxon_names)
+
+    # Rename labels on tree so they are ott
+    for n in clean_tree.taxon_namespace:
+        label = n.label.split("ott")[-1]
+        n.label = f"ott{label}"
+
+    # Convert tree to ete3 tree.
+    final_tree = ete3.Tree(clean_tree.as_string(schema="newick",
+                                                suppress_rooting=True),format=9)
+
+    # Arbitrarily resolve any polytomies
+    final_tree.resolve_polytomy()
+
+    # Give every node a support of 1 and a branch length of 1
+    ott_seen = []
+    for n in final_tree.traverse():
+        if n.dist != 1:
+            n.dist = 1
+        if n.support != 1:
+            n.support = 1
+
+        if n.is_leaf():
+            ott_seen.append(int(n.name[3:]))
+
+    # Not seen in tree
+    not_resolved = list(set(ott_list)-set(ott_seen))
+
+    results = {"resolved":ott_seen,
+               "not_resolved":not_resolved,
+               "unknown_ids":unknown_ids,
+               "not_monophyletic":not_monophyletic}
+
+    return final_tree, results
+
+
+def ott_resolvable(ott_list=None,species_list=None):
     """
-    Get the OTT values for a list of species.
+    Get whether or not taxa are resolvable on the synthetic ott tree.
 
     Parameters
     ----------
-    species_list : list
-        list of binomial species names as strings (i.e. ["Homo sapiens",
-        "Mus musculus"])
-    phylo_context : str, default="All life"
-        used to limit species seach for looking up species ids on open tree of
-        life
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
 
     Returns
     -------
-    results : list
-        list of ott found from this search
-    not_resolved : list
-        list of ott that could not be resolved on the species tree even though
-        they have ott.
+    resolvable : list
+        list of True/False for each ott in ott_list
     """
 
-    # Check input arguments
-    species_list = check.check_iter(species_list,
-                                    "species_list",
-                                    is_not_type=str,
-                                    required_value_type=str)
+    # Check ott list
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
 
-    # Make sure the phylo_context is recognizable by OTT
-    phylo_context = is_allowed_phylo_context(phylo_context)
+    try:
+        ott_list = [int(o) for o in ott_list]
+    except (ValueError,TypeError):
+        err = "\nott_list should be a list of integer ott values\n\n"
+        raise ValueError(err)
 
-    # Strip leading/trailing spaces
-    species_list = [s.strip() for s in species_list]
+    # Return empty list if empty input
+    if len(ott_list) == 0:
+        return []
 
-    # Do fuzzy match for species names
-    ot_matches = OT.tnrs_match(species_list,
-                               context_name=phylo_context,
-                               do_approximate_matching=True)
+    # Get tree and metadata
+    final_tree, results = ott_species_tree(ott_list)
 
-    # Compile pattern to remove gobblygook like "(in domain bacteria)" that
-    # comes down with tnrs match
-    domain_pattern = re.compile(" \(.*?in domain.*?\)")
+    # Dictionary of resolved/not resolved keyed to ott
+    resolved_dict = dict([(r,True) for r in results["resolved"]])
+    for r in results["not_resolved"]:
+        resolved_dict[r] = False
 
-    # Go through hits
-    results = {}
-    for match in ot_matches.response_dict["results"]:
+    # Convert to a final True/False list
+    resolvable = []
+    for o in ott_list:
+        resolvable.append(resolved_dict[o])
 
-        # No match
-        if len(match["matches"]) == 0:
-            results[match['name']] = (None,match['name'])
-
-        # Match
-        else:
-
-            matches = match["matches"]
-
-            # Multiple match -- print warning
-            if len(matches) > 1:
-
-                # If we have multiple fuzzy matches, where the first is not exactly
-                # equal to the query, warn the user
-                if matches[0]['matched_name'] != matches[0]['taxon']['unique_name']:
-
-                    w = f"\n\nSpecies {matches[0]['matched_name']} had multiple hits. Taking first.\n"
-                    w += "Matches:\n"
-                    for i in range(len(matches)):
-                        w += f"    {matches[i]['taxon']['unique_name']}\n"
-                    print(w)
-
-            # Record data about hit
-            hit = matches[0]
-
-            matched_name = domain_pattern.sub("",hit["matched_name"])
-            otl_name = domain_pattern.sub("",hit["taxon"]["unique_name"])
-            ott_id = hit["taxon"]["ott_id"]
-
-            results[matched_name] = (ott_id,otl_name)
+    return resolvable
 
 
-    # Record non-hits
-    for unmatch in ot_matches.response_dict["unmatched_names"]:
-        results[unmatch] = (None,unmatch,None)
+def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
+    """
+    Get the most recent common ancestor given a list of ott. Unrecognized ott
+    are dropped with a warning.
 
-    # List of ott numbers to query as tree
-    tmp_ott_list = [results[k][0] for k in results if results[k][0] is not None]
+    Parameters
+    ----------
+    ott_list : list, optional
+        list of ott ids (integers). this or species_list must be specified
+    species_list : list, optional
+        list of binomial species (str). this or ott_list must be specified
+    move_up_by : int, default=0
+        starting at actual MRCA, move up by this number of ranks. For
+        example, if the MRCA for a set of OTT was a kingdom and
+        move_up_by = 1, this would yield the relevant domain.
+    avoid_all_life : bool, default=True
+        if possible, avoid the jump to all cellular organisms. This takes
+        precedence over move_up_by.
 
-    # Don't try to get synthetic tree for empty sequence set
-    if len(tmp_ott_list) == 0:
-        return results, []
+    Returns
+    -------
+    out : dict
+        dictionary with keys ott_name, ott_id, ott_rank, lineage, and taxid.
+    """
 
-    # Get taxa that cannot be resolved
-    resolved, not_resolved = get_resolvable(tmp_ott_list)
+    ott_list = _validate_ott_vs_species(ott_list,species_list)
 
-    return results, not_resolved
+    avoid_all_life = check.check_bool(avoid_all_life,
+                                      "avoid_all_life")
+    move_up_by = check.check_int(move_up_by,
+                                 "move_up_by",
+                                 minimum_allowed=0)
+
+    if len(ott_list) == 0:
+        out = {}
+        out["ott_name"] = "life"
+        out["ott_id"] = 805080
+        out["ott_rank"] = "no rank"
+        out["lineage"] = None
+        out["taxid"] = 1
+
+        return out
+
+    # Get the synthetic mrca
+    try:
+        synth_mrca = OT.synth_mrca(ott_ids=ott_list)
+    except opentree.OTWebServicesError as e:
+        err = "No valid OTT in ott list.\n"
+        raise ValueError(err) from e
+
+    # Get ott for the mrca species
+    mrca = synth_mrca.response_dict["mrca"]
+    try:
+        taxon = mrca["taxon"]
+    except KeyError:
+        taxon = synth_mrca.response_dict["nearest_taxon"]
+
+    # Get ott, name, and lineage for the mrca
+    mrca_ott = taxon["ott_id"]
+    mcra_name = taxon["name"]
+    mrca_info = OT.taxon_info(ott_id=mrca_ott,include_lineage=True)
+    lineage = mrca_info.response_dict["lineage"]
+
+    # Start lineage with the mrca
+    lineage.insert(0,taxon)
+
+    # Whack off "life" if that's the highest rank and we're avoiding all life
+    if len(lineage) > 1 and avoid_all_life:
+        if lineage[-1]["name"] == "life":
+            lineage = lineage[:-1]
+
+    # Whack off "cellular life" if that's the highest rank and we're avoiding
+    # all life
+    if len(lineage) > 1 and avoid_all_life:
+        if lineage[-1]["name"] == "cellular organisms":
+            lineage = lineage[:-1]
+
+    # Figure out how much to move up by given what's in lineage
+    if move_up_by > len(lineage) - 1:
+        move_up_by = len(lineage) - 1
+
+    anc = lineage[move_up_by]
+
+    # Get information about this ancestor
+    out = {}
+    out["ott_name"] = anc["name"]
+    out["ott_id"] = anc["ott_id"]
+    out["ott_rank"] = anc["rank"]
+    out["lineage"] = lineage
+    taxid = None
+    for t in anc["tax_sources"]:
+        if t.startswith("ncbi"):
+            taxid = int(t.split(":")[1])
+            break
+
+    if taxid is None:
+        try:
+            taxid = topiary.ncbi.entrez.get_taxid(anc["name"])
+        except RuntimeError:
+            pass
+
+    out["taxid"] = taxid
+
+    return out

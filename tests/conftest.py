@@ -121,6 +121,25 @@ def xml():
 
     return out_dict
 
+@pytest.fixture(scope="module")
+def user_xml_files():
+    """
+    Dictionary holding paths pointing to ncbi style xml files.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml","user-xml-files"))
+    json_file = os.path.join(base_dir,"index.json")
+
+    with open(json_file) as f:
+        file_info = json.load(f)
+
+    final_dict = {}
+    for f in file_info:
+        final_dict[os.path.join(base_dir,f)] = file_info[f]
+
+    return final_dict
+
 
 def get_public_param_defaults(public_function,private_function):
     """
@@ -202,9 +221,31 @@ def seed_dataframes():
 
     out_dict = {}
     for f in files:
-        out_dict[f] = os.path.join(base_dir,f)
+        out_file = os.path.join(base_dir,f)
+        if os.path.isfile(out_file):
+            out_dict[f] = out_file
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def user_seed_dataframes():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,
+                                            "data",
+                                            "seed-dataframes",
+                                            "user-seed-dataframes"))
+
+
+    files = glob.glob(os.path.join(base_dir,"*.xlsx"))
+
+    out_dict = {}
+    for f in files:
+        out_dict[os.path.split(f)[-1]] = f
+
+    return out_dict
+
+
 
 @pytest.fixture(scope="module")
 def esummary_assembly_records():
@@ -249,3 +290,12 @@ def for_real_inference():
         out_dict[key] = f
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def df_with_species_not_resolvable():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    df_file = os.path.abspath(os.path.join(dir,"data","df-with-species-not-resolvable.csv"))
+    df = pd.read_csv(df_file)
+
+    return df

@@ -1,6 +1,9 @@
 import pytest
 
 import topiary
+from topiary.external.raxml.ancestors import _make_ancestor_summary_trees
+from topiary.external.raxml.ancestors import _parse_raxml_anc_output
+from topiary.external.raxml.ancestors import generate_ancestors
 
 import numpy as np
 
@@ -48,3 +51,15 @@ def test__get_ancestral_gaps(tmpdir):
 
     for k in expected:
         assert np.array_equal(gapping[k],expected[k])
+
+def test__make_ancestor_summary_trees():
+
+    pass
+
+def test__parse_raxml_anc_output():
+
+    pass
+
+def test_generate_ancestors():
+
+    pass

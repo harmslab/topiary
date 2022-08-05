@@ -8,7 +8,7 @@ from . import ncbi
 from . import opentree
 from . import raxml
 
-from .opentree import get_ott_id, get_species_tree
+from .opentree import get_ott, get_species_tree
 from .muscle import run_muscle
 from .ncbi.blast import recip_blast
 

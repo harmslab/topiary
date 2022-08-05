@@ -1,18 +1,15 @@
-topiary.quality package
+topiary.quality
 =======================
 
-Subpackages
------------
 
-.. toctree::
-   :maxdepth: 4
 
-   topiary.quality.redundancy
+.. automodule:: topiary.quality
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-Submodules
-----------
 
-topiary.quality.alignment module
+topiary.quality.alignment
 --------------------------------
 
 .. automodule:: topiary.quality.alignment
@@ -20,7 +17,31 @@ topiary.quality.alignment module
    :undoc-members:
    :show-inheritance:
 
-topiary.quality.taxonomic module
+topiary.quality.polish
+-----------------------------
+
+.. automodule:: topiary.quality.polish
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.quality.redundancy
+---------------------------------
+
+.. automodule:: topiary.quality.redundancy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.quality.shrink
+-----------------------------
+
+.. automodule:: topiary.quality.shrink
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.quality.taxonomic
 --------------------------------
 
 .. automodule:: topiary.quality.taxonomic
@@ -28,10 +49,4 @@ topiary.quality.taxonomic module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.quality
-   :members:
-   :undoc-members:
-   :show-inheritance:

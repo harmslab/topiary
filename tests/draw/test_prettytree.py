@@ -2,46 +2,14 @@
 import pytest
 
 import topiary
-import topiary.draw._prettytree as prettytree
+import topiary.draw.prettytree as prettytree
 import ete3
 
 import toytree
 import numpy as np
 
-def test___get_round_to():
 
-    assert prettytree._get_round_to(1e50,total_requested=3) == 0
-    assert prettytree._get_round_to(0.1,total_requested=3) == 1
-    assert prettytree._get_round_to(0.01,total_requested=3) == 2
-    assert prettytree._get_round_to(0.001,total_requested=3) == 3
-    assert prettytree._get_round_to(0.0011,total_requested=3) == 3
-    assert prettytree._get_round_to(0.0001,total_requested=3) == 4
-    assert prettytree._get_round_to(0.00001,total_requested=3) == 5
-    assert prettytree._get_round_to(1e-5,total_requested=3) == 5
-
-    assert prettytree._get_round_to(1.1,total_requested=3) == 1
-    assert prettytree._get_round_to(1.10,total_requested=3) == 1
-    assert prettytree._get_round_to(1.12,total_requested=3) == 2
-    assert prettytree._get_round_to(1.12,total_requested=2) == 1
-    assert prettytree._get_round_to(1.12,total_requested=1) == 0
-
-    assert prettytree._get_round_to(-1e50,total_requested=3) == 0
-    assert prettytree._get_round_to(-0.1,total_requested=3) == 1
-    assert prettytree._get_round_to(-0.01,total_requested=3) == 2
-    assert prettytree._get_round_to(-0.001,total_requested=3) == 3
-    assert prettytree._get_round_to(-0.0011,total_requested=3) == 3
-    assert prettytree._get_round_to(-0.0001,total_requested=3) == 4
-    assert prettytree._get_round_to(-0.00001,total_requested=3) == 5
-    assert prettytree._get_round_to(-1e-5,total_requested=3) == 5
-
-    assert prettytree._get_round_to(-1.1,total_requested=3) == 1
-    assert prettytree._get_round_to(-1.10,total_requested=3) == 1
-    assert prettytree._get_round_to(-1.12,total_requested=3) == 2
-    assert prettytree._get_round_to(-1.12,total_requested=2) == 1
-    assert prettytree._get_round_to(-1.12,total_requested=1) == 0
-
-
-def test_PrettyTree__init__():
+def test_PrettyTree():
 
     # Read as string
     tree = "(((A:1.0,B:4.0)AB:1.0,((C:1.0,D:1.0)CD:1.0,E:1.0)CDE:1.0)ABCDE:1.0,(F:1.0,G:1.0)FG)ABCDEFG;"
@@ -60,8 +28,8 @@ def test_PrettyTree__init__():
     pt = prettytree.PrettyTree(T=tree,stroke_width=20)
     assert pt._stroke_width == 20
 
-    pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_taxon=100)
-    assert pt._vertical_pixels_per_taxon == 100
+    pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_tip=100)
+    assert pt._vertical_pixels_per_tip == 100
 
     # check artwork parameters
     bad_float = [-1,None,int,float,[],(1,)]
@@ -71,7 +39,7 @@ def test_PrettyTree__init__():
         with pytest.raises(ValueError):
             pt = prettytree.PrettyTree(T=tree,stroke_width=b)
         with pytest.raises(ValueError):
-            pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_taxon=b)
+            pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_tip=b)
 
 def test_integrated_single():
     T = toytree.rtree.rtree(50)
@@ -119,3 +87,55 @@ def test_integrated_categories():
     pt.draw_node_labels("test_feature")
     pt.draw_scale_bar()
     pt.draw_node_legend()
+    
+def test_PrettyTree__get_node_values():
+
+    pass
+
+def test_PrettyTree_canvas():
+
+    pass
+
+def test_PrettyTree_default_size():
+
+    pass
+
+def test_PrettyTree_draw_node_labels():
+
+    pass
+
+def test_PrettyTree_draw_node_legend():
+
+    pass
+
+def test_PrettyTree_draw_nodes():
+
+    pass
+
+def test_PrettyTree_draw_scale_bar():
+
+    pass
+
+def test_PrettyTree_legend_ax():
+
+    pass
+
+def test_PrettyTree_plotted_properties():
+
+    pass
+
+def test_PrettyTree_render():
+
+    pass
+
+def test_PrettyTree_tT():
+
+    pass
+
+def test_PrettyTree_tree_ax():
+
+    pass
+
+def test_PrettyTree_tree_mark():
+
+    pass

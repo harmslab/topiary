@@ -1,10 +1,15 @@
-topiary.util package
+topiary.util
 ====================
 
-Submodules
-----------
 
-topiary.util.create\_nicknames module
+
+.. automodule:: topiary.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.util.create\_nicknames
 -------------------------------------
 
 .. automodule:: topiary.util.create_nicknames
@@ -12,10 +17,4 @@ topiary.util.create\_nicknames module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.util
-   :members:
-   :undoc-members:
-   :show-inheritance:

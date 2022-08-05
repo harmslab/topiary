@@ -180,3 +180,11 @@ def test_validate_stack():
         installed.validate_stack([{"program":"git",
                                    "min_version":(10000000,0,1),
                                    "must_pass":True}])
+def test_check_mpirun():
+
+    pass
+
+def test_test_mpi_configuration():
+
+    pass
+

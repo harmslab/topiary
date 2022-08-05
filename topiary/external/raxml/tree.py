@@ -58,8 +58,6 @@ def generate_ml_tree(previous_dir=None,
     """
 
     # Copy files in, write out alignment, move into working directory, etc.
-
-
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
@@ -74,6 +72,8 @@ def generate_ml_tree(previous_dir=None,
     tree_file = result["tree_file"]
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
+    existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     other_args = []
 
@@ -95,43 +95,47 @@ def generate_ml_tree(previous_dir=None,
                     raxml_binary=raxml_binary,
                     other_args=other_args)
 
-    outdir = "output"
-    os.mkdir(outdir)
+    os.mkdir("output")
+
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in existing_trees:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
 
     # Grab the final tree and store as tree.newick
+    shutil.copy(os.path.join("working","alignment.phy.raxml.bestTree"),
+                os.path.join("output","tree.newick"))
+
+    # If we ran bootstrap, get tree with supports and bootstrap information
     if bootstrap:
         shutil.copy(os.path.join("working","alignment.phy.raxml.support"),
-                    os.path.join(outdir,"tree.newick"))
-    else:
-        shutil.copy(os.path.join("working","alignment.phy.raxml.bestTree"),
-                    os.path.join(outdir,"tree.newick"))
+                    os.path.join("output","tree_supports.newick"))
 
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="ml_tree",
-                          model=model,
-                          cmd=cmd)
-
-    # Copy bootstrap results to the output directory
-    if bootstrap:
-        bs_out = os.path.join(outdir,"bootstrap_replicates")
+        bs_out = os.path.join("output","bootstrap_replicates")
         os.mkdir(bs_out)
         bsmsa = glob.glob(os.path.join("working","alignment.phy.raxml.bootstrapMSA.*.phy"))
         for b in bsmsa:
             number = int(b.split(".")[-2])
             shutil.copy(b,os.path.join(bs_out,f"bsmsa_{number:04d}.phy"))
         shutil.copy(os.path.join("working","alignment.phy.raxml.bootstraps"),
-                    os.path.join(outdir,"bootstrap_replicates","bootstraps.newick"))
+                    os.path.join("output","bootstrap_replicates","bootstraps.newick"))
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="ml_tree",
+                          model=model,
+                          cmd=cmd,
+                          start_time=start_time)
+
+    print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
     # Create plot holding tree
-    ret = topiary.draw.ml_tree(run_dir=output,
-                               output_file=os.path.join(output,
-                                                        "output",
-                                                        "summary-tree.pdf"))
-    return ret
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

@@ -3,38 +3,30 @@ Use entrez to download protein sequences from the NCBI.
 """
 
 import topiary
-from topiary._private import check
+from topiary._private import check, threads
 
-from Bio import Entrez
+from Bio import Entrez, SeqIO
 
-from tqdm.auto import tqdm
+import urllib, http, time, io
 
-import os, urllib, http, time
-import multiprocessing as mp
-
-def _get_sequences_thread(args):
+def _get_sequences_thread_function(ids,num_tries_allowed,lock):
     """
-    Download ids from the NCBI. args is interpreted as:
+    Download ids from the NCBI.
 
     Parameters
     ----------
-        args: list of arguments controlling entrez query. Expanded to:
-            index: number of request, used for sorting results after multithreading
-            ids: string with comma-separated list of ids to download
-            num_tries_allowed: how many attempts should be made to actually do
-                               a given query
-            lock: lock to control number of requests per thread per second
-            queue: multiprocessing queue in which to store results
-    Return
-    ------
-        None
-    """
+    ids : str
+        string with comma-separated list of ids to download
+    num_tries_allowed : int
+        how many attempts should be made to actually do a given query
+    lock : multiprocessing.Manager().Lock()
+        lock used to prevent hammering NCBI servers at too high of a rate.
 
-    index = args[0]
-    ids = args[1]
-    num_tries_allowed = args[2]
-    lock = args[3]
-    queue = args[4]
+    Returns
+    -------
+    out : handle.read()
+        output from Bio.Entrez
+    """
 
     # While we haven't run out of tries...
     tries = 0
@@ -76,8 +68,14 @@ def _get_sequences_thread(args):
         err = "could not download sequences\n"
         raise ValueError(err)
 
-    # Record out and initial index in the output queue.
-    queue.put((index,out))
+    # Extract sequences from the downloaded data
+    seq_output = []
+    for record in SeqIO.parse(io.StringIO(out.strip()), "fasta"):
+        seq_id = str(record.id)
+        sequence = str(record.seq)
+        seq_output.append((seq_id,sequence))
+
+    return seq_output
 
 def get_sequences(to_download,
                   block_size=50,
@@ -99,34 +97,24 @@ def get_sequences(to_download,
 
     Returns
     -------
-    fasta_file : str
-        file holding all downloaded sequences.
+    seq_output : list
+        list of tuples of strings. Each tuple looks like (seq_id,sequence)
     """
 
+    # Check to_download. if list is empty, return empty list
+    to_download = check.check_iter(to_download,"to_download")
+    if len(to_download) == 0:
+        return []
+
+    # Check/parse other arguments
     block_size = check.check_int(block_size,
-                                             "block_size",
-                                             minimum_allowed=1)
+                                 "block_size",
+                                 minimum_allowed=1)
     num_tries_allowed = check.check_int(num_tries_allowed,
-                                                    "num_tries_allowed",
-                                                    minimum_allowed=1)
-    num_threads = check.check_int(num_threads,
-                                              "num_threads",
-                                              minimum_allowed=-1)
-    if num_threads == 0:
-        err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
-        err += "or any integer > 0.\n\n"
-        raise ValueError(err)
+                                        "num_tries_allowed",
+                                        minimum_allowed=1)
 
-
-    # Figure out number of threads to use
-    if num_threads < 0:
-        try:
-            num_threads = mp.cpu_count()
-        except NotImplementedError:
-            num_threads = os.cpu_count()
-            if num_threads is None:
-                print("Could not determine number of cpus. Using single thread.\n",flush=True)
-                num_threads = 1
+    num_threads = threads.get_num_threads(num_threads)
 
     # Figure out how many blocks we're going to download
     num_blocks = len(to_download) // block_size
@@ -134,39 +122,23 @@ def get_sequences(to_download,
         num_blocks += 1
     print(f"Downloading {num_blocks} blocks of ~{block_size} sequences... ",flush=True)
 
-    # queue will hold results from each download batch.
-    manager = mp.Manager()
-    queue = manager.Queue()
-    lock = manager.Lock()
-    with mp.Pool(num_threads) as pool:
+    # Construct kwargs to pass to _get_sequences_thread_function
+    kwargs_list = []
+    for i in range(0,len(to_download),block_size):
+        ids = ",".join(to_download[i:(i+block_size)])
+        kwargs_list.append({"ids":ids,
+                            "num_tries_allowed":num_tries_allowed})
 
-        # This is a bit obscure. Build a list of args to pass to the pool. Each
-        # tuple of args matches the args in _get_sequences_thread.
-        # all_args has all len(df) recip blast runs we want to do.
-        all_args = []
-        for i in range(0,len(to_download),block_size):
-            ids = ",".join(to_download[i:(i+block_size)])
-            all_args.append((i,ids,num_tries_allowed,lock,queue))
-
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _get_sequences_thread
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        list(tqdm(pool.imap(_get_sequences_thread,all_args),
-                  total=len(all_args)))
-
-    # Get results out of the queue. Sort by i to put in correct order
-    results = []
-    while not queue.empty():
-        results.append(queue.get())
-    results.sort()
+    # Download sequences in multi-threaded fashion
+    results = threads.thread_manager(kwargs_list,
+                                     _get_sequences_thread_function,
+                                     num_threads,
+                                     progress_bar=True,
+                                     pass_lock=True)
 
     # Get final downloaded stuff
-    total_download = []
+    seq_output = []
     for r in results:
-        total_download.append(r[1])
+        seq_output.extend(r)
 
-    print("Done.")
-
-    return "".join(total_download)
+    return seq_output

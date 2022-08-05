@@ -1,10 +1,15 @@
-topiary.pipeline package
+topiary.pipeline
 ========================
 
-Submodules
-----------
 
-topiary.pipeline.alignment\_to\_ancestors module
+
+.. automodule:: topiary.pipeline
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.pipeline.alignment\_to\_ancestors
 ------------------------------------------------
 
 .. automodule:: topiary.pipeline.alignment_to_ancestors
@@ -12,7 +17,7 @@ topiary.pipeline.alignment\_to\_ancestors module
    :undoc-members:
    :show-inheritance:
 
-topiary.pipeline.seed\_to\_alignment module
+topiary.pipeline.seed\_to\_alignment
 -------------------------------------------
 
 .. automodule:: topiary.pipeline.seed_to_alignment
@@ -20,18 +25,4 @@ topiary.pipeline.seed\_to\_alignment module
    :undoc-members:
    :show-inheritance:
 
-topiary.pipeline.seq\_to\_alignment module
-------------------------------------------
 
-.. automodule:: topiary.pipeline.seq_to_alignment
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: topiary.pipeline
-   :members:
-   :undoc-members:
-   :show-inheritance:

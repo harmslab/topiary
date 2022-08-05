@@ -176,3 +176,11 @@ def test_wrap_function(tmpdir):
     ret, out = wf(test_fcn,argv=["stupid"],
                   extra_args=[("--extra",{"action":"store_true"})])
     assert out.__dict__["extra"] == False
+def test_IterFromFile():
+
+    pass
+
+def test_IterFromFile___call__():
+
+    pass
+

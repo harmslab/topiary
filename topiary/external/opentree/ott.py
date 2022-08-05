@@ -5,67 +5,38 @@ Get OTT ids given a topiary dataframe.
 import topiary
 from topiary._private import check
 from topiary.external.opentree.util import species_to_ott
+from .util import species_to_ott, ott_resolvable
 
 import pandas as pd
 import numpy as np
 
 import re, copy
 
-def get_ott_id(df,
-               phylo_context="All life",
-               verbose=True):
+def get_ott(df,verbose=True):
     """
     Return a copy of df with an ott column holding open tree of life
-    names for each species.
+    names for each species. It also adds a "resolvable" column indicating
+    whether the species can be resolved on the open tree of life synthetic
+    tree.
 
     Parameters
     ----------
     df : pandas.DataFrame
         dataframe that has an ott column with Open Tree of Life taxon ids
-    phylo_context: str, default="All life"
-        used to limit scope for looking up species. See Notes for details.
     verbose : bool, default=True
         whether or not to print out unresolvable taxa, etc.
 
     Returns
     -------
     topiary_df : pandas.DataFrame
-        Copy of df with added ott and orig_species column.  ott column
-        holds ott index for the species. orig_species holds what used to be
-        in the species column. The species column is replaced by the uniuqe
-        species name used by Open Tree of Life.
-
-    Notes
-    -----
-    :code:`phylo_context` should be a string recognized by
-    opentreeoflife.org. Strings are case-sensitive. To get the current strings
-    recognized by the database, use the following code:
-
-    .. code-block:: python
-
-        from opentree import OT
-        print(OT.tnrs_contexts().response_dict)
-
-    As of 2022-06-21, the following are recognized. You can use
-    either the keys or values in this dictionary as a :code:`phylo_context`.
-
-    .. code-block:: python
-
-        {'ANIMALS':
-            ['Animals', 'Birds', 'Tetrapods', 'Mammals', 'Amphibians',
-             'Vertebrates', 'Arthropods', 'Molluscs', 'Nematodes',
-             'Platyhelminthes', 'Annelids', 'Cnidarians', 'Arachnids','Insects'],
-         'FUNGI': ['Fungi', 'Basidiomycetes', 'Ascomycetes'],
-         'LIFE': ['All life'],
-         'MICROBES': ['Bacteria', 'SAR group', 'Archaea', 'Excavata', 'Amoebozoa',
-                      'Centrohelida', 'Haptophyta', 'Apusozoa', 'Diatoms',
-                      'Ciliates', 'Forams'],
-         'PLANTS': ['Land plants', 'Hornworts', 'Mosses', 'Liverworts',
-                    'Vascular plants', 'Club mosses', 'Ferns', 'Seed plants',
-                    'Flowering plants', 'Monocots', 'Eudicots', 'Rosids',
-                    'Asterids', 'Asterales', 'Asteraceae', 'Aster',
-                    'Symphyotrichum', 'Campanulaceae', 'Lobelia']}
-
+        Copy of df with added ott, orig_species, and resolvable columns.
+        ott column holds ott index for the species. orig_species holds what used
+        to be in the species column. The species column is replaced by clean
+        species name used by Open Tree of Life. The resolvable column indicates
+        whether the species can be resolved on the synthetic tree. Rows with
+        species that have no ott and/or are not resolvable have keep set to
+        False. This will *not* respect the always_keep column, and will warn
+        the user it is doing so.
     """
 
     # Make sure this is a topiary dataframe
@@ -78,64 +49,67 @@ def get_ott_id(df,
     local_df = df.copy()
     local_df["orig_species"] = local_df.loc[:,"species"]
 
-    # Get unique list of species, stripping any leading/trailing spaces.
-    species_list = list(local_df.species.drop_duplicates())
+    # Get ott and clean species names from opentree database
+    ott_list, species_list, ott_results_dict = species_to_ott(local_df.species)
+    good_ott_mask = np.array([o is not None for o in ott_list],dtype=bool)
+    new_ott = [f"ott{o}" for o in np.array(ott_list)[good_ott_mask]]
 
-    # Actually get species ott from opentree database
-    results, not_resolved = species_to_ott(species_list=species_list,
-                                           phylo_context=phylo_context)
+    # Get species names that were not recognized
+    bad_ott_mask = np.logical_not(good_ott_mask)
+    unrecognized_name = np.array(species_list)[bad_ott_mask]
+    unrecognized_name = list(set(unrecognized_name))
+    unrecognized_name.sort()
 
-    # Create new, empty column for "ott" in the local df
-    local_df["ott"] = pd.array(["" for _ in range(len(local_df))])
+    # Load in otts and species
+    local_df["ott"] = [pd.NA for _ in ott_list]
+    local_df.loc[good_ott_mask,"ott"] = new_ott
+    local_df["species"] = species_list
 
-    # Go through the local_df and populate species, ott, and keep
-    unrecognized_name = []
-    unresolved_taxa = []
-    final_ott = []
-    for i in range(len(local_df)):
+    # Figure out which species are resolvable
+    good_mask = np.array([o is not None for o in ott_list],dtype=bool)
+    ott_array = np.array(ott_list)
+    resolvable = np.array(ott_resolvable(ott_array[good_mask]),dtype=bool)
+    local_df["resolvable"] = False
+    local_df.loc[good_mask,"resolvable"] = np.array(resolvable)
 
-        # Get row name
-        row_name = local_df.iloc[i].name
+    # Get list of taxa that could be recognized but not placed
+    resolvable = local_df.loc[:,"resolvable"]
+    good_not_resolved = np.logical_and(good_ott_mask,np.logical_not(resolvable))
+    unresolved_taxa = np.array(species_list)[good_not_resolved]
+    unresolved_taxa = list(set(unresolved_taxa))
+    unresolved_taxa.sort()
 
-        # Get species and what keep status was before this move
-        s = local_df.loc[row_name,"orig_species"]
-        keep = local_df.loc[row_name,"keep"]
+    # Get bad ott or not resolvable
+    bad = np.logical_or(pd.isnull(local_df["ott"]),
+                        np.logical_not(local_df["resolvable"]))
 
-        # Default values
-        ott_id = None
-        species = s
+    # See if always_keep species are not resolvable. These will be dropped,
+    # overriding always_keep.
+    try:
+        always_keep = df.loc[:,"always_keep"]
 
-        # Try to grab parsed results. If fails, no hit. Set ott_id to None
-        # and keep species as is
-        try:
-            ott_id = results[s][0]
-            species = results[s][1]
-        except KeyError:
-            pass
+        bad_drop = np.logical_and(always_keep,bad)
+        bad_rows = local_df.loc[bad_drop,:]
+        if len(bad_rows) > 0:
+            w = "Not all entries with always_keep == True are resolvable on\n"
+            w += "the opentreeoflife synthetic tree. The following rows will\n"
+            w += "have always_keep and keep both set to False.\n"
+            for idx in bad_rows.index:
+                uid = bad_rows.loc[idx,"uid"]
+                species = bad_rows.loc[idx,"species"]
+                ott = bad_rows.loc[idx,"ott"]
+                w += f"    {uid}: {species} ({ott})\n"
+            print(w)
 
-        # If ott is none, set to keep = False, and record we did not find the
-        # species
-        if ott_id is None:
-            keep = False
-            unrecognized_name.append(s)
+        local_df.loc[bad_drop,"always_keep"] = False
 
-        # If ott_id was something not resovled in the syntehci tree, set
-        # keep = False and record we could not resolve
-        if ott_id in not_resolved:
-            keep = False
-            unresolved_taxa.append(s)
+    except KeyError:
+        pass
 
-        # Update the local_df keep, species, and ott
-        local_df.loc[row_name,"keep"] = keep
-        local_df.loc[row_name,"species"] = species
-
-        if ott_id is None:
-            local_df.loc[row_name,"ott"] = pd.NA
-        else:
-            local_df.loc[row_name,"ott"] = f"ott{ott_id}"
+    # Set taxa that could not be resolved to False
+    local_df.loc[bad,"keep"] = False
 
     # Print warning data for user -- species we could not find OTT for
-    unrecognized_name = set(unrecognized_name)
     if len(unrecognized_name) != 0:
 
         w = "\n"
@@ -165,7 +139,7 @@ def get_ott_id(df,
         This is a unique species, but can't be placed on a bifurcating species
         tree.
 
-        If you are able to find a name for the spieces that successfully resolves
+        If you are able to find a name for the species that successfully resolves
         on the opentreeoflife database, you can update the dataframe. For the
         example of Apteryx mantelli mantellii above, you could fix this error
         by running the following code. (Note we set `keep = True` because the
@@ -174,7 +148,7 @@ def get_ott_id(df,
         ```
         df.loc[df.species == "Apteryx mantelli mantelli","species"] = "Apteryx australis mantelli"
         df.loc[df.species == "Apteryx australis mantelli","keep"] = True
-        df = topiary.get_ott_id(df,phylo_context="Animals")
+        df = topiary.get_ott(df)
         ```
         \n""")
 
@@ -182,7 +156,6 @@ def get_ott_id(df,
             print(w)
 
     # Print warning data for user -- species we could not resolve
-    unresolved_taxa = set(unresolved_taxa)
     if len(unresolved_taxa) != 0:
 
         w = "\n"

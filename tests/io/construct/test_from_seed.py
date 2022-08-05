@@ -1,9 +1,7 @@
 import pytest
 
 import topiary
-
-import numpy as pd
-import pandas as pd
+from topiary.io.construct import df_from_seed
 
 def test_df_from_seed():
 

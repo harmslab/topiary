@@ -11,6 +11,7 @@ import subprocess, sys, os, random, string, re, warnings
 def run_muscle(input,
                output_fasta=None,
                super5=False,
+               silent=False,
                muscle_cmd_args=[],
                muscle_binary="muscle"):
     """
@@ -25,6 +26,8 @@ def run_muscle(input,
         is a dataframe; reqiured if the input is a fasta file.
     super5 : bool
         Use the 'super5' mode of muscle 5
+    silent : bool, default=False
+        whether or not to suppress all output
     muscle_cmd_args : list
         list of arguments to pass directly to muscle. Wrapper specifies :code:`-align`
         and :code:`-output` (or :code:`-in/-out` for old version of the command
@@ -65,7 +68,7 @@ def run_muscle(input,
             raise ValueError(err)
 
         # Do the alignment.
-        _run_muscle(input,output_fasta,super5,muscle_cmd_args,muscle_binary)
+        _run_muscle(input,output_fasta,super5,silent,muscle_cmd_args,muscle_binary)
 
         print(f"\nSuccess. Alignment written to '{output_fasta}'.",flush=True)
 
@@ -89,7 +92,7 @@ def run_muscle(input,
             temporary_output = True
 
         # Do the alignment
-        _run_muscle(input_fasta,output_fasta,super5,muscle_cmd_args,muscle_binary)
+        _run_muscle(input_fasta,output_fasta,super5,silent,muscle_cmd_args,muscle_binary)
 
         # Read alignment back into the dataframe
         df = topiary.read_fasta_into(df,output_fasta)
@@ -101,14 +104,16 @@ def run_muscle(input,
             pass
 
         # Delete temporary output file
-        print("\nSuccess. Alignment written to the `alignment` column in the dataframe.",flush=True)
+        if not silent:
+            print("\nSuccess. Alignment written to the `alignment` column in the dataframe.",flush=True)
         if temporary_output:
             try:
                 os.remove(output_fasta)
             except FileNotFoundError:
                 pass
         else:
-            print(f"\nSuccess. Alignment written to '{output_fasta}'.",flush=True)
+            if not silent:
+                print(f"\nSuccess. Alignment written to '{output_fasta}'.",flush=True)
 
         return df
 
@@ -120,6 +125,7 @@ def run_muscle(input,
 def _run_muscle(input_fasta,
                 output_fasta,
                 super5=False,
+                silent=False,
                 muscle_cmd_args=[],
                 muscle_binary="muscle"):
     """
@@ -133,6 +139,8 @@ def _run_muscle(input_fasta,
         output fasta file to store alignment
     super5 : bool
         Use the 'super5' mode of muscle 5
+    silent : bool, default=False
+        whether or not to suppress all output
     muscle_cmd_args : list
         list of arguments to pass directly to muscle. Wrapper specifies :code:`-align`
         and :code:`-output` (or :code:`-in/-out` for old version of the command
@@ -188,15 +196,16 @@ def _run_muscle(input_fasta,
                              universal_newlines=True)
     for line in popen.stdout:
 
-        # This bit of trickery makes it so the muscle output counts up to 100%
-        # on a single line, rather than spewing out over 100s of lines over the
-        # course of the alignment
-        if re.search("100.0%",line):
+        if not silent:
+            # This bit of trickery makes it so the muscle output counts up to 100%
+            # on a single line, rather than spewing out over 100s of lines over the
+            # course of the alignment
             endl = "\n"
-        else:
-            print(90*" ",end="\r")
-            endl = "\r"
-        print(line.strip(),end=endl,flush=True)
+            if topiary._in_notebook:
+                if not re.search("100.0%",line):
+                    print(90*" ",end="\r")
+                    endl = "\r"
+            print(line.strip(),end=endl,flush=True)
 
     popen.stdout.close()
     return_code = popen.wait()

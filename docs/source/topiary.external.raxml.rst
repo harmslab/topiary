@@ -1,10 +1,15 @@
-topiary.external.raxml package
+topiary.external.raxml
 ==============================
 
-Submodules
-----------
 
-topiary.external.raxml.ancestors module
+
+.. automodule:: topiary.external.raxml
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+topiary.external.raxml.ancestors
 ---------------------------------------
 
 .. automodule:: topiary.external.raxml.ancestors
@@ -12,7 +17,15 @@ topiary.external.raxml.ancestors module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.raxml.model module
+topiary.external.raxml.bootstrap
+---------------------------------------
+
+.. automodule:: topiary.external.raxml.bootstrap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.external.raxml.model
 -----------------------------------
 
 .. automodule:: topiary.external.raxml.model
@@ -20,7 +33,7 @@ topiary.external.raxml.model module
    :undoc-members:
    :show-inheritance:
 
-topiary.external.raxml.tree module
+topiary.external.raxml.tree
 ----------------------------------
 
 .. automodule:: topiary.external.raxml.tree
@@ -28,10 +41,4 @@ topiary.external.raxml.tree module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.external.raxml
-   :members:
-   :undoc-members:
-   :show-inheritance:

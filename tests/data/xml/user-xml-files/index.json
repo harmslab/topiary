@@ -1,0 +1,16 @@
+{"ZO1_vertebrate_nr-clustered.xml":
+    {"length":100,
+     "queries":1},
+ "chs_plant_pdb.xml":
+    {"length":88,
+     "queries":1},
+ "gprotein_bacteria_nr.xml":
+    {"length":1000,
+     "queries":1},
+ "iapp_danio_refseq.xml":
+    {"length":5,
+     "queries":1},
+ "ly96_vert_nr-clustered-two-queries.xml":
+    {"length":100,
+     "queries":2}
+}

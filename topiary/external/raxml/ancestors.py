@@ -127,13 +127,11 @@ def _get_ancestral_gaps(alignment_file,tree_file):
 
 def _make_ancestor_summary_trees(df,
                                  avg_pp_dict,
-                                 tree_file_with_labels,
-                                 tree_file_with_supports=None):
+                                 tree_file_with_labels):
     """
     Make trees summarizing ASR results. Creates two or three newick files:
     + ancestors_label.newick. internal names are labeled with ancestor names
     + ancestors_pp.newick. internal names are avg pp for that ancestor
-    + ancestors_support.newick. internal names are branch supports
 
     Parameters
     ----------
@@ -144,8 +142,6 @@ def _make_ancestor_summary_trees(df,
     tree_file_with_labels : str
         output from RAxML that has nodes labeled by their ancestor identity.
         Tree Should also have branch lengths.
-    tree_file_with_supports : str
-        tree file with branch supports (optional)
     """
 
     # Create label trees
@@ -162,9 +158,6 @@ def _make_ancestor_summary_trees(df,
     label_iterator = t_out_label.traverse("preorder")
     pp_iterator = t_out_pp.traverse("preorder")
 
-    if tree_file_with_supports is not None:
-        t_out_supports = Tree(tree_file_with_supports,format=0)
-        support_iterator = t_out_supports.traverse("preorder")
 
     # Iterate over main iterator
     for input_label_node in input_label_iterator:
@@ -172,9 +165,6 @@ def _make_ancestor_summary_trees(df,
         # Update sub itorators
         pp_node = next(pp_iterator)
         label_node = next(label_iterator)
-
-        if tree_file_with_supports is not None:
-            support_node = next(support_iterator)
 
         # See if this is a leaf and make sure the labeles
         is_label_leaf = input_label_node.is_leaf()
@@ -208,15 +198,12 @@ def _make_ancestor_summary_trees(df,
     t_out_pp.write(format=2,format_root_node=True,outfile="ancestors_pp.newick")
     t_out_label.write(format=3,format_root_node=True,outfile="ancestors_label.newick")
 
-    if tree_file_with_supports is not None:
-        t_out_supports.write(format=3,format_root_node=True,outfile="ancestors_support.newick")
 
 
 def _parse_raxml_anc_output(df,
                             anc_prob_file,
                             alignment_file,
                             tree_file_with_labels,
-                            tree_file_with_supports=None,
                             dir_name="ancestors",
                             alt_cutoff=0.25,
                             plot_width_ratio=5):
@@ -236,8 +223,6 @@ def _parse_raxml_anc_output(df,
         phylip alignment used to create ancestors
     tree_file_with_labels : str
         output newick tree file written by raxml
-    tree_file_with_supports : str, optional
-        newick tree with supports
     dir_name : str, default="ancestors"
         name for output directory
     alt_cutoff : float, default=.25
@@ -252,9 +237,6 @@ def _parse_raxml_anc_output(df,
     anc_prob_file = copy_input_file(anc_prob_file,dir_name)
     alignment_file = copy_input_file(alignment_file,dir_name)
     tree_file_with_labels = copy_input_file(tree_file_with_labels,dir_name)
-    if tree_file_with_supports is not None:
-        tree_file_with_supports = copy_input_file(tree_file_with_supports,
-                                                  dir_name)
 
     # Move into output directory
     cwd = os.getcwd()
@@ -464,8 +446,7 @@ def _parse_raxml_anc_output(df,
     # Create final tree
     _make_ancestor_summary_trees(df,
                                  avg_pp_dict,
-                                 tree_file_with_labels,
-                                 tree_file_with_supports)
+                                 tree_file_with_labels)
 
     os.chdir(cwd)
 
@@ -474,7 +455,6 @@ def generate_ancestors(previous_dir=None,
                        df=None,
                        model=None,
                        tree_file=None,
-                       tree_file_with_supports=None,
                        alt_cutoff=0.25,
                        output=None,
                        overwrite=False,
@@ -483,7 +463,7 @@ def generate_ancestors(previous_dir=None,
     """
     Generate ancestors and various summary outputs. Creates fasta file and csv
     file with ancestral sequences, set of ancestor plots, and a tree with
-    ancestral names and supports.
+    ancestral names and posterior probabilities.
 
     Parameters
     ----------
@@ -501,9 +481,6 @@ def generate_ancestors(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
-    tree_file_with_supports : str
-        tree file with supports for each node in newick format. Will override
-        tree_file_with_supports from `previous_dir` if specified.
     alt_cutoff : float, default=0.25
         cutoff to use for altAll calculation. Should be between 0 and 1.
     output : str, optional
@@ -527,7 +504,6 @@ def generate_ancestors(previous_dir=None,
                        df=df,
                        model=model,
                        tree_file=tree_file,
-                       other_files=[tree_file_with_supports],
                        output=output,
                        overwrite=overwrite,
                        output_base="generate_ancestors")
@@ -537,19 +513,17 @@ def generate_ancestors(previous_dir=None,
     model = result["model"]
     tree_file = result["tree_file"]
     alignment_file = result["alignment_file"]
-    tree_file_with_supports = result["other_files"][0]
     starting_dir = result["starting_dir"]
     output = result["output"]
-
-    # Remove labels and supports from internal nodes of tree file to make sure
-    # compatible with raxml ancestor inference.
-    T = ete3.Tree(tree_file)
-    T.write(format=4,outfile=tree_file)
+    existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     alt_cutoff = check.check_float(alt_cutoff,
                                    "alt_cutoff",
                                    minimum_allowed=0,
                                    maximum_allowed=1)
+
+    print("Reconstructing ancestral states.\n",flush=True)
 
     # Do reconstruction on the tree
     cmd = run_raxml(algorithm="--ancestral",
@@ -558,6 +532,8 @@ def generate_ancestors(previous_dir=None,
                     model=model,
                     seed=True,
                     dir_name="working_inference",
+                    log_to_stdout=False,
+                    suppress_output=True,
                     num_threads=num_threads,
                     raxml_binary=raxml_binary)
 
@@ -571,39 +547,45 @@ def generate_ancestors(previous_dir=None,
                             anc_prob_file,
                             alignment_file,
                             tree_file_with_labels,
-                            tree_file_with_supports,
                             dir_name="working_analysis",
                             alt_cutoff=alt_cutoff)
 
-    outdir = "output"
-    os.mkdir(outdir)
+    os.mkdir("output")
 
-    # tree file
-    shutil.copy(tree_file,os.path.join(outdir,"tree.newick"))
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in existing_trees:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
 
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="ancestors",
-                          model=model,
-                          cmd=cmd,
-                          outgroup=result["outgroup"])
+    # Copy ancestors with labels and posterior probabilities
+    shutil.copy(os.path.join("working_analysis","ancestors_label.newick"),
+                os.path.join("output","tree_anc-label.newick"))
+    shutil.copy(os.path.join("working_analysis","ancestors_pp.newick"),
+                os.path.join("output","tree_anc-pp.newick"))
 
     # Copy ancestor files into an ancestors directory
     files_to_grab = glob.glob(os.path.join("working_analysis","*.*"))
-    anc_out = os.path.join(outdir,"ancestors")
+    anc_out = os.path.join("output","ancestors")
     os.mkdir(anc_out)
     for f in files_to_grab:
         shutil.copy(f,os.path.join(anc_out,os.path.split(f)[-1]))
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    # Write run information
+    write_run_information(outdir="output",
+                          df=df,
+                          calc_type="ancestors",
+                          model=model,
+                          cmd=cmd,
+                          start_time=start_time)
+
+    print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
     # Create a plot of the tree
-    ret = topiary.draw.ancestor_tree(run_dir=output,
-                                     output_file=os.path.join(output,
-                                                              "output",
-                                                              "summary-tree.pdf"))
-    return ret
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

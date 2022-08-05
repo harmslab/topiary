@@ -11,7 +11,6 @@ from topiary._private import interface
 import numpy as np
 
 import subprocess, os, sys, time, random, string, shutil, copy
-import multiprocessing as mp
 
 def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
     """
@@ -28,8 +27,9 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
         phylogenetic model to use (should match model used to generate gene_tree)
     out_dir : str
         output directory
-    species_tree : ete3.Tree, optional
-        file with species tree. if not specified, download from opentree
+    species_tree : ete3.Tree or dendropy.Tree or str, optional
+        species tree as a tree or newick file. if not specified, download from
+        opentree
     """
 
     # -------------------------------------------------------------------------
@@ -73,7 +73,12 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
 
     # Get species tree corresponding to uid seen
     if species_tree is None:
-        species_tree = topiary.get_species_tree(df)
+        species_tree, dropped = topiary.get_species_tree(df)
+    else:
+        species_tree = topiary.io.read_tree(species_tree,fmt=5)
+        for n in species_tree.traverse():
+            if n.is_leaf():
+                n.add_feature("ott",n.name)
 
     # Resolve polytomies and make sure all branch lenghts/supports have values
     species_tree.resolve_polytomy()
@@ -129,12 +134,13 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
 
 
 def run_generax(run_directory,
-                allow_horizontal_transfer=False,
+                allow_horizontal_transfer=True,
                 seed=None,
-                generax_binary=GENERAX_BINARY,
                 log_to_stdout=True,
+                suppress_output=False,
+                other_args=[],
                 num_threads=1,
-                other_args=[]):
+                generax_binary=GENERAX_BINARY):
 
     """
     Run generax. Creates a working directory, copies in the relevant files, runs
@@ -144,30 +150,31 @@ def run_generax(run_directory,
     ----------
     run_directory : str
         directory in which to do calculation
-    allow_horizontal_transfer : bool, default=False
+    allow_horizontal_transfer : bool, default=True
         whether or not to allow horizontal gene transfer. This corresponds to
         the UndatedDTL (horizontal) vs UndatedDL (no horizontal) models
     seed : bool or int or str, optional
         If true, pass a randomly generated seed to generax. If int or str, use
         that as the seed (passed via --seed).
-    generax_binary : str, optional
-        generax binary to use
     log_to_stdout : bool, default=True
         capture log and write to std out.
-    num_threads : int, default=1
-        number of threads. if > 1, execute by mpirun -np num_threads
+    suppress_output : bool, default=False
+        whether or not to capture generax spew rather than printing to stdout.
+        (ignored if log_to_stdout is True)
     other_args : list, optional
         other arguments to pass to generax
+    num_threads : int, default=1
+        number of threads. if > 1, execute by mpirun -np num_threads
+    generax_binary : str, optional
+        generax binary to use
 
     Returns
     -------
     generax_cmd : str
         string representation of command passed to generax
     """
-    if num_threads > 1:
-        cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
-    else:
-        cmd = ["generax"]
+
+    cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
 
     cmd.extend(["--families","control.txt"])
     cmd.extend(["--species-tree","species_tree.newick"])
@@ -203,7 +210,7 @@ def run_generax(run_directory,
 
     # Make sure that generax is in the path
     try:
-        subprocess.run([generax_binary])
+        subprocess.run([generax_binary],capture_output=True)
     except FileNotFoundError:
         err = f"\ngenerax binary '{generax_binary}' not found in path\n\n"
         raise ValueError(err)
@@ -234,6 +241,9 @@ def run_generax(run_directory,
         log_file = os.path.join("result","generax.log")
 
     # Launch run
-    interface.launch(cmd,run_directory,log_file)
+    interface.launch(cmd,
+                     run_directory=run_directory,
+                     log_file=log_file,
+                     suppress_output=suppress_output)
 
     return " ".join(cmd)

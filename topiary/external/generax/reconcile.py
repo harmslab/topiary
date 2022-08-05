@@ -19,6 +19,7 @@ def reconcile(previous_dir=None,
               df=None,
               model=None,
               tree_file=None,
+              species_tree_file=None,
               allow_horizontal_transfer=True,
               output=None,
               overwrite=False,
@@ -45,6 +46,8 @@ def reconcile(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format.
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -79,6 +82,7 @@ def reconcile(previous_dir=None,
                                   df=df,
                                   model=model,
                                   tree_file=tree_file,
+                                  species_tree_file=species_tree_file,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   output=output,
                                   overwrite=overwrite,
@@ -94,7 +98,7 @@ def reconcile(previous_dir=None,
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
-                       tree_file=model,
+                       tree_file=tree_file,
                        output=output,
                        overwrite=overwrite,
                        output_base="generax_reconcilation")
@@ -106,6 +110,8 @@ def reconcile(previous_dir=None,
     alignment_file = result["alignment_file"]
     starting_dir = result["starting_dir"]
     output = result["output"]
+    existing_trees = result["existing_trees"]
+    start_time = result["start_time"]
 
     required = [df,model,tree_file]
     for r in required:
@@ -115,11 +121,17 @@ def reconcile(previous_dir=None,
             raise ValueError(err)
 
     # Set up generax directory
-    setup_generax(df,tree_file,model,"working")
+    setup_generax(df,
+                  tree_file,
+                  model,
+                  "working",
+                  species_tree=species_tree_file)
 
-    # Get number of threads to use. If no mpi, use only one thread
-    num_threads = get_num_threads(num_threads,num_cores)
-    if not use_mpi:
+    # Figure out number of threads to use
+    if use_mpi:
+        if num_threads is None:
+            num_threads = get_num_threads(num_threads)
+    else:
         num_threads = 1
 
     # Actually run generax
@@ -129,37 +141,39 @@ def reconcile(previous_dir=None,
                       generax_binary=generax_binary)
 
     # Make output directory to hold final outputs
-    outdir = "output"
-    os.mkdir(outdir)
+    os.mkdir("output")
+
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in existing_trees:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
 
     # Copy in tree.newick
     shutil.copy(os.path.join("working","result","results","reconcile","geneTree.newick"),
                 os.path.join("output","tree.newick"))
 
-    # Get outgroups (e.g. leaves descending from each half after root)
-    reconcile_file = os.path.join("working","result","reconciliations","reconcile_events.newick")
-    reconcile_tree = ete3.Tree(reconcile_file,format=1)
-    root = reconcile_tree.get_tree_root()
-    root_children = root.get_children()
-    outgroup = [[n.name for n in r.get_leaves()] for r in root_children]
+    # Copy reconcilation information
+    shutil.copytree(os.path.join("working","result","reconciliations"),
+                    os.path.join("output","reconcilations"))
+    shutil.copy(os.path.join("output","reconcilations","reconcile_events.newick"),
+                os.path.join("output","tree_events.newick"))
 
     # Write run information
-    write_run_information(outdir=outdir,
+    write_run_information(outdir="output",
                           df=df,
                           calc_type="reconciliation",
                           model=model,
                           cmd=cmd,
-                          outgroup=outgroup)
+                          start_time=start_time)
 
-    # Copy reconcilation information
-    shutil.copytree(os.path.join("working","result","reconciliations"),
-                    os.path.join("output","reconcilations"))
-
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    print(f"\nWrote results to {os.path.abspath('output')}\n")
 
     # Leave working directory
     os.chdir(starting_dir)
 
     # Write out a summary tree.
-    return topiary.draw.reconciliation_tree(run_dir=output,
-                                            output_file=os.path.join(output,outdir,"summary-tree.pdf"))
+    return topiary.draw.tree(run_dir=output,
+                             output_file=os.path.join(output,
+                                                      "output",
+                                                      "summary-tree.pdf"))

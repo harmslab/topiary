@@ -13,8 +13,7 @@ from topiary._private import threads
 import pandas as pd
 import numpy as np
 
-import os, re, shutil, sys, random, string
-import multiprocessing as mp
+import os, re, shutil, random, string
 from tqdm.auto import tqdm
 
 
@@ -45,6 +44,7 @@ def _generate_parsimony_tree(alignment_file,
               num_threads=num_threads,
               raxml_binary=raxml_binary,
               log_to_stdout=False,
+              suppress_output=True,
               other_args=["--tree","pars{1}"])
 
 
@@ -178,6 +178,7 @@ def find_best_model(df,
     alignment_file = result["alignment_file"]
     tree_file = result["tree_file"]
     starting_dir = result["starting_dir"]
+    start_time = result["start_time"]
 
     # Generate a parsimony tree if not was specified
     if tree_file is None:
@@ -224,6 +225,8 @@ def find_best_model(df,
 
     seed = gen_seed()
 
+    print("Constructing set of possible models.")
+
     # Go over all combos of the requested matrices, rates, freqs, invariant and
     # create kwargs for run_raxml calls
     kwargs_list = []
@@ -257,10 +260,13 @@ def find_best_model(df,
                               "dir_name":dir_name,
                               "num_threads":1, # single thread per calc
                               "raxml_binary":raxml_binary,
-                              "log_to_stdout":False}
+                              "log_to_stdout":False,
+                              "suppress_output":True}
                     kwargs_list.append({"kwargs":kwargs})
                     models.append(model)
 
+
+    print(f"Testing {len(kwargs_list)} models.\n",flush=True)
 
     out_list = threads.thread_manager(kwargs_list,
                                       _model_thread_function,
@@ -291,13 +297,6 @@ def find_best_model(df,
     outdir = "output"
     os.mkdir(outdir)
 
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="find_best_model",
-                          model=final_df.model.iloc[0],
-                          cmd=None)
-
     # Write dataframe comparing models
     final_df.to_csv(os.path.join(outdir,"model-comparison.csv"))
 
@@ -308,6 +307,14 @@ def find_best_model(df,
         if i >= len(final_df):
             break
         print(f"{final_df.model.iloc[i]:>20s}{final_df.p.iloc[i]:>20.3f}",flush=True)
+
+    # Write run information
+    write_run_information(outdir=outdir,
+                          df=df,
+                          calc_type="find_best_model",
+                          model=final_df.model.iloc[0],
+                          cmd=None,
+                          start_time=start_time)
 
     print(f"\nWrote results to {os.path.abspath(outdir)}\n")
 

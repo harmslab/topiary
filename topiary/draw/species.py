@@ -3,8 +3,7 @@ Draw a species tree with tips labeled by species name.
 """
 
 import topiary
-from ._core import final_render
-from ._prettytree import PrettyTree
+from .prettytree import PrettyTree
 
 import ete3
 
@@ -13,7 +12,7 @@ def species_tree(species_tree,
                  output_file=None,
                  font_size=15,
                  stroke_width=2,
-                 vertical_pixels_per_taxon=20,
+                 vertical_pixels_per_tip=20,
                  min_height=300,
                  tip_labels_align=True,
                  **kwargs):
@@ -33,8 +32,8 @@ def species_tree(species_tree,
         font size in points for labels
     stroke_width : int, default=2
         width of lines drawing tree (pixels)
-    vertical_pixels_per_taxon : int, default=20
-        number of pixels to assign to each taxon when calculating figure
+    vertical_pixels_per_tip : int, default=20
+        number of pixels to assign to each tip when calculating figure
         height
     min_height : float, default=300
         minimum height for figure (pixels)
@@ -59,9 +58,18 @@ def species_tree(species_tree,
                     name_dict=name_dict,
                     font_size=font_size,
                     stroke_width=stroke_width,
-                    vertical_pixels_per_taxon=vertical_pixels_per_taxon,
+                    vertical_pixels_per_tip=vertical_pixels_per_tip,
                     min_height=min_height,
                     tip_labels_align=tip_labels_align,
                     **kwargs)
 
-    return final_render(pt,output_file=output_file,default_file="species-tree.pdf")
+    # Figure out plotting to file.
+    if output_file is not None:
+        pt.render(output_file)
+
+    # If this is in a notebook, return it so it appears
+    ret = None
+    if topiary._in_notebook:
+        ret = pt.canvas
+
+    return ret

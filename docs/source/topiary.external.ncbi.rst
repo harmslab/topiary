@@ -1,8 +1,13 @@
-topiary.external.ncbi package
+topiary.external.ncbi
 =============================
 
-Subpackages
------------
+
+
+.. automodule:: topiary.external.ncbi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 .. toctree::
    :maxdepth: 4
@@ -10,10 +15,4 @@ Subpackages
    topiary.external.ncbi.blast
    topiary.external.ncbi.entrez
 
-Module contents
----------------
 
-.. automodule:: topiary.external.ncbi
-   :members:
-   :undoc-members:
-   :show-inheritance:

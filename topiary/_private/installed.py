@@ -2,9 +2,10 @@
 Check for installed external software in the path.
 """
 
+import topiary
 import numpy as np
-
 import subprocess, shutil, os, re
+
 
 def _version_checker(cmd,version_slicer):
     """
@@ -53,7 +54,7 @@ def _version_checker(cmd,version_slicer):
     return binary_path, version
 
 
-def check_muscle():
+def check_muscle(binary=None):
     """
     Check for muscle in the PATH and get its version.
 
@@ -74,10 +75,13 @@ def check_muscle():
     def _version_slicer(ret):
         return ret.stdout.split()[1].decode()
 
-    return _version_checker(["muscle"],_version_slicer)
+    if binary is None:
+        binary = "muscle"
+
+    return _version_checker([binary],_version_slicer)
 
 
-def check_generax():
+def check_generax(binary=None):
     """
     Check for generax in the PATH and get its version.
 
@@ -102,10 +106,13 @@ def check_generax():
                 return line.split()[2:][0].strip()
         return None
 
-    return _version_checker(["generax"],_version_slicer)
+    if binary is None:
+        binary = "generax"
+
+    return _version_checker([binary],_version_slicer)
 
 
-def check_raxml():
+def check_raxml(binary=None):
     """
     Check for raxml-ng in the PATH and get its version.
 
@@ -126,10 +133,13 @@ def check_raxml():
     def _version_slicer(ret):
         return ret.stdout.decode().strip().split("\n")[0].split()[2]
 
-    return _version_checker(["raxml-ng"],_version_slicer)
+    if binary is None:
+        binary = "raxml-ng"
+
+    return _version_checker([binary],_version_slicer)
 
 
-def check_blastp():
+def check_blastp(binary=None):
     """
     Check for blastp in the PATH and get its version.
 
@@ -150,9 +160,12 @@ def check_blastp():
     def _version_slicer(ret):
         return ret.stdout.decode().split()[1].strip()
 
-    return _version_checker(["blastp","-version"],_version_slicer)
+    if binary is None:
+        binary = "blastp"
 
-def check_makeblastdb():
+    return _version_checker([binary,"-version"],_version_slicer)
+
+def check_makeblastdb(binary=None):
     """
     Check for makeblastdb in the PATH and get its version.
 
@@ -173,9 +186,12 @@ def check_makeblastdb():
     def _version_slicer(ret):
         return ret.stdout.decode().split()[1].strip()
 
-    return _version_checker(["makeblastdb","-version"],_version_slicer)
+    if binary is None:
+        binary = "makeblastdb"
 
-def check_git():
+    return _version_checker([binary,"-version"],_version_slicer)
+
+def check_git(binary=None):
     """
     Check for git in the PATH and get its version.
 
@@ -196,9 +212,12 @@ def check_git():
     def _version_slicer(ret):
         return ret.stdout.decode().split()[2].strip()
 
-    return _version_checker(["git","--version"],_version_slicer)
+    if binary is None:
+        binary = "git"
 
-def check_mpirun():
+    return _version_checker([binary,"--version"],_version_slicer)
+
+def check_mpirun(binary=None):
     """
     Check for mpirun in the PATH and get its version.
 
@@ -219,7 +238,10 @@ def check_mpirun():
     def _version_slicer(ret):
         return ret.stdout.decode().split("\n")[0].split()[-1]
 
-    return _version_checker(["mpirun","--version"],_version_slicer)
+    if binary is None:
+        binary = "mpirun"
+
+    return _version_checker([binary,"--version"],_version_slicer)
 
 def _compare_versions(installed,required):
     """
@@ -301,6 +323,13 @@ def validate_stack(to_check):
     for check in to_check:
 
         program = check["program"]
+        min_version = check["min_version"]
+        must_pass = check["must_pass"]
+
+        try:
+            binary = check["binary"]
+        except KeyError:
+            binary = None
 
         out.append(70*"-")
         out.append(f"Checking {program}")
@@ -308,10 +337,8 @@ def validate_stack(to_check):
         out.append("")
 
         fcn = binary_tests[program]
-        min_version = check["min_version"]
-        must_pass = check["must_pass"]
 
-        binary, version = fcn()
+        binary, version = fcn(binary)
 
         if version == (-2,-2,-2):
             installed =   "N"
@@ -374,3 +401,36 @@ def validate_stack(to_check):
         err += f"    {os.environ['PATH']}"
         err += "\n"
         raise RuntimeError(err)
+
+def test_mpi_configuration(num_threads,test_binary):
+    """
+    Make sure mpi configuration allows the requested number of threads.
+    """
+
+    # if threads were not passed in directly, infer from the environment
+    if num_threads == -1:
+        num_threads = topiary._private.threads.get_num_threads(num_threads)
+
+    # Run ls on num_threads.
+    cmd = ["mpirun","-np",f"{num_threads}",test_binary]
+    ret = subprocess.run(cmd,capture_output=True)
+
+    # If mpirun failed,
+    if ret.returncode != 0:
+
+        err = "\n\nmpirun is not working. See error below. This could because you\n"
+        err += "set --num_threads to be more than the number of nodes you have\n"
+        err += "allocated on your cluster. If you did not set --num_threads\n"
+        err += "specifically, try setting it rather than having topiary try to\n"
+        err += "figure out the number of processors. Another issue could be subtle\n"
+        err += "problems with how processors are being requested via your job\n"
+        err += "management software. Maybe play with flags like --ntasks-per-node\n"
+        err += "or talk to your cluster administrator. mpirun stdout and stderr\n"
+        err += "follows:\n\n"
+        err += "stdout:\n\n"
+        err += f"{ret.stdout.decode()}"
+        err += "\nstderr:\n\n"
+        err += f"{ret.stderr.decode()}"
+        err += "\n"
+
+        raise ValueError(err)

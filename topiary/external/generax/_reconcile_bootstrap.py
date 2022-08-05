@@ -18,11 +18,13 @@ import os
 import glob
 import shutil
 import copy
+import tarfile
 
 def _prepare_for_bootstrap(previous_dir=None,
                            df=None,
                            model=None,
                            tree_file=None,
+                           species_tree_file=None,
                            output=None,
                            overwrite=False):
     """
@@ -44,6 +46,8 @@ def _prepare_for_bootstrap(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format
     output: str, optional
         output directory. If not specified, create an output directory with
         form "generax_reconcilation_randomletters"
@@ -63,7 +67,7 @@ def _prepare_for_bootstrap(previous_dir=None,
     result = prep_calc(previous_dir=previous_dir,
                        df=df,
                        model=model,
-                       tree_file=model,
+                       tree_file=tree_file,
                        output=output,
                        overwrite=overwrite,
                        output_base="generax_bootstrap_reconcilation")
@@ -85,10 +89,11 @@ def _prepare_for_bootstrap(previous_dir=None,
             raise ValueError(err)
 
     # Read previous run directory
-    if calc_type != "ml_tree":
-        err = f"\nPrevious dir calc_type is '{calc_type}' but should be 'ml_tree'.\n"
-        err += "Bootstrap reconciliation must have a maximum-likelihood tree\n"
-        err += "calculation directory as its input.\n\n"
+    if calc_type not in ["ml_tree","ml_bootstrap"]:
+        err = f"\nPrevious dir calc_type is '{calc_type}' but should be 'ml_tree'\n"
+        err += "or ml_bootstrap. Bootstrap reconciliation must have a\n"
+        err +  "maximum-likelihood tree calculation directory with bootstraps\n"
+        err += "as its input.\n\n"
         raise ValueError(err)
 
     # Make sure bootstrap directory exists
@@ -101,9 +106,12 @@ def _prepare_for_bootstrap(previous_dir=None,
 
     bs_df = df.loc[df.keep,:]
 
-    # Load species tree from opentree
-    species_tree = topiary.get_species_tree(bs_df)
-    species_tree.resolve_polytomy()
+    # Read species tree
+    if species_tree_file is not None:
+        species_tree = species_tree_file
+    else:
+        species_tree, dropped = topiary.get_species_tree(bs_df,strict=True)
+        species_tree.resolve_polytomy()
 
     # Create replicate directory
     replicate_dir = os.path.abspath(os.path.join("replicates"))
@@ -190,12 +198,8 @@ def _prepare_for_bootstrap(previous_dir=None,
 
         os.chdir(replicate_dir)
 
-    # Create directory for maximum likelihood reconcilation
-    os.chdir(starting_dir)
-    ml_dir = os.path.abspath(os.path.join(replicate_dir,"ml"))
-    calc_dirs.append(ml_dir)
 
-    setup_generax(df,tree_file,model,ml_dir,species_tree=species_tree)
+    os.chdir(starting_dir)
 
     return result, calc_dirs
 
@@ -206,7 +210,7 @@ def _construct_args(calc_dirs,
                     other_args=[],
                     use_mpi=True,
                     num_threads=-1,
-                    manual_num_cores=None):
+                    num_cores=None):
     """
     Construct arguments to pass to each thread in the pool.
 
@@ -228,21 +232,21 @@ def _construct_args(calc_dirs,
         whether or not to use mpirun
     num_threads : int, default=-1
         number of threads. if -1, use all available
-    manual_num_cores : int, optional
-        for the number of cores to be manual_num_cores (for testing)
+    num_cores : int, optional
+        for the number of cores to be num_cores (for testing and mpi)
 
     Returns
     ------
         list of args to pass for each calculation, number of threads
     """
 
-    # If using MPI and have a specified number of threads, set manual_num_cores
+    # If using MPI and have a specified number of threads, set num_cores
     # to num_threads. (Don't rely on os.cpu_count and friends for MPI)
-    if use_mpi and num_threads > 0 and manual_num_cores is None:
-        manual_num_cores = num_threads
+    if use_mpi and num_threads > 0 and num_cores is None:
+        num_cores = num_threads
 
     # Get number of threads available
-    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
+    num_threads = threads.get_num_threads(num_threads,num_cores)
 
     # If mpi, each generax calc will get num_threads. python will run each
     # calcualation in series on a single thread
@@ -293,8 +297,6 @@ def _generax_thread(run_directory,
         generax binary to use
     num_threads : int
         number of mpi threads to use
-    log_to_stdout : bool, default=True
-        capture log and write to std out.
     other_args : list, optional
         other arguments to pass to generax
     """
@@ -305,6 +307,7 @@ def _generax_thread(run_directory,
                       generax_binary=generax_binary,
                       num_threads=num_threads,
                       log_to_stdout=False,
+                      suppress_output=True,
                       other_args=other_args)
 
 def _combine_results(prep_output):
@@ -317,13 +320,11 @@ def _combine_results(prep_output):
         dictionary output from prep_calc (called by _prepare_for_bootstrap).
     """
 
-    # Get base output directory for the calculation
-    base_dir = prep_output["output"]
-    base_rep = os.path.join(base_dir,"replicates")
+    ml_tree = prep_output["tree_file"]
 
-    # output directory
-    outdir = os.path.join(base_dir,"output")
-    os.mkdir(outdir)
+    # Get base output directory for the calculation
+    base_dir = os.path.abspath(prep_output["output"])
+    base_rep = os.path.join(base_dir,"replicates")
 
     # combine-bootstraps directory
     combine_dir = os.path.join(base_dir,"combine-bootstraps")
@@ -361,62 +362,81 @@ def _combine_results(prep_output):
         for key in bs_keys:
             f.write(f"{tree_stack[key]}\n")
 
-    # Copy ml tree into combine dir
-    shutil.copy(os.path.join(base_rep,"ml",gene_tree_path),
-                os.path.join(combine_dir,"ml-tree.newick"))
-
     # Combine bootstrap replicates in combine_dir using raxmls
-    starting_dir = os.getcwd()
+
     os.chdir(combine_dir)
 
     cmd = run_raxml(algorithm="--support",
-                    tree_file="ml-tree.newick",
+                    tree_file=ml_tree,
                     num_threads=1,
                     log_to_stdout=False,
+                    suppress_output=True,
                     dir_name="combine_with_raxml",
                     other_files=["bs-trees.newick"],
                     other_args=["--bs-trees","bs-trees.newick","--redo"])
-    os.chdir(starting_dir)
+
+    os.chdir(base_dir)
+
+    # output directory
+    os.mkdir("output")
+
+    # Copy trees from previous calculation in. This will preserve any that our
+    # new calculation did not wipe out.
+    for t in prep_output["existing_trees"]:
+        tree_filename = os.path.split(t)[-1]
+        shutil.copy(t,os.path.join("output",tree_filename))
+
+    # Copy in ml-tree, no supports
+    shutil.copy(ml_tree,
+                os.path.join("output","tree.newick"))
 
     # Copy ml-tree with supports into output directory
     shutil.copy(os.path.join(combine_dir,
                              "combine_with_raxml",
                              "tree.newick.raxml.support"),
-                os.path.join(outdir,"tree.newick"))
+                os.path.join("output","tree_supports.newick"))
 
-    # Copy reconcilation directory into output directory
-    shutil.copytree(os.path.join(base_rep,"ml",reconcile_path),
-                    os.path.join(outdir,"reconcilations"))
+    # Write message indicating where to look for further output
+    msg = "For more information on the reconcilation events (orthgroups,\n"
+    msg += "event counts, full nhx files, etc.) please see the maximum\n"
+    msg += "likelihood reconciliation output directory that was used as\n"
+    msg += "input for this bootstrap calcultion.\n"
 
-    # Get outgroups (e.g. leaves descending from each half after root)
-    reconcile_file = os.path.join(base_rep,
-                                  "ml",reconcile_path,
-                                  "reconcile_events.newick")
-    reconcile_tree = ete3.Tree(reconcile_file,format=1)
-    root = reconcile_tree.get_tree_root()
-    root_children = root.get_children()
-    outgroup = [[n.name for n in r.get_leaves()] for r in root_children]
+    f = open(os.path.join("output","reconciliations.txt"),"w")
+    f.write(msg)
+    f.close()
 
     # Write run information
-    write_run_information(outdir=outdir,
+    write_run_information(outdir="output",
                           df=prep_output["df"],
                           calc_type="reconciliation_bootstrap",
                           model=prep_output["model"],
-                          cmd=None,
-                          outgroup=outgroup)
+                          cmd=None)
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    # Compress big, complicated replicates directory and delete
+    print("\nCompressing replicates.\n",flush=True)
+    f = tarfile.open("replicates.tar.gz","w:gz")
+    f.add("replicates")
+    f.close()
+    shutil.rmtree("replicates")
+
+
+
+    print(f"\nWrote results to {os.path.abspath('output')}\n",flush=True)
+
+    os.chdir(prep_output["starting_dir"])
 
     # Write out a summary tree.
-    return topiary.draw.reconciliation_tree(run_dir=base_dir,
-                                            output_file=os.path.join(base_dir,
-                                                                     "output",
-                                                                     "summary-tree.pdf"))
+    return topiary.draw.tree(run_dir=base_dir,
+                             output_file=os.path.join(base_dir,
+                                                      "output",
+                                                      "summary-tree.pdf"))
 
 def reconcile_bootstrap(previous_dir=None,
                         df=None,
                         model=None,
                         tree_file=None,
+                        species_tree_file=None,
                         allow_horizontal_transfer=True,
                         output=None,
                         overwrite=False,
@@ -443,6 +463,8 @@ def reconcile_bootstrap(previous_dir=None,
     tree_file : str
         tree_file in newick format. Will override tree from `previous_dir` if
         specified.
+    species_tree_file : str
+        species tree in newick format
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
@@ -467,20 +489,24 @@ def reconcile_bootstrap(previous_dir=None,
         None.
     """
 
-    print("Creating bootstrap directories.",flush=True)
+    print("Creating reconciliation bootstrap directories.\n",flush=True)
 
     # Create stack of directories
     prep_output, calc_dirs = _prepare_for_bootstrap(previous_dir=previous_dir,
                                                     df=df,
                                                     model=model,
                                                     tree_file=tree_file,
+                                                    species_tree_file=species_tree_file,
                                                     output=output,
                                                     overwrite=overwrite)
 
+    print("\nGenerating reconciliation bootstraps.\n",flush=True)
+
     # Construct keyword arguments to pass to thread
     kwargs_list, num_threads = _construct_args(calc_dirs,
+                                               use_mpi=use_mpi,
                                                num_threads=num_threads,
-                                               manual_num_cores=num_cores)
+                                               num_cores=num_cores)
 
     # Run multi-threaded generax--one reconciliation per thread
     threads.thread_manager(kwargs_list,
