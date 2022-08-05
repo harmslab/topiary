@@ -10,13 +10,14 @@ on:
     branches: [ main   ]
 
 jobs:
-  build-nix:
+  build-linux:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: ubuntu-latest
         python-version: ['3.8', '3.9' ]
+
     steps:
     - name: Install Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -30,34 +31,114 @@ jobs:
         repository: harmsm/topiary
         path: topiary
 
-    - name: ghostscript-action
-      uses: jy95/ghostscript-action@v1
-
-    - name: Install topiary, run flake8, run pytest
+    - name: Setup environment
       shell: bash
       run: |
+
+        sudo apt-get update
+        sudo apt-get install ghostscript -y
+
         cd topiary
 
         $CONDA/bin/conda env create --file environment.yml
         $CONDA/bin/conda activate topiary || true
         export PATH=$CONDA/envs/topiary/bin:$PATH
+        $CONDA/bin/python setup.py install
 
         $CONDA/bin/conda install flake8
         $CONDA/bin/conda install pytest-timeout
         $CONDA/bin/python -m pip install --upgrade pip
 
+        cd ..
+
+    # - name: run flake8
+    #   shell: bash
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     # stop the build if there are Python syntax errors or undefined names
+    #     $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+    #     $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #
+    #     cd ..
+    #
+    # - name: run pytest
+    #   shell: bash
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     # test with pytest timeout
+    #     $CONDA/bin/pytest --timeout 300 --timeout_method thread
+    #
+    #     cd ..
+
+  build-macos:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: macos-latest
+        python-version: ['3.8', '3.9' ]
+
+    steps:
+    - name: Install Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+
+    - name: Checkout
+      uses: actions/checkout@v3.0.0
+      with:
+        repository: harmsm/topiary
+        path: topiary
+
+    - name: Setup environment
+      shell: bash
+      run: |
+
+        brew update
+        brew install ghostscript
+
+        cd topiary
+
+        $CONDA/bin/conda env create --file environment.yml
+        $CONDA/bin/conda activate topiary || true
+        export PATH=$CONDA/envs/topiary/bin:$PATH
         $CONDA/bin/python setup.py install
 
-        # stop the build if there are Python syntax errors or undefined names
-        $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-        # test with pytest timeout
-        $CONDA/bin/pytest --timeout 300 --timeout_method thread
+        $CONDA/bin/conda install flake8
+        $CONDA/bin/conda install pytest-timeout
+        $CONDA/bin/python -m pip install --upgrade pip
 
         cd ..
 
+    # - name: run flake8
+    #   shell: bash
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     # stop the build if there are Python syntax errors or undefined names
+    #     $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+    #     $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #
+    #     cd ..
+    #
+    # - name: run pytest
+    #   shell: bash
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     # test with pytest timeout
+    #     $CONDA/bin/pytest --timeout 300 --timeout_method thread
+    #
+    #     cd ..
 
   build-windows:
     runs-on: windows-latest
@@ -72,16 +153,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-    #
-    # - name: Setup conda
-    #   uses: conda-incubator/setup-miniconda@v2
-    #   with:
-    #     auto-update-conda: true
-    #     python-version: ${{ matrix.python-version }}
-    #
-    # - name: Install dependencies
-    #   run: |
-    #     python -m pip install --upgrade pip
 
     - name: Checkout
       uses: actions/checkout@v3.0.0
@@ -89,28 +160,43 @@ jobs:
         repository: harmsm/topiary
         path: topiary
 
-    - name: Install the Python dependencies
+    - name: Setup environment
       shell: powershell
       run: |
+
+        choco install ghostscript
 
         cd topiary
 
         C:\Miniconda\condabin\conda.bat env create --file environment.yml
         C:\Miniconda\condabin\conda.bat activate topiary
+        C:\Miniconda\python -m pip install --upgrade pip
+        C:\Miniconda\python setup.py install
 
         C:\Miniconda\condabin\conda.bat install flake8
         C:\Miniconda\condabin\conda.bat install pytest
 
-        C:\Miniconda\python -m pip install --upgrade pip
-        C:\Miniconda\python setup.py install
-
-        ls C:\Miniconda\Scripts\
-
-        # stop the build if there are Python syntax errors or undefined names
-        C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        C:\Miniconda\Scripts\flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-        C:\Miniconda\Scripts\pytest.exe
-
         cd ..
+
+    # - name: run flake8
+    #   shell: powershell
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     # stop the build if there are Python syntax errors or undefined names
+    #     C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+    #     C:\Miniconda\Scripts\flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #
+    #     cd ..
+    #
+    # - name: run pytest
+    #   shell: powershell
+    #   run: |
+    #
+    #     cd topiary
+    #
+    #     C:\Miniconda\Scripts\pytest.exe
+    #
+    #     cd ..
