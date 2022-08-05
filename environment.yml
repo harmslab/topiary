@@ -4,16 +4,17 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - openpyxl
-  - xlrd
-  - pytest
-  - pandas
   - numpy
-  - jupyter
+  - matplotlib
+  - pandas
+  - xlrd
+  - openpyxl
   - tqdm
-  - blast
-  - generax
-  - muscle
-  - raxml-ng
+  - ete3
+  - dendropy
   - toytree
   - ghostscript
+#  - blast
+#  - generax
+#  - muscle
+#  - raxml-ng
