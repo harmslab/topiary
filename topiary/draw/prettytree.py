@@ -9,7 +9,7 @@ import topiary._private.check as check
 
 import toytree
 import toyplot
-from toyplot import svg, pdf, png
+from toyplot import svg, pdf
 
 import numpy as np
 
@@ -1043,13 +1043,20 @@ class PrettyTree:
         key = output_file[-3:].lower()
         render_dict = {"svg":toyplot.svg.render,
                        "pdf":toyplot.pdf.render,
-                       "png":toyplot.png.render}
+                       "png":None}
         try:
             render_fcn = render_dict[key]
         except KeyError:
             print(f"Could not identify render type for file {output_file}.")
             print("Using pdf.",flush=True)
             render_fcn = render_dict["pdf"]
+
+        # png rendering requires ghostscript, which requires a painful external
+        # install chain (particularly on github workflows). Hack makes this a
+        # fall back rather than something in the base import functionality.
+        if key == "png":
+            from topyplot import png
+            render_fcn = toyplot.png.render
 
         render_fcn(self.canvas,output_file)
 

@@ -17,7 +17,6 @@ import toyplot
 
 import numpy as np
 import pandas as pd
-import png  # toyplot uses png, so this is not a new dependency
 
 import string, os
 

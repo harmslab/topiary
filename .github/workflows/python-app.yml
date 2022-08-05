@@ -35,8 +35,8 @@ jobs:
       shell: bash
       run: |
 
-        sudo apt-get update
-        sudo apt-get install ghostscript -y
+        #sudo apt-get update
+        #sudo apt-get install ghostscript -y
 
         cd topiary
 
@@ -100,8 +100,8 @@ jobs:
       shell: bash
       run: |
 
-        brew update
-        brew install ghostscript
+        #brew update
+        #brew install ghostscript
 
         cd topiary
 
@@ -164,7 +164,7 @@ jobs:
       shell: powershell
       run: |
 
-        choco install ghostscript
+        #choco install ghostscript
 
         cd topiary
 

@@ -13,8 +13,9 @@ dependencies:
   - ete3
   - dendropy
   - toytree
-  - ghostscript
-#  - blast
-#  - generax
-#  - muscle
-#  - raxml-ng
+  - pip:
+    - pastml
+  - blast # [not win] 
+  - muscle # [not win]
+  - generax # [not win]
+  - raxml-ng # [not win]
