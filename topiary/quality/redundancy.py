@@ -335,6 +335,7 @@ def _redundancy_thread_function(i_block,
 def remove_redundancy(df,
                       cutoff=0.95,
                       target_length_cutoff=0.25,
+                      discard_key=False,
                       silent=False,
                       num_threads=-1):
     """
@@ -365,6 +366,8 @@ def remove_redundancy(df,
         Give a higher quality to any sequence whose length is within
         target_length_cutoff pct of the median key_species sequence length. To
         disable, set to None.
+    discard_key : bool, default=False
+        whether or not to discard sequences from key species
     silent : bool, default=False
         whether to print output and use status bars
     only_in_species : bool, default=False
@@ -467,7 +470,7 @@ def remove_redundancy(df,
                                                quality_array=quality_array,
                                                keep_array=keep_array,
                                                cutoff=cutoff,
-                                               discard_key=False,
+                                               discard_key=discard_key,
                                                num_threads=num_threads)
 
     threads.thread_manager(kwargs_list,

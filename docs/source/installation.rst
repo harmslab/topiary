@@ -1,5 +1,5 @@
 
-.. include:: /include/links.rst
+.. include:: links.rst
 
 ============
 Installation

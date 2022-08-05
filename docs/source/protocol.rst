@@ -88,8 +88,9 @@ Protocol for preparing the table
    taxonomic coverage.
 #. :emph:`Download sequences for each paralog` from each species and put it into
    the table. Our usual source for these seed sequences is uniprot_. Generally,
-   you'll want the canonical_ sequence rather than an isoform. These sequences
-   can come from anywhere; they do not even have to be from a database.
+   you'll want the `canonical <uniprot_canonical>_`_ sequence rather than an
+   isoform. These sequences can come from anywhere; they do not even have to be
+   from a database.
 #. :emph:`Compile a list of aliases for each paralog`. Annoyingly, the same protein
    can have different names across different databases/species. By using a
    human-curated list of aliases, topiary is more effective at identifying

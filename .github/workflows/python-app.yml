@@ -52,6 +52,7 @@ jobs:
       run: |
 
         cd topiary
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         cd ..
 
@@ -60,6 +61,7 @@ jobs:
       run: |
 
         cd topiary
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/pytest --timeout 300 --timeout_method thread
         cd ..
 
@@ -105,6 +107,7 @@ jobs:
       run: |
 
         cd topiary
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         cd ..
 
@@ -113,6 +116,7 @@ jobs:
       run: |
 
         cd topiary
+        $CONDA/bin/conda activate topiary || true
         $CONDA/bin/pytest --timeout 300 --timeout_method thread
         cd ..
 
@@ -156,6 +160,7 @@ jobs:
       run: |
 
         cd topiary
+        C:\Miniconda\condabin\conda.bat activate topiary
         C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         cd ..
 
@@ -164,5 +169,6 @@ jobs:
       run: |
 
         cd topiary
+        C:\Miniconda\condabin\conda.bat activate topiary
         C:\Miniconda\Scripts\pytest.exe
         cd ..

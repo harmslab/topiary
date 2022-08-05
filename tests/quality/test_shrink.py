@@ -12,6 +12,9 @@ import pandas as pd
 
 import os
 
+def test_shrink_in_species():
+    pass
+
 def test_shrink_redundant(for_real_inference):
 
     df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])

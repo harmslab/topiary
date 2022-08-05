@@ -14,8 +14,8 @@
 .. _`NCBI BLAST`: https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE=Proteins
 .. _`nr-clustered`: https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastp&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome
 .. _uniprot: https://www.uniprot.org
-.. _canonical: https://www.uniprot.org/help/canonical_and_isoforms
-.. _genecards: https://www.genecards.org
+.. _`uniprot_canonical`: https://www.uniprot.org/help/canonical_and_isoforms
+.. _`genecards`: https://www.genecards.org
 .. _`Also known as`: https://www.ncbi.nlm.nih.gov/gene/23643
 .. _`Protein names`: https://www.uniprot.org/help/protein_names
 .. _`API reference` : topiary.html
