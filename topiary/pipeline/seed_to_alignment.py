@@ -29,8 +29,8 @@ def seed_to_alignment(seed_df,
                       out_dir,
                       seqs_per_column=1,
                       max_seq_number=500,
-                      redundancy_cutoff=0.98,
-                      sparse_column_cutoff=0.95,
+                      redundancy_cutoff=0.90,
+                      sparse_column_cutoff=0.80,
                       align_trim=(0.05,0.95),
                       ncbi_blast_db="nr",
                       local_blast_db=None,
@@ -69,7 +69,7 @@ def seed_to_alignment(seed_df,
     redundancy_cutoff : float, default=0.98
         merge sequences from closely related species with sequence identity
         above cutoff.
-    sparse_column_cutoff : float, default=0.95
+    sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
     align_trim : tuple, default=(0.05,0.95)

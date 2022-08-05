@@ -10,7 +10,7 @@ from topiary.quality.alignment import score_alignment
 import numpy as np
 import pandas as pd
 
-def _get_cutoff(x,avg_bin_contents=10,pct=0.975):
+def _get_cutoff(x,avg_bin_contents=None,pct=0.975):
     """
     Get cutoff corresponding to percentile.
 
@@ -18,35 +18,49 @@ def _get_cutoff(x,avg_bin_contents=10,pct=0.975):
     ----------
     x : numpy.ndarray
         float array to test
-    avg_bin_contents : int, default=10
-        create histograms with widths of len(x)/avg_bin_contents
+    avg_bin_contents : int, optional
+        create histograms with widths of len(x)/avg_bin_contents and then define
+        percentile based on those histograms. See note.
     pct : float, default=0.975
         get value in x corresponding to percentile.
 
     Notes
     -----
-    This uses a coarse-grained histogram approach and is thus conservative. If
-    a large number of values are in a bin with a high value, the function will
-    end up grabbing the cutoff corresponding to the first sparsely populated
-    bin, even if this means selecting fewer sequences than would strictly
-    correspond to the top pct percentile.
+    If avg_bin_contents is specified, use a coarse-grained histogram approach
+    to percentile calculation. This tends to be conservative. If a large number
+    of values are in a bin with a high value, the function will end up grabbing
+    the cutoff corresponding to the first sparsely populated bin, even if this
+    means selecting fewer sequences than would strictly correspond to the top
+    pct percentile.
     """
 
-    bins = int(np.round(len(x)/avg_bin_contents,0))
-    counts, edges = np.histogram(x,bins=bins)
-    mids = (edges[1:] - edges[:-1])/2 + edges[:-1]
-    cumsum = np.cumsum(counts)/np.sum(counts)
+    if avg_bin_contents is None:
 
-    return np.min(mids[cumsum >= pct])
+        # Get cutoff corresponding to the percentile by sorting
+        x = np.array(x.copy())
+        x.sort()
+        idx = int(np.round(len(x)*pct,0))
+        return x[idx]
+
+    else:
+
+        check.check_int(avg_bin_contents,"avg_bin_contents",minimum_allowed=1)
+
+        bins = int(np.round(len(x)/avg_bin_contents,0))
+        counts, edges = np.histogram(x,bins=bins)
+        mids = (edges[1:] - edges[:-1])/2 + edges[:-1]
+        cumsum = np.cumsum(counts)/np.sum(counts)
+
+        return np.min(mids[cumsum >= pct])
 
 
 def polish_alignment(df,
                      realign=True,
-                     sparse_column_cutoff=0.90,
-                     align_trim=(0.02,0.98),
-                     fx_sparse_percential=0.975,
-                     sparse_run_percentile=0.975,
-                     fx_missing_percentile=0.900):
+                     sparse_column_cutoff=0.80,
+                     align_trim=(0,1),
+                     fx_sparse_percential=0.90,
+                     sparse_run_percentile=0.90,
+                     fx_missing_percentile=0.90):
     """
     Polish a near-final alignment by removing sequences that have long
     insertions or are missing large chunks of the sequence.
@@ -57,21 +71,22 @@ def polish_alignment(df,
         topiary dataframe
     realign : bool, default=True
         align after dropping columns
-    sparse_column_cutoff : float, default=0.90
+    sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
-    align_trim : tuple, default=(0.02,0.98)
+    align_trim : tuple, default=(0,1)
         when checking alignment quality, do not score the first and last parts
         of the alignment. Interpreted like a slice, but with percentages.
         (0.0,1.0) would not trim; (0.05,0,98) would trim the first 0.05 off the
-        front and the last 0.02 off the back.
-    fx_sparse_percential : float, default=0.975
+        front and the last 0.02 off the back. The default to this function does
+        not trim at all.
+    fx_sparse_percential : float, default=0.90
         flag any sequence that is has a fraction sparse above this percential
         cutoff.
-    sparse_run_percentile : float, default=0.975
+    sparse_run_percentile : float, default=0.90
         flag any sequence that is has total sparse run length above this
         percential cutoff.
-    fx_missing_percentile : float, default=0.900
+    fx_missing_percentile : float, default=0.90
         flag any sequence that is has a fraction missing above this percential
         cutoff.
 
@@ -79,14 +94,14 @@ def polish_alignment(df,
     -----
     The alignment is scored using topiary.quality.score_alignment (see that
     docstring for details). Briefly: columns are characterized as either dense
-    (many sequences have a non-gap) or sparse (meaning most sequences have a
-    gap character). This call is made using the sparse_column_cutoff argument.
-    This function then identifies sequences that have many non-gap characters
-    in sparse columns overall, sequences with long runs of non-gap characters
-    in long runs of gaps, and sequences that are missing large portions of the
-    dense columns. It drops sequences that have BOTH large fx_sparse AND large
-    sparse_run. It also drops sequences that have BOTH large fx_missing AND
-    are flagged as partial in the original NCBI entry.
+    (most sequences have a non-gap) or sparse (defined as not dense). This call
+    is made using the sparse_column_cutoff argument. This function then
+    identifies sequences that have many non-gap characters in sparse columns
+    overall, sequences with runs of non-gap characters in long runs of sparse
+    columns, and sequences that are missing large portions of the dense columns.
+    It drops sequences that have BOTH large fx_sparse AND large sparse_run. It
+    also drops sequences that have BOTH large fx_missing AND are flagged as
+    partial in the original NCBI entry.
     """
 
     df = check.check_topiary_dataframe(df)

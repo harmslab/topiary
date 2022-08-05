@@ -378,7 +378,7 @@ def remove_redundancy(df,
     topiary_dataframe : pandas.dataframe
         Copy of df in which "keep" is set to False for redundant sequences
     """
-    
+
     # Process arguments
     df = check.check_topiary_dataframe(df)
     cutoff = check.check_float(cutoff,

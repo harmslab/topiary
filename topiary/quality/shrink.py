@@ -1,4 +1,5 @@
 """
+Shrink the sequence database in a rational way.
 """
 import topiary
 from topiary._private import check
@@ -8,6 +9,68 @@ from topiary.quality.alignment import score_alignment
 
 import numpy as np
 from tqdm.auto import tqdm
+
+def shrink_in_species(df,redundancy_cutoff=0.98):
+    """
+    Lower sequence redundancy within individual species, ignoring paralog
+    annotation.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary dataframe
+    redundancy_cutoff : float, default=0.98
+        merge sequences that have identities greater than or equal to
+        redundancy_cutoff.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        dataframe with keep set to False for redundant sequences
+    """
+
+    df = check.check_topiary_dataframe(df)
+
+    redundancy_cutoff = check.check_float(redundancy_cutoff,
+                                          "redundancy_cutoff",
+                                          minimum_allowed=0,
+                                          maximum_allowed=1)
+
+    # Get uid blocks for kept sequences from unique species in dataframe
+    kept_df = df.loc[df.keep,:]
+    species = np.unique(kept_df.loc[:,"species"])
+    merge_blocks = []
+    for s in species:
+        merge_blocks.append(kept_df.loc[kept_df["species"] == s,"uid"])
+
+    # Figure out how many merge steps we're doing
+    num_to_merge = sum([len(m) for m in merge_blocks])
+    with tqdm(total=num_to_merge) as pbar:
+
+        uid_to_keep = []
+
+        # Remove redundant sequences within each merge block
+        for uid in merge_blocks:
+
+            this_mask = df.loc[:,"uid"].isin(uid)
+            this_df = df.loc[this_mask,:]
+
+            this_df = remove_redundancy(this_df,
+                                        cutoff=redundancy_cutoff,
+                                        silent=True,
+                                        discard_key=True)
+
+            uid_to_keep.extend(this_df.loc[this_df.keep,"uid"])
+            pbar.update(n=len(uid))
+
+    # Update dataframe keep with merge results
+    keep_mask = df.loc[:,"uid"].isin(uid_to_keep)
+    df.loc[:,"keep"] = False
+    df.loc[keep_mask,"keep"] = True
+    if "always_keep" in df:
+        df.loc[df.always_keep,"keep"] = True
+
+    return df
 
 def shrink_redundant(df,
                      paralog_column="recip_paralog",
@@ -111,7 +174,7 @@ def shrink_aligners(df,
                     target_seq_number,
                     paralog_column="recip_paralog",
                     weighted_paralog_split=False,
-                    sparse_column_cutoff=0.95,
+                    sparse_column_cutoff=0.80,
                     align_trim=(0.05,0.95)):
     """
     Select sequences that align best within taxonomically informed blocks.
@@ -129,7 +192,7 @@ def shrink_aligners(df,
         weight the budget by the number of times each paralog is seen. If False,
         (default), split the budget as evenly as possible between the paralogs
         in the dataframe.
-    sparse_column_cutoff : float, default=0.95
+    sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
     align_trim : tuple, default=(0.05,0.95)
@@ -239,13 +302,13 @@ def shrink_dataset(df,
                    paralog_column="recip_paralog",
                    seqs_per_column=1,
                    max_seq_number=500,
-                   redundancy_cutoff=0.98,
+                   redundancy_cutoff=0.90,
                    merge_block_size=50,
                    weighted_paralog_split=False,
-                   sparse_column_cutoff=0.95,
+                   sparse_column_cutoff=0.80,
                    align_trim=(0.05,0.95)):
     """
-    Sample sequences from a topiary dataframe in a taxonomically informed way.
+    Select a subset of sequences from a topiary dataframe in a rational way.
 
     Parameters
     ----------
@@ -272,7 +335,7 @@ def shrink_dataset(df,
         weight the budget by the number of times each paralog is seen. If False,
         (default), split the budget as evenly as possible between the paralogs
         in the dataframe.
-    sparse_column_cutoff : float, default=0.95
+    sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
     align_trim : tuple, default=(0.05,0.95)
@@ -331,7 +394,7 @@ def shrink_dataset(df,
     if target_seq_number > max_seq_number:
         target_seq_number = max_seq_number
 
-    target_seq_number = int(round(target_seq_number,0))
+    target_seq_number = int(round(target_seq_number*1.1,0))
 
     print(f"Will build final alignment with ~{target_seq_number} sequences.\n",
           flush=True)
@@ -339,6 +402,22 @@ def shrink_dataset(df,
     # How many sequences we start with
     starting_keep = np.sum(df.keep)
 
+    print(f"Number of sequences: {starting_keep}",flush=True)
+
+    # ----------------------------------------------
+    # Remove nearly identical sequences with species
+
+    print("Removing redundant sequences within species.",flush=True)
+
+    df = shrink_in_species(df,redundancy_cutoff=redundancy_cutoff)
+
+    # Sanity check -- make sure something is left.
+    if np.sum(df.keep) == 0:
+        err = "redundancy pass removed all sequences!\n"
+        raise ValueError(err)
+
+    current_keep = np.sum(df.keep)
+    print(f"Number of sequences: {current_keep}",flush=True)
 
     # --------------------------------------------------------------------------
     # Remove nearly identical sequences from related species for each paralog
@@ -357,7 +436,7 @@ def shrink_dataset(df,
         raise ValueError(err)
 
     current_keep = np.sum(df.keep)
-    print(f"Reduced {starting_keep} sequences to {current_keep}\n")
+    print(f"Number of sequences: {current_keep}",flush=True)
 
     # --------------------------------------------------------------------------
     # Select best aligners within merge blocks
@@ -373,6 +452,8 @@ def shrink_dataset(df,
                          align_trim=align_trim)
 
     current_keep = np.sum(df.keep)
+    print(f"Number of sequences: {current_keep}",flush=True)
+
     print(f"Reduced {starting_keep} sequences to {current_keep}\n")
 
     return df

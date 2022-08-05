@@ -324,7 +324,7 @@ def alignment_to_ancestors(df,
                 # cause python to launch num_threads `mpirun -np 1 generax`
                 # jobs. If we did not pass in num_cores, python would detect
                 # it only had num_threads on whatever core the main job was
-                # running on and not send jobs out to other cores. 
+                # running on and not send jobs out to other cores.
                 topiary.reconcile(previous_dir=previous_dir,
                                   output=output,
                                   allow_horizontal_transfer=allow_horizontal_transfer,

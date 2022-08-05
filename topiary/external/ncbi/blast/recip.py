@@ -570,6 +570,8 @@ def recip_blast(df,
 
     """
 
+    print("Doing reciprocal blast.")
+
     # Check sanity of input parameters and return a validated topiary dataframe,
     # list of sequences, and compiled set of patterns to search. Note: the
     # values of ncbi_blast_db, local_blast_db, ncbi_taxid, hitlist_size,

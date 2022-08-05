@@ -1,5 +1,5 @@
 """
-Functions for scoring alignment quality. 
+Functions for scoring alignment quality.
 """
 
 import topiary
@@ -15,7 +15,7 @@ AA = "ACDEFGHIKLMNPQRSTVWY-"
 AA_TO_INT = dict([(a,i) for i, a in enumerate(AA)])
 INT_TO_AA = list(AA)
 
-def _get_sparse_columns(seqs,sparse_column_cutoff=0.5):
+def _get_sparse_columns(seqs,sparse_column_cutoff=0.80):
     """
     Get True/False array for whether each column is less than cutoff % gaps.
 
@@ -23,7 +23,7 @@ def _get_sparse_columns(seqs,sparse_column_cutoff=0.5):
     ----------
     seqs : numpy.ndarray
         2D numpy array holding sequences represented as integers
-    sparse_column_cutoff : float, default=0.5
+    sparse_column_cutoff : float, default=0.80
         column is sparse if it has > sparse_column_cutoff fraction gap
 
     Return
@@ -122,180 +122,8 @@ def _drop_gaps_only(seqs):
 
     return seqs
 
-# def _find_too_many_sparse(seqs,
-#                           cumulative_keep,
-#                           force_keep,
-#                           sparse_column_cutoff,
-#                           maximum_sparse_allowed):
-#     """
-#     Filter out sequences where over maximum_sparse_allowed of sequence is in
-#     sparse columns.
-#
-#     Parameters
-#     ----------
-#     seqs : numpy.ndarray
-#         array of sequences
-#     cumulative_keep : numpy.ndarray
-#         array of indexes to be passed on for further analyses
-#     force_keep : numpy.ndarray
-#         array of bool forcing specific columns to be kept
-#     sparse_column_cutoff : float
-#         a column is called sparse if it has > sparse_column_cutoff gaps
-#     maximum_sparse_allowed : float
-#         only keep sequences where less than maximum_sparse_allowed of the
-#         sequence (fraction) is a sparse column. Between 0 and 1.
-#
-#     Returns
-#     -------
-#     kept : numpy.ndarray
-#         copy of sequences containing only kept sequences
-#     cumulative_keep : numpy.ndarray
-#         copy of cumulative_keep containing only kept sequences
-#     force_keep : numpy.ndarray
-#         copy of force_keep containing only kept sequences
-#     """
-#
-#     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
-#     non_gap_sparse = np.logical_and(seqs != 20,sparse_columns)
-#     seq_score = np.sum(non_gap_sparse,axis=1)/seqs.shape[1]
-#
-#     keep_mask = seq_score <= maximum_sparse_allowed
-#     keep_mask = np.logical_or(keep_mask,force_keep)
-#     force_keep = force_keep[keep_mask]
-#     cumulative_keep = cumulative_keep[keep_mask]
-#     seqs = seqs[keep_mask]
-#     seqs = _drop_gaps_only(seqs)
-#
-#     return seqs, cumulative_keep, force_keep
-#
-# def _find_too_few_dense(seqs,
-#                         cumulative_keep,
-#                         force_keep,
-#                         sparse_column_cutoff,
-#                         minimum_dense_required):
-#     """
-#     Filter out sequences that have a non gap in less than minimum_dense_required
-#     fraction of the dense columns.
-#
-#     Parameters
-#     ----------
-#     seqs : numpy.ndarray
-#         array of sequences
-#     cumulative_keep : numpy.ndarray
-#         array of indexes to be passed on for further analyses
-#     force_keep : numpy.ndarray
-#         array of bool forcing specific columns to be kept
-#     sparse_column_cutoff : float
-#         a column is called sparse if it has > sparse_column_cutoff gaps
-#     minimum_dense_required: float
-#         only keep sequences that have sequence covering >= than
-#         minimum_dense_required of the dense columns. Between 0 and 1.
-#
-#     Returns
-#     -------
-#     kept : numpy.ndarray
-#         copy of sequences containing only kept sequences
-#     cumulative_keep : numpy.ndarray
-#         copy of cumulative_keep containing only kept sequences
-#     force_keep : numpy.ndarray
-#         copy of force_keep containing only kept sequences
-#     """
-#
-#     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
-#     dense_columns = np.logical_not(sparse_columns)
-#     gap_dense = np.logical_and(seqs != 20,dense_columns)
-#     seq_score = np.sum(gap_dense,axis=1)/np.sum(dense_columns)
-#
-#     keep_mask = seq_score >= minimum_dense_required
-#     keep_mask = np.logical_or(keep_mask,force_keep)
-#     force_keep = force_keep[keep_mask]
-#     cumulative_keep = cumulative_keep[keep_mask]
-#     seqs = seqs[keep_mask]
-#     seqs = _drop_gaps_only(seqs)
-#
-#     return seqs, cumulative_keep, force_keep
-#
-# def _find_long_insertions(seqs,
-#                           cumulative_keep,
-#                           force_keep,
-#                           sparse_column_cutoff,
-#                           long_insertion_length,
-#                           long_insertion_fx_cutoff):
-#     """
-#     Filter out sequences that are part of long stretches of sparse sequences.
-#     Any sequence with long_insertion_fx_cutoff of the sparse columns not
-#     gapped will be removed.
-#
-#     Parameters
-#     ----------
-#     seqs : numpy.ndarray
-#         array of sequences
-#     cumulative_keep : numpy.ndarray
-#         array of indexes to be passed on for further analyses
-#     force_keep : numpy.ndarray
-#         array of bool forcing specific columns to be kept
-#     sparse_column_cutoff : float
-#         a column is called sparse if it has > sparse_column_cutoff gaps
-#     long_insertion_length: int
-#         look at sequences that participate in an insertion with >= than
-#         long_insertion_length contiguous sparse columns.
-#     long_insertion_fx_cutoff: float
-#         remove sequences that have sequence covering >= than
-#         long_insertion_fx_cutoff of the insertion. Between 0 and 1.
-#
-#     Returns
-#     -------
-#     kept : numpy.ndarray
-#         copy of sequences containing only kept sequences
-#     cumulative_keep : numpy.ndarray
-#         copy of cumulative_keep containing only kept sequences
-#     force_keep : numpy.ndarray
-#         copy of force_keep containing only kept sequences
-#     """
-#
-#     sparse_columns = _get_sparse_columns(seqs,sparse_column_cutoff)
-#     dense_columns = np.logical_not(sparse_columns)
-#     num_dense_columns = np.sum(dense_columns)
-#
-#     run_lengths, start_positions, values = _rle(dense_columns)
-#
-#     keep_mask = np.ones(seqs.shape[0],dtype=bool)
-#     for i in range(len(run_lengths)):
-#
-#         # If the this is a run of sparse columns
-#         if values[i] == False:
-#
-#             # If the run length is less than the long_insertion_length stop
-#             # considering it
-#             if run_lengths[i] < long_insertion_length:
-#                 continue
-#
-#             # Grab indexes for start and stop of sparse column run
-#             s = start_positions[i]
-#             e = s + run_lengths[i]
-#
-#             # Go through every sequence
-#             for j in range(len(seqs)):
-#
-#                 # If we haven't already tossed this sequence...
-#                 if keep_mask[j]:
-#                     # Calculate the fraction of non-gap characters for this
-#                     # sequence in the sparse region. If this is greater than
-#                     # long_insertion_fx_cutoff, toss the sequence
-#                     fx_in_sparse = np.sum(seqs[j,s:e] != 20)/run_lengths[i]
-#                     if fx_in_sparse >= long_insertion_fx_cutoff:
-#                         keep_mask[j] = False
-#
-#     keep_mask = np.logical_or(keep_mask,force_keep)
-#     force_keep = force_keep[keep_mask]
-#     cumulative_keep = cumulative_keep[keep_mask]
-#     seqs = seqs[keep_mask]
-#     seqs = _drop_gaps_only(seqs)
-#
-#     return seqs, cumulative_keep, force_keep
-
 def score_alignment(df,
-                    sparse_column_cutoff=0.95,
+                    sparse_column_cutoff=0.80,
                     align_trim=(0.1,0.9),
                     silent=False):
     """
@@ -320,7 +148,7 @@ def score_alignment(df,
     ----------
     df : pandas.DataFrame
         topiary dataframe
-    sparse_column_cutoff : float, default=0.95
+    sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
     align_trim : tuple, default=(0.05,0.95)
