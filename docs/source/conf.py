@@ -120,8 +120,6 @@ for rst in topiary_rst:
             line = re.sub(" module","",line)
             body.append(line)
 
-            #line = re.sub(" package","",line)
-            #body.append(line)
 
     header[0] = re.sub(" package","",header[0])
 

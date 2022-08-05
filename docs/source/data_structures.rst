@@ -1,5 +1,5 @@
 
-.. _Data Structures:
+.. include:: links.rst
 
 Data structures
 ===============

@@ -9,12 +9,6 @@ topiary.io
    :show-inheritance:
 
 
-.. toctree::
-   :maxdepth: 4
-
-   topiary.io.construct
-
-
 topiary.io.alignments
 ----------------------------
 

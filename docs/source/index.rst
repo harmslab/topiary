@@ -3,6 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. include:: links.rst
+
 .. role:: red
 
 .. role:: bolditalic
@@ -15,87 +17,64 @@ topiary
 
 Python framework for doing ancestral sequence reconstruction.
 
-+ Automates sequence database construction, quality control, multiple
-  sequence alignment, tree construction, gene/species tree reconciliation,
-  and ancestral reconstruction.
-+ Spreadsheet centric. Users prepare input as spreadsheets. The sequence database
-  and alignments are stored as csv files.
-+ Final outputs are human-readable trees and ancestral sequences.
-+ Use with simple command line tools or do custom analyses using the topiary
-  API.
++ :bolditalic:`Automatic.` Performs sequence database construction, quality
+  control, multiple sequence alignment, tree construction, gene/species tree
+  reconciliation, and ancestral reconstruction with minimal user input.
++ :bolditalic:`Species aware.` Integrates with the `Open Tree of Life`_
+  database, improving selection of sequences and tree/ancestor inference.
++ :bolditalic:`Human-oriented.` Users prepare input as spreadsheets. Outputs are
+  pdf trees, spreadsheets, clean fasta files, and graphical summaries of
+  ancestor quality.
++ :bolditalic:`Flexible.` Use as a command line program or do custom analyses
+  and plotting in Jupyter notebooks using the topiary API.
+
+:bolditalic:`User input to a topiary calculation`
+
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| name | aliases                                                                                    | species       | sequence   |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Homo sapiens  | MLPFLFF... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Gallus gallus | MFEFVFF... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Danio rerio   | MALWCPS... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Homo sapiens  | MKGFTAT... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Gallus gallus | MKTLNVL... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+| LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Danio rerio   | MKTYFNM... |
++------+--------------------------------------------------------------------------------------------+---------------+------------+
+
+:bolditalic:`Final output tree from a topiary calculation`
+
+.. image:: _static/img/final-tree.svg
+  :align: center
+  :alt: Topiary tree drawing
 
 
-.. _Installation:
+
+Quick start
+===========
 
 Installation
-============
-
-------------
-Requirements
 ------------
 
-+ Core scientific python libraries:
+For full installation instructions, see the
 
-  + `Python >= 3.8 <https://www.python.org/downloads/>`_
-  + `numpy <https://numpy.org>`_
-  + pandas_
-
-+ Tree manipulation/drawing:
-
-  + `ete3 <http://etetoolkit.org/download/>`_
-  + `toytree <https://toytree.readthedocs.io/en/latest/3-installation.html>`_
-
-+ Packages used for tree/ancestor inferences:
-
-  + `NCBI BLAST+ >= 2.2 <https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/>`_
-  + `muscle >= 5.0 <https://github.com/rcedgar/muscle/releases/>`_
-  + `GeneRax >= 2.0 <https://github.com/BenoitMorel/GeneRax/releases/>`_
-  + `RAxML-NG >= 1.1 <https://github.com/amkozlov/raxml-ng/releases/>`_
-  + `pastml >= 1.9 <https://pastml.pasteur.fr>`_
-
-
----------------
-macOS and linux
----------------
-
-We recommend installing topiary via miniconda_.
+topiary can be easily installed with conda.
 
 .. code-block:: shell-session
 
-  conda install -c bioconda topiary-asr
+  conda create -n topiary topiary-asr
+  conda activate topiary
 
+Windows users and arm macOS users will need to manually install
+`muscle <download_muscle_>`_ and `blast <download_blast_>`_.
 
-On a command line/conda terminal:
+Running
+-------
 
-.. code-block:: shell-session
-
-  conda install -c bioconda muscle
-  conda install -c bioconda blast
-
-
-If you plan to run generax and raxml-ng, and are on macOS or linux:
-
-.. code-block:: shell-session
-
-  conda install -c bioconda generax
-  conda install -c bioconda raxml-ng
-
-
-Finally:
-
-.. code-block:: shell-session
-
-  git clone https://github.com/harmslab/topiary.git
-  cd topiary
-  python setup.py install
-
-
-To make sure the code installed properly, run:
-
-.. code-block:: shell-session
-
-  conda install pytest
-  pytest
 
 
 .. _How to cite:
@@ -104,11 +83,12 @@ How to cite
 ===========
 
 If you use topiary in your research, please cite:
+
 + CITATION.
 
 Please make sure to cite the tools we use in the package as well:
 
-+ Muscle_ (for alignment): Edgar RC (2021) *bioRxiv* https://doi.org/10.1101/2021.06.20.449169
++ `Muscle <muscle link>`__ (for alignment): Edgar RC (2021) *bioRxiv* https://doi.org/10.1101/2021.06.20.449169
 + `RAxML-NG`_ (for tree/ancestor inference): Kozlov et al (2019) *Bioinformatics* 35(21):4453–4455 https://doi.org/10.1093/bioinformatics/btz305
 + GeneRax_ (for gene/species tree reconcilation): Morel et al (2020) *MBE* https://doi.org/10.1093/molbev/msaa141
 + PastML_ (for ancestral gap assignment): Ishikawa et al (2019) *MBE* 36(9):2069–2085 https://doi.org/10.1093/molbev/msz131
@@ -119,6 +99,7 @@ Please make sure to cite the tools we use in the package as well:
    :maxdepth: 2
    :caption: Contents:
 
+   installation
    protocol
    drawing
    data_structures

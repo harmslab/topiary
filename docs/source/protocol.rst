@@ -9,6 +9,8 @@
 
 .. role:: emph
 
+.. include:: links.rst
+
 .. _protocol_doc:
 
 =================

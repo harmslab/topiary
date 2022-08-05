@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. include:: links.rst
 
 =============
 Drawing Trees
@@ -16,7 +17,9 @@ Topiary allows users to generate their own plots with customized formatting.
   topiary.draw.tree("06_ancestors_with_branch_supports")
 
 
-
+.. image:: _static/img/final-tree.svg
+  :align: center
+  :alt: Topiary tree drawing
 
 
 

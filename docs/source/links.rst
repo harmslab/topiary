@@ -7,7 +7,7 @@
 .. _`Open Tree of Life`: https://tree.opentreeoflife.org/
 .. _PastML: https://pastml.pasteur.fr
 .. _`RAxML-NG`: https://github.com/amkozlov/raxml-ng
-.. _Muscle: https://www.drive5.com/muscle/
+.. _`muscle link`: https://www.drive5.com/muscle/
 .. _paralogs: https://en.wikipedia.org/wiki/Sequence_homology#Paralogy
 .. _LY96: https://www.uniprot.org/uniprot/Q9Y6Y9
 .. _LY86: https://www.uniprot.org/uniprot/O95711
@@ -20,3 +20,7 @@
 .. _`Protein names`: https://www.uniprot.org/help/protein_names
 .. _`API reference` : topiary.html
 .. _`miniconda` : https://docs.conda.io/en/latest/miniconda.html
+.. _`conda` : https://docs.conda.io/en/latest/
+.. _`matplotlib` : https://matplotlib.org
+.. _`download_muscle` : https://github.com/rcedgar/muscle/releases/tag/v5.1
+.. _`download_blast` : https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
