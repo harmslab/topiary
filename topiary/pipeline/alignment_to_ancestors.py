@@ -330,7 +330,6 @@ def alignment_to_ancestors(df,
                                   allow_horizontal_transfer=allow_horizontal_transfer,
                                   generax_binary=generax_binary,
                                   num_threads=num_threads,
-                                  num_cores=num_threads,
                                   use_mpi=False,
                                   bootstrap=do_bootstrap)
             counter += 1
