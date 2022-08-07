@@ -74,7 +74,7 @@ jobs:
       run: |
         $CONDA/bin/pytest --timeout 300 --timeout_method thread
 
-  build-linux:
+  build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
