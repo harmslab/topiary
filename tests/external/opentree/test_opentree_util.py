@@ -1,8 +1,12 @@
 import pytest
 import topiary
 from topiary.external.opentree.util import _validate_ott_vs_species
-from topiary.external.opentree.util import ott_mrca, ott_resolvable
-from topiary.external.opentree.util import species_to_ott, ott_species_tree
+from topiary.external.opentree.util import ott_mrca
+from topiary.external.opentree.util import ott_resolvable
+from topiary.external.opentree.util import species_to_ott
+from topiary.external.opentree.util import ott_species_tree
+from topiary.external.opentree.util import get_taxa_order
+from topiary.external.opentree.util import taxonomic_sort
 
 import ete3
 
@@ -10,6 +14,7 @@ import pandas as pd
 import numpy as np
 
 import re
+import string
 
 def test__validate_ott_vs_species():
 
@@ -49,8 +54,6 @@ def test__validate_ott_vs_species():
     assert len(ott_list) == 0
 
 
-
-
 def test_species_to_ott():
 
     input_species_list = ["Homo sapiens",
@@ -88,7 +91,31 @@ def test_species_to_ott():
     assert len(ott_list) == 1
     assert len(species_list) == 1
     assert ott_list[0] is None
-    assert species_list[0] == "Not really a species"
+    assert species_list[0] == "Not really a species"\
+
+    # Two ambiguous cases. Gekko has a synonym an should be resolved. Capra
+    # has a (wacky) bacterial species name and should not resolve. If this test
+    # starts failing, opentreeoflife may finally have fixed problem where Capra
+    # resolves to a bacterium...
+    ott_list, species_list, results = species_to_ott(["Gekko japonicus",
+                                                      "Capra hircus",
+                                                      "Escherichia coli"])
+    assert len(ott_list) == 3
+    assert ott_list[0] == 212506
+    assert ott_list[1] is None
+    assert ott_list[2] == 474506
+
+    # This should work because we're inside cow-like things. OTT should realize
+    # we mean a goat, not a bacterium.
+    ott_list, species_list, results = species_to_ott(["Bos taurus",
+                                                      "Capra hircus"])
+    assert len(ott_list) == 2
+    assert ott_list[0] == 490099
+    assert ott_list[1] == 19017
+
+    # This is a fuzzy match and should fail
+    ott_list, species_list, results = species_to_ott(["Neosciurus carolinensis"])
+    assert results["Neosciurus carolinensis"]["msg"].startswith("No exact match")
 
 
 def test_ott_species_tree():
@@ -357,3 +384,109 @@ def test_ott_mrca():
     assert out["ott_name"] == 'Euarchontoglires'
     assert out["ott_rank"] == 'superorder'
     assert out["taxid"] == 314146
+
+def test_get_taxa_order():
+
+    T = ete3.Tree("((((A,B),(C,D)),Q),(H,(E,F)));")
+    out_order = get_taxa_order(T,ref_name="H")
+    assert np.array_equal(out_order[:4],["H","E","F","Q"])
+
+    out_order = get_taxa_order(T,ref_name="A")
+    assert np.array_equal(out_order,["A","B","C","D","Q","H","E","F"])
+
+    out_order = get_taxa_order(T,ref_name="B")
+    assert np.array_equal(out_order,["B","A","C","D","Q","H","E","F"])
+
+    out_order = get_taxa_order(T,ref_name="F")
+    assert np.array_equal(out_order[:4],["F","E","H","Q"])
+
+    # ref_name not in tree
+    out_order = get_taxa_order(T,ref_name="X")
+    assert isinstance(out_order,list)
+    assert len(out_order) == 8
+
+    # No ref_name given
+    out_order = get_taxa_order(T)
+    assert isinstance(out_order,list)
+    assert len(out_order) == 8
+
+def test_taxonomic_sort(for_real_inference):
+
+    df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])
+
+    # Make sure it sorts on first key_species ott then recip_paralog
+    new_df = taxonomic_sort(df)
+    assert new_df.loc[new_df.index[0],"ott"] == "ott770315"
+    expected = ["LY86","LY86","LY86","LY86","LY86","LY86","LY86","LY86",
+                "LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96",
+                "unassigned"]
+    assert np.array_equal(new_df.loc[:,"recip_paralog"],expected)
+
+    # Make sure it sorts on given ott then recip_paralog
+    new_df = taxonomic_sort(df,ref_ott="ott490109")
+    assert new_df.loc[new_df.index[0],"ott"] == "ott490109"
+    expected = ["LY86","LY86","LY86","LY86","LY86","LY86","LY86","LY86",
+                "LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96",
+                "unassigned"]
+    assert np.array_equal(new_df.loc[:,"recip_paralog"],expected)
+
+    # Drop recip_paralog column; should now sort on nickname
+    input_df = df.copy()
+    input_df = input_df.drop(columns=["recip_paralog"])
+    values = np.arange(len(input_df))
+    np.random.shuffle(values)
+    input_df.loc[:,"nickname"] = values
+    new_df = taxonomic_sort(input_df,ref_ott="ott770315")
+    assert np.array_equal(new_df.loc[:,"nickname"],np.arange(len(input_df)))
+
+    # Drop recip_paralog and nickname column; should now sort on name
+    input_df = df.copy()
+    input_df = input_df.drop(columns=["recip_paralog","nickname"])
+    values = list(string.ascii_lowercase[:len(input_df)])
+    np.random.shuffle(values)
+    input_df.loc[:,"name"] = values
+    new_df = taxonomic_sort(input_df,ref_ott="ott770315")
+    assert np.array_equal(new_df.loc[:,"name"],list(string.ascii_lowercase[:len(input_df)]))
+
+    # Short on custom paralog column
+    input_df = df.copy()
+    values = np.arange(len(input_df))
+    np.random.shuffle(values)
+    input_df["rocket"] = values
+    new_df = taxonomic_sort(input_df,paralog_column="rocket")
+    assert np.array_equal(new_df.loc[:,"rocket"],np.arange(len(input_df)))
+
+    # Make sure it's paying attention to only_keepers
+    input_df = df.copy()
+    input_df.loc[input_df.index[5:],"keep"] = False
+    new_df = taxonomic_sort(input_df)
+    assert len(new_df) == len(input_df)
+
+    input_df = df.copy()
+    input_df.loc[input_df.index[5:],"keep"] = False
+    new_df = taxonomic_sort(input_df,only_keepers=True)
+    assert len(new_df) == 5
+
+    input_df = df.copy()
+    input_df.loc[input_df.index[5:],"keep"] = False
+    new_df = taxonomic_sort(input_df,only_keepers=False)
+    assert len(new_df) == len(input_df)
+
+    # Arg checking
+    bad_paralog_columns = ["A",1.5,list]
+    for b in bad_paralog_columns:
+        print("passing",b)
+        with pytest.raises(ValueError):
+            new_df = taxonomic_sort(df,paralog_column=b)
+
+    bad_ott = [770315,"Homo sapiens",1.1]
+    for b in bad_ott:
+        print("passing",b)
+        with pytest.raises(ValueError):
+            new_df = taxonomic_sort(df,ref_ott=b)
+
+    bad_keep = ["Homo sapiens",1.1,None]
+    for b in bad_keep:
+        print("passing",b)
+        with pytest.raises(ValueError):
+            new_df = taxonomic_sort(df,only_keepers=b)

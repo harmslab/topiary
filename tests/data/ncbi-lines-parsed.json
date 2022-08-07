@@ -46,5 +46,17 @@
    "precursor":false,
    "isoform":false,
    "hypothetical":false,
-   "partial":false}
+   "partial":false},
+  {"raw_line":"gb|AAB22007.1| CP-10=10.3 kda chemotactic protein [mice, Peptide Partial, 76 aa] [Mus sp.]",
+   "line":"gb|AAB22007.1| CP-10=10.3 kda chemotactic protein [mice, Peptide Partial, 76 aa] [Mus sp.]",
+   "name":"CP-10=10.3 kda chemotactic protein",
+   "accession":"AAB22007",
+   "species":"Mus sp.",
+   "low_quality":false,
+   "predicted":false,
+   "precursor":false,
+   "isoform":false,
+   "hypothetical":false,
+   "partial":true,
+   "structure":false}
 ]

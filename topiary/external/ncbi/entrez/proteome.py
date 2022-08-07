@@ -128,6 +128,12 @@ def get_proteome_ids(taxid=None,species=None):
         err = f"\nThe Entrez.eserch query '{query_text}' returned no assemblies.\n\n"
         return None, err
 
+    # Try to delete random file that gets downloaded when we make this query.
+    try:
+        os.remove("esummary_assembly.dtd")
+    except FileNotFoundError:
+        pass
+
     return returned_ids, None
 
 def get_proteome(taxid=None,species=None,output_dir="."):
@@ -198,6 +204,9 @@ def get_proteome(taxid=None,species=None,output_dir="."):
             out_file = f"{refseq_name}_protein.faa.gz"
             remote_file = f"{genome_url}/{out_file}"
             local_file = os.path.join(output_dir,out_file)
+
+            # XXX FIX HERE ...
+
             urllib.request.urlretrieve(remote_file, local_file)
             success = True
             break
@@ -207,6 +216,7 @@ def get_proteome(taxid=None,species=None,output_dir="."):
 
     # Try to delete random file that gets downloaded when we make this query.
     try:
+        os.remove("esummary_assembly.dtd")
         os.remove(os.path.join(output_dir,"esummary_assembly.dtd"))
     except FileNotFoundError:
         pass

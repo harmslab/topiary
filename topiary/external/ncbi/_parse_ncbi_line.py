@@ -140,21 +140,29 @@ def parse_ncbi_line(line,accession=None):
     for m in meta:
         out[m] = meta[m]
 
-    # Look for species name (thing within [ xxx ])
+    # We look for species name as the *last* pattern on the line that matches.
+    # Start first looking for [[genus] species], then look for [genus species].
+    # The first pattern follows an ncbi taxonomy convention for potentially
+    # misidentified genuses.
+    # https://support.nlm.nih.gov/knowledgebase/article/KA-03379/en-us
     species = None
 
-    # Look for species with format [[something] this] (ncbi taxnomy convention)
-    # https://support.nlm.nih.gov/knowledgebase/article/KA-03379/en-us
+
+    # Start with [[genus] species]
+    sm = None
     species_pattern = re.compile("\[.*?\[.*?].*?]")
-    sm = species_pattern.search(line)
+    for sm in species_pattern.finditer(line):
+        pass
     if sm:
         species = sm.group(0)[1:-1]
         species = re.sub("[\[\]]","",species)
 
-    # If we didn't get species yet, look for generic [something this]
+    # If we didn't get species yet, look for [something this]
     if species is None:
         species_pattern = re.compile("\[.*?\]")
-        sm = species_pattern.search(line)
+        sm = None
+        for sm in species_pattern.finditer(line):
+            pass
         if sm:
             species = sm.group(0)[1:-1]
 

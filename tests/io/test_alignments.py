@@ -63,14 +63,19 @@ def test_write_fasta(test_dataframes,tmpdir):
     os.remove(out_file)
     io.write_fasta(df,out_file=out_file)
     has_gaps = _check_output_file(out_file,num_columns=3)
-    assert not has_gaps
+    assert has_gaps
 
     os.remove(out_file)
     io.write_fasta(df,out_file=out_file,seq_column="alignment")
     has_gaps = _check_output_file(out_file,num_columns=3)
     assert has_gaps
 
-    bad_seq_columns = [None,1.0,[1,3,4],{"test":1},pd.DataFrame({"test":[1]}),
+    os.remove(out_file)
+    io.write_fasta(df,out_file=out_file,seq_column="sequence")
+    has_gaps = _check_output_file(out_file,num_columns=3)
+    assert not has_gaps
+
+    bad_seq_columns = [1.0,[1,3,4],{"test":1},pd.DataFrame({"test":[1]}),
                         str,(1,2),"not_in_df"]
     for b in bad_seq_columns:
         with pytest.raises(ValueError):
@@ -134,7 +139,7 @@ def test_write_fasta(test_dataframes,tmpdir):
     to_clean_df = df.copy()
     to_clean_df.loc[:,"sequence"] = "STUPIDX?STUPID"
     to_clean_df.loc[:,"length"] = len("STUPIDX?STUPID")
-    io.write_fasta(to_clean_df,out_file=out_file,clean_sequence=True)
+    io.write_fasta(to_clean_df,out_file=out_file,clean_sequence=True,seq_column="sequence")
     f = open(out_file)
     lines = f.readlines()
     f.close()
@@ -161,6 +166,8 @@ def test_write_fasta(test_dataframes,tmpdir):
 
     # Should work because we have the file in place
     io.write_fasta(df,out_file,overwrite=True)
+
+    # XX NEED TO TEST TAXONOMIC ORDERING
 
 def test_write_phy(test_dataframes,tmpdir):
 
@@ -222,16 +229,17 @@ def test_write_phy(test_dataframes,tmpdir):
     has_gaps = _check_output_file(out_file)
     assert has_gaps
 
-    bad_seq_columns = [None,1.0,[1,3,4],{"test":1},pd.DataFrame({"test":[1]}),
+    os.remove(out_file)
+    bad_seq_columns = [1.0,[1,3,4],{"test":1},pd.DataFrame({"test":[1]}),
                         str,(1,2),"not_in_df"]
     for b in bad_seq_columns:
+        print("trying",b)
         with pytest.raises(ValueError):
             io.write_phy(df,out_file=out_file,seq_column=b)
 
     # Send in alignment column with a short sequence (not all same length)
     bad_align_df = df.copy()
     bad_align_df.loc[0,"alignment"] = "MTG"
-    os.remove(out_file)
     with pytest.raises(ValueError):
         io.write_phy(bad_align_df,out_file=out_file,seq_column="alignment")
 

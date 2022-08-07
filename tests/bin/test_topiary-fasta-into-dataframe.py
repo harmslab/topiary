@@ -5,7 +5,7 @@ import topiary
 import numpy as np
 import pandas as pd
 
-import os, subprocess
+import os, subprocess, sys
 
 def test_main(test_dataframes,tmpdir):
 

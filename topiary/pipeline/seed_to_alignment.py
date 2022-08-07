@@ -30,6 +30,7 @@ def seed_to_alignment(seed_df,
                       seqs_per_column=1,
                       max_seq_number=500,
                       redundancy_cutoff=0.90,
+                      worst_align_drop_fx=0.1,
                       sparse_column_cutoff=0.80,
                       align_trim=(0.05,0.95),
                       ncbi_blast_db="nr",
@@ -69,6 +70,10 @@ def seed_to_alignment(seed_df,
     redundancy_cutoff : float, default=0.98
         merge sequences from closely related species with sequence identity
         above cutoff.
+    worst_align_drop_fx : float, default=0.1
+        after alignment, drop approximately this fraction of the sequences,
+        selecting those that have long insertions and are missing chunks of
+        sequences
     sparse_column_cutoff : float, default=0.80
         when checking alignment quality, a column is sparse if it has gaps in
         more than sparse_column_cutoff sequences.
@@ -195,7 +200,7 @@ def seed_to_alignment(seed_df,
 
     if run_calc:
 
-        print("-------------------------------------------------------------------")
+        print("\n-------------------------------------------------------------------")
         print("Building initial topiary dataframe.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
@@ -229,7 +234,7 @@ def seed_to_alignment(seed_df,
 
     if run_calc:
 
-        print("-------------------------------------------------------------------")
+        print("\n-------------------------------------------------------------------")
         print("Doing reciprocal blast.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
@@ -260,20 +265,20 @@ def seed_to_alignment(seed_df,
         df = topiary.read_dataframe(expected_output)
 
     step_counter += 1
-    expected_output = f"{step_counter:02d}_sampled-dataframe.csv"
+    expected_output = f"{step_counter:02d}_shrunk-dataframe.csv"
     run_calc = _check_restart(expected_output,restart)
 
     if run_calc:
 
-        print("-------------------------------------------------------------------")
+        print("\n-------------------------------------------------------------------")
         print("Reducing number of sequences.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
 
         kwargs = {"df":df,
                   "paralog_column":"recip_paralog",
-                  "seqs_per_column":seqs_per_column,
-                  "max_seq_number":max_seq_number,
+                  "seqs_per_column":seqs_per_column*(1 + worst_align_drop_fx),
+                  "max_seq_number":max_seq_number*(1 + worst_align_drop_fx),
                   "redundancy_cutoff":redundancy_cutoff,
                   "sparse_column_cutoff":sparse_column_cutoff,
                   "align_trim":align_trim}
@@ -291,7 +296,7 @@ def seed_to_alignment(seed_df,
 
     if run_calc:
 
-        print("-------------------------------------------------------------------")
+        print("\n-------------------------------------------------------------------")
         print("Aligning sequences.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
@@ -308,16 +313,17 @@ def seed_to_alignment(seed_df,
 
     if run_calc:
 
-        print("-------------------------------------------------------------------")
+        print("\n-------------------------------------------------------------------")
         print("Polishing alignment and re-aligning.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
 
         kwargs = {"df":df,
+                  "fx_sparse_percential":(1 - worst_align_drop_fx),
+                  "sparse_run_percentile":(1 - worst_align_drop_fx),
+                  "fx_missing_percentile":(1 - worst_align_drop_fx),
                   "realign":True,
-                  "sparse_column_cutoff":sparse_column_cutoff,
-                  "align_trim":align_trim}
-
+                  "sparse_column_cutoff":sparse_column_cutoff}
 
         df = topiary.quality.polish_alignment(**kwargs)
         topiary.write_dataframe(df,expected_output)

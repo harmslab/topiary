@@ -4,6 +4,7 @@ Functions for reading and writing alignments to files.
 
 import topiary
 from topiary._private import check
+from topiary.external.opentree.util import taxonomic_sort
 
 import pandas as pd
 import numpy as np
@@ -31,6 +32,14 @@ def _validate_seq_writer(df,
     if type(out_file) is not str:
         err = f"\n\nout_file '{out_file}' should be a string.\n"
         raise ValueError(err)
+
+    # If no sequence column is specified, get alignment if present. If not,
+    # dump sequence.
+    if seq_column is None:
+        if "alignment" in df.columns:
+            seq_column = "alignment"
+        else:
+            seq_column = "sequence"
 
     # Make sure seq column is sane
     try:
@@ -108,12 +117,13 @@ def _validate_seq_writer(df,
             err += "overwrite = True.\n\n"
             raise FileExistsError(err)
 
-    return df, label_columns, empty_char
+    return df, seq_column, label_columns, empty_char
 
 
-def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name"],
+
+def write_fasta(df,out_file,seq_column=None,label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False,
-                overwrite=False):
+                overwrite=False,sort_on_taxa=True):
     """
     Write a fasta file from a dataframe.
 
@@ -123,8 +133,9 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         data frame to write out
     out_file : str
         output file
-    seq_column : str, default="sequence"
-        column in data frame to use as sequence
+    seq_column : str, optional
+        column in data frame to use as sequence. If not specified, use
+        "alignment" (if present) or "sequence"
     label_columns : list, default=["species","name"]
         list of columns to use for sequence labels
     write_only_keepers : bool, default=True
@@ -136,16 +147,30 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         replace any non-aa characters with "-"
     overwrite : bool, default=False
         whether or not to overwrite an existing file
+    sort_on_taxa : bool, default=True
+        sort output taxonomically if possible. This will sort (in order of
+        preference) by recip_paralog, nickname, and then name. Once sorted by
+        protein, the species will then be sorted based on their taxonomic
+        separation, starting with the first key_species in the dataframe.
     """
 
-    df, label_columns, empty_char = _validate_seq_writer(df,
-                                                         out_file,
-                                                         seq_column,
-                                                         label_columns,
-                                                         write_only_keepers,
-                                                         empty_char,
-                                                         clean_sequence,
-                                                         overwrite)
+    df, seq_column, label_columns, empty_char = _validate_seq_writer(df,
+                                                                     out_file,
+                                                                     seq_column,
+                                                                     label_columns,
+                                                                     write_only_keepers,
+                                                                     empty_char,
+                                                                     clean_sequence,
+                                                                     overwrite)
+
+    # Can only do taxonomic sort if ott already loaded. (Do not want to
+    # automatically add ott as this will potentially set keep to False for some
+    # seqs; this is a writer, not a calculator/editor. )
+    if not "ott" in df.columns:
+        sort_on_taxa = False
+
+    if sort_on_taxa:
+        df = taxonomic_sort(df,only_keepers=write_only_keepers)
 
     # Construct fasta output
     out = []
@@ -220,14 +245,14 @@ def write_phy(df,
 
     label_columns = ["uid"]
 
-    df, label_columns, empty_char = _validate_seq_writer(df,
-                                                         out_file,
-                                                         seq_column,
-                                                         label_columns,
-                                                         write_only_keepers,
-                                                         empty_char,
-                                                         clean_sequence,
-                                                         overwrite)
+    df, seq_column, label_columns, empty_char = _validate_seq_writer(df,
+                                                                     out_file,
+                                                                     seq_column,
+                                                                     label_columns,
+                                                                     write_only_keepers,
+                                                                     empty_char,
+                                                                     clean_sequence,
+                                                                     overwrite)
 
     if write_only_keepers:
         num_to_write = np.sum(df.keep)

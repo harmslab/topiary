@@ -270,7 +270,12 @@ def _combine_hits(hits,return_singleton):
     # Construct a list of output dataframes, one for each query sequence
     out_df = []
     for h in hits:
+
         queries = np.unique(h["query"])
+        queries = [(int(q[5:]),q) for q in queries]
+        queries.sort()
+        queries = [q[1] for q in queries]
+
         for q in queries:
             this_df = h.loc[h["query"] == q,:]
 

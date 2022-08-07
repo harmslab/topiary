@@ -131,15 +131,28 @@ def species_to_ott(species):
                           "msg":"success",
                           "ret":matches}
         else:
+
             taxon = matches[0]["taxon"]
 
-            msg = "success"
             if matches[0]["is_approximate_match"]:
-                msg = f"No exact match for '{s}'. Approximate matches:\n"
 
+                msg = f"No exact match for '{s}'. Approximate matches:\n"
                 for m in matches:
                     msg += f"    {m['matched_name']}\n"
                 msg += "\n"
+
+            else:
+
+                ambiguous_match = False
+                for j in range(1,len(matches)):
+                    if not matches[j]["is_synonym"]:
+                        ambiguous_match = True
+                        break
+
+                if ambiguous_match:
+                    msg = "multiple matches"
+                else:
+                    msg = "success"
 
             results[s] = {"matched":not matches[0]["is_approximate_match"],
                           "num_matches":len(matches),
@@ -453,3 +466,227 @@ def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
     out["taxid"] = taxid
 
     return out
+
+def get_taxa_order(T,ref_name=None):
+    """
+    Get taxa in a stereotypical order given a tree.
+
+    Parameters
+    ----------
+    T : ete3.Tree
+        ete3.Tree with leaves that have meaningful .name element. (This function
+        does not check, but it really only makes sense if these all have unique
+        values).
+    ref_name : str, optional
+        use the leaf with this name as the first element in the output list.
+        Other leaf names will come out sorted relative to their distance from
+        this leaf name. If not specified (or no leaf in tree matches), choose
+        the first node in the tree as the reference.
+
+    Returns
+    -------
+    node_names : list
+        list of node names sorted by a flattened taxonomic grouping relative to
+        ref_name.
+    """
+
+    if ref_name is None:
+        for n in T.get_leaves():
+            ref_name = n.name
+            break
+
+    node_list = T.get_leaves_by_name(ref_name)
+
+    # No match -- grab a leaf randomly
+    if len(node_list) == 0:
+        for n in T.get_leaves():
+            node_list.append(n)
+            w = f"\nNo leaf with name '{ref_name}'. Arbitrarily using leaf\n"
+            w += f"'{n.name}'.\n"
+            print(w)
+            break
+
+    # Arbitrarily get the first node that matches
+    elif len(node_list) > 1:
+        node_list = node_list[1:]
+
+    # Got a single match.
+    else:
+        pass
+
+    # Get all ancestors of leaf down to base ancestor.
+    for anc in node_list[0].get_ancestors():
+        node_list.append(anc)
+
+    # Loop through node_list getting descendants until all nodes are leaves
+    complete = False
+    while not complete:
+
+        # Start a pass.
+        complete = True
+        leaves_seen = {}
+        new_node_list = []
+        for n in node_list:
+
+            # If the node is a leaf, check to see if we've already seen it
+            # this pass. If not, append to new_node list
+            if n.is_leaf():
+                try:
+                    leaves_seen[n]
+                except KeyError:
+                    new_node_list.append(n)
+                    leaves_seen[n] = None
+
+            # If the node is not a leaf, get it's descendants and declare that
+            # we need to do another pass
+            else:
+                complete = False
+                desc = n.get_descendants()
+
+                # Decide order based on which descendants are leaves. If both
+                # are leaves, sort by name; if one is a leaf, put that one
+                # first. Otherwise, order is arbitrary
+                if desc[0].is_leaf():
+                    if desc[1].is_leaf():
+                        to_sort = [(desc[0].name,desc[0]),(desc[1].name,desc[1])]
+                        to_sort.sort()
+                        desc = [to_sort[0][1],to_sort[1][1]]
+                    else:
+                        desc = [desc[0],desc[1]]
+                else:
+                    if desc[1].is_leaf():
+                        desc = [desc[1],desc[0]]
+                    else:
+                        pass
+
+                # For these descendants...
+                for d in desc:
+
+                    # Only a leaf if we haven't already seen it. If we have not
+                    # seen it, append to new node list
+                    if d.is_leaf():
+                        try:
+                            leaves_seen[d]
+                        except KeyError:
+                            new_node_list.append(d)
+                            leaves_seen[d] = None
+                    else:
+                        new_node_list.append(d)
+
+        # Replace node_list with new_node_list
+        node_list = new_node_list[:]
+
+    return [n.name for n in node_list]
+
+def taxonomic_sort(df,paralog_column=None,ref_ott=None,only_keepers=False):
+    """
+    Sort a dataframe according to paralog call and then species phylogeny. If a
+    dataframe has two paralogs A and B, this will return the dataframe with all
+    A first and all B second. Within each paralog, the proteins are sorted by
+    distance from the species given by ref_ott. The ref_ott sets the first
+    species in the list; all other species are sorted relative to their distance
+    from that species.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary dataframe to sort
+    paralog_column : str, optional
+        column holding paralogs. If not specified, tries recip_paralog first,
+        then nickname, then settles on name.
+    ref_ott : str, optional
+        ott (in ottINTEGER format). If not specified, first tries to get the
+        ott for the first key species in the dataframe. If there is no key
+        species, it chooses the key species arbitrarily.
+    only_keepers : bool, default=False
+        only include proteins with keep=True.
+    """
+
+    # Check dataframe
+    df = check.check_topiary_dataframe(df)
+
+    # Check and apply only_keepers (bool)
+    only_keepers = check.check_bool(only_keepers,"only_keepers")
+    if only_keepers:
+        df = df.loc[df.keep,:]
+
+    # If we dropped everything...
+    if len(df) == 0:
+        return df
+
+    # Get paralog column on which to sort
+    if paralog_column is None:
+
+        if "recip_paralog" in df.columns:
+            paralog_column = "recip_paralog"
+        elif "nickname" in df.columns:
+            paralog_column = "nickname"
+        else:
+            paralog_column = "name"
+
+    # Check paralog column argument
+    if not paralog_column in df.columns:
+        err = f"\n\nparalog_column {paralog_column} is not in the dataframe\n\n"
+        raise ValueError(err)
+
+    # Try to get ref_ott (first key species)
+    if ref_ott is None:
+        if "key_species" in df.columns:
+            key_df = df.loc[df["key_species"],"ott"]
+            if len(key_df) > 1:
+                ref_ott = key_df.iloc[0]
+
+    # ref_ott should either be None or an ott string
+    if ref_ott is not None:
+        ref_ott = str(ref_ott)
+        if not ref_ott.startswith("ott"):
+            err = "\n\nref_ott should a string that looks like ottINTEGER\n\n"
+            raise ValueError(err)
+
+    # Get bad ott and store for later
+    bad_ott_mask = pd.isnull(df.loc[:,"ott"])
+    bad_ott = df.loc[bad_ott_mask,"ott"]
+    bad_ott = list(set(bad_ott))
+
+    # Get ott
+    good_ott = df.loc[np.logical_not(bad_ott_mask),"ott"]
+    ott_array = np.array([int(ott[3:]) for ott in good_ott])
+    ott_array = np.unique(ott_array)
+
+    # Get a species tree from ott and then get leaf order relative to
+    # reference species
+    T, results = ott_species_tree(ott_list=ott_array)
+    leaf_order = get_taxa_order(T,ref_name=ref_ott)
+
+    # Append any ott that were not resolved on the tree to the list of
+    # leaves.
+    for r in results:
+        if r != "resolved":
+            leaf_order.extend(results[r])
+    leaf_order.extend(bad_ott)
+
+    # Convert into a numpy array
+    leaf_order = np.array(leaf_order)
+
+    # Numpy black magic that sorts ott_in_df according to their order in
+    # leaf_order, returning the indexes in order. Handles duplicates...
+    ott_in_df = np.array(df.loc[:,"ott"])
+    indices = np.where(leaf_order.reshape(leaf_order.size, 1) == ott_in_df)[1]
+
+    # Sort dataframe by species
+    new_df = df.iloc[indices]
+
+    # Get list of unique paralogs seen
+    paralog_values_seen = list(set(df.loc[:,paralog_column]))
+
+    # Try to sort by paralog values. Otherwise, just keep in original orders
+    try:
+        paralog_values_seen.sort()
+    except TypeError:
+        pass
+
+    to_return = []
+    for p in paralog_values_seen:
+        to_return.append(new_df.loc[df[paralog_column] == p,:])
+
+    return pd.concat(to_return)

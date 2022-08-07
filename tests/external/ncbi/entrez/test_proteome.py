@@ -87,6 +87,7 @@ def test_get_proteome(tmpdir):
         get_proteome(taxid="9606",output_dir="NOT_REALLY_A_DIR")
 
     # Actually pull down the human proteome, making sure it comes down and is
-    # written to outptu
-    output1 = get_proteome(taxid=9606,output_dir=tmpdir)
-    assert os.path.isfile(output1)
+    # written to output. [DISABLED THIS TEST BECAUSE IT WAS CAUSING SERIOUS
+    # LAGGING ON TEST RUNS]
+    #output1 = get_proteome(taxid=9606,output_dir=tmpdir)
+    #assert os.path.isfile(output1)

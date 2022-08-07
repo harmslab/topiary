@@ -309,7 +309,7 @@ def _construct_args(sequence_list,
 def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
-    Return parsed output as a dataframe. 
+    Return parsed output as a dataframe.
 
     Parameters
     ----------
