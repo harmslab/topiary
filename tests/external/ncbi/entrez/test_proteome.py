@@ -77,17 +77,18 @@ def test_get_proteome_ids():
 
 def test_get_proteome(tmpdir):
 
+    cwd = os.getcwd()
+    os.chdir(tmpdir)
+
     with pytest.raises(ValueError):
         get_proteome(species=None,taxid=None)
 
     with pytest.raises(ValueError):
         get_proteome(species="Homo sapiens",taxid="9606")
 
-    with pytest.raises(ValueError):
-        get_proteome(taxid="9606",output_dir="NOT_REALLY_A_DIR")
-
     # Actually pull down the human proteome, making sure it comes down and is
-    # written to output. [DISABLED THIS TEST BECAUSE IT WAS CAUSING SERIOUS
-    # LAGGING ON TEST RUNS]
-    #output1 = get_proteome(taxid=9606,output_dir=tmpdir)
-    #assert os.path.isfile(output1)
+    # written to output.
+    output1 = get_proteome(taxid=9606)
+    assert os.path.isfile(output1)
+
+    os.chdir(cwd)

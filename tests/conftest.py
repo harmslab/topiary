@@ -299,3 +299,18 @@ def df_with_species_not_resolvable():
     df = pd.read_csv(df_file)
 
     return df
+
+@pytest.fixture(scope="module")
+def ftp_test_files():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+
+    base_dir = os.path.abspath(os.path.join(dir,"data","ftp"))
+    files = glob.glob(os.path.join(base_dir,"*"))
+
+    out_dict = {}
+    for f in files:
+        key = os.path.basename(f)
+        out_dict[key] = f
+
+    return out_dict

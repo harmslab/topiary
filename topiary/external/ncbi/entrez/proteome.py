@@ -4,10 +4,13 @@ Use entrez to download a proteome from the NCBI.
 
 import topiary
 from topiary._private import check
+from topiary.external.ncbi.entrez.download import ncbi_ftp_download
+
 
 from Bio import Entrez
 
 import os, urllib, datetime, re
+import ftplib
 
 def _get_genome_url(record):
     """
@@ -136,7 +139,7 @@ def get_proteome_ids(taxid=None,species=None):
 
     return returned_ids, None
 
-def get_proteome(taxid=None,species=None,output_dir="."):
+def get_proteome(taxid=None,species=None):
     """
     Use entrez to download a proteome from the NCBI.
 
@@ -148,20 +151,12 @@ def get_proteome(taxid=None,species=None,output_dir="."):
     species : str, optional
         bionomial name of species (i.e. Mus musculus). Incompatible with `taxid`
         argument. At least taxid or species must be specified.
-    output_dir : str, optional
-        where to write the file locally
 
     Returns
     -------
     proteome_file : str or None
         the file we downloaded or None if no file downloaded
     """
-
-
-    output_dir = str(output_dir)
-    if not os.path.isdir(output_dir) or not os.access(output_dir,os.W_OK):
-        err = "\nlocal_path must exist and be writable.\n\n"
-        raise ValueError(err)
 
     # Get proteome ids to download. Validate taxid and species arguments via
     # this function
@@ -198,31 +193,27 @@ def get_proteome(taxid=None,species=None,output_dir="."):
     success = False
     for u in urls:
 
+        genome_url = u[3]
+        refseq_name = os.path.basename(genome_url)
+        out_file = f"{refseq_name}_protein.faa.gz"
+        remote_file = f"{genome_url}/{out_file}"
+
         try:
-            genome_url = u[3]
-            refseq_name = os.path.basename(genome_url)
-            out_file = f"{refseq_name}_protein.faa.gz"
-            remote_file = f"{genome_url}/{out_file}"
-            local_file = os.path.join(output_dir,out_file)
-
-            # XXX FIX HERE ...
-
-            urllib.request.urlretrieve(remote_file, local_file)
-            success = True
-            break
-
-        except (urllib.error.URLError,urllib.error.HTTPError):
+            ncbi_ftp_download(genome_url,file_base="_protein.faa.gz")
+        except (ftplib.error_perm,RuntimeError):
             continue
+
+        success = True
+        break
 
     # Try to delete random file that gets downloaded when we make this query.
     try:
         os.remove("esummary_assembly.dtd")
-        os.remove(os.path.join(output_dir,"esummary_assembly.dtd"))
     except FileNotFoundError:
         pass
 
 
     if success:
-        return local_file
+        return out_file
 
     return None

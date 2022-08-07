@@ -244,7 +244,15 @@ def seed_to_alignment(seed_df,
 
             proteome_list = []
             for k in key_species:
-               proteome_list.append(topiary.ncbi.get_proteome(species=k))
+                proteome_list.append(topiary.ncbi.get_proteome(species=k))
+                if proteome_list[-1] is None:
+                    err = f"\nCould not download proteome for {k} despite multiple\n"
+                    err += "attempts. This could be because of high server load\n"
+                    err += "at the NCBI or too many requests from your IP address.\n"
+                    err += "Try running the pipeline again, appending the --restart\n"
+                    err += "flag.\n\n"
+                    raise RuntimeError(err)
+
 
             base = "".join([random.choice(string.ascii_letters) for _ in range(10)])
             blast_db = f"{base}_local_blast"
