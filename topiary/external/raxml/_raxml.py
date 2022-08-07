@@ -123,7 +123,13 @@ def run_raxml(algorithm=None,
             raise ValueError(err)
 
     num_threads = threads.get_num_threads(num_threads)
-    cmd.extend(["--threads","auto{" + f"{num_threads:d}" + "}"])
+
+    if algorithm in ["--all","--search"]:
+        threads_arg = "auto{" + f"{num_threads:d}" + "}"
+    else:
+        threads_arg = f"{num_threads:d}"
+
+    cmd.extend(["--threads",threads_arg])
 
     # Put on any custom args
     if other_args is not None:
