@@ -75,7 +75,7 @@ Windows users and arm macOS users will need to manually install
 Running
 -------
 
-
+IN PROGRESS
 
 .. _How to cite:
 
@@ -88,11 +88,21 @@ If you use topiary in your research, please cite:
 
 Please make sure to cite the tools we use in the package as well:
 
-+ `Muscle <muscle link>`__ (for alignment): Edgar RC (2021) *bioRxiv* https://doi.org/10.1101/2021.06.20.449169
++ `Muscle <muscle link_>`_ (for alignment): Edgar RC (2021) *bioRxiv* https://doi.org/10.1101/2021.06.20.449169
 + `RAxML-NG`_ (for tree/ancestor inference): Kozlov et al (2019) *Bioinformatics* 35(21):4453–4455 https://doi.org/10.1093/bioinformatics/btz305
 + GeneRax_ (for gene/species tree reconcilation): Morel et al (2020) *MBE* https://doi.org/10.1093/molbev/msaa141
 + PastML_ (for ancestral gap assignment): Ishikawa et al (2019) *MBE* 36(9):2069–2085 https://doi.org/10.1093/molbev/msz131
-+ `Open Tree of Life`_ (for species trees): Rees J & Cranston K (2017) *Biodiversity Data Journal* 5:e12581 https://doi.org/10.3897/BDJ.5.e12581
++ `Open Tree`_ (for accessing species trees): Mctavish J, Sánchez-Reyes LL, Holster MT (2021) *Syst Biol* 70(6): 1295–1301. https://doi.org/10.1093/sysbio/syab033
+
+Rees J & Cranston K (2017) *Biodiversity Data Journal* 5:e12581 https://doi.org/10.3897/BDJ.5.e12581
+
+Syst Biol. 2021 Nov; 70(6): 1295–1301.
+Published online 2021 May 10. doi: 10.1093/sysbio/syab033
+PMCID: PMC8513759
+PMID: 33970279
+OpenTree: A Python Package for Accessing and Analyzing Data from the Open Tree of Life
+
+Emily Jane Mctavish,1 Luna Luisa Sánchez-Reyes,1 and Mark T Holder2,3
 
 
 .. toctree::

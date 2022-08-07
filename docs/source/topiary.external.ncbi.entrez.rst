@@ -9,6 +9,14 @@ topiary.external.ncbi.entrez
    :show-inheritance:
 
 
+topiary.external.ncbi.entrez.download
+--------------------------------------------
+
+.. automodule:: topiary.external.ncbi.entrez.download
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.external.ncbi.entrez.proteome
 --------------------------------------------
 

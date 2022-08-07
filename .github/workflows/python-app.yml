@@ -10,7 +10,7 @@ on:
     branches: [ main   ]
 
 jobs:
-  build:
+  build-nix:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -48,7 +48,7 @@ jobs:
         conda install pytest
         pytest
 
-  build:
+  build-windows:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
