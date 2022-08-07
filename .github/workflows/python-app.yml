@@ -17,93 +17,98 @@ jobs:
         python-version: ['3.8', '3.9' ]
 
     steps:
-    - uses: actions/checkout@v3.0.0
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+    - name: checkout
+      uses: actions/checkout@v3.0.0
 
-    - name: Install topiary and tools
-      shell: bash
+    - name: set up miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: topiary
+        environment-file: environment.yml
+        python-version: ${{ matrix.python-version }}
+        auto-activate-base: false
+
+    - name: install topiary
+      shell: bash -l {0}
       run: |
-        $CONDA/bin/conda install flake8 pytest-timeout
-        $CONDA/bin/conda env create --file environment.yml
-        $CONDA/bin/conda activate topiary || true
-        export PATH=$CONDA/envs/topiary/bin:$PATH
-        $CONDA/bin/python setup.py install
+        python setup.py install
 
     - name: run flake8
-      shell: bash
+      shell: bash -l {0}
       run: |
-        $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        conda install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
     - name: run pytest
-      shell: bash
+      shell: bash -l {0}
       run: |
-        $CONDA/bin/pytest --timeout 300 --timeout_method thread
+        conda install pytest-timeout
+        pytest --timeout 300 --timeout_method thread
 
-  build-macos:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9' ]
-
-    steps:
-    - uses: actions/checkout@v3.0.0
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install topiary and tools
-      shell: bash
-      run: |
-        $CONDA/bin/conda env create --file environment.yml
-        $CONDA/bin/conda activate topiary || true
-        export PATH=$CONDA/envs/topiary/bin:$PATH
-        $CONDA/bin/python setup.py install
-        $CONDA/bin/conda install flake8 pytest-timeout
-
-    - name: run flake8
-      shell: bash
-      run: |
-        $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-    - name: run pytest
-      shell: bash
-      run: |
-        $CONDA/bin/pytest --timeout 300 --timeout_method thread
-
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9' ]
-
-    steps:
-    - uses: actions/checkout@v3.0.0
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install topiary and tools
-      shell: powershell
-      run: |
-
-        C:\Miniconda\condabin\conda.bat env create --file environment.yml
-        C:\Miniconda\condabin\conda.bat activate topiary
-        C:\Miniconda\python setup.py install
-
-        C:\Miniconda\condabin\conda.bat install flake8
-        C:\Miniconda\condabin\conda.bat install pytest
-
-    - name: run flake8
-      shell: powershell
-      run: |
-        C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-    - name: run pytest
-      shell: powershell
-      run: |
-        C:\Miniconda\Scripts\pytest.exe
+  # build-macos:
+  #   runs-on: macos-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: ['3.8', '3.9' ]
+  #
+  #   steps:
+  #   - uses: actions/checkout@v3.0.0
+  #   - name: Install Python ${{ matrix.python-version }}
+  #     uses: actions/setup-python@v4
+  #     with:
+  #       python-version: ${{ matrix.python-version }}
+  #
+  #   - name: Install topiary and tools
+  #     shell: bash
+  #     run: |
+  #       $CONDA/bin/conda update --all
+  #       $CONDA/bin/conda env create --file environment.yml
+  #       $CONDA/bin/conda activate topiary || true
+  #       export PATH=$CONDA/envs/topiary/bin:$PATH
+  #       $CONDA/bin/python setup.py install
+  #       $CONDA/bin/conda install flake8 pytest-timeout
+  #
+  #   - name: run flake8
+  #     shell: bash
+  #     run: |
+  #       $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  #
+  #   - name: run pytest
+  #     shell: bash
+  #     run: |
+  #       $CONDA/bin/pytest --timeout 300 --timeout_method thread
+  #
+  # build-windows:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: ['3.8', '3.9' ]
+  #
+  #   steps:
+  #   - uses: actions/checkout@v3.0.0
+  #   - name: Install Python ${{ matrix.python-version }}
+  #     uses: actions/setup-python@v4
+  #     with:
+  #       python-version: ${{ matrix.python-version }}
+  #
+  #   - name: Install topiary and tools
+  #     shell: powershell
+  #     run: |
+  #
+  #       C:\Miniconda\condabin\conda.bat update --all
+  #       C:\Miniconda\condabin\conda.bat env create --file environment.yml
+  #       C:\Miniconda\condabin\conda.bat activate topiary
+  #       C:\Miniconda\python setup.py install
+  #
+  #       C:\Miniconda\condabin\conda.bat install flake8
+  #       C:\Miniconda\condabin\conda.bat install pytest
+  #
+  #   - name: run flake8
+  #     shell: powershell
+  #     run: |
+  #       C:\Miniconda\Scripts\flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  #
+  #   - name: run pytest
+  #     shell: powershell
+  #     run: |
+  #       C:\Miniconda\Scripts\pytest.exe
