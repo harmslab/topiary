@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+"""
+Check for installed packages on command line.
+"""
+
+import topiary
+
+def main(argv=None):
+
+    required = topiary._private.software_requirements
+
+    print(70*"=")
+    print("Checking for installed external software")
+    print(70*"=")
+    print("",flush=True)
+
+    to_check = []
+    for r in required:
+        to_check.append({"program":r,
+                         "min_version":required[r],
+                         "must_pass":False})
+
+    topiary._private.installed.validate_stack(to_check)
+
+
+if __name__ == "__main__":
+    main()

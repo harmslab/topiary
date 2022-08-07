@@ -35,7 +35,7 @@ jobs:
       run: |
         # platform specific packages
         conda install -c conda-forge "openmpi<4.1.3"
-        conda install -c conda-forge -c bioconda muscle raxml-ng generax blast
+        conda install -c conda-forge -c bioconda "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
         python -m pip install . -vv
 
     - name: run flake8
@@ -48,7 +48,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda install pytest
-        export PATH=`which conda | xargs dirname`/envs/topiary/bin/:$PATH
+        #export PATH=`which conda | xargs dirname`/envs/topiary/bin/:$PATH
         pytest
 
   build-windows:
@@ -86,5 +86,5 @@ jobs:
       shell: pwsh
       run: |
         conda install pytest
-        $Env:PATH = "C:\Miniconda3\Scripts\;$Env:PATH"
+        #$Env:PATH = "C:\Miniconda3\Scripts\;$Env:PATH"
         pytest
