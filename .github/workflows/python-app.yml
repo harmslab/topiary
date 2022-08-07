@@ -34,6 +34,8 @@ jobs:
       shell: bash -l {0}
       run: |
         conda install -c conda-forge -c bioconda muscle raxml-ng generax blast
+        # hack because conda openmpi currently busted for linux
+        if [ `uname -s` == "Linux" ]; then conda install -c conda-forge openmpi=4.1.4=ha1ae619_100; fi
         python -m pip install . -vv
 
     - name: run flake8
@@ -46,7 +48,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda install pytest
-        export PATH=`which conda | xargs dirname`:$PATH
+        export PATH=`which conda | xargs dirname`/envs/topiary/bin/:$PATH
         pytest
 
   build-windows:
