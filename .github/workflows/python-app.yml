@@ -10,10 +10,11 @@ on:
     branches: [ main   ]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.8', '3.9' ]
 
     steps:
@@ -43,8 +44,8 @@ jobs:
     - name: run pytest
       shell: bash -l {0}
       run: |
-        conda install pytest-timeout
-        pytest --timeout 300 --timeout_method thread
+        conda install pytest
+        pytest
 
   # build-macos:
   #   runs-on: macos-latest
