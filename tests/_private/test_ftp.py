@@ -24,9 +24,8 @@ def test__ftp_thread(tmpdir):
 def test_ftp_download(tmpdir):
 
     def _get_creation_time(file_name):
-        if sys.platform == "win32":
-            creation_time = os.path.getctime(file_name)
-        elif sys.platform == "darwin":
+
+        if sys.platform == "darwin":
             creation_time = os.stat(file_name).st_birthtime
         else:
             creation_time = None
@@ -75,5 +74,4 @@ def test_ftp_download(tmpdir):
 
 def test_calc_md5(ftp_test_files,tmpdir):
 
-    assert calc_md5(ftp_test_files["md5checksums_test.txt"]) == "72cbe763d8fcc744fa88a86fe0528cac"
-    assert calc_md5(ftp_test_files["GCF_000001405.40_GRCh38.p14_assembly_report.txt"]) == "073e01acec1c43398074c61e3628bf45"
+    assert calc_md5(ftp_test_files["GCF_000001405.40_GRCh38.p14_assembly_report.txt.gz"]) == "edbd21ee24986ce383fb54d2a7f93708"
