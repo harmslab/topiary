@@ -33,9 +33,9 @@ jobs:
     - name: install topiary
       shell: bash -l {0}
       run: |
+        # platform specific packages
+        conda install -c conda-forge openmpi<4.1.3
         conda install -c conda-forge -c bioconda muscle raxml-ng generax blast
-        # hack because conda openmpi currently busted for linux
-        if [ `uname -s` == "Linux" ]; then conda install -c conda-forge openmpi=4.1.4=ha1ae619_100; fi
         python -m pip install . -vv
 
     - name: run flake8

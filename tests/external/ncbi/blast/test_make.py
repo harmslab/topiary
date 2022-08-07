@@ -5,6 +5,7 @@ import topiary
 from topiary.external.ncbi.blast.make import make_blast_db
 
 import os
+import glob
 
 def test_make_blast_db(make_blast_db_files,tmpdir):
 
@@ -15,8 +16,7 @@ def test_make_blast_db(make_blast_db_files,tmpdir):
 
     cwd = os.getcwd()
     os.chdir(tmpdir)
-
-    expected_extensions = ["pdb","pin","pot","ptf","phr","psq","pto"]
+    expected_extensions = ["pin","phr","psq"]
 
     faa = [make_blast_db_files["test1.faa"],make_blast_db_files["test2.faa"]]
     out = "output"
@@ -26,6 +26,8 @@ def test_make_blast_db(make_blast_db_files,tmpdir):
     for e in expected_extensions:
         out_file = f"{out}.{e}"
         assert os.path.isfile(out_file)
+
+    for out_file in glob.glob("output.p*"):
         os.remove(out_file)
 
     faa_gz = [make_blast_db_files["test1.faa.gz"],make_blast_db_files["test2.faa.gz"]]
@@ -35,6 +37,8 @@ def test_make_blast_db(make_blast_db_files,tmpdir):
     for e in expected_extensions:
         out_file = f"{out}.{e}"
         assert os.path.isfile(out_file)
+
+    for out_file in glob.glob("output.p*"):
         os.remove(out_file)
 
     mixed = [make_blast_db_files["test1.faa.gz"],make_blast_db_files["test2.faa"]]

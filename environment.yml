@@ -14,6 +14,7 @@ dependencies:
   - ete3
   - dendropy
   - toytree
+  - openmpi<4.1.3
   # - blast    # [not osx]
   # - muscle   # [not osx]
   # - generax  # [not osx]
