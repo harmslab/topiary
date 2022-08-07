@@ -32,6 +32,7 @@ jobs:
       shell: bash -l {0}
       run: |
         python setup.py install
+        conda install -c conda-forge -c bioconda muscle raxml-ng generax blast
 
     - name: run flake8
       shell: bash -l {0}
