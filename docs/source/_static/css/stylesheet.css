@@ -349,17 +349,7 @@ ul.auto-toc {
   list-style-type: none }
 
 
-.red {
-  color: red;
-}
-
 .emph {
-  font-family: serif;
-  /*  color: #437EB4; */
-  font-weight: bold;
-}
-
-.bolditalic {
   font-weight: bold;
   font-style: italic;
 }

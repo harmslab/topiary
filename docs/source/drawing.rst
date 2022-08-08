@@ -1,30 +1,39 @@
-.. topiary documentation master file, created by
-   sphinx-quickstart on Thu Aug 12 18:37:04 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 .. include:: links.rst
+
+.. role:: emph
+
+.. _drawing-trees-doc:
 
 =============
 Drawing Trees
 =============
 
-Topiary allows users to generate their own plots with customized formatting.
+Topiary allows users to generate their own plots with customized formatting
+using the topiary python :ref:`API<api-doc>`. Users can control all aspects of
+phylogenetic tree drawing from a the :code:`topiary.draw.tree` function. The
+following python generates the following output
 
 .. code-block:: python
 
   import topiary
   topiary.draw.tree("06_ancestors_with_branch_supports")
 
-
 .. image:: _static/img/final-tree.svg
   :align: center
   :alt: Topiary tree drawing
 
+.. note::
+
+  Jupyter examples coming soon.
 
 
+Description of arguments
+========================
+
+---------------------
 General plot features
-=====================
+---------------------
 
 + :code:`output_file`. Output file. Type is determined by file extension.
   Allowed extensions are pdf, svg, and png. If this is not specified and you are
@@ -37,13 +46,14 @@ General plot features
   tip on the tree. This controls the height of the plot.
 + :code:`min_height`. Make sure the plot is at least this many pixels high.
 
-Nodes
-=====
+--------------------------
+Internal nodes (ancestors)
+--------------------------
 
 Labels
 ------
 
-+ What labels to draw?
++ :emph:`What labels to draw?`
 
   + :code:`bs_label`. Draw bootstrap labels (:code:`True` or :code:`False`)
   + :code:`pp_label`. Draw posterior probability labels (:code:`True` or
@@ -53,7 +63,7 @@ Labels
   + :code:`anc_label`. Draw ancestral name labels (:code:`True` or
     :code:`False`)
 
-+ How to format labels?
++ :emph:`How to format labels?`
 
   + :code:`label_position`. Where to position the labels relative to the node.
     ("top-left", "top", "top-right", "right", "bottom-right", "bottom",
@@ -95,11 +105,11 @@ Size
 
 + :code:`node_size`. Set size of nodes in pixels
 
-Tree tip labels
-===============
+---------------------------
+Tree tips (modern proteins)
+---------------------------
 
-How to construct names?
------------------------
+:emph:`How to construct names?`
 
 + :code:`tip_columns`. Which columns from the dataframe to use to build tip
   the tip labels.
@@ -111,17 +121,41 @@ How to construct names?
 The defaults are :code:`tip_columns=["species","recip_paralog"]` and
 :code:`tip_name_separator="|"`, which gives tip names like "Homo sapiens|LY96".
 
-How to format tip labels?
--------------------------
+:emph:`How to format tip labels?`
 
 + :code:`tip_text_style`. This gives detailed control over the tip label
   styling. This is a dictionary that contains css properties for the text.
   For details see the :ref:`CSS section<CSS section>` below.
 
+Even more customization
+=======================
+
+The :code:`topiary.draw.tree` object is a wrapper that constructs a
+:code:`topiary.draw.PrettyTree` object. Advanced users can create custom
+instances of this object to further customize tree outputs. Please see the
+:ref:`API<api-doc>` and :code:`topiary.draw.PrettyTree` docstring for details.
+
+Topiary draws trees using the `toytree <toytree-link_>`_ library, which is
+built on the `toyplot <toyplot-link_>`_ library. The :code:`topiary.draw.tree`
+function returns a toyplot `canvas object <toyplot-canvas-link_>`_. Advanced
+users can thus further manipulate the plot by editing that canvas as described
+in the `toyplot <toyplot-link_>`_ and `toytree <toytree-link_>`_ documentation.
+
+
+General considerations
+======================
+
+Because topiary trees are ultimately built using `toyplot <toyplot-link_>`_,
+any customizations of :ref:`color<colors section>` or styling via
+:ref:`css <CSS section>` accepted by toyplot are available to topiary users. For
+full details, see the `toyplot documentation <toyplot-link_>`_. We summarize
+the most commonly used options here.
+
 .. _colors section:
 
+------
 Colors
-======
+------
 
 Colors can be specified in three different ways:
 
@@ -140,19 +174,19 @@ Colors can be specified in three different ways:
   :code:`"#FFFFFF"` (white), :code:`"#000000"` (black).
 
 For a complete discussion of the color options, see the
-`toyplot documentation <https://toyplot.readthedocs.io/en/stable/colors.html>`_ .
+`toyplot documentation <toyplot-colors-link_>`_.
 
 .. _CSS section:
 
+---
 CSS
-===
+---
 
-CSS (Cascading Style Sheets) is the language used to format html in web pages.
-Under the hood, topiary plots are generated using the
-`toyplot library <https://toyplot.readthedocs.io/en/stable/>`_, which can read
-a fair number of css properties and apply them to text. For an up-to-date list
-of available properties, see the
-`topyplot documentation <https://toyplot.readthedocs.io/en/stable/_modules/toyplot/style.html>`_.
+`CSS <css-wikipedia_>`_ (Cascading Style Sheets) is the language used to format
+html in web pages. The `toyplot library <toyplot-link_>`_, that topiary uses
+under the hood can a fair number of css properties and apply them to text. For
+an up-to-date list of available properties, see the
+`toyplot documentation <toyplot-css-link_>`_.
 As of toyplot 1.02, the following css properties can be set:
 
 + "alignment-baseline"
@@ -172,12 +206,4 @@ As of toyplot 1.02, the following css properties can be set:
 + "text-shadow"
 
 For information on each of these css properties, there are css references online
-(i.e. `w3schools <https://www.w3schools.com/css/>`_).
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+(i.e. `w3schools <css-w3s_>`_).

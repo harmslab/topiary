@@ -1,21 +1,17 @@
-.. topiary documentation master file, created by
-   sphinx-quickstart on Thu Aug 12 18:37:04 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-.. role:: red
-
-.. role:: bolditalic
 
 .. role:: emph
 
 .. include:: links.rst
 
-.. _protocol_doc:
+.. _protocol-doc:
 
 =================
 Protocol
 =================
+
+.. danger::
+
+  This protocol is under heavy development. Expect it to change. 
 
 Generate Alignment
 ==================
@@ -34,7 +30,7 @@ The first step in a topiary ASR calculation is constructing a
 taxonomic distribution of the family). topiary will use this to automatically
 find and download sequences to put into the alignment. The table can be prepared
 in a spreadsheet program (Excel or LibreOffice), a text editor, or
-programmatically via pandas_.
+programmatically via `pandas <pandas-link_>`_.
 
 An example for the LY86/LY96 protein family is shown below. The full
 spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
@@ -88,7 +84,7 @@ Protocol for preparing the table
    taxonomic coverage.
 #. :emph:`Download sequences for each paralog` from each species and put it into
    the table. Our usual source for these seed sequences is uniprot_. Generally,
-   you'll want the `canonical <uniprot_canonical>_`_ sequence rather than an
+   you'll want the `canonical <uniprot-canonical_>`_ sequence rather than an
    isoform. These sequences can come from anywhere; they do not even have to be
    from a database.
 #. :emph:`Compile a list of aliases for each paralog`. Annoyingly, the same protein
@@ -218,7 +214,7 @@ Visually inspect and (possibly) edit the alignment
 
 Alignments aren't always perfect. So we can edit the alignment.
 
-Check out the alignment in `aliview <https://ormbunkar.se/aliview/>`_.
+Check out the alignment in `aliview <aliview-link_>`_.
 
 Once you have edited the alignment, you need to load the new alignment back into the
 topiary dataframe.
@@ -350,15 +346,3 @@ Each of these will have an *output* directory.
 ------------------------------------------------
 
 Stuff
-
-
-
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
