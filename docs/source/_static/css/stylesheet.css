@@ -349,18 +349,15 @@ ul.auto-toc {
   list-style-type: none }
 
 
-.red { 
-  color: red;
-}
-
 .emph {
-  font-family: serif;
-  /*  color: #437EB4; */
-  font-weight: bold;
-}
-
-.bolditalic {
   font-weight: bold;
   font-style: italic;
 }
 
+.wy-side-nav-search, .wy-nav-top {
+    background: #C8C8C8;
+}
+
+.icon.icon-home {
+  color: #0071BC;
+}

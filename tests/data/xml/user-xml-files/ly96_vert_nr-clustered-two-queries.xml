@@ -1,0 +1,2860 @@
+<?xml version="1.0"?>
+<!DOCTYPE BlastOutput PUBLIC "-//NCBI//NCBI BlastOutput/EN" "http://www.ncbi.nlm.nih.gov/dtd/NCBI_BlastOutput.dtd">
+<BlastOutput>
+  <BlastOutput_program>blastp</BlastOutput_program>
+  <BlastOutput_version>BLASTP 2.13.0+</BlastOutput_version>
+  <BlastOutput_reference>Stephen F. Altschul, Thomas L. Madden, Alejandro A. Sch&amp;auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. Lipman (1997), &quot;Gapped BLAST and PSI-BLAST: a new generation of protein database search programs&quot;, Nucleic Acids Res. 25:3389-3402.</BlastOutput_reference>
+  <BlastOutput_db>nr_cluster_seq</BlastOutput_db>
+  <BlastOutput_query-ID>Query_9010</BlastOutput_query-ID>
+  <BlastOutput_query-def>A</BlastOutput_query-def>
+  <BlastOutput_query-len>160</BlastOutput_query-len>
+  <BlastOutput_param>
+    <Parameters>
+      <Parameters_matrix>BLOSUM62</Parameters_matrix>
+      <Parameters_expect>0.05</Parameters_expect>
+      <Parameters_gap-open>11</Parameters_gap-open>
+      <Parameters_gap-extend>1</Parameters_gap-extend>
+      <Parameters_filter>L;</Parameters_filter>
+    </Parameters>
+  </BlastOutput_param>
+<BlastOutput_iterations>
+<Iteration>
+  <Iteration_iter-num>1</Iteration_iter-num>
+  <Iteration_query-ID>Query_9010</Iteration_query-ID>
+  <Iteration_query-def>A</Iteration_query-def>
+  <Iteration_query-len>160</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>ref|NP_056179.4|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform 1 precursor [Homo sapiens]</Hit_def>
+  <Hit_accession>NP_056179</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>271.937</Hsp_bit-score>
+      <Hsp_score>694</Hsp_score>
+      <Hsp_evalue>2.2552e-91</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>160</Hsp_identity>
+      <Hsp_positive>160</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>pdb|2Z65|C</Hit_id>
+  <Hit_def>Crystal structure of the human TLR4 TV3 hybrid-MD-2-Eritoran complex [Homo sapiens]</Hit_def>
+  <Hit_accession>2Z65_C</Hit_accession>
+  <Hit_len>140</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>258.455</Hsp_bit-score>
+      <Hsp_score>659</Hsp_score>
+      <Hsp_evalue>3.01601e-86</Hsp_evalue>
+      <Hsp_query-from>19</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>140</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>139</Hsp_identity>
+      <Hsp_positive>139</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>140</Hsp_align-len>
+      <Hsp_qseq>QKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>QKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKGSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_hseq>
+      <Hsp_midline>QKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELK SKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>ref|XP_012306332.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Aotus nancymaae]</Hit_def>
+  <Hit_accession>XP_012306332</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>242.662</Hsp_bit-score>
+      <Hsp_score>618</Hsp_score>
+      <Hsp_evalue>1.11822e-79</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>138</Hsp_identity>
+      <Hsp_positive>151</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFIFFSTLFSSMFTEAQKQHWICNSSDASISYTYCDKMQYPISINIDPCIKLTGTRGLLHIFYIPRRDLKQLYFNLYITVNSMNLPKRKEVICPGSDDDYSFCRALKGETLNITIPFSFKGIKFSKGRYKCVAEAISGSPEEMLLCLEFAIIHHPNSN</Hsp_hseq>
+      <Hsp_midline>MLPF+FFSTLFSS+FTEAQKQ+W+CNSSDASISYTYCDKMQYPISIN++PCI+L  ++GLLHIFYIPRRDLKQLYFNLYITVN+MNLPKRKEVIC GSDDDYSFCRALKGET+N TI FSFKGIKFSKG+YKCV EAISGSPEEML CLEF I+H PNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>ref|XP_003800091.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Otolemur garnettii]</Hit_def>
+  <Hit_accession>XP_003800091</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>221.476</Hsp_bit-score>
+      <Hsp_score>563</Hsp_score>
+      <Hsp_evalue>2.77777e-71</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>125</Hsp_identity>
+      <Hsp_positive>140</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSTFTEPGKQYWVCNSSDASISYTYCDHMEYPISINVDPCIRLTGTKGYLHIFYIPRRDIQKLYFNLYISVNSMKLPKRKEVICRGSDDSYSFCRALKGETVNATISFSFKGIRFSKGRYRCIAEAIAGSNEEMLFCLNFTIIHHPN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS FTE  KQYWVCNSSDASISYTYCD M+YPISINV+PCI L  +KG LHIFYIPRRD+++LYFNLYI+VN+M LPKRKEVICRGSDD YSFCRALKGETVN TISFSFKGI+FSKG+Y+C+ EAI+GS EEMLFCL F I+H PN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>5</Hit_num>
+  <Hit_id>ref|XP_045417329.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Lemur catta]</Hit_def>
+  <Hit_accession>XP_045417329</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>214.927</Hsp_bit-score>
+      <Hsp_score>546</Hsp_score>
+      <Hsp_evalue>7.91477e-69</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>111</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGKQHWVCNSSDASISYTYCDHMDYPISINVNPCIALKGTKGLLHIYYIPRRDLNKLYFNIYISVNSMEIPKRKEVICRGSDDIYSFCRALKGETVNTTVSFSFTGIRFSKGKYRVVIEAITGSTEEMLFCLNFTLIYRPRLN</Hsp_hseq>
+      <Hsp_midline>E  KQ+WVCNSSDASISYTYCD M YPISINVNPCI LK +KGLLHI+YIPRRDL +LYFN+YI+VN+M +PKRKEVICRGSDD YSFCRALKGETVNTT+SFSF GI+FSKGKY+ V+EAI+GS EEMLFCL F ++++P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>6</Hit_num>
+  <Hit_id>ref|XP_004462521.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Dasypus novemcinctus]</Hit_def>
+  <Hit_accession>XP_004462521</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>213.001</Hsp_bit-score>
+      <Hsp_score>541</Hsp_score>
+      <Hsp_evalue>5.87344e-68</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>120</Hsp_identity>
+      <Hsp_positive>138</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFLSIFTEPRKQHWICNSSDASIWYNYCDNMNYPISINITPCITLKGSKGHLNLYYIPRRDLKNLYFNLYISVNSLELPKRKEVICRGSDDDYSFCRALKGETVNTSVPFSFKGMRFSKGLYRCVAEAISGKTEEMLFCLNLTILHRPDSN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLF SIFTE +KQ+W+CNSSDASI Y YCD M YPISIN+ PCI LK SKG L+++YIPRRDLK LYFNLYI+VN++ LPKRKEVICRGSDDDYSFCRALKGETVNT++ FSFKG++FSKG Y+CV EAISG  EEMLFCL   ILH+P+SN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>7</Hit_num>
+  <Hit_id>ref|XP_016868788.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Homo sapiens]</Hit_def>
+  <Hit_accession>XP_016868788</Hit_accession>
+  <Hit_len>191</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>214.157</Hsp_bit-score>
+      <Hsp_score>544</Hsp_score>
+      <Hsp_evalue>5.92396e-68</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>116</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>8</Hit_num>
+  <Hit_id>ref|XP_047277618.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Homo sapiens]</Hit_def>
+  <Hit_accession>XP_047277618</Hit_accession>
+  <Hit_len>192</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>213.386</Hsp_bit-score>
+      <Hsp_score>542</Hsp_score>
+      <Hsp_evalue>1.2327e-67</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>116</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>9</Hit_num>
+  <Hit_id>ref|XP_007999099.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X3 [Chlorocebus sabaeus]</Hit_def>
+  <Hit_accession>XP_007999099</Hit_accession>
+  <Hit_len>133</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>210.69</Hsp_bit-score>
+      <Hsp_score>535</Hsp_score>
+      <Hsp_evalue>1.91783e-67</Hsp_evalue>
+      <Hsp_query-from>39</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>12</Hsp_hit-from>
+      <Hsp_hit-to>133</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>112</Hsp_identity>
+      <Hsp_positive>119</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>122</Hsp_align-len>
+      <Hsp_qseq>KMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>KMQYPISINVNPCIKLKGSRGLLHIFYIPRRDVKQLYFNLYITVNSMTLPKRKEVICRGSDDDYSFCRALKGETVNTTVPFSFKGIKFSKGKYKCIVEAISGSPEEMLFCLEFVIIHQPNSN</Hsp_hseq>
+      <Hsp_midline>KMQYPISINVNPCI+LK S+GLLHIFYIPRRD+KQLYFNLYITVN+M LPKRKEVICRGSDDDYSFCRALKGETVNTT+ FSFKGIKFSKGKYKC+VEAISGSPEEMLFCLEFVI+HQPNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>10</Hit_num>
+  <Hit_id>ref|XP_021574592.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Carlito syrichta]</Hit_def>
+  <Hit_accession>XP_021574592</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>209.534</Hsp_bit-score>
+      <Hsp_score>532</Hsp_score>
+      <Hsp_evalue>1.33163e-66</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>142</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>EPGEQHWVCNSSDTSISYTYCDNMKYPISIKVEPCIKLVGSKGLLHIFFIPRRDLKQLYFNLYISVNSMELPKRKEVICRGSDDEYSLCRTLKGETLNTTVSFSFRGILFSKGRYKVVAEAIDGSTEETFFCLNFTIIHHPN</Hsp_hseq>
+      <Hsp_midline>E  +Q+WVCNSSD SISYTYCD M+YPISI V PCI+L  SKGLLHIF+IPRRDLKQLYFNLYI+VN+M LPKRKEVICRGSDD+YS CR LKGET+NTT+SFSF+GI FSKG+YK V EAI GS EE  FCL F I+H PN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>11</Hit_num>
+  <Hit_id>ref|XP_048214943.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Perognathus longimembris pacificus]</Hit_def>
+  <Hit_accession>XP_048214943</Hit_accession>
+  <Hit_len>163</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>209.149</Hsp_bit-score>
+      <Hsp_score>531</Hsp_score>
+      <Hsp_evalue>2.25196e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>114</Hsp_identity>
+      <Hsp_positive>138</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFVLFSTLFSSTFTEPEEPPWACNSSDATFAYTYCDNMKYPISVSTEPCIALKGTKGLIHIFYIPRRDLKKLYFNLYISINSMDLPKRTEVICKGSDDDYSFCRALKGETVNTTVPFSFRGIQFPKGRYNCVIEAIAGDPEEKLFCLNFTIIHRHNKN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFSS FTE ++  W CNSSDA+ +YTYCD M+YPIS++  PCI LK +KGL+HIFYIPRRDLK+LYFNLYI++N+M+LPKR EVIC+GSDDDYSFCRALKGETVNTT+ FSF+GI+F KG+Y CV+EAI+G PEE LFCL F I+H+ N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>12</Hit_num>
+  <Hit_id>ref|XP_036743380.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Manis pentadactyla]</Hit_def>
+  <Hit_accession>XP_036743380</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>208.764</Hsp_bit-score>
+      <Hsp_score>530</Hsp_score>
+      <Hsp_evalue>2.54081e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>112</Hsp_identity>
+      <Hsp_positive>141</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFASVFTEPMKQRWICNSSDLSVWYTYCDKMEFPISINVEPCLTLKKSKGYLHLFYIPRRDIKKLYFNIYLSANSVDFPVRKEVICRGANDDYSFCRALKGETVNTTVAFSYKGIRFSKGQYRCVTEAIAGNTEEMLFCLNFTILHSPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLF+S+FTE  KQ W+CNSSD S+ YTYCDKM++PISINV PC+ LK+SKG LH+FYIPRRD+K+LYFN+Y++ N+++ P RKEVICRG++DDYSFCRALKGETVNTT++FS+KGI+FSKG+Y+CV EAI+G+ EEMLFCL F ILH P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>13</Hit_num>
+  <Hit_id>ref|NP_001076256.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 precursor [Oryctolagus cuniculus]</Hit_def>
+  <Hit_accession>NP_001076256</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>208.764</Hsp_bit-score>
+      <Hsp_score>530</Hsp_score>
+      <Hsp_evalue>2.92952e-66</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGKLHWVCKSADATVSYTYCDNMEIPISINVEPCITLKGTQGLLHIFYIPRRDMNQLYLNLYISVNSMDLPKRKEIICKGSDDVYSFCRALKGETVNTTVPFSFKGIRLSKGQYRCVVEAIAGSAEEMIFCLNFTIIHNPRVN</Hsp_hseq>
+      <Hsp_midline>E  K +WVC S+DA++SYTYCD M+ PISINV PCI LK ++GLLHIFYIPRRD+ QLY NLYI+VN+M+LPKRKE+IC+GSDD YSFCRALKGETVNTT+ FSFKGI+ SKG+Y+CVVEAI+GS EEM+FCL F I+H P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>14</Hit_num>
+  <Hit_id>ref|XP_012883912.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 isoform X1 [Dipodomys ordii]</Hit_def>
+  <Hit_accession>XP_012883912</Hit_accession>
+  <Hit_len>163</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>206.068</Hsp_bit-score>
+      <Hsp_score>523</Hsp_score>
+      <Hsp_evalue>2.76353e-65</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>114</Hsp_identity>
+      <Hsp_positive>137</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFVLFSTLFSFIFIESEAQPWACNSSDATLSYTYCDNMKYPISLSTEPCITLKGTKGLIHVFYIPRRDLKKLYLNIYLSVNSMELPKRTEVICRGSDDEYSFCRALKGETVNTSVPFSFKGIQFPKGQYKCVVEAIAGDPEEKLFCLNFTIIHCHNKN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFS IF E++ Q W CNSSDA++SYTYCD M+YPIS++  PCI LK +KGL+H+FYIPRRDLK+LY N+Y++VN+M LPKR EVICRGSDD+YSFCRALKGETVNT++ FSFKGI+F KG+YKCVVEAI+G PEE LFCL F I+H  N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>15</Hit_num>
+  <Hit_id>ref|XP_012590812.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Microcebus murinus]</Hit_def>
+  <Hit_accession>XP_012590812</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>205.297</Hsp_bit-score>
+      <Hsp_score>521</Hsp_score>
+      <Hsp_evalue>4.99387e-65</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>105</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGKQNWVCNSSDASIWYTYCDHMEYPISVNVNPCITLKGTRGLLHLYFIPRRDLNKLYFNLYISINSMELPKRKEVICRGSNDIYSFCRALKGETVNTTVSFSFSGIRFSKGKYRGIVEAIAGNTEEMLFCLNFTLIYRPRLN</Hsp_hseq>
+      <Hsp_midline>E  KQ WVCNSSDASI YTYCD M+YPIS+NVNPCI LK ++GLLH+++IPRRDL +LYFNLYI++N+M LPKRKEVICRGS+D YSFCRALKGETVNTT+SFSF GI+FSKGKY+ +VEAI+G+ EEMLFCL F ++++P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>16</Hit_num>
+  <Hit_id>ref|XP_027433385.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Zalophus californianus]</Hit_def>
+  <Hit_accession>XP_027433385</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>205.297</Hsp_bit-score>
+      <Hsp_score>521</Hsp_score>
+      <Hsp_evalue>6.63848e-65</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>115</Hsp_identity>
+      <Hsp_positive>137</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSIFTEPGQQHWICNSSDSSVWYTYCDNMKVPISIDVKPCIALKGSRGYLHIYYIPRRDIKKLYFNLYISFHSMHFPMRKEVICRGSDDLYSFCRALKGETVNTTVSFSFTGLRFSKGQYKCVAEAISGDPEETLFCLNFTIIHHPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIFTE  +Q+W+CNSSD+S+ YTYCD M+ PISI+V PCI LK S+G LHI+YIPRRD+K+LYFNLYI+ ++M+ P RKEVICRGSDD YSFCRALKGETVNTT+SFSF G++FSKG+YKCV EAISG PEE LFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>17</Hit_num>
+  <Hit_id>ref|XP_041625428.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Vulpes lagopus]</Hit_def>
+  <Hit_accession>XP_041625428</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>203.756</Hsp_bit-score>
+      <Hsp_score>517</Hsp_score>
+      <Hsp_evalue>2.09572e-64</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>115</Hsp_identity>
+      <Hsp_positive>137</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSIFTEPGEQYWICNSSDASVWYAYCDHMKAPISIDLNPCIAMKGSKGYLHLYYIPRRDIKKLYFNLYISFNSMHLPMRKEVICRGSDDVYSFCRALKGETVNTRIPFSFRGIRFSKGQYRCVAEAISGDTEEMLFCLNFTVIHHPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIFTE  +QYW+CNSSDAS+ Y YCD M+ PISI++NPCI +K SKG LH++YIPRRD+K+LYFNLYI+ N+M+LP RKEVICRGSDD YSFCRALKGETVNT I FSF+GI+FSKG+Y+CV EAISG  EEMLFCL F ++H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>18</Hit_num>
+  <Hit_id>ref|XP_011742773.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Macaca nemestrina]</Hit_def>
+  <Hit_accession>XP_011742773</Hit_accession>
+  <Hit_len>130</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>202.216</Hsp_bit-score>
+      <Hsp_score>513</Hsp_score>
+      <Hsp_evalue>3.64788e-64</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>112</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSFIFTEAQKHYWVCNSSDASISYTYCDKMQYPISINVNPCIKLKGSRGLLHIFYIPRRDVKQLYFNLYITVNSMTLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFS IFTEAQK YWVCNSSDASISYTYCDKMQYPISINVNPCI+LK S+GLLHIFYIPRRD+KQLYFNLYITVN+M LPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>19</Hit_num>
+  <Hit_id>ref|XP_008577095.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Galeopterus variegatus]</Hit_def>
+  <Hit_accession>XP_008577095</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>202.986</Hsp_bit-score>
+      <Hsp_score>515</Hsp_score>
+      <Hsp_evalue>4.97685e-64</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>112</Hsp_identity>
+      <Hsp_positive>135</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSFIFTEPGKQYWICNSSESSVSYTYCDKTEYPISINLEPCITLTGTRGFLHIFFIPRTDIKKLYFNLYISVNSVDFPKRKEVICRGSDDVYSFCGNLKGETVNTTISFSFGGMLFSKGRYRCVAEAIAGNAEEMLFCLNFTVIHNPRIN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFS IFTE  KQYW+CNSS++S+SYTYCDK +YPISIN+ PCI L  ++G LHIF+IPR D+K+LYFNLYI+VN+++ PKRKEVICRGSDD YSFC  LKGETVNTTISFSF G+ FSKG+Y+CV EAI+G+ EEMLFCL F ++H P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>20</Hit_num>
+  <Hit_id>ref|XP_011365244.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Pteropus vampyrus]</Hit_def>
+  <Hit_accession>XP_011365244</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>202.601</Hsp_bit-score>
+      <Hsp_score>514</Hsp_score>
+      <Hsp_evalue>6.12762e-64</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>114</Hsp_identity>
+      <Hsp_positive>137</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSPICTEPAEQHWICNSSDTDIWYTYCDNMKFPISLNLNPCIELKGSRGYLHIFYIPRRDIKKLYFNLYLSFNSMNFPVRKEVICHGSDDEYSFCRALKGETVNTTISFSFKGIRFSKGQYRCIVEAITGYTEEKLFCLNFTIIYHPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFS I TE  +Q+W+CNSSD  I YTYCD M++PIS+N+NPCIELK S+G LHIFYIPRRD+K+LYFNLY++ N+MN P RKEVIC GSDD+YSFCRALKGETVNTTISFSFKGI+FSKG+Y+C+VEAI+G  EE LFCL F I++ P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>21</Hit_num>
+  <Hit_id>ref|XP_035921234.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Halichoerus grypus]</Hit_def>
+  <Hit_accession>XP_035921234</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>201.83</Hsp_bit-score>
+      <Hsp_score>512</Hsp_score>
+      <Hsp_evalue>1.48732e-63</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>114</Hsp_identity>
+      <Hsp_positive>139</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSIFTEPGEQQWICNSSDSSVWYTYCDDMKVPISIDLNPCITLKGSKGHLHISYIPRRDIKKLYFNLYLSIHSMHFPMRKEVICQGSDDVYSFCRALKGETVNTTVSFSYRGIRFSKGQYRCVAEAISGDPEEMLFCLNFTIIHDPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIFTE  +Q W+CNSSD+S+ YTYCD M+ PISI++NPCI LK SKG LHI YIPRRD+K+LYFNLY+++++M+ P RKEVIC+GSDD YSFCRALKGETVNTT+SFS++GI+FSKG+Y+CV EAISG PEEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>22</Hit_num>
+  <Hit_id>ref|XP_006086408.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Myotis lucifugus]</Hit_def>
+  <Hit_accession>XP_006086408</Hit_accession>
+  <Hit_len>159</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>201.445</Hsp_bit-score>
+      <Hsp_score>511</Hsp_score>
+      <Hsp_evalue>1.6062e-63</Hsp_evalue>
+      <Hsp_query-from>21</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>20</Hsp_hit-from>
+      <Hsp_hit-to>159</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>120</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>140</Hsp_align-len>
+      <Hsp_qseq>QYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EHWICNSSDVSLWYSYCDNMKYPISIRSEPCVELKGSKGYLHIFFIPRRDIKNLYFNLYLSFNTVDFPMRKEVICRGSDDDYSFCRALKGETVNTTVRFSYRGILFSKGKYRCVVEAITGNTEEMLFCLNFTIIHHPTFN</Hsp_hseq>
+      <Hsp_midline>++W+CNSSD S+ Y+YCD M+YPISI   PC+ELK SKG LHIF+IPRRD+K LYFNLY++ NT++ P RKEVICRGSDDDYSFCRALKGETVNTT+ FS++GI FSKGKY+CVVEAI+G+ EEMLFCL F I+H P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>23</Hit_num>
+  <Hit_id>ref|XP_037658438.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X4 [Choloepus didactylus]</Hit_def>
+  <Hit_accession>XP_037658438</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>201.445</Hsp_bit-score>
+      <Hsp_score>511</Hsp_score>
+      <Hsp_evalue>2.11126e-63</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>120</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPRGQYWICNSSDTSIWYTYCDHMNYPISLNVTPCITMKGSSGHLNIYYIPRRDIKNLYFNLYISANSMNFPKRKEVICRGSDSDFSFCRALKGETVNTSVSFSFKGIRFAKGQYRCVAEAINGKTEEMLFCLNITALHHPDLN</Hsp_hseq>
+      <Hsp_midline>E + QYW+CNSSD SI YTYCD M YPIS+NV PCI +K S G L+I+YIPRRD+K LYFNLYI+ N+MN PKRKEVICRGSD D+SFCRALKGETVNT++SFSFKGI+F+KG+Y+CV EAI+G  EEMLFCL    LH P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>24</Hit_num>
+  <Hit_id>ref|XP_012409905.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Trichechus manatus latirostris]</Hit_def>
+  <Hit_accession>XP_012409905</Hit_accession>
+  <Hit_len>155</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>200.675</Hsp_bit-score>
+      <Hsp_score>509</Hsp_score>
+      <Hsp_evalue>3.03409e-63</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>155</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>139</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>ELGEPRWVCNSSDISIWYTYCDNMKYPISLNLTPCITLKGSRGLLHIYYIPRRDVEKLYFNLYLSVNSINLPKRKEVICRGSDDSYSFCRALKGETVNTTIPFSFRGIKFSKGLYRCVAEAISGKTEEMLFCLNFTMIH</Hsp_hseq>
+      <Hsp_midline>E  +  WVCNSSD SI YTYCD M+YPIS+N+ PCI LK S+GLLHI+YIPRRD+++LYFNLY++VN++NLPKRKEVICRGSDD YSFCRALKGETVNTTI FSF+GIKFSKG Y+CV EAISG  EEMLFCL F ++H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>25</Hit_num>
+  <Hit_id>ref|XP_020028110.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Castor canadensis]</Hit_def>
+  <Hit_accession>XP_020028110</Hit_accession>
+  <Hit_len>157</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>198.749</Hsp_bit-score>
+      <Hsp_score>504</Hsp_score>
+      <Hsp_evalue>1.99324e-62</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>157</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>157</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>111</Hsp_identity>
+      <Hsp_positive>133</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>157</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQP</Hsp_qseq>
+      <Hsp_hseq>MLPLMLFSTLFSSIFAEPEELHWSCNSSDATFSYTYCDDMKFPISVHTEPCIELKGTNGFLHISYIPRRDLKKLYFNLYITVNSMELPKRKQVICRGYDDEYSFCRALKGETVNTTVSFSFKGIRFPKGRYRCITEAIVGDNEEKLFCLNFTVIHRP</Hsp_hseq>
+      <Hsp_midline>MLP + FSTLFSSIF E ++ +W CNSSDA+ SYTYCD M++PIS++  PCIELK + G LHI YIPRRDLK+LYFNLYITVN+M LPKRK+VICRG DD+YSFCRALKGETVNTT+SFSFKGI+F KG+Y+C+ EAI G  EE LFCL F ++H+P</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>26</Hit_num>
+  <Hit_id>ref|XP_037658434.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Choloepus didactylus]</Hit_def>
+  <Hit_accession>XP_037658434</Hit_accession>
+  <Hit_len>208</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>199.134</Hsp_bit-score>
+      <Hsp_score>505</Hsp_score>
+      <Hsp_evalue>7.40666e-62</Hsp_evalue>
+      <Hsp_query-from>19</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>67</Hsp_hit-from>
+      <Hsp_hit-to>208</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>101</Hsp_identity>
+      <Hsp_positive>119</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>142</Hsp_align-len>
+      <Hsp_qseq>QKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>RGQYWICNSSDTSIWYTYCDHMNYPISLNVTPCITMKGSSGHLNIYYIPRRDIKNLYFNLYISANSMNFPKRKEVICRGSDSDFSFCRALKGETVNTSVSFSFKGIRFAKGQYRCVAEAINGKTEEMLFCLNITALHHPDLN</Hsp_hseq>
+      <Hsp_midline>+ QYW+CNSSD SI YTYCD M YPIS+NV PCI +K S G L+I+YIPRRD+K LYFNLYI+ N+MN PKRKEVICRGSD D+SFCRALKGETVNT++SFSFKGI+F+KG+Y+CV EAI+G  EEMLFCL    LH P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>27</Hit_num>
+  <Hit_id>ref|XP_036293045.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Pipistrellus kuhlii]</Hit_def>
+  <Hit_accession>XP_036293045</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>197.208</Hsp_bit-score>
+      <Hsp_score>500</Hsp_score>
+      <Hsp_evalue>9.52546e-62</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>103</Hsp_identity>
+      <Hsp_positive>119</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGKQYWVCNSSDVSLWYTYCDNVNYPISVRNEPCVELKGSKGHLLISYIPRRDMKNLYFNLYVSFNTMNFPMRKQVICQGSDDDYSFCRALKGETVNTSVPFSFRGILFSKGKYRCVVEAIAGNTEEMLFCLNFTIIHYSASN</Hsp_hseq>
+      <Hsp_midline>E  KQYWVCNSSD S+ YTYCD + YPIS+   PC+ELK SKG L I YIPRRD+K LYFNLY++ NTMN P RK+VIC+GSDDDYSFCRALKGETVNT++ FSF+GI FSKGKY+CVVEAI+G+ EEMLFCL F I+H   SN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>28</Hit_num>
+  <Hit_id>ref|XP_006880603.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Elephantulus edwardii]</Hit_def>
+  <Hit_accession>XP_006880603</Hit_accession>
+  <Hit_len>158</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>196.438</Hsp_bit-score>
+      <Hsp_score>498</Hsp_score>
+      <Hsp_evalue>1.89979e-61</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>156</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>98</Hsp_identity>
+      <Hsp_positive>122</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>140</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQ</Hsp_qseq>
+      <Hsp_hseq>EPKQQHWICNSSDLSVWYTYCDNMKYPISIIPTPCVSLKGSKGQLHLSYIPRRDMKKLYFNLYVSINSLDFPKRKEVICRGSDDDYSFCRALKGETINTTISFSYKGLKFSKGQYRVVAEAITGSAEEMLFCLNFTLIHS</Hsp_hseq>
+      <Hsp_midline>E ++Q+W+CNSSD S+ YTYCD M+YPISI   PC+ LK SKG LH+ YIPRRD+K+LYFNLY+++N+++ PKRKEVICRGSDDDYSFCRALKGET+NTTISFS+KG+KFSKG+Y+ V EAI+GS EEMLFCL F ++H </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>29</Hit_num>
+  <Hit_id>ref|XP_019581388.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 isoform X1 [Rhinolophus sinicus]</Hit_def>
+  <Hit_accession>XP_019581388</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>196.438</Hsp_bit-score>
+      <Hsp_score>498</Hsp_score>
+      <Hsp_evalue>2.00499e-61</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>112</Hsp_identity>
+      <Hsp_positive>133</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSIFTDPGEQHWVCNSSDVSLWYTYCDNMKLPISINVTPCVEMKGSRGNLHISYIPRRDIKDLYFNLYVSFNSLNFPMRKEFICRGSDAYYSFCRALKGETVNTSIPFSFKGILFSKGLYRCVVEAVTGNTEEMLFCLNFTLIHHPNFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIFT+  +Q+WVCNSSD S+ YTYCD M+ PISINV PC+E+K S+G LHI YIPRRD+K LYFNLY++ N++N P RKE ICRGSD  YSFCRALKGETVNT+I FSFKGI FSKG Y+CVVEA++G+ EEMLFCL F ++H PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>30</Hit_num>
+  <Hit_id>ref|XP_003408398.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Loxodonta africana]</Hit_def>
+  <Hit_accession>XP_003408398</Hit_accession>
+  <Hit_len>155</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>196.052</Hsp_bit-score>
+      <Hsp_score>497</Hsp_score>
+      <Hsp_evalue>2.67054e-61</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>155</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>110</Hsp_identity>
+      <Hsp_positive>134</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>MFPFVLFSTLFSSIFPEPGEQRWVCNSSDLSVWYTYCDNLKYPILLNLTPCITLKASKGHLHVYYVPRRDIKKLYFNLYISFNSISLPKRKEVVCRGSEDDYSFCRALKGETVTATIPFSFKGIKFSKGQYRCVAEAMTGSPEEMLFCLNFTLIH</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIF E  +Q WVCNSSD S+ YTYCD ++YPI +N+ PCI LK SKG LH++Y+PRRD+K+LYFNLYI+ N+++LPKRKEV+CRGS+DDYSFCRALKGETV  TI FSFKGIKFSKG+Y+CV EA++GSPEEMLFCL F ++H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>31</Hit_num>
+  <Hit_id>ref|XP_004436351.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Ceratotherium simum simum]</Hit_def>
+  <Hit_accession>XP_004436351</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>195.282</Hsp_bit-score>
+      <Hsp_score>495</Hsp_score>
+      <Hsp_evalue>4.86539e-61</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>142</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>EPEKLHWICNSSDSSIWYSYCDNTKFPISITPNPCIELKGTSGNLHIFFTPRRDIKKLHFNLYLSVNSVDLPLRKEVVCRGSDDDYSFCRALKGETVNTTVPFSFRGIRFPKGLYRCVAEAIVGNAEEMLFCLNFTLLHHPH</Hsp_hseq>
+      <Hsp_midline>E +K +W+CNSSD+SI Y+YCD  ++PISI  NPCIELK + G LHIF+ PRRD+K+L+FNLY++VN+++LP RKEV+CRGSDDDYSFCRALKGETVNTT+ FSF+GI+F KG Y+CV EAI G+ EEMLFCL F +LH P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>32</Hit_num>
+  <Hit_id>ref|NP_001075367.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 precursor [Equus caballus]</Hit_def>
+  <Hit_accession>NP_001075367</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.512</Hsp_bit-score>
+      <Hsp_score>493</Hsp_score>
+      <Hsp_evalue>9.17888e-61</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>95</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPEELRWICNSSDMSIWYTYCDNMKSPISINLEPCIELKGTRGHLHMLFVPRRDIKKLYFNLYLTMNSLEFPMRKEVICRGSDDDYSFCRALKGETVNTTVSFSFRGMRFPKGRYSCIAEAVVGNTEEALFCLNFTLLHQPSFN</Hsp_hseq>
+      <Hsp_midline>E ++  W+CNSSD SI YTYCD M+ PISIN+ PCIELK ++G LH+ ++PRRD+K+LYFNLY+T+N++  P RKEVICRGSDDDYSFCRALKGETVNTT+SFSF+G++F KG+Y C+ EA+ G+ EE LFCL F +LHQP+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>33</Hit_num>
+  <Hit_id>ref|XP_008148549.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Eptesicus fuscus]</Hit_def>
+  <Hit_accession>XP_008148549</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.512</Hsp_bit-score>
+      <Hsp_score>493</Hsp_score>
+      <Hsp_evalue>1.00187e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSTLFSSTLPESGEQHWICNSSDVSLWYTYCDNVKYPISVRSEPCVELKGSKGYLHISYIPRRDMKNLYFNLYLSFKTMTFPMRKEVICRGSDDDYSFCRALKGETVNTSVPFSFKGILFSKGKYRWIVEAITGNTEEMLFCLNFTIIHHSAFN</Hsp_hseq>
+      <Hsp_midline>M P + FSTLFSS   E+ +Q+W+CNSSD S+ YTYCD ++YPIS+   PC+ELK SKG LHI YIPRRD+K LYFNLY++  TM  P RKEVICRGSDDDYSFCRALKGETVNT++ FSFKGI FSKGKY+ +VEAI+G+ EEMLFCL F I+H    N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>34</Hit_num>
+  <Hit_id>ref|XP_032725068.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Lontra canadensis]</Hit_def>
+  <Hit_accession>XP_032725068</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.512</Hsp_bit-score>
+      <Hsp_score>493</Hsp_score>
+      <Hsp_evalue>1.00187e-60</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>119</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGEQRWVCNSSDVSVWYTYCDDMKVPISIEPKPCITLKGSKGYLHLSYIPRRDIKKLYFNIYLSFNSMDFPMRKEVVCRGSDDLYSFCRALKGETVNTAVSFSFRGLRFSKGRYKCVAEAISGDPEEVLFCLNFTIIHHPDFN</Hsp_hseq>
+      <Hsp_midline>E  +Q WVCNSSD S+ YTYCD M+ PISI   PCI LK SKG LH+ YIPRRD+K+LYFN+Y++ N+M+ P RKEV+CRGSDD YSFCRALKGETVNT +SFSF+G++FSKG+YKCV EAISG PEE+LFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>35</Hit_num>
+  <Hit_id>ref|XP_002930732.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Ailuropoda melanoleuca]</Hit_def>
+  <Hit_accession>XP_002930732</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.126</Hsp_bit-score>
+      <Hsp_score>492</Hsp_score>
+      <Hsp_evalue>1.48564e-60</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>97</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPGEQHWICNSSDSSVWYSYCDNMKVPISIDPKPCITLKGSRGYLHLSYIPRRDIKKLYFKLYLSFNSMHFPMRKEVICRGSDDVYSFCRALKGETVNTAVSFSYKGIRFSKGQYRCVAEAVSGDPEEMLFCLNFTIIHHPDFN</Hsp_hseq>
+      <Hsp_midline>E  +Q+W+CNSSD+S+ Y+YCD M+ PISI+  PCI LK S+G LH+ YIPRRD+K+LYF LY++ N+M+ P RKEVICRGSDD YSFCRALKGETVNT +SFS+KGI+FSKG+Y+CV EA+SG PEEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>36</Hit_num>
+  <Hit_id>ref|XP_004679848.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Condylura cristata]</Hit_def>
+  <Hit_accession>XP_004679848</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.126</Hsp_bit-score>
+      <Hsp_score>492</Hsp_score>
+      <Hsp_evalue>1.55212e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>133</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSTLFSSIFTEPGEKHWICNSSDASIWYSYCDNMKYPISINIHPCLTLKGHRGYLHIFYIARGDLKNLYFNLKLSFNSMNFLERTQVICKGADGDYSFCRALKGETVNTTISYSFKRLLFSKGQYRLIVEAITGSTGEMLFCLNFIIIHHPNSN</Hsp_hseq>
+      <Hsp_midline>M P + FSTLFSSIFTE  +++W+CNSSDASI Y+YCD M+YPISIN++PC+ LK  +G LHIFYI R DLK LYFNL ++ N+MN  +R +VIC+G+D DYSFCRALKGETVNTTIS+SFK + FSKG+Y+ +VEAI+GS  EMLFCL F+I+H PNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>37</Hit_num>
+  <Hit_id>ref|XP_045000253.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Jaculus jaculus]</Hit_def>
+  <Hit_accession>XP_045000253</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>193.741</Hsp_bit-score>
+      <Hsp_score>491</Hsp_score>
+      <Hsp_evalue>1.99636e-60</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EHEEQLWSCKSSDATISYTYCDNIKFPISLHTEPCISLKGTNGFLHISYIPRRDLKKLYFNLFIKINSMELPKRKEVICRGSDDDYSICRALKGETVNTSISFSFKGIRFPKGQYRCIAEAIAGDIEEKLFCLNFTIVYRPNFN</Hsp_hseq>
+      <Hsp_midline>E ++Q W C SSDA+ISYTYCD +++PIS++  PCI LK + G LHI YIPRRDLK+LYFNL+I +N+M LPKRKEVICRGSDDDYS CRALKGETVNT+ISFSFKGI+F KG+Y+C+ EAI+G  EE LFCL F I+++PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>38</Hit_num>
+  <Hit_id>ref|NP_001182726.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform 2 precursor [Homo sapiens]</Hit_def>
+  <Hit_accession>NP_001182726</Hit_accession>
+  <Hit_len>130</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.586</Hsp_bit-score>
+      <Hsp_score>488</Hsp_score>
+      <Hsp_evalue>2.4127e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>130</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>129</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>30</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYCG------------------------------RDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFSSIFTEAQKQYWVCNSSDASISYTYC                               RDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIKFSKGKYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>39</Hit_num>
+  <Hit_id>ref|XP_036119713.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Molossus molossus]</Hit_def>
+  <Hit_accession>XP_036119713</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.971</Hsp_bit-score>
+      <Hsp_score>489</Hsp_score>
+      <Hsp_evalue>3.89177e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>130</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSTLFSSTFTEPREQHLVCNSSDVSISFTYCGNMKYPISIKTEPCIQPKGSKGYLYISYIPRRDMKKLYFNLYITLNTHNLPMRKEVLCRGSDDDYSFCRTLKGETMDIKVSFSFKGMLIPKGQHRCVVEAFTGDPEKMLFCLNFTIIHHPNFN</Hsp_hseq>
+      <Hsp_midline>M P + FSTLFSS FTE ++Q+ VCNSSD SIS+TYC  M+YPISI   PCI+ K SKG L+I YIPRRD+K+LYFNLYIT+NT NLP RKEV+CRGSDDDYSFCR LKGET++  +SFSFKG+   KG+++CVVEA +G PE+MLFCL F I+H PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>40</Hit_num>
+  <Hit_id>ref|XP_008847121.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X3 [Nannospalax galili]</Hit_def>
+  <Hit_accession>XP_008847121</Hit_accession>
+  <Hit_len>158</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.586</Hsp_bit-score>
+      <Hsp_score>488</Hsp_score>
+      <Hsp_evalue>5.12169e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>110</Hsp_identity>
+      <Hsp_positive>131</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLFSPIFTESEEQLWVCNSSDTTISYTYCDNIKFPISISAEPCITLKGTNGILHIVFIPRRDIKKLYFNLFINLNSMVLPKRKEVICRGYDDDYSFCSALKGETVNTTVPFSFRGILFSKGQYTCVAEAIVGDIEEKLFCLNFTIIHHNN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFS IFTE+++Q WVCNSSD +ISYTYCD +++PISI+  PCI LK + G+LHI +IPRRD+K+LYFNL+I +N+M LPKRKEVICRG DDDYSFC ALKGETVNTT+ FSF+GI FSKG+Y CV EAI G  EE LFCL F I+H  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>41</Hit_num>
+  <Hit_id>ref|XP_029779690.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Suricata suricatta]</Hit_def>
+  <Hit_accession>XP_029779690</Hit_accession>
+  <Hit_len>177</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>193.356</Hsp_bit-score>
+      <Hsp_score>490</Hsp_score>
+      <Hsp_evalue>5.17543e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>18</Hsp_hit-from>
+      <Hsp_hit-to>177</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>136</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFILFSTLFSFIFTEPGEQQWICNSSDSSVWYSHCDNMKVPISIDIKPCLTMKGSQGNLHLSFVPRRDIRKLYFNLYLSINLMNLPMRKEVICRGSDDVYSFCRALKGETVNTAVSFSFRGIRFSKGEYRCVAEAIAGNTEEMLFCLNFTILHDPNFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFS IFTE  +Q W+CNSSD+S+ Y++CD M+ PISI++ PC+ +K S+G LH+ ++PRRD+++LYFNLY+++N MNLP RKEVICRGSDD YSFCRALKGETVNT +SFSF+GI+FSKG+Y+CV EAI+G+ EEMLFCL F ILH PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>42</Hit_num>
+  <Hit_id>ref|XP_039094342.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Hyaena hyaena]</Hit_def>
+  <Hit_accession>XP_039094342</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.586</Hsp_bit-score>
+      <Hsp_score>488</Hsp_score>
+      <Hsp_evalue>5.52366e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>135</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFILFSILFSSIFTEPGERQWICNSSDSSVWYSYCDKMKIPISIDIEPCIIMKGSRGYLHVSFIPRRDIRKLYFNLYLSINAMELPMRKEVICRGADDVYSFCRALKGETVNTTVGFSFKGIRFSKGEYRCVAEAISGNTEEMLFCLNFTILYNPN</Hsp_hseq>
+      <Hsp_midline>M PF+ FS LFSSIFTE  ++ W+CNSSD+S+ Y+YCDKM+ PISI++ PCI +K S+G LH+ +IPRRD+++LYFNLY+++N M LP RKEVICRG+DD YSFCRALKGETVNTT+ FSFKGI+FSKG+Y+CV EAISG+ EEMLFCL F IL+ PN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>43</Hit_num>
+  <Hit_id>ref|XP_028374462.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Phyllostomus discolor]</Hit_def>
+  <Hit_accession>XP_028374462</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.586</Hsp_bit-score>
+      <Hsp_score>488</Hsp_score>
+      <Hsp_evalue>7.02716e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>132</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSTLFSSTFTEPREQHWICNSSDASVWYSYCDNMEYPISLMPEPCITLKGSNGYLHISFIPRRDIKKLYFNLYLSFNTLEFPTRTEVICRGSDDEYSFCRALKGETVNTSVPFSFKGILFSKGRYRFVVEAIAGNTEEMLFCLNFTIIHYPDIN</Hsp_hseq>
+      <Hsp_midline>M P + FSTLFSS FTE ++Q+W+CNSSDAS+ Y+YCD M+YPIS+   PCI LK S G LHI +IPRRD+K+LYFNLY++ NT+  P R EVICRGSDD+YSFCRALKGETVNT++ FSFKGI FSKG+Y+ VVEAI+G+ EEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>44</Hit_num>
+  <Hit_id>ref|XP_023039860.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Piliocolobus tephrosceles]</Hit_def>
+  <Hit_accession>XP_023039860</Hit_accession>
+  <Hit_len>148</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>191.43</Hsp_bit-score>
+      <Hsp_score>485</Hsp_score>
+      <Hsp_evalue>1.07172e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>114</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>114</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>107</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>114</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVN</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSSIFTEAQKHYWVCNSSDASISYTYCDKIQYPISINVNPCIELKGSRGLLHIFYIPRRDLKQLYFNLYITVNSMTLPKRKEVICRGSDDSYSFCRALKGGKHN</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFSSIFTEAQK YWVCNSSDASISYTYCDK+QYPISINVNPCIELK S+GLLHIFYIPRRDLKQLYFNLYITVN+M LPKRKEVICRGSDD YSFCRALKG   N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>45</Hit_num>
+  <Hit_id>ref|XP_004637614.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Octodon degus]</Hit_def>
+  <Hit_accession>XP_004637614</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>190.274</Hsp_bit-score>
+      <Hsp_score>482</Hsp_score>
+      <Hsp_evalue>4.41714e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>106</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPLMLFSTLFSPIFTEPKDHHWICNSSDASISYTYCDDMKFPISVNVTPCLTFKGSSGTLNISFIPRRDLRKLYFNLYVSFKSMNLPERKEVICRGYDDVYSFCRALKGETVNAKVPFSYRGILFSKGRYSCVAEAITGDAEERLFCLNFTIMHLPHIN</Hsp_hseq>
+      <Hsp_midline>MLP + FSTLFS IFTE +  +W+CNSSDASISYTYCD M++PIS+NV PC+  K S G L+I +IPRRDL++LYFNLY++  +MNLP+RKEVICRG DD YSFCRALKGETVN  + FS++GI FSKG+Y CV EAI+G  EE LFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>46</Hit_num>
+  <Hit_id>ref|XP_016071489.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 isoform X1 [Miniopterus natalensis]</Hit_def>
+  <Hit_accession>XP_016071489</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>189.889</Hsp_bit-score>
+      <Hsp_score>481</Hsp_score>
+      <Hsp_evalue>6.91778e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>130</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSMLFSSTCTEPREPHWICNSSDLTFWYTYCDHMEYPILIKTEPCIQLMGSKGYLHIFYIPRRDIKKLYFNLYLSYNSLNFPVRQEVVCRGSDDEFSFCRALKGETVNTTVSFSFRGIRFSKGRYQCVVEAITGNTGEMLFCLNFTIIHYSGFN</Hsp_hseq>
+      <Hsp_midline>M P + FS LFSS  TE ++ +W+CNSSD +  YTYCD M+YPI I   PCI+L  SKG LHIFYIPRRD+K+LYFNLY++ N++N P R+EV+CRGSDD++SFCRALKGETVNTT+SFSF+GI+FSKG+Y+CVVEAI+G+  EMLFCL F I+H    N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>47</Hit_num>
+  <Hit_id>ref|XP_006202465.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Vicugna pacos]</Hit_def>
+  <Hit_accession>XP_006202465</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>189.889</Hsp_bit-score>
+      <Hsp_score>481</Hsp_score>
+      <Hsp_evalue>7.22726e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>134</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPLMLFSTLFSSIFTEPGEKHWICNSSDASIWYNYCDDKKFPISISTKPCITLKGSNGYLYLYFIPRRDIKKLYFNLYISVKSISLPERKEVICRGSDDNYSFCRALKGETVNTTIGFSFKGLRFSKGQYNCVAEAISGDTEERLLCLNFTIIHHPDSS</Hsp_hseq>
+      <Hsp_midline>M P + FSTLFSSIFTE  +++W+CNSSDASI Y YCD  ++PISI+  PCI LK S G L++++IPRRD+K+LYFNLYI+V +++LP+RKEVICRGSDD+YSFCRALKGETVNTTI FSFKG++FSKG+Y CV EAISG  EE L CL F I+H P+S+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>48</Hit_num>
+  <Hit_id>ref|XP_021798139.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Papio anubis]</Hit_def>
+  <Hit_accession>XP_021798139</Hit_accession>
+  <Hit_len>219</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>191.43</Hsp_bit-score>
+      <Hsp_score>485</Hsp_score>
+      <Hsp_evalue>1.27851e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>112</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>112</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>107</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>112</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGET</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSFIFTEAQKHYWVCNSSDASISYTYCDKMQYPISINVNPCIKLKGSRGLLHIFYIPRRDVKQLYFNLYITVNSMTLPKRKEVICRGSDDDYSFCRALKGGS</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFS IFTEAQK YWVCNSSDASISYTYCDKMQYPISINVNPCI+LK S+GLLHIFYIPRRD+KQLYFNLYITVN+M LPKRKEVICRGSDDDYSFCRALKG +</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>49</Hit_num>
+  <Hit_id>ref|XP_007954948.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Orycteropus afer afer]</Hit_def>
+  <Hit_accession>XP_007954948</Hit_accession>
+  <Hit_len>155</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>188.348</Hsp_bit-score>
+      <Hsp_score>477</Hsp_score>
+      <Hsp_evalue>2.26223e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>155</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>130</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>MFPFLLFSTLFPFIFTELGEQHWICNSSDLSVWYTYCDNMKYPISLNLIPCITLKGSRGHLQISYIPRRDIKKLYFNLYVSTKSLDFPKRKEVVCRGSDDDYSFCRALKGETVNTTVSFSFKEIKFSKGRYKIIAEAIAGSTEEMIFCLNATVIH</Hsp_hseq>
+      <Hsp_midline>M PFL FSTLF  IFTE  +Q+W+CNSSD S+ YTYCD M+YPIS+N+ PCI LK S+G L I YIPRRD+K+LYFNLY++  +++ PKRKEV+CRGSDDDYSFCRALKGETVNTT+SFSFK IKFSKG+YK + EAI+GS EEM+FCL   ++H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>50</Hit_num>
+  <Hit_id>ref|XP_021798141.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X4 [Papio anubis]</Hit_def>
+  <Hit_accession>XP_021798141</Hit_accession>
+  <Hit_len>158</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>187.963</Hsp_bit-score>
+      <Hsp_score>476</Hsp_score>
+      <Hsp_evalue>3.49768e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>110</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>110</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>106</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>110</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKG</Hsp_qseq>
+      <Hsp_hseq>MLPFLFFSTLFSFIFTEAQKHYWVCNSSDASISYTYCDKMQYPISINVNPCIKLKGSRGLLHIFYIPRRDVKQLYFNLYITVNSMTLPKRKEVICRGSDDDYSFCRALKG</Hsp_hseq>
+      <Hsp_midline>MLPFLFFSTLFS IFTEAQK YWVCNSSDASISYTYCDKMQYPISINVNPCI+LK S+GLLHIFYIPRRD+KQLYFNLYITVN+M LPKRKEVICRGSDDDYSFCRALKG</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>51</Hit_num>
+  <Hit_id>ref|XP_007525857.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 isoform X1 [Erinaceus europaeus]</Hit_def>
+  <Hit_accession>XP_007525857</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>187.578</Hsp_bit-score>
+      <Hsp_score>475</Hsp_score>
+      <Hsp_evalue>6.58831e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>130</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMIFPTLFSFVFTKPGEQQWICNSSDLSILYSNCDDMVFPISIKVDPCLSVKGSKGFLHLFYIARRDIKQLYFNLHLSIKSLDFPKRREVICRGSDDDYSFCKAVKGETVNTTISFSYDQIRFPKGTYRFIAEAVTGSTEETLFCLNFTLIHHPDSN</Hsp_hseq>
+      <Hsp_midline>M PF+ F TLFS +FT+  +Q W+CNSSD SI Y+ CD M +PISI V+PC+ +K SKG LH+FYI RRD+KQLYFNL++++ +++ PKR+EVICRGSDDDYSFC+A+KGETVNTTISFS+  I+F KG Y+ + EA++GS EE LFCL F ++H P+SN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>52</Hit_num>
+  <Hit_id>ref|XP_005392134.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Chinchilla lanigera]</Hit_def>
+  <Hit_accession>XP_005392134</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>187.193</Hsp_bit-score>
+      <Hsp_score>474</Hsp_score>
+      <Hsp_evalue>7.1909e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>125</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPLTLFSTLIFPAFTEPQDHHWICSSSDANISYTYCGNKEVPISINVTPCLTLKGSSGTLNIFFIPRRDLRKLYFNLYISFNSMTLPERKEVICSGYDDTYSFCRALKGETVNATVKFSFRGIRFAKGEYNCIAEAITGDMEERLFCLNFTVVHLPHFN</Hsp_hseq>
+      <Hsp_midline>MLP   FSTL    FTE Q  +W+C+SSDA+ISYTYC   + PISINV PC+ LK S G L+IF+IPRRDL++LYFNLYI+ N+M LP+RKEVIC G DD YSFCRALKGETVN T+ FSF+GI+F+KG+Y C+ EAI+G  EE LFCL F ++H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>53</Hit_num>
+  <Hit_id>ref|XP_016009179.2|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Rousettus aegyptiacus]</Hit_def>
+  <Hit_accession>XP_016009179</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>187.193</Hsp_bit-score>
+      <Hsp_score>474</Hsp_score>
+      <Hsp_evalue>8.38107e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>103</Hsp_identity>
+      <Hsp_positive>130</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSVFTQPAEQHWVCNSSDTDIWYTYCDDMKFPISLNVNPCITLKGTRGNLYVSYIPRRDIKKLYFNLYVSFNSMNFPLRTEVVCHGSDDVYSFCRALKGETVNATIPFSFRGLRFTKGRYRCIAEAFSGHIEEKLFCLNFTIIHHPD</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS+FT+  +Q+WVCNSSD  I YTYCD M++PIS+NVNPCI LK ++G L++ YIPRRD+K+LYFNLY++ N+MN P R EV+C GSDD YSFCRALKGETVN TI FSF+G++F+KG+Y+C+ EA SG  EE LFCL F I+H P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>54</Hit_num>
+  <Hit_id>ref|XP_004842102.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Heterocephalus glaber]</Hit_def>
+  <Hit_accession>XP_004842102</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>186.808</Hsp_bit-score>
+      <Hsp_score>473</Hsp_score>
+      <Hsp_evalue>1.21573e-57</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>109</Hsp_identity>
+      <Hsp_positive>133</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFMLFSTLFSPIFTEPEEPLWICSSSDANISYTYCDNKKFPISINIIPCLTLKGSSGSLHIFFIPRRDLKKLYFNLHISFHSMKLPMRKEVICRGYDDEYSFCRALKGESVNATIAFSFKGIRFAKGRYNCVAEAITGDIEERLFCLNFTIEHLPHLN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFS IFTE ++  W+C+SSDA+ISYTYCD  ++PISIN+ PC+ LK S G LHIF+IPRRDLK+LYFNL+I+ ++M LP RKEVICRG DD+YSFCRALKGE+VN TI+FSFKGI+F+KG+Y CV EAI+G  EE LFCL F I H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>55</Hit_num>
+  <Hit_id>ref|XP_007080416.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Panthera tigris]</Hit_def>
+  <Hit_accession>XP_007080416</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>186.808</Hsp_bit-score>
+      <Hsp_score>473</Hsp_score>
+      <Hsp_evalue>1.31248e-57</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>103</Hsp_identity>
+      <Hsp_positive>134</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFILFSTLFSSTFTEPGELQWICNSSDSSVWYSHCDNMKVPISIAIKPCMSMKGSGGYVHLSFIPRRDIKKLYFNLYLSINSMDLPVRKEVICRGSDDVYSFCRALKGETVNTTVHFSFRGIRFSKGQYRCVAEAITGNTEEMLFCLNFTVIYDPNFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS FTE  +  W+CNSSD+S+ Y++CD M+ PISI + PC+ +K S G +H+ +IPRRD+K+LYFNLY+++N+M+LP RKEVICRGSDD YSFCRALKGETVNTT+ FSF+GI+FSKG+Y+CV EAI+G+ EEMLFCL F +++ PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>56</Hit_num>
+  <Hit_id>ref|NP_001277764.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 precursor [Bubalus bubalis]</Hit_def>
+  <Hit_accession>NP_001277764</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>185.267</Hsp_bit-score>
+      <Hsp_score>469</Hsp_score>
+      <Hsp_evalue>4.82436e-57</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>106</Hsp_identity>
+      <Hsp_positive>131</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFLLFSTLFSSIFTEPRENRWVCNSSDATVWYDYCDNLKFPISIRSEPCITLKGSRGILYLYYIPRRDIKSLYFNIYLSTKSMNFPLRKEVICRGYDDDFSFCRALKGETVNTTIQFSFRGIRFSKGQYNCITEAIEGNTEEKLFCLNFTIIHYPDFN</Hsp_hseq>
+      <Hsp_midline>M PFL FSTLFSSIFTE ++  WVCNSSDA++ Y YCD +++PISI   PCI LK S+G+L+++YIPRRD+K LYFN+Y++  +MN P RKEVICRG DDD+SFCRALKGETVNTTI FSF+GI+FSKG+Y C+ EAI G+ EE LFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>57</Hit_num>
+  <Hit_id>ref|NP_001233702.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 precursor [Cricetulus griseus]</Hit_def>
+  <Hit_accession>NP_001233702</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>184.882</Hsp_bit-score>
+      <Hsp_score>468</Hsp_score>
+      <Hsp_evalue>6.55324e-57</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>103</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLPLIFTESEQQLWFCNSSDATFSYSYCDSMKFPFSITAEPCITLKGTNGFLHIKFIPRRDLKKLYFNLSINVNSIEVPTRKEIICHGYDDNYSFCKALKGETVNTVVPFSFKGILFPKGQYRCVAEAIVGDNEEKLFCLNFTIIHHPNVN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL   IFTE+++Q W CNSSDA+ SY+YCD M++P SI   PCI LK + G LHI +IPRRDLK+LYFNL I VN++ +P RKE+IC G DD+YSFC+ALKGETVNT + FSFKGI F KG+Y+CV EAI G  EE LFCL F I+H PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>58</Hit_num>
+  <Hit_id>ref|XP_027803141.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Marmota flaviventris]</Hit_def>
+  <Hit_accession>XP_027803141</Hit_accession>
+  <Hit_len>152</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>183.726</Hsp_bit-score>
+      <Hsp_score>465</Hsp_score>
+      <Hsp_evalue>1.68935e-56</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>152</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>8</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPEEQHWTCSSSDATIAYTYC--------VRPEPCISLKGTEGFLHIFYIPRRDLKQLYFNLYISVNSMNLPKRKEVICRGANDEYSFCRALKGETVNTTIPFSFRGILFLKGRYRCVAEAIAGHTEEKLFCLNFTITYHPRLN</Hsp_hseq>
+      <Hsp_midline>E ++Q+W C+SSDA+I+YTYC        +   PCI LK ++G LHIFYIPRRDLKQLYFNLYI+VN+MNLPKRKEVICRG++D+YSFCRALKGETVNTTI FSF+GI F KG+Y+CV EAI+G  EE LFCL F I + P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>59</Hit_num>
+  <Hit_id>ref|NP_058619.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform A precursor [Mus musculus]</Hit_def>
+  <Hit_accession>NP_058619</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>183.726</Hsp_bit-score>
+      <Hsp_score>465</Hsp_score>
+      <Hsp_evalue>2.28033e-56</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLSPILTESEKQQWFCNSSDAIISYSYCDHLKFPISISSEPCIRLRGTNGFVHVEFIPRGNLKYLYFNLFISVNSIELPKRKEVLCHGHDDDYSFCRALKGETVNTSIPFSFEGILFPKGHYRCVAEAIAGDTEEKLFCLNFTIIHRRDVN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL S I TE++KQ W CNSSDA ISY+YCD +++PISI+  PCI L+ + G +H+ +IPR +LK LYFNL+I+VN++ LPKRKEV+C G DDDYSFCRALKGETVNT+I FSF+GI F KG Y+CV EAI+G  EE LFCL F I+H+ + N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>60</Hit_num>
+  <Hit_id>ref|XP_048639028.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Marmota marmota marmota]</Hit_def>
+  <Hit_accession>XP_048639028</Hit_accession>
+  <Hit_len>170</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>183.341</Hsp_bit-score>
+      <Hsp_score>464</Hsp_score>
+      <Hsp_evalue>3.53863e-56</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>35</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>8</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPEEQHWTCSSSDATIAYTYC--------VRPEPCISLKGTEGFLHIFYIPRRDLKQLYFNLYISVNSMNLPKRKEVICRGANDEYSFCRALKGETVNTTIPFSFRGILFLKGRYRCVAEAIAGHTEEKLFCLNFTITYHPRLN</Hsp_hseq>
+      <Hsp_midline>E ++Q+W C+SSDA+I+YTYC        +   PCI LK ++G LHIFYIPRRDLKQLYFNLYI+VN+MNLPKRKEVICRG++D+YSFCRALKGETVNTTI FSF+GI F KG+Y+CV EAI+G  EE LFCL F I + P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>61</Hit_num>
+  <Hit_id>ref|XP_034346288.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Arvicanthis niloticus]</Hit_def>
+  <Hit_accession>XP_034346288</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>182.956</Hsp_bit-score>
+      <Hsp_score>463</Hsp_score>
+      <Hsp_evalue>3.81288e-56</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>105</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLSPIFTESEKQQWICNSSDAIISYSYCDHMKFPVSISSEPCIRLQGTSGFVHLEFIPRGNLKNLYLNLFINVNSVELPKRKEVVCHGYDDDYSFCRALKGETVNTSIPFSFKGILFSKGHYRCVAEAIAGDTEEKLFCLNFTIIHPRNIN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL S IFTE++KQ W+CNSSDA ISY+YCD M++P+SI+  PCI L+ + G +H+ +IPR +LK LY NL+I VN++ LPKRKEV+C G DDDYSFCRALKGETVNT+I FSFKGI FSKG Y+CV EAI+G  EE LFCL F I+H  N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>62</Hit_num>
+  <Hit_id>ref|XP_006974783.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Peromyscus maniculatus bairdii]</Hit_def>
+  <Hit_accession>XP_006974783</Hit_accession>
+  <Hit_len>159</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>182.956</Hsp_bit-score>
+      <Hsp_score>463</Hsp_score>
+      <Hsp_evalue>4.21086e-56</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>159</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPLILFSTLLSPLVTESEQQ-WICNSSDATLSYSYCDNMKFPITITVEPCITLKGTSGFIYVKFIPRRDLKKLYFNLFISVNSVEVPIRKEVICHGYDDNYSFCRALKGETVTTAVPFSFRGILFSKGQYRCVAEAIVGDNEEKLFCLNFTVIHHPNVN</Hsp_hseq>
+      <Hsp_midline>MLP + FSTL S + TE+++Q W+CNSSDA++SY+YCD M++PI+I V PCI LK + G +++ +IPRRDLK+LYFNL+I+VN++ +P RKEVIC G DD+YSFCRALKGETV T + FSF+GI FSKG+Y+CV EAI G  EE LFCL F ++H PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>63</Hit_num>
+  <Hit_id>ref|XP_004280610.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Orcinus orca]</Hit_def>
+  <Hit_accession>XP_004280610</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>181.415</Hsp_bit-score>
+      <Hsp_score>459</Hsp_score>
+      <Hsp_evalue>1.66908e-55</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>158</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSALFSSTFTEPGEKRWICNSSDTSVWYSYCDNLKFPISINAEPCITLKGGRGNLYLYYIPRRDIKSLYFNIYVSFKSVNFPVRKQVICRGSDDDYSFCRALKGETVNTTISFSFKEIRFSKGRYDCITEAIAGNTEERLLCLNFTIIYHPD</Hsp_hseq>
+      <Hsp_midline>M PF+ FS LFSS FTE  ++ W+CNSSD S+ Y+YCD +++PISIN  PCI LK  +G L+++YIPRRD+K LYFN+Y++  ++N P RK+VICRGSDDDYSFCRALKGETVNTTISFSFK I+FSKG+Y C+ EAI+G+ EE L CL F I++ P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>64</Hit_num>
+  <Hit_id>ref|NP_001019450.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 precursor [Rattus norvegicus]</Hit_def>
+  <Hit_accession>NP_001019450</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>181.03</Hsp_bit-score>
+      <Hsp_score>458</Hsp_score>
+      <Hsp_evalue>2.17004e-55</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>101</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFFLFSTLLSPIFTESERQQWICNSSDAIISYSYCDHMKIPISISSEPCIRLKGTNGFVHVEFIPRGNLKNLYFNLFININSIELPKRKEIVCHGYDDDYSFCRALKGEAVNTAIPFSFDGILFPKGHHRCVAEAIAGDTEEKLFCLNFTIIHHHNVN</Hsp_hseq>
+      <Hsp_midline>MLPF  FSTL S IFTE+++Q W+CNSSDA ISY+YCD M+ PISI+  PCI LK + G +H+ +IPR +LK LYFNL+I +N++ LPKRKE++C G DDDYSFCRALKGE VNT I FSF GI F KG ++CV EAI+G  EE LFCL F I+H  N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>65</Hit_num>
+  <Hit_id>ref|XP_019499119.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Hipposideros armiger]</Hit_def>
+  <Hit_accession>XP_019499119</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>179.489</Hsp_bit-score>
+      <Hsp_score>454</Hsp_score>
+      <Hsp_evalue>9.19122e-55</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFMLLSTLFSSTFTDPVEQHWICNSSDVSVWYTYCDNMRLPISINVTPCLELKGSHGYLLISYIPRRDMKNLYFNLYLSHKSLIFPMRKEVICRESDAQYSFCRALKGETVNTSIYFSFKGIRFSKGLYRFVVEAITGITEELLFCLNFTIIYSPNFN</Hsp_hseq>
+      <Hsp_midline>MLPF+  STLFSS FT+  +Q+W+CNSSD S+ YTYCD M+ PISINV PC+ELK S G L I YIPRRD+K LYFNLY++  ++  P RKEVICR SD  YSFCRALKGETVNT+I FSFKGI+FSKG Y+ VVEAI+G  EE+LFCL F I++ PN N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>66</Hit_num>
+  <Hit_id>ref|XP_036036027.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Onychomys torridus]</Hit_def>
+  <Hit_accession>XP_036036027</Hit_accession>
+  <Hit_len>159</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>179.104</Hsp_bit-score>
+      <Hsp_score>453</Hsp_score>
+      <Hsp_evalue>1.10797e-54</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>159</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>101</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPLILFSTLLSPIVTESEQQ-WICNSSDVTLSYSYCDNMKVPILITVEPCITLKGTSGFIYIKFIPRRDLKKLYINLSINVNSVEVPKRREVICHGEDDDYSFCRALKGETVNTAVPFSFRGILFSKGQYRCVAEAIAGDNEEKLFCLNFTIIHHHNAN</Hsp_hseq>
+      <Hsp_midline>MLP + FSTL S I TE+++Q W+CNSSD ++SY+YCD M+ PI I V PCI LK + G ++I +IPRRDLK+LY NL I VN++ +PKR+EVIC G DDDYSFCRALKGETVNT + FSF+GI FSKG+Y+CV EAI+G  EE LFCL F I+H  N+N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>67</Hit_num>
+  <Hit_id>pdb|7MLM|C</Hit_id>
+  <Hit_def>Chain C, Lymphocyte antigen 96 [Mus musculus]</Hit_def>
+  <Hit_accession>7MLM_C</Hit_accession>
+  <Hit_len>188</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>179.874</Hsp_bit-score>
+      <Hsp_score>455</Hsp_score>
+      <Hsp_evalue>1.37672e-54</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>40</Hsp_hit-from>
+      <Hsp_hit-to>183</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>90</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>DPEKQQWFCNSSDAIISYSYCDHLKFPISISSEPCIRLRGTNGFVHVEFIPRGNLKYLYFNLFISVNSIELPKRKEVLCHGHDDDYSFCRALKGETVNTSIPFSFEGILFPKGHYRCVAEAIAGDTEEKLFCLNFTIIHRRDVN</Hsp_hseq>
+      <Hsp_midline>+ +KQ W CNSSDA ISY+YCD +++PISI+  PCI L+ + G +H+ +IPR +LK LYFNL+I+VN++ LPKRKEV+C G DDDYSFCRALKGETVNT+I FSF+GI F KG Y+CV EAI+G  EE LFCL F I+H+ + N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>68</Hit_num>
+  <Hit_id>ref|XP_027629382.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Tupaia chinensis]</Hit_def>
+  <Hit_accession>XP_027629382</Hit_accession>
+  <Hit_len>145</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>178.333</Hsp_bit-score>
+      <Hsp_score>451</Hsp_score>
+      <Hsp_evalue>1.70075e-54</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>145</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>114</Hsp_positive>
+      <Hsp_gaps>15</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPEKQHWVCNSSDVSISYTYC---------------ELAGTKGFLHLFYIPRRDLKKLYFNLYISVNSMNLPKRKEVICRGFDDDYSFCKAVKGESINTTIPFSFKGIRFPKGQYRCVAEAIVGNTEEMLFCLNFTIIYHPHLN</Hsp_hseq>
+      <Hsp_midline>E +KQ+WVCNSSD SISYTYC               EL  +KG LH+FYIPRRDLK+LYFNLYI+VN+MNLPKRKEVICRG DDDYSFC+A+KGE++NTTI FSFKGI+F KG+Y+CV EAI G+ EEMLFCL F I++ P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>69</Hit_num>
+  <Hit_id>ref|XP_046497552.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Equus quagga]</Hit_def>
+  <Hit_accession>XP_046497552</Hit_accession>
+  <Hit_len>131</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>177.178</Hsp_bit-score>
+      <Hsp_score>448</Hsp_score>
+      <Hsp_evalue>2.66815e-54</Hsp_evalue>
+      <Hsp_query-from>31</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>2</Hsp_hit-from>
+      <Hsp_hit-to>131</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>88</Hsp_identity>
+      <Hsp_positive>111</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>130</Hsp_align-len>
+      <Hsp_qseq>SISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>SIWYTYCDNMKSPISINLEPCIELKGTSGHLHMLFVPRRDIKKLYFNLYLTMNSLEFPMRKEVICRGSDDDYSFCRALKGETVNTTVSFSFRGMRFPKGRYRCIAEAVVGNTEEALFCLNFTLLHQPSFN</Hsp_hseq>
+      <Hsp_midline>SI YTYCD M+ PISIN+ PCIELK + G LH+ ++PRRD+K+LYFNLY+T+N++  P RKEVICRGSDDDYSFCRALKGETVNTT+SFSF+G++F KG+Y+C+ EA+ G+ EE LFCL F +LHQP+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>70</Hit_num>
+  <Hit_id>ref|XP_037361605.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Talpa occidentalis]</Hit_def>
+  <Hit_accession>XP_037361605</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>177.948</Hsp_bit-score>
+      <Hsp_score>450</Hsp_score>
+      <Hsp_evalue>3.41378e-54</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSTFTDPGEQRWVCNSSDASVWYSYCDNINYHIAVNVTPCITLKRSSGYLHIFYIPRRNIENLYFNLYLSLYSMKYPIRTEIICQGADDIYSFCGAQKGETVHTKVRFSFTGVQFSKGRYKLLAEAISGSTEDRLFCLNFTVIHRPNSN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS FT+  +Q WVCNSSDAS+ Y+YCD + Y I++NV PCI LKRS G LHIFYIPRR+++ LYFNLY+++ +M  P R E+IC+G+DD YSFC A KGETV+T + FSF G++FSKG+YK + EAISGS E+ LFCL F ++H+PNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>71</Hit_num>
+  <Hit_id>ref|XP_045417330.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Lemur catta]</Hit_def>
+  <Hit_accession>XP_045417330</Hit_accession>
+  <Hit_len>131</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>176.407</Hsp_bit-score>
+      <Hsp_score>446</Hsp_score>
+      <Hsp_evalue>6.13022e-54</Hsp_evalue>
+      <Hsp_query-from>36</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>7</Hsp_hit-from>
+      <Hsp_hit-to>131</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>93</Hsp_identity>
+      <Hsp_positive>110</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>125</Hsp_align-len>
+      <Hsp_qseq>YCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>FQDHMDYPISINVNPCIALKGTKGLLHIYYIPRRDLNKLYFNIYISVNSMEIPKRKEVICRGSDDIYSFCRALKGETVNTTVSFSFTGIRFSKGKYRVVIEAITGSTEEMLFCLNFTLIYRPRLN</Hsp_hseq>
+      <Hsp_midline>+ D M YPISINVNPCI LK +KGLLHI+YIPRRDL +LYFN+YI+VN+M +PKRKEVICRGSDD YSFCRALKGETVNTT+SFSF GI+FSKGKY+ V+EAI+GS EEMLFCL F ++++P  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>72</Hit_num>
+  <Hit_id>ref|XP_040850143.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Ochotona curzoniae]</Hit_def>
+  <Hit_accession>XP_040850143</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>176.792</Hsp_bit-score>
+      <Hsp_score>447</Hsp_score>
+      <Hsp_evalue>9.75191e-54</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>87</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPENHHWFCNSSDTIFYFSYCDNMKIPFSITVKPCITLKGTEGLLYIYYIPRQDLSKLYLNIYITANSMVLPVRKQVLCQGSSDVYSFCRAMKGETLNTTVPFSFKGIRFLKGQYRCVIEGIAGSAEEMIFCLNFTIIHRPHIN</Hsp_hseq>
+      <Hsp_midline>E +  +W CNSSD    ++YCD M+ P SI V PCI LK ++GLL+I+YIPR+DL +LY N+YIT N+M LP RK+V+C+GS D YSFCRA+KGET+NTT+ FSFKGI+F KG+Y+CV+E I+GS EEM+FCL F I+H+P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>73</Hit_num>
+  <Hit_id>ref|NP_001098426.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Sus scrofa]</Hit_def>
+  <Hit_accession>NP_001098426</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>176.022</Hsp_bit-score>
+      <Hsp_score>445</Hsp_score>
+      <Hsp_evalue>1.96324e-53</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSIFTEPREKMWICNSSDASLWYNYCDDMKFPISVKVEPCVTIKGTKGKLHLYYIARRDIQKLYLNLHISIKSMTLPMRKEVICREYGGDYSFCGALKGETVNTTIPFSFQGIRFSPGQYHCVVEAISGNSEEMLFCLNFTIIHYSSLN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIFTE +++ W+CNSSDAS+ Y YCD M++PIS+ V PC+ +K +KG LH++YI RRD+++LY NL+I++ +M LP RKEVICR    DYSFC ALKGETVNTTI FSF+GI+FS G+Y CVVEAISG+ EEMLFCL F I+H  + N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>74</Hit_num>
+  <Hit_id>ref|XP_031222810.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Mastomys coucha]</Hit_def>
+  <Hit_accession>XP_031222810</Hit_accession>
+  <Hit_len>181</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>176.792</Hsp_bit-score>
+      <Hsp_score>447</Hsp_score>
+      <Hsp_evalue>1.99796e-53</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>156</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>128</Hsp_positive>
+      <Hsp_gaps>2</Hsp_gaps>
+      <Hsp_align-len>157</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDD-YSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQ</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLSPIFTESEKQQWICNSSDAIISYSYCDHMKFPISISSEPCIRLRGTNGFVHIEFIP-RNLRNLYFNLFINVNSIELPKRKEVVCHGHDDDEYSFCRALKGETVNTSVPFSFEGIRFPKGHHRCVVEAIAGDTEEKLFCLNFTIIHH</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL S IFTE++KQ W+CNSSDA ISY+YCD M++PISI+  PCI L+ + G +HI +IP R+L+ LYFNL+I VN++ LPKRKEV+C G DDD YSFCRALKGETVNT++ FSF+GI+F KG ++CVVEAI+G  EE LFCL F I+H </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>75</Hit_num>
+  <Hit_id>ref|XP_006860131.1|</Hit_id>
+  <Hit_def>PREDICTED: lymphocyte antigen 96 [Chrysochloris asiatica]</Hit_def>
+  <Hit_accession>XP_006860131</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>175.637</Hsp_bit-score>
+      <Hsp_score>444</Hsp_score>
+      <Hsp_evalue>2.55227e-53</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>155</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>87</Hsp_identity>
+      <Hsp_positive>110</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>139</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>DLEKQHWICNSSDLSVWYTYCDKMKHSISIKLEPCLTLKGGRGYLQLSYIPRRDIKKLYFNIYMYLKTIEFPMRTEVVCRGFDDQYSFCRAVKGETVNTTIPFSFNEIHFSKGQYRIVTEAIAGSPEEMLFCLNFTAIH</Hsp_hseq>
+      <Hsp_midline>+ +KQ+W+CNSSD S+ YTYCDKM++ ISI + PC+ LK  +G L + YIPRRD+K+LYFN+Y+ + T+  P R EV+CRG DD YSFCRA+KGETVNTTI FSF  I FSKG+Y+ V EAI+GSPEEMLFCL F  +H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>76</Hit_num>
+  <Hit_id>pdb|2Z64|C</Hit_id>
+  <Hit_def>Crystal structure of mouse TLR4 and mouse MD-2 complex [Mus musculus]</Hit_def>
+  <Hit_accession>2Z64_C</Hit_accession>
+  <Hit_len>135</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>174.481</Hsp_bit-score>
+      <Hsp_score>441</Hsp_score>
+      <Hsp_evalue>4.01116e-53</Hsp_evalue>
+      <Hsp_query-from>21</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>135</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>88</Hsp_identity>
+      <Hsp_positive>109</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>135</Hsp_align-len>
+      <Hsp_qseq>QYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>QQWFCNSSDAIISYSYCDHLKFPISISSEPCIRLRGTNGFVHVEFIPRGNLKYLYFNLFISVNSIELPKRKEVLCHGHDDDYSFCRALKGETVNTSIPFSFEGILFPKGHYRCVAEAIAGDTEEKLFCLNFTIIH</Hsp_hseq>
+      <Hsp_midline>Q W CNSSDA ISY+YCD +++PISI+  PCI L+ + G +H+ +IPR +LK LYFNL+I+VN++ LPKRKEV+C G DDDYSFCRALKGETVNT+I FSF+GI F KG Y+CV EAI+G  EE LFCL F I+H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>77</Hit_num>
+  <Hit_id>ref|XP_004588112.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Ochotona princeps]</Hit_def>
+  <Hit_accession>XP_004588112</Hit_accession>
+  <Hit_len>160</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>175.252</Hsp_bit-score>
+      <Hsp_score>443</Hsp_score>
+      <Hsp_evalue>4.17429e-53</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>160</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>86</Hsp_identity>
+      <Hsp_positive>114</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>144</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EPENHHWFCNTSDTIMYYNYCDNMKVPISMTVKPCITLKGTKGLVYVYYIPRQDLSKLYLNLYITANSVDLPMRKHVLCQGSSDVYSLCRAMKGETLNTTVPFSFKGIRFPKGHYRCVVEGIAGSAEEMIFCLNFTIIHRPHIN</Hsp_hseq>
+      <Hsp_midline>E +  +W CN+SD  + Y YCD M+ PIS+ V PCI LK +KGL++++YIPR+DL +LY NLYIT N+++LP RK V+C+GS D YS CRA+KGET+NTT+ FSFKGI+F KG Y+CVVE I+GS EEM+FCL F I+H+P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>78</Hit_num>
+  <Hit_id>ref|XP_017377399.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Cebus imitator]</Hit_def>
+  <Hit_accession>XP_017377399</Hit_accession>
+  <Hit_len>130</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>173.711</Hsp_bit-score>
+      <Hsp_score>439</Hsp_score>
+      <Hsp_evalue>7.20056e-53</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>130</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>113</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>30</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFIFFSTLFSSMFTEAQKQHWICNSSDASISYTYCG------------------------------RDLKQLYFNLYITVNSMNLPKRKEVICPGSDDDYSFCRALKGETLNITVPFSFKGIKFSKGRYKCVAEAISGSPEEVLFCLEFAIIHHPNSN</Hsp_hseq>
+      <Hsp_midline>MLPF+FFSTLFSS+FTEAQKQ+W+CNSSDASISYTYC                               RDLKQLYFNLYITVN+MNLPKRKEVIC GSDDDYSFCRALKGET+N T+ FSFKGIKFSKG+YKCV EAISGSPEE+LFCLEF I+H PNSN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>79</Hit_num>
+  <Hit_id>gb|KAG5204936.1|</Hit_id>
+  <Hit_def>hypothetical protein JEQ12_019381 [Ovis aries]</Hit_def>
+  <Hit_accession>KAG5204936</Hit_accession>
+  <Hit_len>362</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>181.03</Hsp_bit-score>
+      <Hsp_score>458</Hsp_score>
+      <Hsp_evalue>7.605e-53</Hsp_evalue>
+      <Hsp_query-from>20</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>222</Hsp_hit-from>
+      <Hsp_hit-to>362</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>141</Hsp_align-len>
+      <Hsp_qseq>KQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>EKRWVCNSSDATVWYDYCDNLKFPISIRSEPCITLKGSRGILYLYYIPRRDIRSLYFNIYLSTKHMNFPLRKEVICRGYDDDFSFCRALKGETVNTTIQFSFKGIRFSKGQYNCITEAIEGNTEEKLFCLNFTIIHYPDFN</Hsp_hseq>
+      <Hsp_midline>++ WVCNSSDA++ Y YCD +++PISI   PCI LK S+G+L+++YIPRRD++ LYFN+Y++   MN P RKEVICRG DDD+SFCRALKGETVNTTI FSFKGI+FSKG+Y C+ EAI G+ EE LFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>80</Hit_num>
+  <Hit_id>ref|XP_012590813.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Microcebus murinus]</Hit_def>
+  <Hit_accession>XP_012590813</Hit_accession>
+  <Hit_len>148</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>173.326</Hsp_bit-score>
+      <Hsp_score>438</Hsp_score>
+      <Hsp_evalue>1.75234e-52</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>78</Hsp_identity>
+      <Hsp_positive>90</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>100</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>EPGKQNWVCNSSDASIWYTYCDHMEYPISVNVNPCITLKGTRGLLHLYFIPRRDLNKLYFNLYISINSMELPKRKEVICRGSNDIYSFCRALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>E  KQ WVCNSSDASI YTYCD M+YPIS+NVNPCI LK ++GLLH+++IPRRDL +LYFNLYI++N+M LPKRKEVICRGS+D YSFCRALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>81</Hit_num>
+  <Hit_id>ref|XP_038203562.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Arvicola amphibius]</Hit_def>
+  <Hit_accession>XP_038203562</Hit_accession>
+  <Hit_len>159</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>172.17</Hsp_bit-score>
+      <Hsp_score>435</Hsp_score>
+      <Hsp_evalue>6.49686e-52</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>157</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLPPTFAESEQQ-WVCNSSDTTVSYSYCDNMKFPILITSEPCITLKGTSGFVYINFIPRRDLKKLYFNLSIHVNSVKVPVREEVVCHGYDDDYSFCRALKGETVNTRVPFSFKGILFPKGRYRCIAEAIVGDDQERLFCLNFTLIHRPN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL    F E+++Q WVCNSSD ++SY+YCD M++PI I   PCI LK + G ++I +IPRRDLK+LYFNL I VN++ +P R+EV+C G DDDYSFCRALKGETVNT + FSFKGI F KG+Y+C+ EAI G  +E LFCL F ++H+PN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>82</Hit_num>
+  <Hit_id>ref|XP_048276407.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Myodes glareolus]</Hit_def>
+  <Hit_accession>XP_048276407</Hit_accession>
+  <Hit_len>173</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>172.17</Hsp_bit-score>
+      <Hsp_score>435</Hsp_score>
+      <Hsp_evalue>1.21486e-51</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>15</Hsp_hit-from>
+      <Hsp_hit-to>173</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>122</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLLPPTFAESEQQ-WFCNSSDATVSYSYCDNMKFPISITSEPCVTLKGSSGFVYINFIPRRDLKKLYFNLSIHVNSVKLPAREETICHGYDDNYSFCRALKGETVNTRVSFSFKGVLLPKGRYSCIAEAIVGDDQERLFCLNFTVIHRHNVN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTL    F E+++Q W CNSSDA++SY+YCD M++PISI   PC+ LK S G ++I +IPRRDLK+LYFNL I VN++ LP R+E IC G DD+YSFCRALKGETVNT +SFSFKG+   KG+Y C+ EAI G  +E LFCL F ++H+ N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>83</Hit_num>
+  <Hit_id>ref|XP_036686369.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Balaenoptera musculus]</Hit_def>
+  <Hit_accession>XP_036686369</Hit_accession>
+  <Hit_len>152</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>169.088</Hsp_bit-score>
+      <Hsp_score>427</Hsp_score>
+      <Hsp_evalue>8.83776e-51</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>150</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>8</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSTFTEPGEKLWICNSSDTSVWYSYC--------VNSEPCITLKGGRGNLYLYYIPRRDLKSLYFNIYVSFKSVNFPVRKEVICRGSDDDYSFCRALKGETVNTTISFSFKGIRFSKGRYNCITEAIAGNTEERLFCLNFTVIHHPD</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS FTE  ++ W+CNSSD S+ Y+YC        +N  PCI LK  +G L+++YIPRRDLK LYFN+Y++  ++N P RKEVICRGSDDDYSFCRALKGETVNTTISFSFKGI+FSKG+Y C+ EAI+G+ EE LFCL F ++H P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>84</Hit_num>
+  <Hit_id>ref|XP_032172797.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Mustela erminea]</Hit_def>
+  <Hit_accession>XP_032172797</Hit_accession>
+  <Hit_len>173</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>168.318</Hsp_bit-score>
+      <Hsp_score>425</Hsp_score>
+      <Hsp_evalue>3.32437e-50</Hsp_evalue>
+      <Hsp_query-from>38</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>51</Hsp_hit-from>
+      <Hsp_hit-to>173</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>86</Hsp_identity>
+      <Hsp_positive>104</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>123</Hsp_align-len>
+      <Hsp_qseq>DKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>DDMKAPISIEVKPCITLKGSKGYLHLSYIPRRDIKKLYFNIYLSFNSMDFPMRKEVVCRGSDDLYSFCRALKGETVNTAVSFSFRGLRFSKGRYRCVAEAISGDPEEMLFCLNFTIIHHPDFN</Hsp_hseq>
+      <Hsp_midline>D M+ PISI V PCI LK SKG LH+ YIPRRD+K+LYFN+Y++ N+M+ P RKEV+CRGSDD YSFCRALKGETVNT +SFSF+G++FSKG+Y+CV EAISG PEEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>85</Hit_num>
+  <Hit_id>ref|XP_034524103.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Ailuropoda melanoleuca]</Hit_def>
+  <Hit_accession>XP_034524103</Hit_accession>
+  <Hit_len>135</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>166.777</Hsp_bit-score>
+      <Hsp_score>421</Hsp_score>
+      <Hsp_evalue>4.45464e-50</Hsp_evalue>
+      <Hsp_query-from>34</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>9</Hsp_hit-from>
+      <Hsp_hit-to>135</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>87</Hsp_identity>
+      <Hsp_positive>105</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>127</Hsp_align-len>
+      <Hsp_qseq>YTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>YTMLDNMKVPISIDPKPCITLKGSRGYLHLSYIPRRDIKKLYFKLYLSFNSMHFPMRKEVICRGSDDVYSFCRALKGETVNTAVSFSYKGIRFSKGQYRCVAEAVSGDPEEMLFCLNFTIIHHPDFN</Hsp_hseq>
+      <Hsp_midline>YT  D M+ PISI+  PCI LK S+G LH+ YIPRRD+K+LYF LY++ N+M+ P RKEVICRGSDD YSFCRALKGETVNT +SFS+KGI+FSKG+Y+CV EA+SG PEEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>86</Hit_num>
+  <Hit_id>ref|XP_044100396.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Neogale vison]</Hit_def>
+  <Hit_accession>XP_044100396</Hit_accession>
+  <Hit_len>140</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>166.392</Hsp_bit-score>
+      <Hsp_score>420</Hsp_score>
+      <Hsp_evalue>7.48298e-50</Hsp_evalue>
+      <Hsp_query-from>38</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>18</Hsp_hit-from>
+      <Hsp_hit-to>138</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>83</Hsp_identity>
+      <Hsp_positive>102</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>121</Hsp_align-len>
+      <Hsp_qseq>DKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>DDMKAPISIELKPCITLKGSKGYLHLSYIPRRDIKKLYFNIYLSFNSMDFPMRKEVVCRGSDDLYSFCRALKGETVNTAVSFSFRALRFSKGRYRCVAEAISGDPEEMLFCLNFTIIHHPD</Hsp_hseq>
+      <Hsp_midline>D M+ PISI + PCI LK SKG LH+ YIPRRD+K+LYFN+Y++ N+M+ P RKEV+CRGSDD YSFCRALKGETVNT +SFSF+ ++FSKG+Y+CV EAISG PEEMLFCL F I+H P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>87</Hit_num>
+  <Hit_id>ref|XP_010586659.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Loxodonta africana]</Hit_def>
+  <Hit_accession>XP_010586659</Hit_accession>
+  <Hit_len>154</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>166.392</Hsp_bit-score>
+      <Hsp_score>420</Hsp_score>
+      <Hsp_evalue>9.55041e-50</Hsp_evalue>
+      <Hsp_query-from>38</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>37</Hsp_hit-from>
+      <Hsp_hit-to>154</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>84</Hsp_identity>
+      <Hsp_positive>105</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>118</Hsp_align-len>
+      <Hsp_qseq>DKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>DNLKYPILLNLTPCITLKASKGHLHVYYVPRRDIKKLYFNLYISFNSISLPKRKEVVCRGSEDDYSFCRALKGETVTATIPFSFKGIKFSKGQYRCVAEAMTGSPEEMLFCLNFTLIH</Hsp_hseq>
+      <Hsp_midline>D ++YPI +N+ PCI LK SKG LH++Y+PRRD+K+LYFNLYI+ N+++LPKRKEV+CRGS+DDYSFCRALKGETV  TI FSFKGIKFSKG+Y+CV EA++GSPEEMLFCL F ++H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>88</Hit_num>
+  <Hit_id>ref|XP_023401578.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X3 [Loxodonta africana]</Hit_def>
+  <Hit_accession>XP_023401578</Hit_accession>
+  <Hit_len>152</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>165.236</Hsp_bit-score>
+      <Hsp_score>417</Hsp_score>
+      <Hsp_evalue>3.11768e-49</Hsp_evalue>
+      <Hsp_query-from>38</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>35</Hsp_hit-from>
+      <Hsp_hit-to>152</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>84</Hsp_identity>
+      <Hsp_positive>105</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>118</Hsp_align-len>
+      <Hsp_qseq>DKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILH</Hsp_qseq>
+      <Hsp_hseq>DNLKYPILLNLTPCITLKASKGHLHVYYVPRRDIKKLYFNLYISFNSISLPKRKEVVCRGSEDDYSFCRALKGETVTATIPFSFKGIKFSKGQYRCVAEAMTGSPEEMLFCLNFTLIH</Hsp_hseq>
+      <Hsp_midline>D ++YPI +N+ PCI LK SKG LH++Y+PRRD+K+LYFNLYI+ N+++LPKRKEV+CRGS+DDYSFCRALKGETV  TI FSFKGIKFSKG+Y+CV EA++GSPEEMLFCL F ++H</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>89</Hit_num>
+  <Hit_id>ref|XP_005361918.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Microtus ochrogaster]</Hit_def>
+  <Hit_accession>XP_005361918</Hit_accession>
+  <Hit_len>174</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>164.081</Hsp_bit-score>
+      <Hsp_score>414</Hsp_score>
+      <Hsp_evalue>1.96909e-48</Hsp_evalue>
+      <Hsp_query-from>19</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>32</Hsp_hit-from>
+      <Hsp_hit-to>172</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>86</Hsp_identity>
+      <Hsp_positive>105</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>141</Hsp_align-len>
+      <Hsp_qseq>QKQYWVCNSSDASISYTYCDKMQ-YPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>SEQQWFCNSSDTTISYTYCDNMKSYPILITSEPCITLKGTSGFVYVNFIPRRDLKKLYFNLSVHVNSVKIPVREEVICHGYDDDYSFCRALKGETVNTRVPFSFKGVILPKGRYKCIAEAIVGDDRERLFCLNFTIVHGTN</Hsp_hseq>
+      <Hsp_midline> +Q W CNSSD +ISYTYCD M+ YPI I   PCI LK + G +++ +IPRRDLK+LYFNL + VN++ +P R+EVIC G DDDYSFCRALKGETVNT + FSFKG+   KG+YKC+ EAI G   E LFCL F I+H  N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>90</Hit_num>
+  <Hit_id>ref|XP_029409842.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X1 [Nannospalax galili]</Hit_def>
+  <Hit_accession>XP_029409842</Hit_accession>
+  <Hit_len>204</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>164.081</Hsp_bit-score>
+      <Hsp_score>414</Hsp_score>
+      <Hsp_evalue>3.95057e-48</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>84</Hsp_identity>
+      <Hsp_positive>101</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>MLPFILFSTLFSPIFTESEEQLWVCNSSDTTISYTYCDNIKFPISISAEPCITLKGTNGILHIVFIPRRDIKKLYFNLFINLNSMVLPKRKEVICRGYDDDYSFCSALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFS IFTE+++Q WVCNSSD +ISYTYCD +++PISI+  PCI LK + G+LHI +IPRRD+K+LYFNL+I +N+M LPKRKEVICRG DDDYSFC ALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>91</Hit_num>
+  <Hit_id>gb|KAF7478708.1|</Hit_id>
+  <Hit_def>hypothetical protein GHT09_010104 [Marmota monax]</Hit_def>
+  <Hit_accession>KAF7478708</Hit_accession>
+  <Hit_len>113</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>156.762</Hsp_bit-score>
+      <Hsp_score>395</Hsp_score>
+      <Hsp_evalue>1.62718e-46</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>111</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>111</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>67</Hsp_identity>
+      <Hsp_positive>85</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>95</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGE</Hsp_qseq>
+      <Hsp_hseq>EPEEQHWTCSSSDATIAYTYCDDIKFPILVRPEPCISLKGTEGFLHIFYIPRRDLKQLYFNLYISVNSMNLPKRKEVICRGANDEYSFCRALKGD</Hsp_hseq>
+      <Hsp_midline>E ++Q+W C+SSDA+I+YTYCD +++PI +   PCI LK ++G LHIFYIPRRDLKQLYFNLYI+VN+MNLPKRKEVICRG++D+YSFCRALKG+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>92</Hit_num>
+  <Hit_id>ref|XP_047406136.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96-like [Neosciurus carolinensis]</Hit_def>
+  <Hit_accession>XP_047406136</Hit_accession>
+  <Hit_len>230</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>160.229</Hsp_bit-score>
+      <Hsp_score>404</Hsp_score>
+      <Hsp_evalue>3.325e-46</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>70</Hsp_identity>
+      <Hsp_positive>86</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>100</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>EPEEQHWSCNSSDATMEYTYCDDIKFPILITPEPCISLKGTEGFLRVYYIPRRDLKQLYFNLYISVNSMNLPKRKEVICEGSNDEYSICRALKGETVNTT</Hsp_hseq>
+      <Hsp_midline>E ++Q+W CNSSDA++ YTYCD +++PI I   PCI LK ++G L ++YIPRRDLKQLYFNLYI+VN+MNLPKRKEVIC GS+D+YS CRALKGETVNTT</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>93</Hit_num>
+  <Hit_id>ref|XP_039697828.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Pteropus giganteus]</Hit_def>
+  <Hit_accession>XP_039697828</Hit_accession>
+  <Hit_len>139</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>156.762</Hsp_bit-score>
+      <Hsp_score>395</Hsp_score>
+      <Hsp_evalue>4.22015e-46</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>139</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>118</Hsp_positive>
+      <Hsp_gaps>21</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSPIFTEPAEQHWICNSSDTDIWYTYCDNMKFPISLNLNPCIELKGSRGYLHIFYIPMR---------------------KEVICHGSDDEYSFCRALKGETVNTTISFSFKGIRFSKGQYRCIAEAITGYTEEKLFCLNFTIIYHPDFN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFS IFTE  +Q+W+CNSSD  I YTYCD M++PIS+N+NPCIELK S+G LHIFYIP R                     KEVIC GSDD+YSFCRALKGETVNTTISFSFKGI+FSKG+Y+C+ EAI+G  EE LFCL F I++ P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>94</Hit_num>
+  <Hit_id>ref|XP_012667006.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Otolemur garnettii]</Hit_def>
+  <Hit_accession>XP_012667006</Hit_accession>
+  <Hit_len>130</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>156.377</Hsp_bit-score>
+      <Hsp_score>394</Hsp_score>
+      <Hsp_evalue>4.37594e-46</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>128</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>114</Hsp_positive>
+      <Hsp_gaps>30</Hsp_gaps>
+      <Hsp_align-len>158</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>MFPFMLFSTLFSSTFTEPGKQYWVCNSSDASISYTYCG------------------------------RDIQKLYFNLYISVNSMKLPKRKEVICRGSDDSYSFCRALKGETVNATISFSFKGIRFSKGRYRCIAEAIAGSNEEMLFCLNFTIIHHPN</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSS FTE  KQYWVCNSSDASISYTYC                               RD+++LYFNLYI+VN+M LPKRKEVICRGSDD YSFCRALKGETVN TISFSFKGI+FSKG+Y+C+ EAI+GS EEMLFCL F I+H PN</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>95</Hit_num>
+  <Hit_id>ref|XP_032466018.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Phocoena sinus]</Hit_def>
+  <Hit_accession>XP_032466018</Hit_accession>
+  <Hit_len>128</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>155.606</Hsp_bit-score>
+      <Hsp_score>392</Hsp_score>
+      <Hsp_evalue>8.2765e-46</Hsp_evalue>
+      <Hsp_query-from>35</Hsp_query-from>
+      <Hsp_query-to>158</Hsp_query-to>
+      <Hsp_hit-from>3</Hsp_hit-from>
+      <Hsp_hit-to>126</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>80</Hsp_identity>
+      <Hsp_positive>102</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>124</Hsp_align-len>
+      <Hsp_qseq>TYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPN</Hsp_qseq>
+      <Hsp_hseq>TFHDNLKFPISINAEPCITLKGGRGNLYLYYIPRRDIKSLYFNIYVSFKSVNFPVRKEVICRGSDDDYSFCRALKGETVNTTISFSFKEIRFSKGRYNCITEAIAGNTEERLLCLNFTIIYHPD</Hsp_hseq>
+      <Hsp_midline>T+ D +++PISIN  PCI LK  +G L+++YIPRRD+K LYFN+Y++  ++N P RKEVICRGSDDDYSFCRALKGETVNTTISFSFK I+FSKG+Y C+ EAI+G+ EE L CL F I++ P+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>96</Hit_num>
+  <Hit_id>gb|KAF6100087.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 [Phyllostomus discolor]</Hit_def>
+  <Hit_accession>KAF6100087</Hit_accession>
+  <Hit_len>121</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>155.221</Hsp_bit-score>
+      <Hsp_score>391</Hsp_score>
+      <Hsp_evalue>9.65106e-46</Hsp_evalue>
+      <Hsp_query-from>40</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>121</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>83</Hsp_identity>
+      <Hsp_positive>100</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>121</Hsp_align-len>
+      <Hsp_qseq>MQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MEYPISLMPEPCITLKGSNGYLHISFIPRRDIKKLYFNLYLSFNTLEFPTRTEVICRGSDDEYSFCRALKGETVNTSVPFSFKGILFSKGRYRFVVEAIAGNTEEMLFCLNFTIIHYPDIN</Hsp_hseq>
+      <Hsp_midline>M+YPIS+   PCI LK S G LHI +IPRRD+K+LYFNLY++ NT+  P R EVICRGSDD+YSFCRALKGETVNT++ FSFKGI FSKG+Y+ VVEAI+G+ EEMLFCL F I+H P+ N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>97</Hit_num>
+  <Hit_id>ref|XP_048214944.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Perognathus longimembris pacificus]</Hit_def>
+  <Hit_accession>XP_048214944</Hit_accession>
+  <Hit_len>139</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>154.066</Hsp_bit-score>
+      <Hsp_score>388</Hsp_score>
+      <Hsp_evalue>5.32473e-45</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>160</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>136</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>95</Hsp_identity>
+      <Hsp_positive>115</Hsp_positive>
+      <Hsp_gaps>24</Hsp_gaps>
+      <Hsp_align-len>160</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQPNSN</Hsp_qseq>
+      <Hsp_hseq>MLPFVLFSTLFSSTFTEPEEPPWACNSSDATFAYTYCDNMKYPISVSTEPCIALKGTKGLIHIFYIPK------------------------VICKGSDDDYSFCRALKGETVNTTVPFSFRGIQFPKGRYNCVIEAIAGDPEEKLFCLNFTIIHRHNKN</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFSS FTE ++  W CNSSDA+ +YTYCD M+YPIS++  PCI LK +KGL+HIFYIP+                        VIC+GSDDDYSFCRALKGETVNTT+ FSF+GI+F KG+Y CV+EAI+G PEE LFCL F I+H+ N N</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>98</Hit_num>
+  <Hit_id>ref|XP_022373641.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Enhydra lutris kenyoni]</Hit_def>
+  <Hit_accession>XP_022373641</Hit_accession>
+  <Hit_len>130</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>153.295</Hsp_bit-score>
+      <Hsp_score>386</Hsp_score>
+      <Hsp_evalue>9.0377e-45</Hsp_evalue>
+      <Hsp_query-from>17</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>69</Hsp_identity>
+      <Hsp_positive>81</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>100</Hsp_align-len>
+      <Hsp_qseq>EAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>EPGEQRWVCNSSDLSVWYTYCDDMKVPISIEPKPCITLKGSKGYLHLSYIPRRDIKKLYFNIYLSFNSMDFPMRKEVVCRGSDDLYSFCRALKGETVNTA</Hsp_hseq>
+      <Hsp_midline>E  +Q WVCNSSD S+ YTYCD M+ PISI   PCI LK SKG LH+ YIPRRD+K+LYFN+Y++ N+M+ P RKEV+CRGSDD YSFCRALKGETVNT </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>99</Hit_num>
+  <Hit_id>ref|XP_023401579.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X4 [Loxodonta africana]</Hit_def>
+  <Hit_accession>XP_023401579</Hit_accession>
+  <Hit_len>132</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>152.14</Hsp_bit-score>
+      <Hsp_score>383</Hsp_score>
+      <Hsp_evalue>2.13553e-44</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>116</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>116</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>77</Hsp_identity>
+      <Hsp_positive>97</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>116</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTT</Hsp_qseq>
+      <Hsp_hseq>MFPFVLFSTLFSSIFPEPGEQRWVCNSSDLSVWYTYCDNLKYPILLNLTPCITLKASKGHLHVYYVPRRDIKKLYFNLYISFNSISLPKRKEVVCRGSEDDYSFCRALKGGSGGVS</Hsp_hseq>
+      <Hsp_midline>M PF+ FSTLFSSIF E  +Q WVCNSSD S+ YTYCD ++YPI +N+ PCI LK SKG LH++Y+PRRD+K+LYFNLYI+ N+++LPKRKEV+CRGS+DDYSFCRALKG +   +</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>100</Hit_num>
+  <Hit_id>ref|XP_012999613.1|</Hit_id>
+  <Hit_def>lymphocyte antigen 96 isoform X2 [Cavia porcellus]</Hit_def>
+  <Hit_accession>XP_012999613</Hit_accession>
+  <Hit_len>144</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>152.525</Hsp_bit-score>
+      <Hsp_score>384</Hsp_score>
+      <Hsp_evalue>2.46239e-44</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>157</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>142</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>15</Hsp_gaps>
+      <Hsp_align-len>157</Hsp_align-len>
+      <Hsp_qseq>MLPXXXXXXXXXXXXXEAQKQYWVCNSSDASISYTYCDKMQYPISINVNPCIELKRSKGLLHIFYIPRRDLKQLYFNLYITVNTMNLPKRKEVICRGSDDDYSFCRALKGETVNTTXXXXXXXXXXXXXXYKCVVEAISGSPEEMLFCLEFVILHQP</Hsp_qseq>
+      <Hsp_hseq>MLPFVLFSTLFSPMFTEPKDHYWICNSSDANISYTYC---------------ELKGSSGFLNIYHIPRRDLRKLYFNLDVSFKSMSLPKRKEVICRGYDDKYSFCRTLKGETMNASIPFSFTGIRFSKGKYYCVVEAIVGDIEERLFCLNFTIEHFP</Hsp_hseq>
+      <Hsp_midline>MLPF+ FSTLFS +FTE +  YW+CNSSDA+ISYTYC               ELK S G L+I++IPRRDL++LYFNL ++  +M+LPKRKEVICRG DD YSFCR LKGET+N +I FSF GI+FSKGKY CVVEAI G  EE LFCL F I H P</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>239740828</Statistics_db-num>
+      <Statistics_db-len>584139251</Statistics_db-len>
+      <Statistics_hsp-len>0</Statistics_hsp-len>
+      <Statistics_eff-space>0</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+<Iteration>
+  <Iteration_iter-num>2</Iteration_iter-num>
+  <Iteration_query-ID>Query_9011</Iteration_query-ID>
+  <Iteration_query-def>B</Iteration_query-def>
+  <Iteration_query-len>155</Iteration_query-len>
+<Iteration_hits>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>239740828</Statistics_db-num>
+      <Statistics_db-len>584139251</Statistics_db-len>
+      <Statistics_hsp-len>0</Statistics_hsp-len>
+      <Statistics_eff-space>0</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+</BlastOutput_iterations>
+</BlastOutput>

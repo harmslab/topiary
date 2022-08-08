@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""
+Command line interface to pipeline.seed_to_alignment
+"""
+
+import topiary
+from topiary.pipeline import seed_to_alignment
+from topiary._private import wrap_function
+
+import sys
+
+def main(argv=None):
+
+    if argv is None:
+        argv = sys.argv[1:]
+
+    # Set arg types for args with None as default
+    optional_arg_types = {}
+
+    # Wrap and run function
+    wrap_function(seed_to_alignment,
+                  argv=argv,
+                  optional_arg_types=optional_arg_types)
+
+if __name__ == "__main__":
+    main()

@@ -3,16 +3,19 @@ Draw a species tree with tips labeled by species name.
 """
 
 import topiary
-from ._base import setup_generic_tree_format, final_render
+from .prettytree import PrettyTree
 
 import ete3
 
 
 def species_tree(species_tree,
                  output_file=None,
-                 fontsize=36,
-                 circle_radius=0.0,
-                 width=800,space_between_taxa=10,line_width=4):
+                 font_size=15,
+                 stroke_width=2,
+                 vertical_pixels_per_tip=20,
+                 min_height=300,
+                 tip_labels_align=True,
+                 **kwargs):
     """
     Draw a species tree with tips labeled by species name.
 
@@ -25,45 +28,48 @@ def species_tree(species_tree,
         notebook and write to this file. If running in a notebook but not
         specified, do not write to a file. If not in a notebook and not
         specified, will write out ancestor-tree.pdf.
-    fontsize : float, default=36
-        fontsize in points for labels
-    circle_radius : float, default=0.025
-        circle size for internal nodes (fraction of total width)
-    width : int, default=800
-        width of total tree in pixels
-    space_between_taxa : int, default=10
-        number of pixels between taxa, sets height.
-    line_width : int, default=4
-        width of lines used to draw tree (pixels)
-    df : pandas.DataFrame or None, default=None
-        topiary dataframe (overides whatever is in run_dir/output/dataframe.csv)
+    font_size : float, default=15
+        font size in points for labels
+    stroke_width : int, default=2
+        width of lines drawing tree (pixels)
+    vertical_pixels_per_tip : int, default=20
+        number of pixels to assign to each tip when calculating figure
+        height
+    min_height : float, default=300
+        minimum height for figure (pixels)
+    tip_labels_align : bool, default=True
+        align species names on the right of the plot
+    **kwargs : dict, optional
+        pass any other keyword arguments directly to toytree.tree.draw
 
     Returns
     -------
-    Python.core.display.Image or None
-        if running in jupyter notebook, return Image; otherwise, return None
+    plot : toyplot.canvas or None
+        if running in jupyter notebook, return toyplot.canvas; otherwise, return
+        None.
     """
 
-    T = species_tree.copy()
-
-    # Set up formats (color map for main nodes, tree format (ts) and generic
-    # node format (ns)).
-    cm, ts, ns = setup_generic_tree_format(num_leaves=len(T.get_leaves()),
-                                           width=width,
-                                           space_between_taxa=space_between_taxa,
-                                           line_width=line_width)
-
-    for n in T.traverse():
-
-        n.set_style(ns)
-
+    name_dict = {}
+    for n in species_tree.traverse():
         if n.is_leaf():
+            name_dict[n.name] = n.species
 
-            # Add text for clean name
-            n.name = ""
-            txt = ete3.TextFace(n.species[0],fsize=fontsize)
-            txt.margin_left = 4
-            n.add_face(txt,0,position="branch-right")
+    pt = PrettyTree(species_tree,
+                    name_dict=name_dict,
+                    font_size=font_size,
+                    stroke_width=stroke_width,
+                    vertical_pixels_per_tip=vertical_pixels_per_tip,
+                    min_height=min_height,
+                    tip_labels_align=tip_labels_align,
+                    **kwargs)
 
+    # Figure out plotting to file.
+    if output_file is not None:
+        pt.render(output_file)
 
-    return final_render(T,ts,output_file,"species-tree.pdf")
+    # If this is in a notebook, return it so it appears
+    ret = None
+    if topiary._in_notebook:
+        ret = pt.canvas
+
+    return ret

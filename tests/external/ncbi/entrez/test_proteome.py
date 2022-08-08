@@ -2,7 +2,9 @@
 import pytest
 
 import topiary
-from topiary.external.ncbi.entrez.proteome import get_proteome, _get_genome_url
+from topiary.external.ncbi.entrez.proteome import _get_genome_url
+from topiary.external.ncbi.entrez.proteome import get_proteome_ids
+from topiary.external.ncbi.entrez.proteome import get_proteome
 
 import numpy as np
 import pandas as pd
@@ -42,7 +44,41 @@ def test__get_genome_url(esummary_assembly_records):
 
         assert acc == expected_output[k]
 
+def test_get_proteome_ids():
+
+    with pytest.raises(ValueError):
+        get_proteome_ids(species=None,taxid=None)
+
+    with pytest.raises(ValueError):
+        get_proteome_ids(species="Homo sapiens",taxid="9606")
+
+    # Bad taxid query
+    id_list, err = get_proteome_ids(taxid=999999999999)
+    assert id_list is None
+    assert isinstance(err,str)
+
+    # Bad species query
+    id_list, err = get_proteome_ids(species="Not a species")
+    assert id_list is None
+    assert isinstance(err,str)
+
+    # Human, by taxid
+    by_taxid, err = get_proteome_ids(taxid=9606)
+    assert isinstance(by_taxid,list)
+    assert len(by_taxid) > 0
+    assert err is None
+
+    # Human, by species
+    by_species, err = get_proteome_ids(species="Homo sapiens")
+
+    # Make sure species and taxid queries bring down equivalent ids
+    assert np.array_equal(by_species,by_taxid)
+
+
 def test_get_proteome(tmpdir):
+
+    cwd = os.getcwd()
+    os.chdir(tmpdir)
 
     with pytest.raises(ValueError):
         get_proteome(species=None,taxid=None)
@@ -50,12 +86,9 @@ def test_get_proteome(tmpdir):
     with pytest.raises(ValueError):
         get_proteome(species="Homo sapiens",taxid="9606")
 
-    with pytest.raises(ValueError):
-        get_proteome(taxid="9606",output_dir="NOT_REALLY_A_DIR")
-
-    # Actually pull down the human proteome, both using taxid and species.
-    # Make sure these get the same file.
-    output1 = get_proteome(taxid=9606,output_dir=tmpdir)
+    # Actually pull down the human proteome, making sure it comes down and is
+    # written to output.
+    output1 = get_proteome(taxid=9606)
     assert os.path.isfile(output1)
-    output2 = get_proteome(species="Homo sapiens",output_dir=tmpdir)
-    assert output1 == output2
+
+    os.chdir(cwd)

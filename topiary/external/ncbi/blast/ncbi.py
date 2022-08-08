@@ -3,8 +3,12 @@ Run BLAST against a remote NCBI database.
 """
 
 import topiary
-from topiary import check
-from .util import read_blast_xml, _standard_blast_args_checker
+from topiary._private import check
+from topiary._private import animation
+from topiary._private import threads
+
+from .read import read_blast_xml, check_for_cpu_limit
+from .util import _standard_blast_args_checker
 
 from Bio import Entrez
 from Bio.Blast import NCBIXML, NCBIWWW
@@ -15,7 +19,6 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 import sys, urllib, http, copy, os, time, random, string
-import multiprocessing as mp
 
 def _prepare_for_blast(sequence,
                        db,
@@ -34,23 +37,37 @@ def _prepare_for_blast(sequence,
 
     Parameters
     ----------
-        sequence: sequence as a string OR list of string sequences
-        db: NCBI blast database
-        taxid: taxid for limiting blast search (default to no limit)
-        blast_program: NCBI blast program to use (blastp, tblastn, etc.)
-        hitlist_size: download only the top hitlist_size hits
-        e_value_cutoff: only take hits with e_value better than e_value_cutoff
-        gapcost: BLAST gapcosts (length 2 tuple of ints)
-        url_base: NCBI base url
-        kwargs: extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
-                overriding anything constructed above. You could, for example, pass
-                entrez_query="txid9606[ORGN] or txid10090[ORGN]" to limit blast
-                results to hits from human or mouse. This would take precedence over
-                any taxid specified above.
+    sequence : str or list
+        sequence as a string OR list of string sequences
+    db : str
+        NCBI blast database
+    taxid : int, optional
+        taxid for limiting blast search (default to no limit)
+    blast_program : str
+        NCBI blast program to use (blastp, tblastn, etc.)
+    hitlist_size : int
+        download only the top hitlist_size hits
+    e_value_cutoff : float
+        only take hits with e_value better than e_value_cutoff
+    gapcost : tuple
+        BLAST gapcosts (length 2 tuple of ints)
+    url_base : str
+        NCBI base url
+    kwargs : dict
+        extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
+        overriding anything constructed above. You could, for example, pass
+        entrez_query="txid9606[ORGN] or txid10090[ORGN]" to limit blast
+        results to hits from human or mouse. This would take precedence over
+        any taxid specified above.
 
-    Return
-    ------
-        sequence_list, blast_kwargs, return_singleton
+    Returns
+    -------
+    sequence_list : list
+        list of sequences
+    blast_kwargs : dict
+        keyword arguments to pass to the blast function
+    return_singleton : bool
+        whether or not to return a blast df or list of blast df
     """
 
     # Deal with standard input
@@ -173,65 +190,51 @@ def _construct_args(sequence_list,
                     blast_kwargs,
                     max_query_length,
                     num_tries_allowed,
+                    keep_blast_xml,
                     num_threads=-1,
-                    test_num_cores=None):
+                    manual_num_cores=None):
     """
     Construct a list of arguments to pass to each thread that will run a
     blast query.
 
     Parameters
     ----------
-        sequence_list: list of sequences as strings
-        blast_kwargs: keyword arguments to pass to blast call
-        max_query_length: maximum string length accepted by the server. if the
-                          query is too long, this function will break it into
-                          multiple requests, each sent to ncbi.
-        num_tries_allowed: try num_tries_allowed times in case of timeout
-        num_threads: number of threads to use (locally). if -1 use all available.
-        test_num_cores: send in a hacked number of cores for testing purposes
+    sequence_list : list
+        list of sequences as strings
+    blast_kwargs : dict
+        keyword arguments to pass to blast call
+    max_query_length : int
+        maximum string length accepted by the server. if the query is too long,
+        this function will break it into multiple requests, each sent to ncbi.
+    num_tries_allowed : int
+        try num_tries_allowed times in case of timeout
+    keep_blast_xml : bool
+        whether or not to keep temporary blast xml files
+    num_threads : int, default=-1
+        number of threads to use (locally). if -1 use all available.
+    manual_num_cores : int
+        send in a hacked number of cores for testing purposes
 
-    Return
+    Returns
     ------
-        list of args to pass for each calculation, number of threads
+    kwargs_list : list
+        list of kwargs to pass for each calculation
+    num_threds : int
+        number of threads to use
     """
 
     # Validate inputs that have not yet been validated.
     max_query_length = check.check_int(max_query_length,
-                                                   "max_query_length",
-                                                   minimum_allowed=1)
+                                       "max_query_length",
+                                       minimum_allowed=1)
 
     num_tries_allowed = check.check_int(num_tries_allowed,
-                                                    "num_tries_allowed",
-                                                    minimum_allowed=1)
+                                        "num_tries_allowed",
+                                        minimum_allowed=1)
 
-    num_threads = check.check_int(num_threads,
-                                              "num_threads",
-                                              minimum_allowed=-1)
-    if num_threads == 0:
-        err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
-        err += "or any integer > 0.\n\n"
-        raise ValueError(err)
+    keep_blast_xml = check.check_bool(keep_blast_xml,"keep_blast_xml")
 
-
-    if test_num_cores is not None:
-        num_cores = test_num_cores
-    else:
-
-        # Try to figure out how many cores are available
-        try:
-            num_cores = mp.cpu_count()
-        except NotImplementedError:
-            num_cores = os.cpu_count()
-
-        # If we can't figure it out, revert to 1. (os.cpu_count() gives None
-        # if the number of cores unknown).
-        if num_cores is None:
-            print("Could not determine number of cpus. Using single thread.",flush=True)
-            num_cores = 1
-
-    # Set number of threads
-    if num_threads == -1 or num_threads > num_cores:
-        num_threads = num_cores
+    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
 
     # Make sure sequence_list is an array
     sequence_list = np.array(sequence_list)
@@ -292,92 +295,42 @@ def _construct_args(sequence_list,
     for s in split_sequences:
         final_sequences.append("".join(s))
 
-    all_args = []
+    kwargs_list = []
     for i, seq in enumerate(final_sequences):
         query = copy.deepcopy(blast_kwargs)
         query["sequence"] = seq
-        all_args.append([query,i,num_tries_allowed])
+        kwargs_list.append({"this_query":query,
+                            "num_tries_allowed":num_tries_allowed,
+                            "keep_blast_xml":keep_blast_xml})
 
-    return all_args, num_threads
+    return kwargs_list, num_threads
 
 
-def _thread_manager(all_args,num_threads):
-    """
-    Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
-    by ncbi_blast.
-
-    Parameters
-    ----------
-        all_args: list of lists containing arguments to pass to to _thread.
-                  Should not have the `queue` argument, as this will be added
-                  by this function.
-        num_threads: number of threads to use.
-
-    Return
-    ------
-        list of hits from all blast calls when all threads complete. These will
-        be ordered by `counter`, passed in via all_args.
-    """
-
-    print(f"Performing {len(all_args)} blast queries on {num_threads} threads.",
-          flush=True)
-
-    # queue will hold results from each run. Append to each entry in all_args
-    manager = mp.Manager()
-    queue = manager.Queue()
-    lock = manager.Lock()
-    for i in range(len(all_args)):
-        all_args[i].append(queue)
-        all_args[i].append(lock)
-
-    with mp.Pool(num_threads) as pool:
-
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _blast_thread
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
-
-    # Get results out of the queue.
-    results = []
-    while not queue.empty():
-        results.append(queue.get())
-
-    # Sort results
-    results.sort()
-    hits = [r[1] for r in results]
-
-    return hits
-
-def _thread(args):
+def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
-    Put results in a multiprocessing queue.
-
-    args is expanded into the following:
-        this_query: qblast keyword arguments
-        counter: integer, used to sort results after they all complete
-        num_tries_allowed: how many times to try before giving up
-        queue: multiprocessing queue in which to store results
+    Return parsed output as a dataframe.
 
     Parameters
     ----------
-        args. a list of arguments expanded as detailed above.
+    this_query : dict
+        kwargs to pass to NCBIWWW.qblast
+    num_tries : int
+        number of tries before timing out
+    keep_blast_xml : bool
+        whether or not to keep temporary blast xml files
+    lock : multiprocessing.Manager().Lock()
+        lock used to prevent hammering NCBI servers at too high of a rate.
 
-    Return
+    Returns
     ------
-        None. results put into queue.
+    out_df : pandas.DataFrame
+        dataframe with BLAST hits
     """
-
-    this_query = args[0]
-    counter = args[1]
-    num_tries_allowed = args[2]
-    queue = args[3]
-    lock = args[4]
 
     # While we haven't run out of tries...
     tries = 0
+    tmp_file = None
     while tries < num_tries_allowed:
 
         # Try to read output.
@@ -395,43 +348,20 @@ def _thread(args):
 
             result = NCBIWWW.qblast(**this_query)
 
-            # Write output to an xml file. NCBI can spit out trashed XML
-            # with CREATE_VIEW\n\n\n randomly injected between <hit> entries.
-            # biopython chokes on the input. To fix this, pull down the XML,
-            # clean up, write to a file, then pass the file handle back to
-            # biopython.
-
-            # Get rid of nastiness if present.
-            contents = result.readlines()
-            contents = [c for c in contents if c.strip() not in ["","CREATE_VIEW"]]
-
             # Write temporary file
             tmp_root = "".join([random.choice(string.ascii_letters)
                                 for _ in range(10)])
             tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
             f = open(tmp_file,"w")
-            f.write("".join(contents))
+            f.write(result.read())
             f.close()
-
-            # Read output xml file and parse
-            f = open(tmp_file,"r")
-
-            # Clean up
-            p = NCBIXML.parse(f)
-            out = []
-            for r in p:
-                out.append(r)
-            f.close()
-
-            # If parsing successful, nuke temporary file
-            os.remove(tmp_file)
 
         # If some kind of http error or timeout, set out to None
         except (urllib.error.URLError,urllib.error.HTTPError,http.client.IncompleteRead):
-            out = None
+            tmp_file = None
 
         # If out is None, try again. If not, break out of loop--success!
-        if out is None:
+        if tmp_file is None:
             tries += 1
             continue
         else:
@@ -439,16 +369,23 @@ def _thread(args):
 
     # We didn't get result even after num_tries_allowed tries. Throw
     # an error.
-    if out is None:
+    if tmp_file is None:
         err = "\nProblem accessing with NCBI server. We got no output after\n"
         err += f"{num_tries_allowed} attempts. This is likely due to a server\n"
         err += "timeout. Try again at a later time.\n"
         raise RuntimeError(err)
 
     # Parse output
-    out_df = read_blast_xml(out)
+    out_dfs, xml_files = read_blast_xml(tmp_file,do_cpu_check=True)
 
-    queue.put((counter,out_df))
+    # If parsing successful, nuke temporary file
+    if not keep_blast_xml:
+        os.remove(xml_files[0])
+
+    if out_dfs is None:
+        return None
+
+    return out_dfs[0]
 
 
 def _combine_hits(hits,return_singleton):
@@ -512,6 +449,8 @@ def ncbi_blast(sequence,
                max_query_length=80000,
                num_tries_allowed=5,
                num_threads=1,
+               verbose=False,
+               keep_blast_xml=False,
                **kwargs):
     """
     Perform a blast query against a remote NCBI blast database. Takes a sequence
@@ -547,6 +486,10 @@ def ncbi_blast(sequence,
         try num_tries_allowed times in case of server timeout
     num_threads : int, default=1
         number of threads to use. if -1, use all available.
+    verbose : bool, default=False
+        whether or not to use verbose output
+    keep_blast_xml : bool, default=False
+        whether or not to keep raw blast xml output
     **kwargs : dict, optional
         extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
         overriding anything constructed above. You could, for example, pass
@@ -578,17 +521,70 @@ def ncbi_blast(sequence,
     blast_kwargs = prep[1]
     return_singleton = prep[2]
 
-    # Get arguments to pass to each thread
-    all_args, num_threads = _construct_args(sequence_list=sequence_list,
-                                            blast_kwargs=blast_kwargs,
-                                            max_query_length=max_query_length,
-                                            num_threads=num_threads,
-                                            num_tries_allowed=num_tries_allowed)
-
     # Run multi-threaded blast
-    hits = _thread_manager(all_args,num_threads)
+    print(f"Performing {len(sequence_list)} BLAST queries against the NCBI {db} database")
+    print(f"on {num_threads} threads. Depending on the server load, this could")
+    print(f"take awhile. This is a good time to grab a cup of coffee.",flush=True)
+
+    a = animation.WaitingAnimation()
+    a.start()
+
+    # Get arguments to pass to each thread
+    kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
+                                               blast_kwargs=blast_kwargs,
+                                               max_query_length=max_query_length,
+                                               num_tries_allowed=num_tries_allowed,
+                                               keep_blast_xml=keep_blast_xml,
+                                               num_threads=num_threads)
+
+    all_hits = threads.thread_manager(kwargs_list,
+                                      _ncbi_blast_thread_function,
+                                      num_threads,
+                                      progress_bar=False,
+                                      pass_lock=True)
+
+    # If all_hits has None, at least one of our queries hit a cpu limit on the
+    # ncbi server. Try again, doing each query one at a time on a single thread.
+    if sum([h is None for h in all_hits]) > 0:
+
+        w = "\nThe initial BLAST query exceed the CPU resource limit on the\n"
+        w += "NCBI server. Switching to slow-and-steady mode, sending each\n"
+        w += "seed sequence individually.\n"
+        print(w,flush=True)
+
+        all_hits = []
+        for i, s in enumerate(sequence_list):
+
+            print(f"    Query {i+1} of {len(sequence_list)}",flush=True)
+
+            kwargs_list, num_threads = _construct_args(sequence_list=[sequence_list[i]],
+                                                       blast_kwargs=blast_kwargs,
+                                                       max_query_length=max_query_length,
+                                                       num_tries_allowed=num_tries_allowed,
+                                                       keep_blast_xml=keep_blast_xml,
+                                                       num_threads=1)
+
+            hits = threads.thread_manager(kwargs_list,
+                                          _ncbi_blast_thread_function,
+                                          num_threads,
+                                          progress_bar=False,
+                                          pass_lock=True)
+
+            if hits[0] is None:
+                err = "\nCPU limit still exceeded. Consider selecting shorter\n"
+                err += "input sequences, fewer input sequences, trying again at\n"
+                err += "a different time (when the NCBI server may be less busy),\n"
+                err += "or running BLAST manually and passing the resulting xml\n"
+                err += "files into topiary via --blast_xml."
+                raise RuntimeError(err)
+
+            all_hits.extend(hits)
+
+
+    print("BLAST query complete.",flush=True)
+    a.stop()
 
     # Combine hits into dataframes, one for each query
-    out_df = _combine_hits(hits,return_singleton)
+    out_df = _combine_hits(all_hits,return_singleton)
 
     return out_df

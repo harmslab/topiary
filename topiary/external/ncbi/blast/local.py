@@ -3,17 +3,17 @@ Run BLAST against a local database.
 """
 
 import topiary
-from topiary import check
-from .util import read_blast_xml, _standard_blast_args_checker
+from topiary._private import check
+from topiary._private import threads
+from .util import _standard_blast_args_checker
+from .read import read_blast_xml
 
 import Bio.Blast.Applications as apps
 
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
 
-import sys, os, string, random, subprocess, copy
-import multiprocessing as mp
+import os, string, random, subprocess, copy
 
 def _prepare_for_blast(sequence,
                        db,
@@ -109,10 +109,10 @@ def _prepare_for_blast(sequence,
 def _construct_args(sequence_list,
                     blast_function,
                     blast_kwargs,
-                    keep_tmp=False,
+                    keep_blast_xml=False,
                     block_size=20,
                     num_threads=-1,
-                    test_num_cores=None):
+                    manual_num_cores=None):
     """
     Construct a list of arguments to pass to each thread in the pool.
 
@@ -121,7 +121,7 @@ def _construct_args(sequence_list,
         sequence_list: list of sequences as strings
         blast_function: blast function to use
         blast_kwargs: keyword arguments to pass to blast call
-        keep_tmp: whether or not to keep temporary files
+        keep_blast_xml: whether or not to keep temporary files
         num_threads: number of threads to use. if -1, use all available.
         block_size: break into block_size sequence chunks
 
@@ -132,43 +132,23 @@ def _construct_args(sequence_list,
 
     # Validate inputs that have not yet been validated.
     block_size = check.check_int(block_size,
-                                             "block_size",
-                                              minimum_allowed=1)
+                                 "block_size",
+                                 minimum_allowed=1)
 
-    num_threads = check.check_int(num_threads,
-                                              "num_threads",
-                                              minimum_allowed=-1)
-    if num_threads == 0:
-        err = "\nnum_threads cannot be zero. It can be -1 (use all available),\n"
-        err += "or any integer > 0.\n\n"
-        raise ValueError(err)
+    num_threads = threads.get_num_threads(num_threads,manual_num_cores)
 
-    keep_tmp = check.check_bool(keep_tmp,"keep_tmp")
-
-    # Try to figure out how many cores are available
-    if test_num_cores is not None:
-        num_cores = test_num_cores
-    else:
-        try:
-            num_cores = mp.cpu_count()
-        except NotImplementedError:
-            num_cores = os.cpu_count()
-
-        # If we can't figure it out, revert to 1
-        if num_cores is None:
-            print("Could not determine number of cpus. Using single thread.",flush=True)
-            num_cores = 1
+    keep_blast_xml = check.check_bool(keep_blast_xml,"keep_blast_xml")
 
     # Determine number of threads useful for this problem. It's not worth
     # chopping up a super small set of comparisons
     max_useful_threads = len(sequence_list)//block_size
     if max_useful_threads < 1:
         max_useful_threads = 1
-    if max_useful_threads > num_cores:
-        max_useful_threads = num_cores
+    if max_useful_threads > num_threads:
+        max_useful_threads = num_threads
 
     # Set number of threads
-    if num_threads == -1 or num_threads > max_useful_threads:
+    if num_threads > max_useful_threads:
         num_threads = max_useful_threads
 
     # Break sequences up into blocks
@@ -194,91 +174,47 @@ def _construct_args(sequence_list,
     windows = np.cumsum(windows)
 
     # Blocks will allow us to tile over whole sequence
-    all_args = []
+    kwargs_list = []
     for i in range(len(windows)-1):
 
         i_block = (windows[i],windows[i+1])
 
-        all_args.append([sequence_list,
-                         i_block,
-                         blast_function,
-                         blast_kwargs,
-                         keep_tmp])
-
-    return all_args, num_threads
+        kwargs_list.append({"sequence_list":sequence_list,
+                            "index":i_block,
+                            "blast_function":blast_function,
+                            "blast_kwargs":blast_kwargs,
+                            "keep_blast_xml":keep_blast_xml})
 
 
-def _thread_manager(all_args,num_threads):
+    return kwargs_list, num_threads
+
+
+def _local_blast_thread_function(sequence_list,
+                                 index,
+                                 blast_function,
+                                 blast_kwargs,
+                                 keep_blast_xml):
     """
-    Run a bunch of blast jobs in a mulithreaded fashion. Should only be called
-    by local_blast.
+    Run local blast on a list of sequences.
 
     Parameters
     ----------
-        all_args: list of args to pass for each calculatio
-        nm_threads: number of threads to use
+    sequence_list : list
+        list of sequences
+    index : tuple
+        indexes to pull from sequence_list
+    blast_function : function
+        blast function to run
+    blast_kwargs : dict
+        kwargs to pass to blast function
+    keep_blast_xml : bool
+        whether or not to keep temporary files
 
-    Return
-    ------
-        list of dataframes with blast results
+    Returns
+    -------
+    out_df : pandas.DataFrame
+        dataframe containing blast hits
     """
-
-    print(f"Performing {len(all_args)} blast queries on {num_threads} threads.",
-          flush=True)
-
-    # queue will hold results from each run. Append to each entry in all_args
-    queue = mp.Manager().Queue()
-    for i in range(len(all_args)):
-        all_args[i].append(queue)
-
-    with mp.Pool(num_threads) as pool:
-
-        # Black magic. pool.imap() runs a function on elements in iterable,
-        # filling threads as each job finishes. (Calls _blast_thread
-        # on every args tuple in all_args). tqdm gives us a status bar.
-        # By wrapping pool.imap iterator in tqdm, we get a status bar that
-        # updates as each thread finishes.
-        list(tqdm(pool.imap(_thread,all_args),total=len(all_args)))
-
-    # Get results out of the queue.
-    results = []
-    while not queue.empty():
-        results.append(queue.get())
-
-    # Sort results
-    results.sort()
-    hits = [r[1] for r in results]
-
-    return hits
-
-def _thread(args):
-    """
-    Run blast on a thread. Should only be called via _thread_manager.
-    Puts resulting hits as a pandas dataframe into the queue
-
-    Parameters
-    ----------
-        args. list that is expanded as follows:
-
-        sequence_list: list of sequences as strings
-        index: sequence to grab
-        blast_kwargs: keyword arguments to pass to blast call
-        blast_function: blast function to call
-        keep_tmp: whether or not to keep temporary files
-        queue: multiprocessing queue for storing results
-
-    Return
-    ------
-        None
-    """
-
-    # parse args
-    sequence_list = args[0]
-    index = args[1]
-    blast_function = args[2]
-    blast_kwargs = args[3]
-    keep_tmp = args[4]
-    queue = args[5]
 
     # make a 10-character random string for temporary files
     tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
@@ -298,19 +234,20 @@ def _thread(args):
 
     # Parse output
     try:
-        out_df = read_blast_xml(out_file)
+        out_dfs, xml_files = read_blast_xml(out_file)
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
         raise RuntimeError(err)
 
-    # Delete temporary files
-    if not keep_tmp:
+    # If parsing successful, nuke temporary file
+    if not keep_blast_xml:
         os.remove(input_file)
         os.remove(out_file)
 
-    # update queue
-    queue.put((index[0],out_df))
+    return out_dfs[0]
+
+
 
 def _combine_hits(hits,return_singleton):
     """
@@ -333,7 +270,12 @@ def _combine_hits(hits,return_singleton):
     # Construct a list of output dataframes, one for each query sequence
     out_df = []
     for h in hits:
+
         queries = np.unique(h["query"])
+        queries = [(int(q[5:]),q) for q in queries]
+        queries.sort()
+        queries = [q[1] for q in queries]
+
         for q in queries:
             this_df = h.loc[h["query"] == q,:]
 
@@ -358,7 +300,7 @@ def local_blast(sequence,
                 hitlist_size=100,
                 e_value_cutoff=0.001,
                 gapcosts=(11,1),
-                keep_tmp=False,
+                keep_blast_xml=False,
                 num_threads=-1,
                 block_size=20,
                 **kwargs):
@@ -381,8 +323,8 @@ def local_blast(sequence,
         only return hits with e_value better than e_value_cutoff
     gapcosts : tuple, default=(11,1)
         BLAST gapcosts (length 2 tuple of ints)
-    keep_tmp : bool, default=False
-        whether or not to keep temporary blast output
+    keep_blast_xml : bool, default=False
+        whether or not to keep temporary blast xml files
     num_threads : int, default=-1
         number of threads to use. if -1, use all available.
     block_size : int, default=20
@@ -414,15 +356,17 @@ def local_blast(sequence,
     return_singleton = prep[3]
 
     # Construct a list of arguments to pass into _thread_manager
-    all_args, num_threads = _construct_args(sequence_list=sequence_list,
-                                            blast_function=blast_function,
-                                            blast_kwargs=blast_kwargs,
-                                            keep_tmp=keep_tmp,
-                                            block_size=block_size,
-                                            num_threads=num_threads)
+    kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
+                                               blast_function=blast_function,
+                                               blast_kwargs=blast_kwargs,
+                                               keep_blast_xml=keep_blast_xml,
+                                               block_size=block_size,
+                                               num_threads=num_threads)
 
     # Run multi-threaded local blast
-    hits = _thread_manager(all_args,num_threads)
+    hits = threads.thread_manager(kwargs_list,
+                                  _local_blast_thread_function,
+                                  num_threads)
 
     # Combine hits into dataframes, one for each query
     out_df = _combine_hits(hits,return_singleton)

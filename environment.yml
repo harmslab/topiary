@@ -2,16 +2,24 @@ name: topiary
 channels:
   - defaults
   - bioconda
+  - conda-forge
 dependencies:
-  - openpyxl
-  - xlrd
-  - pytest
+  - numpy<1.22
   - pandas
-  - numpy
-  - jupyter
-  - pyqt
+  - xlrd
+  - openpyxl
+  - matplotlib
+  - biopython
   - tqdm
-  - blast
-  - generax
-  - muscle
-  - raxml-ng
+  - ete3
+  - dendropy
+  - toytree
+  # - openmpi<4.1.3
+  # - blast    # [not osx]
+  # - muscle   # [not osx]
+  # - generax  # [not osx]
+  # - raxml-ng # [not osx]
+  - pip
+  - pip:
+    - pastml
+    - opentree

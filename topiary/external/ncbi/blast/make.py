@@ -3,7 +3,7 @@ Construct a blast database.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import os, subprocess, gzip, random, string
 
@@ -48,7 +48,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
     # If we are overwriting an existing blast database.
     if os.path.exists(f"{db_name}.psq"):
         if overwrite:
-            expected_extensions = ["pdb","pin","pot","ptf","phr","pjs","psq","pto"]
+            expected_extensions = ["pdb","pin","pot","ptf","phr","psq","pto"]
             for e in expected_extensions:
                 try:
                     os.remove(f"{db_name}.{e}")
@@ -60,7 +60,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
 
     # Make sure that makeblastdb is in the path
     try:
-        subprocess.run([makeblastdb_binary])
+        subprocess.run([makeblastdb_binary],capture_output=True)
     except FileNotFoundError:
         err = f"\makeblastdb_binary binary '{makeblastdb_binary}' not found in path\n\n"
         raise ValueError(err)

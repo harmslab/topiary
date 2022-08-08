@@ -7,24 +7,21 @@ def ncbi_lines():
     """
     A list of generic ncbi lines.
     """
+    dir = os.path.dirname(os.path.realpath(__file__))
+    filename = os.path.join(dir,"data","ncbi-lines-file.txt")
 
-    return ["sp|Q9Y6Y9|LY96_HUMAN Lymphocyte antigen 96 OS=Homo sapiens OX=9606 GN=LY96 PE=1 SV=2"]
+    lines = []
+    with open(filename) as f:
+        for line in f:
+            lines.append(line.strip())
 
-@pytest.fixture(scope="module")
-def ncbi_lines_parsed():
-    """
-    A list of parse results for those ncbi_lines.
-    """
+    filename = os.path.join(dir,"data","ncbi-lines-parsed.json")
+    f = open(filename)
+    parsed_lines =json.load(f)
+    f.close()
 
-    parsed_lines =  [{"structure":False,
-                      "low_quality":False,
-                      "predicted":False,
-                      "precursor":False,
-                      "isoform":False,
-                      "hypothetical":False,
-                      "partial":False}]
+    return (lines, parsed_lines)
 
-    return parsed_lines
 
 @pytest.fixture(scope="module")
 def dataframe_good_files():
@@ -124,6 +121,25 @@ def xml():
 
     return out_dict
 
+@pytest.fixture(scope="module")
+def user_xml_files():
+    """
+    Dictionary holding paths pointing to ncbi style xml files.
+    """
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","xml","user-xml-files"))
+    json_file = os.path.join(base_dir,"index.json")
+
+    with open(json_file) as f:
+        file_info = json.load(f)
+
+    final_dict = {}
+    for f in file_info:
+        final_dict[os.path.join(base_dir,f)] = file_info[f]
+
+    return final_dict
+
 
 def get_public_param_defaults(public_function,private_function):
     """
@@ -205,9 +221,31 @@ def seed_dataframes():
 
     out_dict = {}
     for f in files:
-        out_dict[f] = os.path.join(base_dir,f)
+        out_file = os.path.join(base_dir,f)
+        if os.path.isfile(out_file):
+            out_dict[f] = out_file
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def user_seed_dataframes():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,
+                                            "data",
+                                            "seed-dataframes",
+                                            "user-seed-dataframes"))
+
+
+    files = glob.glob(os.path.join(base_dir,"*.xlsx"))
+
+    out_dict = {}
+    for f in files:
+        out_dict[os.path.split(f)[-1]] = f
+
+    return out_dict
+
+
 
 @pytest.fixture(scope="module")
 def esummary_assembly_records():
@@ -230,6 +268,44 @@ def make_blast_db_files():
 
     dir = os.path.dirname(os.path.realpath(__file__))
     base_dir = os.path.abspath(os.path.join(dir,"data","make_blast_db_files"))
+    files = glob.glob(os.path.join(base_dir,"*"))
+
+    out_dict = {}
+    for f in files:
+        key = os.path.basename(f)
+        out_dict[key] = f
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def for_real_inference():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    base_dir = os.path.abspath(os.path.join(dir,"data","for-real-inference"))
+    files = glob.glob(os.path.join(base_dir,"*"))
+
+    out_dict = {}
+    for f in files:
+        key = os.path.basename(f)
+        out_dict[key] = f
+
+    return out_dict
+
+@pytest.fixture(scope="module")
+def df_with_species_not_resolvable():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+    df_file = os.path.abspath(os.path.join(dir,"data","df-with-species-not-resolvable.csv"))
+    df = pd.read_csv(df_file)
+
+    return df
+
+@pytest.fixture(scope="module")
+def ftp_test_files():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+
+    base_dir = os.path.abspath(os.path.join(dir,"data","ftp"))
     files = glob.glob(os.path.join(base_dir,"*"))
 
     out_dict = {}

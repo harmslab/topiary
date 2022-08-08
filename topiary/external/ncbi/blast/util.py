@@ -2,7 +2,8 @@
 Shared functions for dealing with NCBI blast.
 """
 
-from topiary import util, check
+from topiary import util
+from topiary._private import check
 
 import pandas as pd
 import numpy as np
@@ -94,84 +95,3 @@ def _standard_blast_args_checker(sequence,
         raise ValueError(err)
 
     return sequence_list, hitlist_size, e_value_cutoff, gapcosts, return_singleton
-
-
-
-def read_blast_xml(blast_record):
-    """
-    Read BLAST XML format and return as a pandas data frame.
-
-    Parameters
-    ----------
-    blast_record : biopython.Blast record or str
-        either biopython Blast record or string pointing to blast xml file
-
-    Returns
-    -------
-    results : list
-        list of dataframes, one for each query in blast_record
-    """
-
-    # If argument is a string, treat as xml file
-    if type(blast_record) is str:
-
-        f = open(blast_record, 'r')
-        p = NCBIXML.parse(f)
-
-        blast_record = []
-        for r in p:
-            blast_record.append(r)
-        f.close()
-
-    out_df = []
-    for record in blast_record:
-
-        # Prepare DataFrame fields.
-        data = {'accession': [],
-                'hit_def': [],
-                'hit_id': [],
-                'title': [],
-                'length': [],
-                'e_value': [],
-                'sequence': [],
-                'subject_start': [],
-                'subject_end':[],
-                'query_start':[],
-                'query_end':[],
-                'query':[]}
-
-        # Get alignments from blast result.
-        for i, s in enumerate(record.alignments):
-            data['accession'].append(s.accession)
-            data['hit_def'].append(s.hit_def)
-            data['hit_id'].append(s.hit_id)
-            data['title'].append(s.title)
-            data['length'].append(s.length)
-            data['e_value'].append(s.hsps[0].expect)
-            data['sequence'].append(s.hsps[0].sbjct)
-            data['subject_start'].append(s.hsps[0].sbjct_start)
-            data['subject_end'].append(s.hsps[0].sbjct_end)
-            data['query_start'].append(s.hsps[0].query_start)
-            data['query_end'].append(s.hsps[0].query_end)
-            data['query'].append(record.query)
-
-        if len(record.alignments) == 0:
-            data['accession'].append(pd.NA)
-            data['hit_def'].append(pd.NA)
-            data['hit_id'].append(pd.NA)
-            data['title'].append(pd.NA)
-            data['length'].append(pd.NA)
-            data['e_value'].append(pd.NA)
-            data['sequence'].append(pd.NA)
-            data['subject_start'].append(pd.NA)
-            data['subject_end'].append(pd.NA)
-            data['query_start'].append(pd.NA)
-            data['query_end'].append(pd.NA)
-            data['query'].append(record.query)
-
-        # Port to DataFrame.
-        out_df.append(pd.DataFrame(data))
-
-    out_df = pd.concat(out_df)
-
-    return out_df

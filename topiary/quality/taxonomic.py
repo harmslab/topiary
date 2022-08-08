@@ -1,10 +1,11 @@
 """
-Sample sequences from a topiary dataframe in a taxonomically informed way.
+Functions for finding blocks of sequences to merge in a taxonomically-informed
+(species/paralog) fashion.
 """
 
 import topiary
 from topiary.quality import score_alignment
-from topiary import check
+from topiary._private import check
 
 import ete3
 
@@ -18,13 +19,17 @@ def _prep_species_tree(df,paralog_column):
 
     Parameters
     ----------
-        df: topiary dataframe
-        paralog_column: column in dataframe containing paralog calls for each
-                        sequence.
+    df : pandas.DataFrame
+        topiary dataframe
+    paralog_column : str
+        column in dataframe containing paralog calls for each sequence.
 
-    Return
-    ------
-        annotated species tree (ete3)
+    Returns
+    -------
+    df : pandas.DataFrame
+        dataframe with organisms who cannot be placed on the current synthetic
+        tree set to keep = False
+    annotated_species_tree : ete3.Tree
     """
 
     if paralog_column not in df.columns:
@@ -33,10 +38,18 @@ def _prep_species_tree(df,paralog_column):
 
     # Make sure df has ott
     if "ott" not in df.columns:
-        df = topiary.opentree.get_ott_id(df)
+        df = topiary.opentree.get_ott(df)
 
-    # Get rid of almost identical sequences within each species
-    species_tree = topiary.opentree.get_species_tree(df)
+    # Get species tree
+    species_tree, dropped = topiary.opentree.get_species_tree(df)
+
+    # Drop sequences for species that cannot be resolved on the tree
+    df = df.loc[np.logical_not(df.ott.isin(dropped)),:]
+
+    # If everything is dropped, complain
+    if len(df) == 0:
+        err = "Could not place any species onto a species tree.\n"
+        raise ValueError(err)
 
     all_paralogs = list(np.unique(df.loc[:,paralog_column]))
     paralogs_seen = dict([(p,[]) for p in all_paralogs])
@@ -48,26 +61,25 @@ def _prep_species_tree(df,paralog_column):
             idx = this_df.index[i]
             leaf.paralogs[this_df.loc[idx,paralog_column]].append(this_df.loc[idx,"uid"])
 
-    return species_tree
+    return df, species_tree
 
-def _divide_budget_among_paralogs(T,overall_budget):
+def _even_paralog_budgeting(T,overall_budget):
     """
-    Given some overall number of sequences desired, figure out how many to
-    assign to each paralog. Decides how to do this in a tree-weighted
-    fashion.
+    Generate as even as possible of a split between paralogs given the
+    overall sequence budget.
 
     Parameters
     ----------
-        T: ete3 tree with leaves that have the `paralogs` dictionary holding
-           lists of uid with paralog names as keys. Assumes all branch
-           lengths are identical.
-        overall_budget: integer number of sequences to keep adding up all
-                        all paralogs.
+    T : ete3.Tree
+        tree with leaves that have the `paralogs` dictionary holding lists of
+        uid with paralog names as keys. Assumes all branch lengths are identical.
+    overall_budget : int
+        number of sequences to keep adding up all all paralogs.
 
-    Return
-    ------
-        paralog_budget dictionary holding total number of sequences to keep for
-        each paralog
+    Returns
+    -------
+    paralog_budget : dict
+        dictionary with number of sequences to keep for each paralog
     """
 
     # Get all unique paralogs in the tree
@@ -76,16 +88,69 @@ def _divide_budget_among_paralogs(T,overall_budget):
         paralogs.extend(list(leaf.paralogs.keys()))
     paralogs = list(set(paralogs))
 
-    # Figure out a weighted total for each paralog. The weights have two
-    # components. Number of paralogs seen (higher weight) and the distance
-    # from the ancestor (lower weight). If an organism has two called copies
-    # of some paralog and is four splits from the tree ancestor, it will
-    # recieve a weight of 2*(0.5^4) = 0.125. If an organism has one called
-    # copy of the same paralog, but directly splits off the ancestor, it
-    # will have a weight of 1*(0.5^1) = 0.5. This strategy is to ensure we
-    # have an adequte number of seqeunces to capture both early duplications
-    # and late expansions.
-    paralog_totals = dict([(p,0) for p in paralogs])
+    paralog_counts = dict([(p,0) for p in paralogs])
+    for leaf in T.get_leaves():
+        for p in paralogs:
+            paralog_counts[p] += len(leaf.paralogs[p])
+
+    paralog_budget = {}
+    fx = 1.0/(len(paralogs))
+    for p in paralog_counts:
+        paralog_budget[p] = int(np.round(fx*overall_budget,0))
+
+    # If rounding dropped a count, add it back in
+    total_allocated = sum([paralog_budget[p] for p in paralog_budget])
+    if total_allocated < overall_budget:
+        paralog_budget[paralogs[0]] += 1
+
+    paralog_budget = _finalize_paralog_budget(paralog_budget,paralog_counts)
+
+    return paralog_budget
+
+def _weighted_paralog_budgeting(T,overall_budget):
+    """
+    Given some overall number of sequences desired, figure out how many to
+    assign to each paralog. Decides how to do this in a tree-weighted
+    fashion. (See Notes)
+
+    Parameters
+    ----------
+    T : ete3.Tree
+        tree with leaves that have the `paralogs` dictionary holding lists of
+        uid with paralog names as keys. Assumes all branch lengths are identical.
+    overall_budget : int
+        number of sequences to keep adding up all all paralogs.
+
+    Returns
+    -------
+    paralog_budget : dict
+        dictionary holding total number of sequences to keep for each paralog
+
+    Notes
+    -----
+    This function finds a weighted total budget for each paralog. The weights
+    have two components. Number of paralogs seen (higher weight) and the
+    distance from the ancestor (lower weight). The number of paralogs seen is
+    the starting weight (1, 2, 3, etc.). The weight for distance from ancestor
+    is calculated by the number of splits (N) by 0.5^N. For example, if an
+    organism has two copies of some paralog and the organism is four splits from
+    the tree ancestor, it will recieve a weight of 2*(0.5^4) = 0.125. If an
+    organism has one copy of the same paralog, but directly splits off the
+    ancestor, it will have a weight of 1*(0.5^1) = 0.5. This strategy ensures
+    have an adequte number of seqeunces to capture both early duplications
+    and late expansions. The final budget assigned to paralog x is given by
+    sum(weights_for_parlog_x)/sum(weights_for_all_paralogs)*total_budget.
+    """
+
+    # Get all unique paralogs in the tree
+    paralogs = []
+    for leaf in T.get_leaves():
+        paralogs.extend(list(leaf.paralogs.keys()))
+    paralogs = list(set(paralogs))
+
+    # Figure out a weighted total for each paralog.
+    paralog_counts = dict([(p,0) for p in paralogs])
+    paralog_weights = dict([(p,0) for p in paralogs])
     anc = T.get_common_ancestor(T.get_leaves())
     for leaf in T.get_leaves():
         distance = leaf.get_distance(anc)
@@ -93,17 +158,77 @@ def _divide_budget_among_paralogs(T,overall_budget):
 
         for p in paralogs:
             num_p = len(leaf.paralogs[p])
-            paralog_totals[p] += num_p*weight
+            paralog_counts[p] += num_p
+            paralog_weights[p] += num_p*weight
 
     # Given our overall budget and the weights on each paralog seen, give
     # each paralog a total budget (paralog_weight/sum(paralog_weights) * overall).
     paralog_budget = {}
-    all_total = sum([paralog_totals[p] for p in paralog_totals])
-    for p in paralog_totals:
-        fx = paralog_totals[p]/all_total
+    Q = sum([paralog_weights[p] for p in paralog_weights])
+    for p in paralog_weights:
+        fx = paralog_weights[p]/Q
         paralog_budget[p] = int(np.round(fx*overall_budget,0))
 
+    paralog_budget = _finalize_paralog_budget(paralog_budget,paralog_counts)
+
     return paralog_budget
+
+def _finalize_paralog_budget(paralog_budget,paralog_counts):
+    """
+    The budgeting protocols will potentially give a paralog more budget than
+    sequences. The loop below will iteratively partition any extra budget to
+    other paralogs.
+
+    Parameters
+    ----------
+    paralog_budget : dict
+        planned paralog budget
+    paralog_counts : dict
+        actual counts for each paralog
+
+    Returns
+    -------
+    finished_paralogs : dict
+        budget redistributed to match actual number of paralog counts
+    """
+
+    finished_paralogs = {}
+    while True:
+
+        remaining_budget = 0
+        for p in list(paralog_budget.keys()):
+            if paralog_budget[p] >= paralog_counts[p]:
+                remaining_budget += (paralog_budget[p] - paralog_counts[p])
+                finished_paralogs[p] = paralog_counts[p]
+                paralog_budget.pop(p)
+
+        # We didn't create a remaining budget -- nothing to partition to other
+        # paralogs
+        if remaining_budget == 0:
+            break
+
+        # We finished off all paralog budgets
+        if len(paralog_budget) == 0:
+            break
+
+        # Re-divide paralog budget among paralogs that have not finished yet
+        local_total = sum([paralog_budget[p] for p in paralog_budget])
+        budget_to_allocate = local_total + remaining_budget
+        for p in paralog_budget:
+
+            # If no budget allocated at this point to any left, assign even
+            # weights.
+            if local_total == 0:
+                fx = 1/len(paralog_budget)
+            else:
+                fx = paralog_budget[p]/local_total
+            paralog_budget[p] = int(np.round(fx*budget_to_allocate,0))
+
+    # Copy in any budget that was not already popped out to finished
+    for p in paralog_budget:
+        finished_paralogs[p] = paralog_budget[p]
+
+    return finished_paralogs
 
 
 def _get_sequence_budgets(T,total_budget):
@@ -115,12 +240,15 @@ def _get_sequence_budgets(T,total_budget):
 
     Parameters
     ----------
-        T: ete3 with `sequences` list associated with each node.
-        total_budget: total number of sequences to budget over the whole tree
+    T : ete3.Tree
+        tree with `sequences` list associated with each node.
+    total_budget : int
+        total number of sequences to budget over the whole tree
 
-    Return
-    ------
-        T updated with .budget and .num_seq attributes
+    Returns
+    -------
+    T : ete3.Tree
+        input tree updated with .budget and .num_seq attributes
     """
 
     # Starts at ancestor and moves up
@@ -134,8 +262,13 @@ def _get_sequence_budgets(T,total_budget):
         else:
             # This is the root. Record the total budget available and continue
             if num_sister_clades == 0:
-                current_node.budget = total_budget
+
                 current_node.num_seq = sum([len(l.sequences) for l in current_node.get_leaves()])
+
+                if total_budget > current_node.num_seq:
+                    total_budget = current_node.num_seq
+                current_node.budget = total_budget
+
                 continue
             else:
                 err = "\nInput tree must be rooted and fully resolved (no polytomies)\n\n"
@@ -215,9 +348,123 @@ def _get_sequence_budgets(T,total_budget):
 
     return T
 
-def _identify_merge_blocks(T):
 
+def _even_merge_blocks(T,merge_block_size):
+    """
+    Given the annotated budgets on the tree and the number of sequences at the
+    tips, create as evenly sized as possible blocks to merge.
+
+    Parameters
+    ----------
+    T : ete3.Tree
+        tree with budgets and num_seq annotated on all nodes
+
+    Returns
+    -------
+    merge_blocks : list
+        list of blocks to merge with the following form
+        [(len(list_of_uid_to_merge),list_of_uid_to_merge,ete3_node_from_merge),
+         ...]
+    """
+
+    #T = T.copy()
+
+    uid_blocks = []
+    for current_node in T.traverse(strategy="levelorder"):
+
+        # Get ancestor of clade containing sisters to current group
+        sisters = current_node.get_sisters()
+        num_sister_clades = len(sisters)
+
+        # Root
+        if num_sister_clades == 0:
+
+            current_node.in_block = False
+
+            # Set root to not in_block to start
+            if current_node.num_seq <= merge_block_size:
+                uid = [leaf.sequences for leaf in current_node.get_leaves()]
+                uid_blocks.append((uid,current_node))
+                current_node.in_block = True
+
+            continue
+
+        # Standard bifurcating tree node
+        elif num_sister_clades == 1:
+            sister_node = sisters[0]
+
+        else:
+            err = "\nInput tree must be rooted and fully resolved (no polytomies)\n\n"
+            raise ValueError(err)
+
+        # If we've already visited this split, don't do anything
+        if hasattr(current_node,"in_block") and hasattr(sister_node,"in_block"):
+            continue
+
+        # Get whether we are already in a merge block from the parent
+        parent_node = T.get_common_ancestor(current_node,sister_node)
+        in_block = parent_node.in_block
+
+        # If we're already in a block, record this
+        if in_block:
+            current_node.in_block = True
+            sister_node.in_block = True
+            continue
+        else:
+            current_node.in_block = False
+            sister_node.in_block = False
+
+        # If the number of descendants of current node is <= merge block size,
+        # merge it.
+        if not current_node.in_block:
+            if current_node.num_seq <= merge_block_size or current_node.is_leaf():
+                uid = [leaf.sequences for leaf in current_node.get_leaves()]
+                uid_blocks.append((uid,current_node))
+                current_node.in_block = True
+
+
+        # If the number of descendants of sister node is <= merge block size,
+        # merge it.
+        if not sister_node.in_block:
+            if sister_node.num_seq <= merge_block_size or sister_node.is_leaf():
+                uid = [leaf.sequences for leaf in sister_node.get_leaves()]
+                uid_blocks.append((uid,sister_node))
+                sister_node.in_block = True
+
+    # Assemble final blocks from sub blocks
+    final_uid_blocks = []
+    for result in uid_blocks:
+        block = result[0]
+        node = result[1]
+
+        this_block = []
+        for sub_block in block:
+            this_block.extend(sub_block)
+        final_uid_blocks.append((len(this_block),this_block,node))
+
+    return final_uid_blocks
+
+def _taxonomic_merge_blocks(T):
+    """
+    Given the annotated budgets on the tree and the number of sequences at the
+    tips, create blocks of sequences that must be merged with one another.
+
+    Parameters
+    ----------
+    T : ete3.Tree
+        tree with budgets and num_seq annotated on all nodes
+
+    Returns
+    -------
+    merge_blocks : list
+        list of blocks to merge with the following form
+        [(budget_for_merge,list_of_uid_to_merge,ete3_node_from_merge),
+         ...]
+    """
+
+    # Work on copy -- we're going to edit tree as we go
     T = T.copy()
+
     merge_blocks = []
     for counter, leaf in enumerate(T.get_leaves()):
 
@@ -225,22 +472,25 @@ def _identify_merge_blocks(T):
         if leaf.budget == -1:
             continue
 
-        # If we have enough budget to take every sequence
+        # If we have enough budget to take every sequence on this leaf...
         if leaf.num_seq <= leaf.budget:
 
             # No sequences -- don't do anything
             if leaf.num_seq == 0:
                 continue
 
-            # Record that we want to merge all sequences on this leaf
+            # Record that we want to keep all sequences on this leaf. Put into
+            # a merge block that that has the same number of output sequences
+            # as we ask to merge.
             merge_uid = list(leaf.sequences)
             merge_blocks.append((len(merge_uid),merge_uid,leaf))
             leaf.budget = -1
 
+        # We're taking a subset of the sequences on this leaf
         else:
 
-            # If the leaf has some budget, we're taking a subset of the
-            # sequences on this leaf.
+            # if the budget is greater than zero, merge the sequences on this
+            # leaf into a block of size leaf.buddet
             if leaf.budget > 0:
                 merge_uid = list(leaf.sequences)
                 merge_blocks.append((leaf.budget,merge_uid,leaf))
@@ -249,13 +499,17 @@ def _identify_merge_blocks(T):
             # If the budget is zero, we need to go down the tree to find
             # a group of leaves to merge
             else:
+
                 for anc in leaf.get_ancestors():
 
-                    # If we have a non-zero budget, merge all descendants
+                    # If we hit an ancestor with a non-zero budget, merge all of
+                    # its descendants.
                     if anc.budget > 0:
 
                         budget = anc.budget
                         merge_uid = []
+
+                        # Go through the leaves that descend from this ancestor
                         for m in anc.get_leaves():
                             if m.budget == -1:
                                 err = "We hit a descendant leaf of that\n"
@@ -263,6 +517,9 @@ def _identify_merge_blocks(T):
                                 err += "should not be possible for a monophyletic\n"
                                 err += "tree!\n\n"
                                 raise RuntimeError(err)
+
+                            # Get uid to merge and set budget of this leaf to
+                            # -1 -- now merged
                             merge_uid.extend(m.sequences)
                             m.budget = -1
 
@@ -271,190 +528,82 @@ def _identify_merge_blocks(T):
                         # Break out of get_ancestors loop
                         break
 
-    # Sanity check on merge
-    for l in T.get_leaves():
-        if l.num_seq > 0:
-            assert l.budget == -1
-
     return merge_blocks
 
-def taxonomic_sample(df,
+
+def get_merge_blocks(df,
+                     target_seq_number,
                      paralog_column="recip_paralog",
-                     target_seq_number=500,
-                     even_paralog_split=True,
-                     key_species=[],
-                     within_species_redundancy_cutoff=0.99,
-                     sparse_column_cutoff=0.95,
-                     sparse_run_length_keep_percentile=0.99,
-                     fx_missing_dense_cutoff=0.75,
-                     align_trim=(0.05,0.95),
-                     verbose=False):
+                     weighted_paralog_split=False,
+                     target_merge_block_size=None):
     """
-    Sample sequences from a topiary dataframe in a taxonomically informed way.
+    Determine blocks of sequences to merge in a taxonomically informed fashion.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        topiary dataframe
+        topiary dataframe to evaluate
+    target_seq_number : int
+        target number of sequences after the merge
     paralog_column : str, default="recip_paralog"
-        column holding preliminary paralog calls.
-    target_seq_number : int, default=500
-        number of sequences to aim for in the final dataset
-    even_paralog_split : bool, default=True
-        try to keep an even number of paralogs. If False, select the relative
-        number of each paralog to keep based on its frequency in the dataframe
-    key_species : list, default=[]
-        list of species (binomial names) that will not have sequences removed
-        (unless there are duplicate sequences for that species with identity >
-        within_species_redundancy_cutoff).
-    within_species_redundancy_cutoff : float, default=0.99
-        merge sequences with sequence identity above cutoff when removing
-        redundancy of sequences within species.
-    sparse_column_cutoff : float, default=0.95
-        when checking alignment quality, a column is sparse if it has gaps in
-        more than sparse_column_cutoff sequences.
-    sparse_run_length_keep_percentile : float, 0.99
-        when checking alignment quality, remove the sequences with the longest
-        insertions. Toss the longest (1 - sparse_run_length_keep_percentile)*num_sequences
-        sequences.
-    fx_missing_dense_cutoff : float, default=0.75
-        when checking alignment quality, remove sequences that are missing more
-        than 1 - fx_missing_dense_cutoff of the dense (that is, not sparse,
-        columns).
-    align_trim : tuple, default=(0.05,0.95)
-        when checking alignment quality, do not score the first and last parts
-        of the alignment. Interpreted like a slice, but with percentages.
-        (0.0,1.0) would not trim; (0.05,0,98) would trim the first 0.05 off the
-        front and the last 0.02 off the back.
-    verbose : bool, default=False
-        output verbosity
+        column in dataframe containing paralog name of each sequence
+    weighted_paralog_split : bool, default=False
+        when deciding how much of the total budget to assign to each paralog,
+        weight the budget by the number of times each paralog is seen. If False,
+        (default), split the budget as evenly as possible between the paralogs
+        in the dataframe.
+    target_merge_block_size : int, optional
+        if specified, attempt to make merge blocks have the given size. The
+        actual block sizes will vary wildly, as it is done by traversing the
+        tree and thus depends strongly on the tree topology. merge blocks will
+        all be <= the target size *except* for tips that have more copies of a
+        given paralog than the target size. In such a case, the paralogs from
+        that species will form their own merge block.
+
+    Returns
+    -------
+    merge_blocks : dict
+        dictionary keyed to paralog names taken from paralog_column. Values are
+        lists of blocks to merge with the following form
+        [(budget_for_merge,list_of_uid_to_merge,ete3_leaf_this_came_from),...]
     """
+
+    # --------------------------------------------------------------------------
+    # Check input arguments
 
     df = check.check_topiary_dataframe(df)
 
-    try:
-        df.loc[:,paralog_column]
-    except KeyError:
-        err = f"\nparalog_column '{paralog_column}' not found in dataframe.\n\n"
+    if paralog_column not in df.columns:
+        err = f"\nparalog_column '{paralog_column}' not in dataframe.\n"
         raise ValueError(err)
 
     target_seq_number = check.check_int(target_seq_number,
-                                                 "target_seq_number",
-                                                 minimum_allowed=1)
+                                        "target_seq_number",
+                                        minimum_allowed=1)
 
-    key_species = check.check_iter(key_species,
-                                               "key_species")
+    weighted_paralog_split = check.check_bool(weighted_paralog_split,
+                                              "weighted_paralog_split")
+    if target_merge_block_size is not None:
+        target_merge_block_size = check.check_int(target_merge_block_size,
+                                                  "target_merge_block_size",
+                                                  minimum_allowed=1)
 
-    within_species_redundancy_cutoff = check.check_float(within_species_redundancy_cutoff,
-                                                         "within_species_redundancy_cutoff",
-                                                         minimum_allowed=0.0,
-                                                         maximum_allowed=1.0)
+    # --------------------------------------------------------------------------
+    # Do merging
 
-    sparse_run_length_keep_percentile = check.check_float(sparse_run_length_keep_percentile,
-                                                          "sparse_run_length_keep_percentile",
-                                                          minimum_allowed=0.0,
-                                                          maximum_allowed=1.0)
-
-    fx_missing_dense_cutoff = check.check_float(fx_missing_dense_cutoff,
-                                                "fx_missing_dense_cutoff",
-                                                minimum_allowed=0.0,
-                                                maximum_allowed=1.0)
-
-    fx_missing_dense_cutoff = 1 - fx_missing_dense_cutoff
-
-    ## align_trim passed directly to score_alignment and validated there
-
-    verbose = check.check_bool(verbose,"verbose")
-
-    # Drop unkept columns
-    df = df.loc[df.keep,:]
-
-    # How many sequences we start with
-    starting_keep = np.sum(df.keep)
-    print(f"Starting with {starting_keep} sequences.\n",flush=True)
-
-    if within_species_redundancy_cutoff < 1.0:
-        print("Removing nearly identical sequences within species.\n",flush=True)
-        df = topiary.quality.remove_redundancy(df,
-                                               cutoff=within_species_redundancy_cutoff,
-                                               only_in_species=True)
-
-        if np.sum(df.keep) == 0:
-            err = "redundnacy pass removed all sequences!\n"
-            raise ValueError(err)
-
-    # Drop unkept columns
-    df = df.loc[df.keep,:]
-
-    # Update dataframe with alignment score information
-    df["sparse_run_length"] = 0.0
-    df["fx_missing_dense"] = 0.0
-
-    # Iterate over all paralogs.
-    paralogs = set(df.loc[:,paralog_column])
-    for p in paralogs:
-
-        # Create a dataframe with this paralog only
-        paralog_mask = df.loc[:,paralog_column] == p
-        this_df = df.loc[paralog_mask,:]
-
-        # Align the sequenes within this paralog
-        print(f"Performing initial alignment of paralog {p}.\n",flush=True)
-        this_df = topiary.run_muscle(this_df,super5=True)
-
-        print(f"\nRemoving poorly aligned sequences.\n",flush=True)
-
-        # Score alignment
-        this_df = score_alignment(this_df,
-                                  alignment_column="alignment",
-                                  align_trim=align_trim,
-                                  sparse_column_cutoff=sparse_column_cutoff)
-
-        df.loc[paralog_mask,"sparse_run_length"] = this_df["sparse_run_length"]
-        df.loc[paralog_mask,"fx_missing_dense"] = this_df["fx_missing_dense"]
-
-        # Remove hardest-to-align to align sequences from consideration
-        tmp = np.array(this_df.sparse_run_length)
-        slicer = int(np.round(len(tmp)*sparse_run_length_keep_percentile,0))
-        sparse_run_length_cutoff = tmp[np.argsort(tmp)][slicer]
-
-        keep_mask = np.product((this_df.sparse_run_length < sparse_run_length_cutoff,
-                                this_df.fx_missing_dense < fx_missing_dense_cutoff),axis=0)
-
-        df.loc[paralog_mask,"keep"] = np.logical_and(df.loc[paralog_mask,"keep"],
-                                                     keep_mask)
-
-        if np.sum(keep_mask) == 0:
-            err = f"alignment quality pass removed all sequences for paralog {p}!\n"
-            raise ValueError(err)
-
-
-    print(f"\nInitial sequence quality control: {starting_keep} --> {np.sum(df.keep)} sequences.\n",flush=True)
-
-    # Construct species tree annotated with paralogs at tips
-    species_tree = _prep_species_tree(df,paralog_column=paralog_column)
+    # Get species tree, dropping sequences that cannot be resolved.
+    df, species_tree = _prep_species_tree(df,paralog_column=paralog_column)
 
     # Get the sequence budget for all paralogs
-    if even_paralog_split:
-        paralog_totals = {}
-        for p in paralogs:
-            paralog_totals[p] = np.sum(df.loc[:,paralog_column] == p)
-        all_total = sum([paralog_totals[p] for p in paralog_totals])
-
-        paralog_budget = {}
-        for p in paralog_totals:
-            fx = paralog_totals[p]/all_total
-            paralog_budget[p] = int(np.round(fx*target_seq_number,0))
+    if weighted_paralog_split:
+        paralog_budget = _weighted_paralog_budgeting(species_tree,
+                                                     target_seq_number)
     else:
-        paralog_budget = _divide_budget_among_paralogs(species_tree,target_seq_number)
-
-    print("Approximate number of paralogs to keep")
-    for p in paralog_budget:
-        print(f"    {p}: {paralog_budget[p]}")
-    print("",flush=True)
+        paralog_budget = _even_paralog_budgeting(species_tree,
+                                                 target_seq_number)
 
     # Go through each paralog
-    uid_to_keep = []
+    merge_blocks = {}
     for p in paralog_budget:
 
         # Create a tree that has only paralog p in it
@@ -464,60 +613,12 @@ def taxonomic_sample(df,
             leaf.name = f"{leaf.name} ({len(leaf.sequences)})"
 
         # Figure out how to distribute the total budget across the tree
-        _get_sequence_budgets(T,paralog_budget[p])
+        T = _get_sequence_budgets(T,paralog_budget[p])
 
         # Get list of blocks of sequences to merge
-        merge_blocks = _identify_merge_blocks(T)
+        if target_merge_block_size is not None:
+            merge_blocks[p] = _even_merge_blocks(T,target_merge_block_size)
+        else:
+            merge_blocks[p] = _taxonomic_merge_blocks(T)
 
-        # Merge each merge block
-        for m in merge_blocks:
-            budget = m[0]
-            uid = m[1]
-
-            this_mask = df.loc[:,"uid"].isin(uid)
-            this_df = df.loc[this_mask,:]
-
-            # If a key_species is in the block, take it.
-            in_species_mask = this_df.species.isin(key_species)
-            if np.sum(in_species_mask) >= budget:
-                this_uid = list(this_df.loc[in_species_mask,"uid"])
-            else:
-
-                # Sort by best aligner
-                a = np.array(this_df.fx_missing_dense/np.sum(this_df.fx_missing_dense))
-                b = np.array(this_df.sparse_run_length/np.sum(this_df.sparse_run_length))
-
-                sort_order = np.argsort(a + b)
-                this_uid = np.array(this_df.uid.iloc[sort_order])[:budget]
-
-            if verbose:
-
-                species = this_df.loc[this_df.uid.isin(this_uid),"species"]
-
-                print("---------------------------------------------------------")
-                if budget == len(uid):
-                    print("KEEPING")
-                else:
-                    print("MERGING")
-                print("---------------------------------------------------------")
-
-                print(m[2])
-                print()
-                print(f"{p}",",".join(species))
-                print(flush=True)
-
-            uid_to_keep.extend(this_uid)
-
-
-    # Update dataframe keep with merge results
-    keep_mask = df.loc[:,"uid"].isin(uid_to_keep)
-    df.loc[keep_mask,"keep"] = True
-    df.loc[np.logical_not(keep_mask),"keep"] = False
-    if "always_keep" in df:
-        df.loc[df.always_keep,"keep"] = True
-
-    print("Final number of sequences:")
-    print(sum(df.keep))
-    print()
-
-    return df
+    return merge_blocks

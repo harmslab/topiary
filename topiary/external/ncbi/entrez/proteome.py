@@ -3,11 +3,14 @@ Use entrez to download a proteome from the NCBI.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
+from topiary.external.ncbi.entrez.download import ncbi_ftp_download
+
 
 from Bio import Entrez
 
 import os, urllib, datetime, re
+import ftplib
 
 def _get_genome_url(record):
     """
@@ -64,9 +67,11 @@ def _get_genome_url(record):
 
     return None
 
-def get_proteome(taxid=None,species=None,output_dir="."):
+def get_proteome_ids(taxid=None,species=None):
     """
-    Use entrez to download a proteome from the NCBI.
+    Query entrez to get a list of proteome ids that match a taxid or species.
+    This will not raise an error on failure, but will instead return None with
+    an error string.
 
     Parameters
     ----------
@@ -76,13 +81,13 @@ def get_proteome(taxid=None,species=None,output_dir="."):
     species : str, optional
         bionomial name of species (i.e. Mus musculus). Incompatible with `taxid`
         argument. At least taxid or species must be specified.
-    output_dir : str, optional
-        where to write the file locally
 
     Returns
     -------
-    proteome_file : str or None
-        the file we downloaded or None if no file downloaded
+    returned_ids : list or None
+        list of proteome ids. None if no ids found/error.
+    err: str or None
+        descriptive error if no returned_ids. None if no error.
     """
 
     if species is None and taxid is None:
@@ -93,18 +98,15 @@ def get_proteome(taxid=None,species=None,output_dir="."):
         err = "\nYou must specify either species or taxid, but not both.\n\n"
         raise ValueError(err)
 
-    output_dir = str(output_dir)
-    if not os.path.isdir(output_dir) or not os.access(output_dir,os.W_OK):
-        err = "\nlocal_path must exist and be writable.\n\n"
-        raise ValueError(err)
-
     # Do query using taxid. This will throw an error if species is not sane,
     # so is a helpful check before querying ncbi.
     if species:
-        print(f"Downloading proteome for species '{species}'",flush=True)
-        taxid = topiary.ncbi.get_taxid(species)
-    else:
-        print(f"Downloading proteome for taxid '{taxid}'",flush=True)
+
+        try:
+            taxid = topiary.ncbi.get_taxid(species)
+        except RuntimeError:
+            err = f"\nCould not find taxid for species '{species}'\n\n"
+            return None, err
 
     # Make sure the taxid is sane
     taxid = check.check_int(taxid,"taxid")
@@ -122,12 +124,50 @@ def get_proteome(taxid=None,species=None,output_dir="."):
         returned_ids = list(search_record["IdList"])
     except KeyError:
         err = "\nThe Entrez.esearch query failed.\n\n"
-        raise RuntimeError(err)
+        return None, err
 
     # Make sure something came back
     if len(returned_ids) == 0:
-        err = f"\nThe query '{query_text}' returned no assemblies.\n\n"
+        err = f"\nThe Entrez.eserch query '{query_text}' returned no assemblies.\n\n"
+        return None, err
+
+    # Try to delete random file that gets downloaded when we make this query.
+    try:
+        os.remove("esummary_assembly.dtd")
+    except FileNotFoundError:
+        pass
+
+    return returned_ids, None
+
+def get_proteome(taxid=None,species=None):
+    """
+    Use entrez to download a proteome from the NCBI.
+
+    Parameters
+    ----------
+    taxid: int or str, optional
+        NCBI taxid (integer or string version of the integer). Incompatible with
+        `species` argument. At least taxid or species must be specified.
+    species : str, optional
+        bionomial name of species (i.e. Mus musculus). Incompatible with `taxid`
+        argument. At least taxid or species must be specified.
+
+    Returns
+    -------
+    proteome_file : str or None
+        the file we downloaded or None if no file downloaded
+    """
+
+    # Get proteome ids to download. Validate taxid and species arguments via
+    # this function
+    returned_ids, err = get_proteome_ids(taxid=taxid,species=species)
+    if returned_ids is None:
         raise RuntimeError(err)
+
+    if species is not None:
+        print(f"Downloading proteome for species '{species}'",flush=True)
+    else:
+        print(f"Downloading proteome for taxid '{taxid}'",flush=True)
 
     # Now get summary data for these records.
     esummary_query = ",".join(returned_ids)
@@ -153,27 +193,27 @@ def get_proteome(taxid=None,species=None,output_dir="."):
     success = False
     for u in urls:
 
-        try:
-            genome_url = u[3]
-            refseq_name = os.path.basename(genome_url)
-            out_file = f"{refseq_name}_protein.faa.gz"
-            remote_file = f"{genome_url}/{out_file}"
-            local_file = os.path.join(output_dir,out_file)
-            urllib.request.urlretrieve(remote_file, local_file)
-            success = True
-            break
+        genome_url = u[3]
+        refseq_name = os.path.basename(genome_url)
+        out_file = f"{refseq_name}_protein.faa.gz"
+        remote_file = f"{genome_url}/{out_file}"
 
-        except (urllib.error.URLError,urllib.error.HTTPError):
+        try:
+            ncbi_ftp_download(genome_url,file_base="_protein.faa.gz")
+        except (ftplib.error_perm,RuntimeError):
             continue
+
+        success = True
+        break
 
     # Try to delete random file that gets downloaded when we make this query.
     try:
-        os.remove(os.path.join(output_dir,"esummary_assembly.dtd"))
+        os.remove("esummary_assembly.dtd")
     except FileNotFoundError:
         pass
 
 
     if success:
-        return local_file
+        return out_file
 
     return None

@@ -1,0 +1,12 @@
+numpy<1.22
+pandas
+xlrd
+openpyxl
+matplotlib
+biopython
+tqdm
+ete3
+dendropy
+toytree
+pastml
+opentree

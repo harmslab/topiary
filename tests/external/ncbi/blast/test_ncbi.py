@@ -3,18 +3,18 @@ import pytest
 from conftest import get_public_param_defaults
 
 import topiary
-from topiary.external.ncbi.blast.ncbi import ncbi_blast
 from topiary.external.ncbi.blast.ncbi import _prepare_for_blast as _pfb
 from topiary.external.ncbi.blast.ncbi import _construct_args as _ca
 from topiary.external.ncbi.blast.ncbi import _combine_hits
+from topiary.external.ncbi.blast.ncbi import _ncbi_blast_thread_function
+from topiary.external.ncbi.blast.ncbi import ncbi_blast
 
 import numpy as np
 import pandas as pd
 
 import copy
-import multiprocessing as mp
 
-def test__prepare_blast(test_dataframes):
+def test__prepare_for_blast(test_dataframes):
 
     default_kwargs = get_public_param_defaults(ncbi_blast,_pfb)
     default_kwargs["kwargs"] = {}
@@ -259,7 +259,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
-                                test_num_cores=5)
+                                keep_blast_xml=False,
+                                manual_num_cores=5)
 
     assert type(all_args) is list
     assert len(all_args) == 5
@@ -268,22 +269,19 @@ def test__construct_args(test_dataframes):
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[i]
 
         # useful kwargs
-        assert a[0]["database"] == "nr"
-        assert a[0]["hitlist_size"] == '100'
-        assert a[0]["program"] == "blastp"
-        assert a[0]["expect"] == '0.001'
-        assert a[0]["gapcosts"] == '11 1'
-        assert a[0]["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
-
-        # Make sure counter is working
-        assert a[1] == i
+        assert a["this_query"]["database"] == "nr"
+        assert a["this_query"]["hitlist_size"] == '100'
+        assert a["this_query"]["program"] == "blastp"
+        assert a["this_query"]["expect"] == '0.001'
+        assert a["this_query"]["gapcosts"] == '11 1'
+        assert a["this_query"]["url_base"] == "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
 
         # Num tries allowed
-        assert a[2] == 5
+        assert a["num_tries_allowed"] == 5
 
     # -------------------------------------------------------------------------
     # test sequence bits
@@ -294,10 +292,11 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=5,
-                                test_num_cores=5)
+                                keep_blast_xml=False,
+                                manual_num_cores=5)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
     assert num_threads == 1
 
     # Machine as two core, auto detect cores. Should have two args
@@ -307,11 +306,12 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=2)
+                                keep_blast_xml=False,
+                                manual_num_cores=2)
 
     assert len(all_args) == 2
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[1][0]["sequence"].split("\n")[1] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[1]["this_query"]["sequence"].split("\n")[1] == "this"
     assert num_threads == 2
 
     # Machine as one core, auto detect cores. Should have one arg
@@ -321,11 +321,12 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[0][0]["sequence"].split("\n")[3] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[3] == "this"
     assert num_threads == 1
 
     # Machine as one core. Pass in 2. Should have one arg, one thread
@@ -335,11 +336,12 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=2,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
-    assert all_args[0][0]["sequence"].split("\n")[1] == "test"
-    assert all_args[0][0]["sequence"].split("\n")[3] == "this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == "test"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[3] == "this"
     assert num_threads == 1
 
 
@@ -351,10 +353,11 @@ def test__construct_args(test_dataframes):
                                 max_query_length=150,
                                 num_tries_allowed=5,
                                 num_threads=-1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
     assert len(all_args) == 2
-    assert all_args[0][0]["sequence"].split("\n")[1] == 25*"test"
-    assert all_args[1][0]["sequence"].split("\n")[1] == 25*"this"
+    assert all_args[0]["this_query"]["sequence"].split("\n")[1] == 25*"test"
+    assert all_args[1]["this_query"]["sequence"].split("\n")[1] == 25*"this"
     assert num_threads == 1
 
     # -------------------------------------------------------------------------
@@ -372,7 +375,8 @@ def test__construct_args(test_dataframes):
                                         max_query_length=b,
                                         num_tries_allowed=5,
                                         num_threads=-1,
-                                        test_num_cores=1)
+                                        keep_blast_xml=False,
+                                        manual_num_cores=1)
 
     # Get expected and actual sequence length for this df.sequence compiled
     # into >countX\nSEQUENCE\n ... format. Assumes there are less than 10
@@ -386,10 +390,11 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
-    seqs = all_args[0][0]["sequence"].split("\n")
+    seqs = all_args[0]["this_query"]["sequence"].split("\n")
     idx = [1,3,5,7,9]
     for i in range(5):
         assert seqs[idx[i]].strip() == df.sequence.iloc[i]
@@ -403,7 +408,8 @@ def test__construct_args(test_dataframes):
                                     max_query_length=long_indiv_sequence//2,
                                     num_tries_allowed=5,
                                     num_threads=1,
-                                    test_num_cores=1)
+                                    keep_blast_xml=False,
+                                    manual_num_cores=1)
 
     # Make sure splitting looks reasonable -- each sequence on own
     all_args, num_threads = _ca(sequence_list,
@@ -411,13 +417,14 @@ def test__construct_args(test_dataframes):
                                 max_query_length=180,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 5
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[i]
 
 
@@ -427,14 +434,15 @@ def test__construct_args(test_dataframes):
                                 max_query_length=340,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 3
     counter = 0
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[counter]
         counter += 2
 
@@ -444,14 +452,15 @@ def test__construct_args(test_dataframes):
                                 max_query_length=510,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 2
     counter = 0
     for i, a in enumerate(all_args):
 
         # Make sure it's pulling out sequences
-        seq = a[0]["sequence"].split("\n")[1].strip()
+        seq = a["this_query"]["sequence"].split("\n")[1].strip()
         assert seq == df.sequence.iloc[counter]
         counter += 3
 
@@ -462,7 +471,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=5,
                                 num_threads=1,
-                                test_num_cores=1)
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
 
     assert len(all_args) == 1
 
@@ -474,8 +484,9 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=1,
-                                test_num_cores=1)
-    assert all_args[0][2] == 7
+                                keep_blast_xml=False,
+                                manual_num_cores=1)
+    assert all_args[0]["num_tries_allowed"] == 7
 
 
     bad_int = [0,False,[],-1,None,str,"",{},int]
@@ -487,7 +498,8 @@ def test__construct_args(test_dataframes):
                                             max_query_length=10000,
                                             num_tries_allowed=b,
                                             num_threads=1,
-                                            test_num_cores=1)
+                                            keep_blast_xml=False,
+                                            manual_num_cores=1)
 
     # -------------------------------------------------------------------------
     # num_threads.
@@ -497,7 +509,8 @@ def test__construct_args(test_dataframes):
                                 max_query_length=10000,
                                 num_tries_allowed=7,
                                 num_threads=3,
-                                test_num_cores=None)
+                                keep_blast_xml=False,
+                                manual_num_cores=1000) # way more cores than 3
     assert num_threads == 3
 
 
@@ -505,12 +518,13 @@ def test__construct_args(test_dataframes):
     for b in bad_int:
         print("passing bad num_threads:",b)
         with pytest.raises(ValueError):
-                all_args, num_threads = _ca(sequence_list,
-                                            blast_kwargs=blast_kwargs,
-                                            max_query_length=10000,
-                                            num_tries_allowed=5,
-                                            num_threads=b,
-                                            test_num_cores=None)
+            all_args, num_threads = _ca(sequence_list,
+                                        blast_kwargs=blast_kwargs,
+                                        max_query_length=10000,
+                                        num_tries_allowed=5,
+                                        num_threads=b,
+                                        keep_blast_xml=False,
+                                        manual_num_cores=None)
 
 def test__combine_hits(ncbi_blast_server_output):
 
@@ -533,3 +547,11 @@ def test__combine_hits(ncbi_blast_server_output):
     df_list = _combine_hits(single_hit,return_singleton=False)
     assert type(df_list) is list
     assert len(df_list) == 1
+
+def test__ncbi_blast_thread_function():
+
+    pass
+
+def test_ncbi_blast():
+
+    pass

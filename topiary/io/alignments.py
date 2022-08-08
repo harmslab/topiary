@@ -3,7 +3,8 @@ Functions for reading and writing alignments to files.
 """
 
 import topiary
-from topiary import check, _private
+from topiary._private import check
+from topiary.external.opentree.util import taxonomic_sort
 
 import pandas as pd
 import numpy as np
@@ -25,12 +26,20 @@ def _validate_seq_writer(df,
     For argument parameter meanings, see write_fasta and write_phy.
     """
 
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
         err = f"\n\nout_file '{out_file}' should be a string.\n"
         raise ValueError(err)
+
+    # If no sequence column is specified, get alignment if present. If not,
+    # dump sequence.
+    if seq_column is None:
+        if "alignment" in df.columns:
+            seq_column = "alignment"
+        else:
+            seq_column = "sequence"
 
     # Make sure seq column is sane
     try:
@@ -108,12 +117,13 @@ def _validate_seq_writer(df,
             err += "overwrite = True.\n\n"
             raise FileExistsError(err)
 
-    return df, label_columns, empty_char
+    return df, seq_column, label_columns, empty_char
 
 
-def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name"],
+
+def write_fasta(df,out_file,seq_column=None,label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False,
-                overwrite=False):
+                overwrite=False,sort_on_taxa=True):
     """
     Write a fasta file from a dataframe.
 
@@ -123,8 +133,9 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         data frame to write out
     out_file : str
         output file
-    seq_column : str, default="sequence"
-        column in data frame to use as sequence
+    seq_column : str, optional
+        column in data frame to use as sequence. If not specified, use
+        "alignment" (if present) or "sequence"
     label_columns : list, default=["species","name"]
         list of columns to use for sequence labels
     write_only_keepers : bool, default=True
@@ -136,20 +147,30 @@ def write_fasta(df,out_file,seq_column="sequence",label_columns=["species","name
         replace any non-aa characters with "-"
     overwrite : bool, default=False
         whether or not to overwrite an existing file
-
-    Returns
-    -------
-    None
+    sort_on_taxa : bool, default=True
+        sort output taxonomically if possible. This will sort (in order of
+        preference) by recip_paralog, nickname, and then name. Once sorted by
+        protein, the species will then be sorted based on their taxonomic
+        separation, starting with the first key_species in the dataframe.
     """
 
-    df, label_columns, empty_char = _validate_seq_writer(df,
-                                                         out_file,
-                                                         seq_column,
-                                                         label_columns,
-                                                         write_only_keepers,
-                                                         empty_char,
-                                                         clean_sequence,
-                                                         overwrite)
+    df, seq_column, label_columns, empty_char = _validate_seq_writer(df,
+                                                                     out_file,
+                                                                     seq_column,
+                                                                     label_columns,
+                                                                     write_only_keepers,
+                                                                     empty_char,
+                                                                     clean_sequence,
+                                                                     overwrite)
+
+    # Can only do taxonomic sort if ott already loaded. (Do not want to
+    # automatically add ott as this will potentially set keep to False for some
+    # seqs; this is a writer, not a calculator/editor. )
+    if not "ott" in df.columns:
+        sort_on_taxa = False
+
+    if sort_on_taxa:
+        df = taxonomic_sort(df,only_keepers=write_only_keepers)
 
     # Construct fasta output
     out = []
@@ -224,14 +245,14 @@ def write_phy(df,
 
     label_columns = ["uid"]
 
-    df, label_columns, empty_char = _validate_seq_writer(df,
-                                                         out_file,
-                                                         seq_column,
-                                                         label_columns,
-                                                         write_only_keepers,
-                                                         empty_char,
-                                                         clean_sequence,
-                                                         overwrite)
+    df, seq_column, label_columns, empty_char = _validate_seq_writer(df,
+                                                                     out_file,
+                                                                     seq_column,
+                                                                     label_columns,
+                                                                     write_only_keepers,
+                                                                     empty_char,
+                                                                     clean_sequence,
+                                                                     overwrite)
 
     if write_only_keepers:
         num_to_write = np.sum(df.keep)
@@ -307,18 +328,18 @@ def write_phy(df,
     f.write("".join(out))
     f.close()
 
-def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=True):
+def read_fasta_into(df,fasta,load_into_column="alignment",unkeep_missing=True):
     """
     Load sequences from a fasta file into an existing topiary dataframe. This
     function expects the fasta file to have names formated like >uid|other stuff.
     It will match the uid in the fasta file with the uid in the topiary dataframe.
-    If a uid is not in the dataframe, the function will raise an error. 
+    If a uid is not in the dataframe, the function will raise an error.
 
     Parameters
     ----------
     df : pandas.DataFrame
         topiary data frame
-    fasta_file : str
+    fasta : str
         a fasta file with headers formatted like >uid|other stuff
     load_into_column : str, default="alignment"
         what column in the dataframe to load the sequences into
@@ -333,59 +354,74 @@ def read_fasta_into(df,fasta_file,load_into_column="alignment",unkeep_missing=Tr
         topiary dataframe with sequences now in load_into_column
     """
 
-    # Create data frame and make sure it has the column in which to load
-    new_df = check.check_topiary_dataframe(df)
-    try:
-        new_df[load_into_column]
-    except KeyError:
-        new_df[load_into_column] = None
+    # Read dataframe from file, if specified that way
+    if issubclass(type(df),str):
+        df = topiary.io.dataframe.read_dataframe(df)
 
-    # Go through the fasta file and get sequences
+    # Create data frame and make sure it has the column in which to load
+    df = check.check_topiary_dataframe(df)
+    try:
+        df[load_into_column]
+    except KeyError:
+        df[load_into_column] = None
+
+    # Dictionary mapping uid to index
+    uid_to_index = dict(zip(df.uid,df.index))
+
+    # If iterable but not string, treat as a list of lines
+    if hasattr(fasta,"__iter__") and not issubclass(type(fasta),str):
+        lines = fasta
+
+    # Read in lines
+    else:
+        f = open(fasta)
+        lines = f.readlines()
+        f.close()
+
+    # Go through lines
     headers = []
     uids = []
     seqs = []
-    with open(fasta_file) as f:
-        for line in f:
-            if line.startswith(">"):
-                headers.append(line.strip())
-                uids.append(line[1:].split("|")[0].strip())
-                seqs.append([])
-            else:
-                seqs[-1].append(line.strip())
+    for line in lines:
+        if line.startswith(">"):
+            headers.append(line.strip())
+            uids.append(line[1:].split("|")[0].strip())
+            seqs.append([])
+        else:
+            seqs[-1].append(line.strip())
 
+    # Make sure uid are unique
     if len(uids) != len(set(uids)):
         err = "Not all uids unique in this fasta file\n"
         raise ValueError(err)
 
     final_seqs = []
-    for s in seqs:
-        final_seqs.append("".join(s))
-    uid_to_index = dict(zip(df.uid,df.index))
+    indexes = []
+    # Note try is on level up from where we'd normally put it, but this function
+    # gets called a lot and lower number of try/except faster. We use i to
+    # report which iteration died.
+    try:
+        for i, s in enumerate(seqs):
+            final_seqs.append("".join(s))
+            indexes.append(uid_to_index[uids[i]])
+    except KeyError:
+        err = f"Could not map the sequence titled {headers[i]} to an index\n"
+        err += "in the data frame. This function expects the sequence titles\n"
+        err += "in a fasta file to have the format:\n"
+        err += ">uid|other stuff here\n"
+        err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
+        raise ValueError(err)
 
-    # Load sequences from fasta into data frame
-    loaded_seq = {}
-    for i in range(len(seqs)):
+    indexes = np.array(indexes)
+    final_seqs = np.array(final_seqs)
 
-        try:
-            index = uid_to_index[uids[i]]
-            new_df.loc[index,load_into_column] = final_seqs[i]
-            loaded_seq[index] = None
-        except KeyError:
-            err = f"Could not map the sequence titled {headers[i]} to an index\n"
-            err += "in the data frame. This function expects the sequence titles\n"
-            err += "in a fasta file to have the format:\n"
-            err += ">uid|other stuff here\n"
-            err += f"The parsed uid ({uids[i]}) is not in the dataframe!\n\n"
-            raise ValueError(err)
+    # Record new df
+    df.loc[indexes,load_into_column] = final_seqs
 
     # If requested, set all sequences not in alignment to Keep = False
     if unkeep_missing:
-        for i in list(new_df.index):
-            try:
-                loaded_seq[i]
-            except KeyError:
-                new_df.loc[i,"keep"] = False
-                new_df.loc[i,load_into_column] = pd.NA
+        to_drop = np.setdiff1d(df.index[df.keep],indexes)
+        df.loc[to_drop,"keep"] = False
+        df.loc[to_drop,load_into_column] = pd.NA
 
-    # Return dataframe with final sanity check to make sure uid stayed unique
-    return check.check_topiary_dataframe(new_df)
+    return df

@@ -3,12 +3,13 @@ Functions for reading and writing dataframes.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 
 import pandas as pd
 import numpy as np
 
 import os
+import csv
 
 def read_dataframe(input,remove_extra_index=True):
     """
@@ -93,7 +94,7 @@ def write_dataframe(df,out_file,overwrite=False):
     """
 
     # Validate dataframe before writing out
-    df = topiary.check.check_topiary_dataframe(df)
+    df = check.check_topiary_dataframe(df)
 
     # Validate output file
     if type(out_file) is not str:
@@ -114,8 +115,8 @@ def write_dataframe(df,out_file,overwrite=False):
 
     # Write out appropriate file type
     if ext == "csv":
-        df.to_csv(out_file,sep=",",index=False)
+        df.to_csv(out_file,sep=",",index=False,quoting=csv.QUOTE_NONNUMERIC)
     elif ext == "tsv":
-        df.to_csv(out_file,sep="\t",index=False)
+        df.to_csv(out_file,sep="\t",index=False,quoting=csv.QUOTE_NONNUMERIC)
     else:
         df.to_excel(out_file,index=False)

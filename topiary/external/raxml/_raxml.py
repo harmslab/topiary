@@ -7,10 +7,9 @@ there, and then returns to the previous directory.
 RAXML_BINARY = "raxml-ng"
 
 import topiary
-import topiary.external._interface as interface
+from topiary._private import interface
+from topiary._private import threads
 
-import pandas as pd
-import multiprocessing as mp
 import os
 
 def run_raxml(algorithm=None,
@@ -19,10 +18,12 @@ def run_raxml(algorithm=None,
               model=None,
               dir_name=None,
               seed=None,
-              threads=-1,
-              raxml_binary=RAXML_BINARY,
               log_to_stdout=True,
-              other_args=[]):
+              suppress_output=False,
+              other_args=None,
+              other_files=None,
+              num_threads=-1,
+              raxml_binary=RAXML_BINARY):
     """
     Run raxml. Creates a working directory, copies in the relevant files, runs
     there, and then returns to the previous directory.
@@ -42,14 +43,19 @@ def run_raxml(algorithm=None,
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
         that as the seed. (passed via --seed)
-    threads : int, default=-1
+    log_to_stdout : bool, default=True
+        capture log and write to std out.
+    suppress_output : bool, default=False
+        suppress output entirely. (ignored if log_to_stdout is True)
+    other_args : list-like, optional
+        list of arguments to pass to raxml
+    other_files : list-like, optional
+        list of files to copy into working directory (besides tree_file and
+        alignment_file)
+    num_threads : int, default=-1
         number of threads (passed via --threads). if -1, use all available.
     raxml_binary : str, default=RAXML_BINARY
         raxml binary to use
-    log_to_stdout : book, default=True
-        capture log and write to std out.
-    other_args : list-like
-        list of arguments to pass to raxml
 
     Return
     ------
@@ -71,6 +77,15 @@ def run_raxml(algorithm=None,
                                               dir_name,
                                               file_name="tree.newick",
                                               put_in_input_dir=False)
+
+    # Copy in any other required files, if requested
+    if other_files is not None:
+        for i in range(len(other_files)):
+            tail = os.path.split(other_files[i])[-1]
+            other_files[i] = interface.copy_input_file(other_files[i],
+                                                       dir_name,
+                                                       file_name=tail,
+                                                       put_in_input_dir=False)
 
     # Build a command list
     cmd = [raxml_binary]
@@ -107,21 +122,19 @@ def run_raxml(algorithm=None,
             err = "seed must be True/False, int, or string representation of int\n"
             raise ValueError(err)
 
-    # Figure out number of threads to use
-    if threads < 0:
-        try:
-            threads = mp.cpu_count()
-        except NotImplementedError:
-            threads = os.cpu_count()
-            if threads is None:
-                print("Could not determine number of cpus. Using single thread.\n")
-                threads = 1
+    num_threads = threads.get_num_threads(num_threads)
 
-    cmd.extend(["--threads",f"{threads:d}"])
+    if algorithm in ["--all","--search"]:
+        threads_arg = "auto{" + f"{num_threads:d}" + "}"
+    else:
+        threads_arg = f"{num_threads:d}"
+
+    cmd.extend(["--threads",threads_arg])
 
     # Put on any custom args
-    for a in other_args:
-        cmd.append(a)
+    if other_args is not None:
+        for a in other_args:
+            cmd.append(a)
 
     # If logging to standard out, get log file name
     log_file = None
@@ -129,6 +142,9 @@ def run_raxml(algorithm=None,
         log_file = "alignment.phy.raxml.log"
 
     # Run job
-    interface.launch(cmd,dir_name,log_file)
+    interface.launch(cmd,
+                     run_directory=dir_name,
+                     log_file=log_file,
+                     suppress_output=suppress_output)
 
     return " ".join(cmd)

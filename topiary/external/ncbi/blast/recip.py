@@ -3,7 +3,7 @@ Reciprocal blast sequences.
 """
 
 import topiary
-from topiary import check
+from topiary._private import check
 from .ncbi import ncbi_blast
 from .local import local_blast
 
@@ -29,33 +29,48 @@ def _prepare_for_blast(df,
 
     Parameters
     ----------
-        df: topiary dataframe. Will pull sequences from df.sequences. If there are
-            'start' and 'stop' columns in the dataframe, only blast sequences
-            between start/top (for example: start = 5, stop = 20 would blast
-            sequence[5:20]. To turn this off, set use_start_end = False.
-        paralog_patterns: dictionary with paralogs as values and lists of patterns
-                          to look for as values.
-        local_blast_db: local database against which to blast
-        ncbi_blast_db: database on ncbi against which to blast
-        ignorecase: whether to ignore letter case when searching blast (default True).
-        max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                      allows for paralog call. This means the matched recip blast
-                      hit does not have to be the best hit, but must be within this
-                      e-value difference of the best hit. A higher number means a
-                      less stringent cutoff. A value of 0 would require the matched
-                      hit be the best hit.
-        min_call_prob: hits from all paralogs that yield a regular expression match
-                       are weighted by their relative e-values. Each paralog is
-                       assigned a relative probability. This cutoff is the minimum
-                       probability the best paralog match must have to result in a
-                       paralog call. Value should be between 0 and 1 (not inclusive),
-                       where min_call_prob --> 1 increases the stringency.
-        use_start_end: boolean. whether or not to use start/stop columns in
-                        dataframe (if present) to slice subset of sequence to blast.
+    df: pandas.DataFrame
+        Will pull sequences from df.sequences. If there are 'start' and 'stop'
+        columns in the dataframe, only blast sequences between start/top (for
+        example: start = 5, stop = 20 would blast sequence[5:20]. To turn this
+        off, set use_start_end = False.
+    paralog_patterns : dict
+        dictionary with paralogs as values and lists of patterns to look for as
+        values.
+    local_blast_db : str or None
+        local database against which to blast
+    ncbi_blast_db : str or None
+        database on ncbi against which to blast
+    ignorecase : bool
+        whether to ignore letter case when searching blast
+    max_del_best : float
+        maximum value for log(e_hit_match) - log(e_hit_best) that
+        allows for paralog call. This means the matched recip blast
+        hit does not have to be the best hit, but must be within this
+        e-value difference of the best hit. A higher number means a
+        less stringent cutoff. A value of 0 would require the matched
+        hit be the best hit.
+    min_call_prob: float
+        hits from all paralogs that yield a regular expression match
+        are weighted by their relative e-values. Each paralog is
+        assigned a relative probability. This cutoff is the minimum
+        probability the best paralog match must have to result in a
+        paralog call. Value should be between 0 and 1 (not inclusive),
+        where min_call_prob --> 1 increases the stringency.
+    use_start_end : bool
+        whether or not to use start/stop columns in
+        dataframe (if present) to slice subset of sequence to blast.
 
     Return
     ------
-        df, sequence_list, patterns, max_del_best, min_call_prob
+    df : pandas.DataFrame
+        validated dataframe
+    sequence_list : list
+        list of sequences to use for blast
+    patterns : dict
+        valiated paralog patterns
+    max_del_best : float
+    min_call_prob : float
     """
 
     # Check type of df
@@ -71,7 +86,7 @@ def _prepare_for_blast(df,
         raise ValueError(err)
 
     patterns = check.check_paralog_patterns(paralog_patterns,
-                                                        ignorecase=ignorecase)
+                                            ignorecase=ignorecase)
     if len(patterns) == 0:
         err = "\nparalog_patterns must have at least one entry\n"
         raise ValueError(err)
@@ -166,6 +181,7 @@ def _run_blast(sequence_list,
                e_value_cutoff,
                gapcosts,
                num_threads,
+               keep_blast_xml,
                **kwargs):
     """
     Run blast on sequence_sequence list, returning a list of dataframes -- one
@@ -173,21 +189,30 @@ def _run_blast(sequence_list,
 
     Parameters
     ----------
-        sequence_list: list of sequences to use as blast queries.
-        local_blast_db: local database against which to blast
-        ncbi_blast_db: database on ncbi against which to blast
-        ncbi_taxid: limit search to species specified by taxid for an ncbi search.
-        e_value_cutoff: minimum allowable e value for a hit
-        gapcosts: gap costs (must be length 2 tuple of ints)
-        num_threads: number of threads to use for blast search. if -1,
-                           use all available.
-        kwargs: extra keyword arguments are passed directly to biopython
-                NcbiblastXXXCommandline (for local blast) or qblast (for remote
-                blast). These take precedence over anything specified above
-                (hitlist_size, for example).
+    sequence_list : list
+        list of sequences to use as blast queries.
+    local_blast_db : str
+        local database against which to blast
+    ncbi_blast_db : str
+        database on ncbi against which to blast
+    ncbi_taxid : int
+        limit search to species specified by taxid for an ncbi search.
+    e_value_cutoff : float
+        minimum allowable e value for a hit
+    gapcosts : tuple
+        gap costs (must be length 2 tuple of ints)
+    num_threads : int
+        number of threads to use for blast search. if -1, use all available.
+    keep_blast_xml: whether or not to keep blast xml
+    kwargs : dict
+        extra keyword arguments are passed directly to biopython
+        NcbiblastXXXCommandline (for local blast) or qblast (for remote
+        blast). These take precedence over anything specified above
+        (hitlist_size, for example).
 
     Return
     ------
+    out : list
         list of dataframes with blast hits, one for each sequence in sequence_list
     """
 
@@ -218,6 +243,7 @@ def _run_blast(sequence_list,
                              e_value_cutoff=e_value_cutoff,
                              gapcosts=gapcosts,
                              num_threads=num_threads,
+                             keep_blast_xml=keep_blast_xml,
                              **kwargs)
 
     # Local blast
@@ -229,43 +255,51 @@ def _run_blast(sequence_list,
                               e_value_cutoff=e_value_cutoff,
                               gapcosts=gapcosts,
                               num_threads=num_threads,
+                              keep_blast_xml=keep_blast_xml,
                               **kwargs)
 
     return hit_dfs
 
 
 def _make_recip_blast_calls(df,
-                              hit_dfs,
-                              patterns,
-                              max_del_best,
-                              min_call_prob,
-                              ncbi_blast_db):
+                            hit_dfs,
+                            patterns,
+                            max_del_best,
+                            min_call_prob,
+                            ncbi_blast_db):
     """
     Make paralog calls given blast output and list of patterns.
 
     Parameters
     ----------
-        df: topiary dataframe with query sequences
-        hit_dfs: list of dataframes returned by blast
-        patterns: dictionary with paralogs as values and lists of patterns
-                  to look for as values.
-        max_del_best: maximum value for log(e_hit_match) - log(e_hit_best) that
-                      allows for paralog call. This means the matched recip blast
-                      hit does not have to be the best hit, but must be within this
-                      e-value difference of the best hit. A higher number means a
-                      less stringent cutoff. A value of 0 would require the matched
-                      hit be the best hit.
-        min_call_prob: hits from all paralogs that yield a regular expression match
-                       are weighted by their relative e-values. Each paralog is
-                       assigned a relative probability. This cutoff is the minimum
-                       probability the best paralog match must have to result in a
-                       paralog call. Value should be between 0 and 1 (not inclusive),
-                       where min_call_prob --> 1 increases the stringency.
-        ncbi_blast_db: database used for ncbi blast. (Used to determine if
-                           this should be parsed as ncbi vs. local blast inputs)
+    df : pandas.DataFrame
+        topiary dataframe with query sequences
+    hit_dfs : list
+        list of dataframes returned by blast
+    patterns : dict
+        dictionary with paralogs as values and lists of patterns to look for as
+        values.
+    max_del_best : float
+        maximum value for log(e_hit_match) - log(e_hit_best) that
+        allows for paralog call. This means the matched recip blast
+        hit does not have to be the best hit, but must be within this
+        e-value difference of the best hit. A higher number means a
+        less stringent cutoff. A value of 0 would require the matched
+        hit be the best hit.
+    min_call_prob : float
+        hits from all paralogs that yield a regular expression match
+        are weighted by their relative e-values. Each paralog is
+        assigned a relative probability. This cutoff is the minimum
+        probability the best paralog match must have to result in a
+        paralog call. Value should be between 0 and 1 (not inclusive),
+        where min_call_prob --> 1 increases the stringency.
+    ncbi_blast_db : str
+        database used for ncbi blast. (Used to determine if this should be
+        parsed as ncbi vs. local blast inputs)
 
     Return
     ------
+    df : pandas.DataFrame
         dataframe with recip blast calls
     """
 
@@ -291,7 +325,8 @@ def _make_recip_blast_calls(df,
             continue
 
         # Get e value of top hit
-        top_e_value = hits["e_value"].iloc[0]
+        top_e_value = hits.loc[hits.index[0],"e_value"]
+        top_hit_def = hits.loc[hits.index[0],"hit_def"]
 
         # Now go through each regular expression pattern
         e_values = []
@@ -299,34 +334,34 @@ def _make_recip_blast_calls(df,
         paralogs = []
         for i, p in enumerate(patterns):
 
-            # Go through each hit description...
-            for j, description in enumerate(hits.hit_def):
+            for j in range(len(hits)):
 
-                row = hits.iloc[j]
+                idx = hits.index[j]
+                description = hits.loc[idx,"hit_def"]
 
                 # If the pattern matches this hit description
                 if p[0].search(description):
 
-                    # Get hit definition
-                    this_def = row["hit_def"]
-
                     # If this was an NCBI blast, try to parse the NCBI line,
                     # pulling apart multi-titles
                     if ncbi_blast_db:
-                        hd = parse_ncbi_line(row["title"],row["accession"])
-                        if hd is not None:
-                            this_def = hd["name"]
 
-                    hit_defs.append(this_def)
+                        title = hits.loc[idx,"title"]
+                        accession = hits.loc[idx,"accession"]
+
+                        hd = parse_ncbi_line(title,accession)
+                        if hd is not None:
+                            description = hd["name"]
+
+                    hit_defs.append(description)
 
                     # get e value
-                    e_values.append(row["e_value"])
+                    e_values.append(hits.loc[idx,"e_value"])
 
                     # Get paralog call
                     paralogs.append(p[1])
 
                     break
-
 
         # If we got at least one hit that matched
         recip_found_paralog = False
@@ -392,7 +427,7 @@ def _make_recip_blast_calls(df,
                 recip_found_paralog = True
 
         else:
-            recip_hit = hits["hit_def"].iloc[0]
+            recip_hit = top_hit_def
             recip_paralog = None
             recip_prob_match = None
             recip_del_best = None
@@ -421,8 +456,19 @@ def _make_recip_blast_calls(df,
 
     num_keep_at_start = np.sum(df.keep)
 
+    print("3",df.loc[df.loc[:,"uid"] == "tRUuOXIzEB",:])
+
     # Update keep with recip_found_paralog
     df.loc[:,"keep"] = np.logical_and(df["keep"],df["recip_found_paralog"])
+
+    # If we have sequences set to always_keep, do not drop them even if they
+    # do not reciprocal blast properly. Set recip_paralog to their name in case
+    # downstream functions use this for naming etc.
+    if "always_keep" in df.columns:
+        df.loc[:,"keep"] = np.logical_or(df.loc[:,"keep"],df.loc[:,"always_keep"])
+        rename = np.logical_and(df.loc[:,"always_keep"],
+                                pd.isnull(df.loc[:,"recip_paralog"]))
+        df.loc[rename,"recip_paralog"] = df.loc[rename,"name"]
 
     # Write out some summary statistics
     print(f"{np.sum(df.keep)} of {num_keep_at_start} sequences passed recip blast.\n")
@@ -436,19 +482,20 @@ def _make_recip_blast_calls(df,
 
 
 def recip_blast(df,
-                  paralog_patterns,
-                  local_blast_db=None,
-                  ncbi_blast_db=None,
-                  ncbi_taxid=None,
-                  ignorecase=True,
-                  max_del_best=100,
-                  min_call_prob=0.95,
-                  use_start_end=True,
-                  hitlist_size=50,
-                  e_value_cutoff=0.01,
-                  gapcosts=(11,1),
-                  num_threads=-1,
-                  **kwargs):
+                paralog_patterns,
+                local_blast_db=None,
+                ncbi_blast_db=None,
+                ncbi_taxid=None,
+                ignorecase=True,
+                max_del_best=100,
+                min_call_prob=0.95,
+                use_start_end=True,
+                hitlist_size=50,
+                e_value_cutoff=0.01,
+                gapcosts=(11,1),
+                num_threads=-1,
+                keep_blast_xml=False,
+                **kwargs):
     """
     Take sequences from a topiary dataframe and do a recip blast analysis
     against an NCBI or local blast database. Looks in blast hits for the
@@ -518,6 +565,8 @@ def recip_blast(df,
     num_threads : int, default=-1
         number of threads to use. if -1, use all available. (Multithreading
         rarely speeds up remote BLAST).
+    keep_blast_xml : bool, default=False
+        whether or not to keep raw blast xml output
     **kwargs : dict, optional
         extra keyword arguments are passed directly to biopython
         blast). These take precedence over anything specified above
@@ -555,6 +604,8 @@ def recip_blast(df,
 
     """
 
+    print("Doing reciprocal blast.")
+
     # Check sanity of input parameters and return a validated topiary dataframe,
     # list of sequences, and compiled set of patterns to search. Note: the
     # values of ncbi_blast_db, local_blast_db, ncbi_taxid, hitlist_size,
@@ -582,6 +633,7 @@ def recip_blast(df,
                          e_value_cutoff,
                          gapcosts,
                          num_threads,
+                         keep_blast_xml,
                          **kwargs)
 
     # Make paralog calls given blast output and list of patterns

@@ -1,34 +1,39 @@
-topiary.draw package
+topiary.draw
 ====================
 
-Submodules
-----------
 
-topiary.draw.ancestor module
-----------------------------
 
-.. automodule:: topiary.draw.ancestor
+.. automodule:: topiary.draw
    :members:
    :undoc-members:
    :show-inheritance:
 
-topiary.draw.ml module
-----------------------
 
-.. automodule:: topiary.draw.ml
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-topiary.draw.reconciliation module
+topiary.draw.ancestor\_data
 ----------------------------------
 
-.. automodule:: topiary.draw.reconciliation
+.. automodule:: topiary.draw.ancestor_data
    :members:
    :undoc-members:
    :show-inheritance:
 
-topiary.draw.species module
+topiary.draw.core
+------------------------
+
+.. automodule:: topiary.draw.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.draw.prettytree
+------------------------------
+
+.. automodule:: topiary.draw.prettytree
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+topiary.draw.species
 ---------------------------
 
 .. automodule:: topiary.draw.species
@@ -36,7 +41,7 @@ topiary.draw.species module
    :undoc-members:
    :show-inheritance:
 
-topiary.draw.tree module
+topiary.draw.tree
 ------------------------
 
 .. automodule:: topiary.draw.tree
@@ -44,10 +49,4 @@ topiary.draw.tree module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: topiary.draw
-   :members:
-   :undoc-members:
-   :show-inheritance:

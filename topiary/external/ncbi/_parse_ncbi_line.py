@@ -2,22 +2,13 @@
 Functions for interacting with NCBI databases and file types.
 """
 
-from topiary import util, check
+from topiary import util
+from topiary._private import check
 
 import pandas as pd
 import numpy as np
 
-# Modules for blasting, etc.
-from Bio import SeqIO, Entrez
-from Bio.Seq import Seq
-from Bio.Blast import NCBIXML, NCBIWWW
-import Bio.Blast.Applications as apps
-from Bio import pairwise2
-
-from tqdm.auto import tqdm
-
-import re, sys, os, string, random, pickle, io, urllib, http, subprocess
-import multiprocessing as mp
+import re
 
 def _grab_line_meta_data(line):
     """
@@ -66,24 +57,30 @@ def parse_ncbi_line(line,accession=None):
 
     Parameters
     ----------
-        line: line from an NCBI record
-        accession: extract entry from line that matches acccession.  Ignores
-                   version (e.g. "1" in XXXXXXXXX.1).  If None, parse first
-                   entry on line.
+    line : str
+        line from an NCBI record
+    accession : str
+        extract entry from line that matches acccession.  Ignores
+        version (e.g. "1" in XXXXXXXXX.1).  If None, parse first
+        entry on line.
 
-    Return
-    ------
-        dictionary with following keys:
-            raw_line: unprocessed line (input)
-            line: processed line (remove multiple titles)
-            name: protein name
-            structure: whether or not this is a structure (bool)
-            low_quality: whether or not this is low quality (bool)
-            predicted: whether or not this is predicted (bool)
-            precursor: whether or not this is a precursor (bool)
-            isoform: whether or not this is an isoform (bool)
-            hypothetical: whether or not this is hypothetical (bool)
-            partial: whether or not this is a partial sequence (bool)
+    Returns
+    -------
+    out : dict
+        dictionary describing line. Has the following keys:
+
+        + *raw_line* unprocessed line (input)
+        + *line* processed line (remove multiple titles)
+        + *name* protein name
+        + *species* organism
+        + *accession* ncbi accession number
+        + *structure* whether or not this is a structure (bool)
+        + *low_quality* whether or not this is low quality (bool)
+        + *predicted* whether or not this is predicted (bool)
+        + *precursor* whether or not this is a precursor (bool)
+        + *isoform* whether or not this is an isoform (bool)
+        + *hypothetical* whether or not this is hypothetical (bool)
+        + *partial* whether or not this is a partial sequence (bool)
     """
 
     out = {"raw_line":line}
@@ -143,15 +140,34 @@ def parse_ncbi_line(line,accession=None):
     for m in meta:
         out[m] = meta[m]
 
-    # Look for species name (thing within [ xxx ])
+    # We look for species name as the *last* pattern on the line that matches.
+    # Start first looking for [[genus] species], then look for [genus species].
+    # The first pattern follows an ncbi taxonomy convention for potentially
+    # misidentified genuses.
+    # https://support.nlm.nih.gov/knowledgebase/article/KA-03379/en-us
     species = None
-    species_pattern = re.compile("\[.*?]")
 
-    sm = species_pattern.search(line)
+
+    # Start with [[genus] species]
+    sm = None
+    species_pattern = re.compile("\[.*?\[.*?].*?]")
+    for sm in species_pattern.finditer(line):
+        pass
     if sm:
-        out["species"] = sm.group(0)[1:-1]
-    else:
-        out["species"] = None
+        species = sm.group(0)[1:-1]
+        species = re.sub("[\[\]]","",species)
+
+    # If we didn't get species yet, look for [something this]
+    if species is None:
+        species_pattern = re.compile("\[.*?\]")
+        sm = None
+        for sm in species_pattern.finditer(line):
+            pass
+        if sm:
+            species = sm.group(0)[1:-1]
+
+    # Record species
+    out["species"] = species
 
     # Clean up any double spaces introduced into the line at this point
     line = re.sub("  "," ",line)
