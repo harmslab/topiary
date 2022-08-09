@@ -32,6 +32,9 @@ Features
   `muscle 5 <muscle-link_>`_, `RAxML-NG <raxml-ng-link_>`_,
   `GeneRax <generax-link_>`_, `PastML <pastml-link_>`_, and `toytree <toytree-link_>`_.
 
+Example input/output
+====================
+
 :emph:`User input to a topiary calculation`
 
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
@@ -56,35 +59,52 @@ Features
   :align: center
   :alt: Topiary tree drawing
 
+.. note::
+
+    More pretty examples coming soon.
 
 Quick start
 ===========
 
-The first half of the topiary pipeline (going from seed sequence to alignment)
-can be run on a windows, macOS or linux machine. The second half (building
-trees and ancestors, usually on a computing cluster) requires macOS or linux.
+The topiary pipeline consists of two halves:
+
+1. Going from seed sequence to alignment (blasting, sequence quality control,
+   reducing redundancy, and alignment). This can be run on a user's windows,
+   macOS, or linux computer.
+2. Going from alignment to ancestors (building a gene tree, reconciling with the
+   species tree, inferring ancestors, and calculating bootstraps). This requires
+   macOS or linux; windows is *not* supported. This step should usually be run
+   on a computer cluster.
 
 Installation
 ------------
 
 .. note::
-  A conda-forge package is in the works. As of this moment, please follow the
-  directions on the :ref:`installation<installation-doc>` page.
 
-topiary can be easily installed with conda.
+  A conda-forge package is in the works that will turn this into a one-line
+  call: :code:`conda create -n topiary topiary-asr -c conda-forge`. Stay tuned.
 
-.. code-block:: shell-session
+See the :ref:`installation<installation-doc>` page.
 
-  conda create -n topiary topiary-asr -c conda-forge
-  conda activate topiary
 
-Windows users and silicon macOS users will need to manually install
-`muscle <muscle-download_>`_ and `blast <blast-download_>`_.
+.. commenting ...
 
-For full installation instructions, see the :ref:`installation<installation-doc>` page.
+  topiary can be easily installed with conda.
+
+  .. code-block:: shell-session
+
+    conda create -n topiary topiary-asr -c conda-forge
+    conda activate topiary
+
+  Windows users and silicon macOS users will need to manually install
+  `muscle <muscle-download_>`_ and `blast <blast-download_>`_.
+
+  For full installation instructions, see the :ref:`installation<installation-doc>` page.
 
 Short protocol
 --------------
+
+For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
 #. Create a seed spreadsheet with a handful of sequences that define the scope
    of the ASR study. For examples, see the table above or download
@@ -123,7 +143,7 @@ Short protocol
 
   A quick summary of outputs coming soon.
 
-For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
+
 
 How to cite
 ===========
@@ -138,7 +158,7 @@ Please make sure to cite the tools we use in the package as well:
   `https://doi.org/10.1101/2021.06.20.449169 <muscle-cite_>`_.
 + `RAxML-NG <raxml-ng-link_>`_: Kozlov et al (2019) *Bioinformatics* 35(21):4453–4455
   `https://doi.org/10.1093/bioinformatics/btz305 <raxml-ng-cite_>`_.
-+ `GeneRax <generax-link_>`: Morel et al (2020) *MBE*
++ `GeneRax <generax-link_>`_: Morel et al (2020) *MBE*
   `https://doi.org/10.1093/molbev/msaa141 <generax-cite_>`_.
 + `PastML <pastml-link_>`_: Ishikawa et al (2019) *MBE* 36(9):2069–2085
   `https://doi.org/10.1093/molbev/msz131 <pastml-cite_>`_.
@@ -148,17 +168,22 @@ Please make sure to cite the tools we use in the package as well:
 API and data structures
 =======================
 
+For a detailed description of the data structures and API, see the
+:ref:`Data Structures<data-structures-doc>` and :ref:`API<api-doc>` pages.
+
 Topiary uses `pandas <pandas-link_>`_ dataframes to manage phylogenetic data.
 These dataframes can be readily written out and read from spreadsheet files
 (.csv, .tsv, .xlsx).
 
-Topiary is built around two key types of dataframes:
+Topiary is built around two types of dataframes:
 
 + :emph:`seed dataframe`: A manually constructed dataframe containing seed sequences
   that topiary uses as input to construct a full topiary dataframe for the
   project.
-+ :emph:`topiary dataframe`: The main structure for holding sequences and information
-  about those sequences for the project.
++ :emph:`topiary dataframe`: The main structure for holding sequences and
+  information about those sequences for the project. Each step in the pipeline
+  saves out, then edits, the main dataframe. This allows one to follow
+  the steps and/or manually introduce changes.
 
 Topiary represents trees in two different ways:
 
@@ -168,12 +193,6 @@ Topiary represents trees in two different ways:
 .. note::
 
   jupyter example coming soon.
-
-For a detailed description of the data structures, see the
-:ref:`Data Structures<data-structures-doc>` page.
-
-For a detailed description of the API, see the :ref:`API<api-doc>` page.
-
 
 
 

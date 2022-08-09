@@ -11,9 +11,8 @@ Cross-platform installation instructions
 ========================================
 
 .. note::
-  A conda-forge package is in the works. These instructions describe that
-  installation mechanism. For now, please use the instructions from the
-  :ref:`Install from source<install-source-section>` below.
+  A conda-forge package is in the works that will make this a single-line
+  conda command (:code:`conda install topiary-asr -c conda-forge`). Stay tuned.
 
 We recommend using conda to install topiary on all operating systems. (Some
 system-specific instructions for installation of wrapped software packages
@@ -27,8 +26,31 @@ the following commands.
 
 .. code-block:: shell-session
 
-  conda create -n topiary topiary-asr -c conda-forge
+  git clone https://github.com/harmslab/topiary
+
+You can install via conda:
+
+.. code-block:: shell-session
+
+  cd topiary
+  conda env create -f environment.yml
   conda activate topiary
+  python -m pip install . -vv
+
+If you are on macos or linux, you can install the core software by:
+
+.. code-block:: shell-session
+
+  conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+
+.. comment out for now
+  .. code-block:: shell-session
+
+    conda create -n topiary topiary-asr -c conda-forge
+    conda activate topiary
+
+Validate the installation
+=========================
 
 You can validate the installation of topiary and the software it uses by
 running:
@@ -51,6 +73,8 @@ If some of the packages are not installed (:code:`passes: N`), proceed to the
 sections below. :emph:`Note`: if generax indicates the binary is installed
 (:code:`installed: Y`) but that the binary does not run (:code:`binary runs: N`),
 please see the :ref:`MPI section<mpi-section>` below.
+
+.. _windows-section:
 
 Windows instructions
 ====================
@@ -85,6 +109,7 @@ directories containing muscle and blast+ to the :code:`$PATH` variable,
 :emph:`you need to restart your Anaconda Prompt to make sure the changes have
 taken effect.`
 
+.. _macos-linux-section:
 
 macOS and linux instructions
 ============================
@@ -156,15 +181,21 @@ You can install via conda:
   conda activate topiary
   python -m pip install . -vv
 
-  # If on macos or linux, you can install the rest of the software
-  conda install -c conda-forge -c bioconda muscle raxml-ng generax blast
-
 Alternatively, you can install via pip:
 
 .. code-block:: shell-session
 
   cd topiary
   pip install -r requirements.txt
+
+These steps will install topiary, but not the full software stack. If you are on
+macos or linux, you can install the core software by:
+
+.. code-block:: shell-session
+
+  conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+
+If you are on windows, please see the :ref:`windows<windows-section>`.
 
 ------------------
 Required libraries
@@ -181,12 +212,13 @@ Required libraries
 
   + `ete3 <ete3-download_>`_
   + `toytree <toytree-download_>`_
+  + `dendropy <dendropy-download_>`_
 
 + Packages used for tree/ancestor inferences:
 
-  + `NCBI BLAST+ >= 2.2 <blast-download_>`_
+  + `NCBI BLAST+ <blast-download_>`_
   + `muscle >= 5.0 <muscle-download_>`_
   + `GeneRax >= 2.0 <generax-download_>`_
   + `RAxML-NG >= 1.1 <raxml-ng-download_>`_
-  + `pastml >= 1.9 <https://pastml.pasteur.fr>`_
-  + `opentree` <opentree-link_>`_
+  + `pastml <pastml-link>`_
+  + `python-opentree <opentree-link_>`_
