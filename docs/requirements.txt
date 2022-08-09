@@ -1,5 +1,6 @@
 pandas
 numpy
+matplotlib
 tqdm
 biopython
 ete3
@@ -8,3 +9,4 @@ dendropy
 pastml
 sphinx-rtd-theme
 sphinxcontrib-napoleon
+toytree

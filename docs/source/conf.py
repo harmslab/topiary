@@ -78,4 +78,4 @@ rst_epilog = ""
 with open('links.rst') as f:
      rst_epilog += f.read()
 
-os.system("sphinx-apidoc -f ../../topiary -o .")
+autodoc_mock_imports = ['numpy']
