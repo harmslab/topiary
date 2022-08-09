@@ -77,5 +77,3 @@ rst_epilog = ""
 # Read link all targets from file
 with open('links.rst') as f:
      rst_epilog += f.read()
-
-autodoc_mock_imports = ['numpy']
