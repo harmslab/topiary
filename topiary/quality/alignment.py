@@ -174,7 +174,7 @@ def score_alignment(df,
     try:
         aln = df.loc[:,"alignment"]
     except KeyError:
-        df = topiary.run_muscle(df,super5=True,silent=silent)
+        df = topiary.align(df,super5=True,silent=silent)
         aln = df.loc[:,"alignment"]
 
     # Get length of sequence column

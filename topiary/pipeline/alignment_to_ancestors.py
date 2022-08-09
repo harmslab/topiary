@@ -5,8 +5,8 @@ and then infers ancestral proteins.
 """
 
 import topiary
-from topiary.external.raxml import RAXML_BINARY
-from topiary.external.generax import GENERAX_BINARY
+from topiary.raxml import RAXML_BINARY
+from topiary.generax import GENERAX_BINARY
 from topiary._private import installed, software_requirements, check
 
 import os, random, string, shutil, time

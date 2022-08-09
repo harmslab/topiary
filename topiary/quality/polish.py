@@ -160,6 +160,6 @@ def polish_alignment(df,
 
     # Realign, if requested
     if realign:
-        full_df = topiary.run_muscle(full_df)
+        full_df = topiary.muscle.align(full_df)
 
     return full_df

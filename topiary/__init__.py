@@ -36,26 +36,18 @@ from . import pipeline
 from . import _private
 from . import quality
 
-from .external import generax
-from .external import ncbi
-from .external import muscle
-from .external import opentree
-from .external import raxml
-
 # Core functions for pipeline
-
-
 from .quality import shrink_dataset
 
 from .pipeline import seed_to_alignment, alignment_to_ancestors
 
 from .util import create_nicknames
 
-from .external import run_muscle
-from .external import get_ott, get_species_tree
-from .external import recip_blast
-from .external import find_best_model, generate_ml_tree, generate_ancestors, generate_bootstraps
-from .external import reconcile
+from .muscle import align
+from .opentree import get_ott, get_species_tree
+from .ncbi.blast import recip_blast
+from .raxml import find_best_model, generate_ml_tree, generate_ancestors, generate_bootstraps
+from .generax import reconcile
 
 # Input/output functions
 from .io import df_from_seed

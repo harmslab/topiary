@@ -325,7 +325,7 @@ def seed_to_alignment(seed_df,
         print("-------------------------------------------------------------------")
         print("",flush=True)
 
-        df = topiary.run_muscle(df)
+        df = topiary.muscle.align(df)
         topiary.write_dataframe(df,expected_output)
         step_counter += 1
 
