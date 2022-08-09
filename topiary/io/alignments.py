@@ -4,7 +4,7 @@ Functions for reading and writing alignments to files.
 
 import topiary
 from topiary._private import check
-from topiary.external.opentree.util import taxonomic_sort
+from topiary.opentree.util import taxonomic_sort
 
 import pandas as pd
 import numpy as np

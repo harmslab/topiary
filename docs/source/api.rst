@@ -8,8 +8,12 @@ API reference
    :maxdepth: 4
 
    topiary.draw
-   topiary.external
+   topiary.generax
    topiary.io
+   topiary.muscle
+   topiary.ncbi
+   topiary.opentree
    topiary.pipeline
    topiary.quality
+   topiary.raxml
    topiary.util

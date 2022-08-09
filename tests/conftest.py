@@ -179,7 +179,7 @@ def xml_to_anc_output():
 @pytest.fixture(scope="module")
 def ncbi_blast_server_output():
     """
-    These csv files are output from topiary.external.ncbi.blast.ncbi._thread_manager
+    These csv files are output from topiary.ncbi.blast.ncbi._thread_manager
     """
 
     dir = os.path.dirname(os.path.realpath(__file__))
@@ -197,7 +197,7 @@ def ncbi_blast_server_output():
 @pytest.fixture(scope="module")
 def local_blast_output():
     """
-    These csv files are output from topiary.external.ncbi._blast_blast._thread_manager
+    These csv files are output from topiary.ncbi._blast_blast._thread_manager
     """
 
     dir = os.path.dirname(os.path.realpath(__file__))

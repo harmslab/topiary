@@ -4,8 +4,8 @@ Functions for working with seed dataframes
 
 import topiary
 from topiary._private import check
-from topiary.external.opentree import species_to_ott, ott_resolvable
-from topiary.external.ncbi.blast import merge_and_annotate
+from topiary.opentree import species_to_ott, ott_resolvable
+from topiary.ncbi.blast import merge_and_annotate
 
 import numpy as np
 import pandas as pd
