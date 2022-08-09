@@ -8,3 +8,4 @@ dendropy
 pastml
 sphinx-rtd-theme
 sphinxcontrib-napoleon
+sphinx-apidoc

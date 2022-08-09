@@ -9,7 +9,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../topiary'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 import glob, re
 
@@ -77,3 +77,5 @@ rst_epilog = ""
 # Read link all targets from file
 with open('links.rst') as f:
      rst_epilog += f.read()
+
+os.system("sphinx-apidoc -f ../../topiary -o .")
