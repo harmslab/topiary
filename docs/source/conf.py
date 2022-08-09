@@ -9,7 +9,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../topiary'))
 
 import glob, re
 
@@ -20,7 +20,7 @@ copyright = '2021, Michael J. Harms'
 author = 'Michael J. Harms'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.0.9'
 
 
 # -- General configuration ---------------------------------------------------
