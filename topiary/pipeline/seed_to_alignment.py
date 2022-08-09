@@ -37,6 +37,8 @@ def seed_to_alignment(seed_df,
                       local_blast_db=None,
                       blast_xml=None,
                       local_recip_blast_db=None,
+                      min_call_prob=0.95,
+                      partition_temp=1,
                       hitlist_size=5000,
                       e_value_cutoff=0.001,
                       gapcosts=(11,1),
@@ -100,6 +102,20 @@ def seed_to_alignment(seed_df,
         Local blast database to use for reciprocal blast. If None, construct a
         reciprocal blast database by downloading the proteomes of the key
         species from the ncbi.
+    min_call_prob : float, default=0.95
+        hits from all paralogs that yield a regular expression match to one of
+        the aliases from the seed dataframe are weighted by their relative blast
+        bit scores. Each paralog is assigned a relative probability. This cutoff
+        is the minimum probability the best paralog match must have to result in
+        a paralog call. Value should be between 0 and 1 (not inclusive), where
+        min_call_prob --> 1 increases the stringency.
+    partition_temp : float, default=1
+        when calculating posterior probability of the paralog call, use this for
+        weighting: 2^(bit_score/partition_temp). partition_temp should be a
+        float > 0. A higher value corresponds to a higher stringency. (The bit
+        score difference between the best hit and the rest would have to be
+        higher to be significant). This is a minium value: it may be adjusted
+        on-the-fly to avoid numerical problems in the calculation.
 
     hitlist_size : int, default=5000
         download only the top hitlist_size hits
@@ -256,13 +272,13 @@ def seed_to_alignment(seed_df,
 
             base = "".join([random.choice(string.ascii_letters) for _ in range(10)])
             blast_db = f"{base}_local_blast"
-            topiary.ncbi.make_blast_db(proteome_list,"blast_db",overwrite=True)
+            topiary.ncbi.make_blast_db(proteome_list,blast_db,overwrite=True)
 
-            local_recip_blast_db = "blast_db"
+            local_recip_blast_db = blast_db
 
         df = topiary.recip_blast(df,
                                  paralog_patterns=paralog_patterns,
-                                 local_blast_db="blast_db",
+                                 local_blast_db=local_recip_blast_db,
                                  num_threads=num_recip_blast_threads,
                                  keep_blast_xml=keep_blast_xml)
 

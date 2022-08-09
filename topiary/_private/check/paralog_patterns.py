@@ -62,15 +62,14 @@ def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
                 re_kwargs["flags"] = re_kwargs["flags"] | f
 
     # Check paralog_patterns data type
-    if type(paralog_patterns) is not dict:
-        err = "\nparalog_patterns is not a dictionary\n\n{generic_pp_error}\n\n"
+    if not issubclass(type(paralog_patterns),dict):
+        err = f"\nparalog_patterns is not a dictionary\n\n{generic_pp_error}\n\n"
         raise ValueError(err)
 
     # Work on a copy of the paralog_patterns dictionary
-    pp = copy.deepcopy(paralog_patterns)
+    paralog_patterns = copy.deepcopy(paralog_patterns)
 
     # Go through all paralog_patterns keys
-    patterns = []
     for k in paralog_patterns:
 
         # Make sure the key is a string
@@ -78,25 +77,25 @@ def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
             err = f"\nparalog key '{k}' not recognized.\n\n{generic_pp_error}\n\n"
             raise ValueError(err)
 
-        # If value is a naked regular expression pattern or string, wrap it in a
-        # list so the code can iterate over it.
-        if issubclass(type(pp[k]),re.Pattern):
-            pp[k] = [pp[k]]
+        # If value is a compiled expression pattern, continue
+        if issubclass(type(paralog_patterns[k]),re.Pattern):
+            continue
 
-        if issubclass(type(pp[k]),str):
-            pp[k] = [pp[k]]
+        # If it's a string, turn into an iterable so we can iterate over it below
+        if issubclass(type(paralog_patterns[k]),str):
+            paralog_patterns[k] = [paralog_patterns[k]]
 
         # Make sure value is an iterable
-        if hasattr(pp[k],"__iter__"):
+        if hasattr(paralog_patterns[k],"__iter__"):
 
             # Make sure there is at least one pattern
-            if len(pp[k]) == 0:
+            if len(paralog_patterns[k]) == 0:
                 err = f"\nparalog key '{k}' has no patterns.\n\n{generic_pp_error}\n\n"
                 raise ValueError(err)
 
             # Compile patterns to search for in the source column
             to_compile = []
-            for a in pp[k]:
+            for a in paralog_patterns[k]:
 
                 if issubclass(type(a),str):
                     to_compile.append(re.escape(a))
@@ -110,12 +109,12 @@ def check_paralog_patterns(paralog_patterns,ignorecase=True,re_flags=None):
                     err = f"\npattern '{a}' not recognized.\n\n{generic_pp_error}\n\n"
                     raise ValueError(err)
 
-            patterns.append((re.compile("|".join(to_compile),**re_kwargs),k))
+            paralog_patterns[k] = re.compile("|".join(to_compile),**re_kwargs)
 
         # value is not iterable -- bad news
         else:
             err = f"\nvalue for paralog_pattern '{k}' should be list-like.\n\n"
-            err += "{generic_pp_error}\n\n"
+            err += f"{generic_pp_error}\n\n"
             raise ValueError(err)
 
-    return patterns
+    return paralog_patterns

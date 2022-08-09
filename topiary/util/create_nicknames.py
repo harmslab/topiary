@@ -99,7 +99,7 @@ def create_nicknames(df,
         raise ValueError(err)
 
     patterns = check.check_paralog_patterns(paralog_patterns,
-                                                        ignorecase=ignorecase)
+                                            ignorecase=ignorecase)
 
     # Get entries from source column
     source = [entry for entry in df.loc[:,source_column]]
@@ -108,13 +108,13 @@ def create_nicknames(df,
 
         out.append([])
 
-        # Go over every patterns
+        # Go over every pattern
         for p in patterns:
 
             # If we find the pattern in the entry, break; we only need
             # to note we found it once
-            if p[0].search(source[i]):
-                out[-1].append(p[1])
+            if patterns[p].search(source[i]):
+                out[-1].append(p)
                 break
 
         # Join list of hits

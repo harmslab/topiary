@@ -123,6 +123,7 @@ def records_to_df(blast_records):
                 'title': [],
                 'length': [],
                 'e_value': [],
+                'bits': [],
                 'sequence': [],
                 'subject_start': [],
                 'subject_end':[],
@@ -132,12 +133,14 @@ def records_to_df(blast_records):
 
         # Get alignments from blast result.
         for i, s in enumerate(record.alignments):
+
             data['accession'].append(s.accession)
             data['hit_def'].append(s.hit_def)
             data['hit_id'].append(s.hit_id)
             data['title'].append(s.title)
             data['length'].append(s.length)
             data['e_value'].append(s.hsps[0].expect)
+            data['bits'].append(s.hsps[0].bits)
             data['sequence'].append(s.hsps[0].sbjct)
             data['subject_start'].append(s.hsps[0].sbjct_start)
             data['subject_end'].append(s.hsps[0].sbjct_end)
@@ -152,6 +155,7 @@ def records_to_df(blast_records):
             data['title'].append(pd.NA)
             data['length'].append(pd.NA)
             data['e_value'].append(pd.NA)
+            data['bits'].append(pd.NA)
             data['sequence'].append(pd.NA)
             data['subject_start'].append(pd.NA)
             data['subject_end'].append(pd.NA)

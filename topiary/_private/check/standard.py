@@ -29,6 +29,9 @@ def check_bool(value,variable_name=None):
         If value cannot be interpreted as a bool
     """
 
+    if np.issubdtype(type(value),np.bool_):
+        return bool(value)
+
     try:
 
         # See if this is an iterable
@@ -53,7 +56,7 @@ def check_bool(value,variable_name=None):
             err = f"\n'{value}' must be True or False.\n\n"
         err += "\n\n"
 
-        raise ValueError(value)
+        raise ValueError(err)
 
     return value
 

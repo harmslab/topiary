@@ -19,12 +19,12 @@ def _prepare_for_blast(df,
                        local_blast_db,
                        ncbi_blast_db,
                        ignorecase,
-                       max_del_best,
                        min_call_prob,
+                       partition_temp,
                        use_start_end):
     """
     Check sanity of input parameters and compile patterns. Return a validated
-    topiary dataframe, list of sequences, compiled set of patterns to search,
+    topiary dataframe, list of sequences, dictionary of patterns to search for,
     and sanitized parameters.
 
     Parameters
@@ -35,28 +35,27 @@ def _prepare_for_blast(df,
         example: start = 5, stop = 20 would blast sequence[5:20]. To turn this
         off, set use_start_end = False.
     paralog_patterns : dict
-        dictionary with paralogs as values and lists of patterns to look for as
-        values.
+        dictionary with paralogs as keys and patterns to look for (as
+        lists of strings or compiled regular expressions) as values
     local_blast_db : str or None
         local database against which to blast
     ncbi_blast_db : str or None
         database on ncbi against which to blast
     ignorecase : bool
         whether to ignore letter case when searching blast
-    max_del_best : float
-        maximum value for log(e_hit_match) - log(e_hit_best) that
-        allows for paralog call. This means the matched recip blast
-        hit does not have to be the best hit, but must be within this
-        e-value difference of the best hit. A higher number means a
-        less stringent cutoff. A value of 0 would require the matched
-        hit be the best hit.
-    min_call_prob: float
+    min_call_prob : float, default=0.95
         hits from all paralogs that yield a regular expression match
-        are weighted by their relative e-values. Each paralog is
+        are weighted by their relative bit scores. Each paralog is
         assigned a relative probability. This cutoff is the minimum
         probability the best paralog match must have to result in a
         paralog call. Value should be between 0 and 1 (not inclusive),
         where min_call_prob --> 1 increases the stringency.
+    partition_temp : float, default=1,
+        when calculating posterior probability of the paralog call, use this for
+        weighting: 2^(bit_score/partition_temp). partition_temp should be a
+        float > 0. A higher value corresponds to a higher stringency. (The bit
+        score difference between the best hit and the rest would have to be
+        higher to be significant).
     use_start_end : bool
         whether or not to use start/stop columns in
         dataframe (if present) to slice subset of sequence to blast.
@@ -67,27 +66,20 @@ def _prepare_for_blast(df,
         validated dataframe
     sequence_list : list
         list of sequences to use for blast
-    patterns : dict
-        valiated paralog patterns
-    max_del_best : float
+    paralog_patterns : dict
+        valiated paralog_patterns
     min_call_prob : float
+    partition_temp : float
     """
 
-    # Check type of df
-    if type(df) is not pd.DataFrame:
-        err = "\ndf should be a topiary dataframe\n\n"
-        raise ValueError(err)
+    # Make sure dataframe is a topiary dataframe
+    df = check.check_topiary_dataframe(df)
 
-    # Check ignorecase
-    try:
-        ignorecase = bool(int(ignorecase))
-    except (ValueError,TypeError):
-        err = "\nignorecase must be True or False\n\n"
-        raise ValueError(err)
+    ignorecase = check.check_bool(ignorecase,"ignorecase")
 
-    patterns = check.check_paralog_patterns(paralog_patterns,
-                                            ignorecase=ignorecase)
-    if len(patterns) == 0:
+    paralog_patterns = check.check_paralog_patterns(paralog_patterns,
+                                                    ignorecase=ignorecase)
+    if len(paralog_patterns) == 0:
         err = "\nparalog_patterns must have at least one entry\n"
         raise ValueError(err)
 
@@ -101,36 +93,21 @@ def _prepare_for_blast(df,
         err += "local_blast_db, but not both.\n\n"
         raise ValueError(err)
 
-    # Check max_del_best
-    try:
-        max_del_best = float(max_del_best)
-        if max_del_best < 0 or np.isnan(max_del_best):
-            raise ValueError
 
-    except (ValueError,TypeError):
-        err = "\nmax_del_best must be a number between 0 and positive infinity\n\n"
-        raise ValueError(err)
+    min_call_prob = check.check_float(min_call_prob,
+                                      "min_call_prob",
+                                      minimum_allowed=0,
+                                      maximum_allowed=1,
+                                      minimum_inclusive=False,
+                                      maximum_inclusive=False)
 
-    # Check min_call_prob
-    try:
-        min_call_prob = float(min_call_prob)
-        if min_call_prob <= 0 or min_call_prob >= 1:
-            raise ValueError
-        if np.isnan(min_call_prob):
-            raise ValueError
-    except (ValueError,TypeError):
-        err = "\nmin_call_prob must be a number between 0 and 1 (not inclusive)\n\n"
-        raise ValueError(err)
+    partition_temp = check.check_float(partition_temp,
+                                       "partition_temp",
+                                       minimum_allowed=0,
+                                       minimum_inclusive=False)
 
-    # Check use_start_end
-    try:
-        use_start_end = bool(int(use_start_end))
-    except (ValueError,TypeError):
-        err = "\nuse_start_end must be True or False\n\n"
-        raise ValueError(err)
+    use_start_end = check.check_bool(use_start_end,"use_start_end")
 
-    # Make sure dataframe is a topiary dataframe
-    df = check.check_topiary_dataframe(df)
 
     # Create list of all sequences in dataframe
     sequence_list = []
@@ -170,7 +147,7 @@ def _prepare_for_blast(df,
             err += f"row: {df.loc[idx,:]}\n\n"
             raise ValueError(err)
 
-    return df, sequence_list, patterns, max_del_best, min_call_prob
+    return df, sequence_list, paralog_patterns, min_call_prob, partition_temp
 
 
 def _run_blast(sequence_list,
@@ -261,11 +238,80 @@ def _run_blast(sequence_list,
     return hit_dfs
 
 
+def _calc_hit_post_prob(hits,paralog_patterns,partition_temp):
+    """
+    Calculate the posterior probability for paralog matches.
+
+    Parameters
+    ----------
+    hits : pandas.DataFrame
+        dataframe with blast hits
+    paralog_patterns : dict
+        dictionary with paralogs as keys and patterns to look for (as
+        compiled regular expressions) as values
+    partition_temp : float
+        partition temperature
+
+    Returns
+    -------
+    posterior_prob : numpy.ndarray
+        array of posterior probabilities for each paralog (in order of keys in
+        paralog_patterns)
+    pattern_masks : dict
+        dictionary keying paralogs to arrays of bools. The True/False in each
+        array records whether each row in the dataframe was matched by that
+        paralog. 
+    """
+
+    # Get weighted bits for all hits in the dataframe
+    all_weights = np.power(2,hits.loc[:,"bits"]/partition_temp)
+    Q = np.sum(all_weights)
+    initial_partition_temp = partition_temp
+    while np.isinf(Q):
+        partition_temp = partition_temp*2
+        all_weights = np.power(2,hits.loc[:,"bits"]/partition_temp)
+        Q = np.sum(all_weights)
+
+    if partition_temp != initial_partition_temp:
+        print(f"Adjusted partition_temp from {initial_partition_temp:.3e} to ")
+        print(f"{partition_temp:.3e} to avoid a numerical overflow.\n")
+
+    # Go through all patterns
+    pattern_masks = {}
+    posterior_prob = []
+    for p in paralog_patterns:
+
+        # Make a mask for whether this paralog_patterns hits or not along each
+        # description.
+        pattern_masks[p] = []
+        for i in range(len(hits)):
+            description = hits.loc[hits.index[i],"hit_def"]
+            if paralog_patterns[p].search(description):
+                pattern_masks[p].append(True)
+            else:
+                pattern_masks[p].append(False)
+
+        # Final mask is value keyed to paralog name
+        pattern_masks[p] = np.array(pattern_masks[p],dtype=bool)
+
+        # Posterior probability is vector with sums of weights for all
+        # hits from this paralog
+        posterior_prob.append(np.sum(all_weights[pattern_masks[p]]))
+
+    # Weight posterior probability all hits from each paralog to all other
+    # hits.
+    posterior_prob = np.array(posterior_prob)
+    posterior_prob = posterior_prob/(np.sum(all_weights))
+
+    return posterior_prob, pattern_masks
+
+
+
 def _make_recip_blast_calls(df,
                             hit_dfs,
-                            patterns,
-                            max_del_best,
+                            paralog_patterns,
                             min_call_prob,
+                            partition_temp,
                             ncbi_blast_db):
     """
     Make paralog calls given blast output and list of patterns.
@@ -276,23 +322,19 @@ def _make_recip_blast_calls(df,
         topiary dataframe with query sequences
     hit_dfs : list
         list of dataframes returned by blast
-    patterns : dict
-        dictionary with paralogs as values and lists of patterns to look for as
-        values.
-    max_del_best : float
-        maximum value for log(e_hit_match) - log(e_hit_best) that
-        allows for paralog call. This means the matched recip blast
-        hit does not have to be the best hit, but must be within this
-        e-value difference of the best hit. A higher number means a
-        less stringent cutoff. A value of 0 would require the matched
-        hit be the best hit.
+    paralog_patterns : dict
+        dictionary with paralogs as keys and lists of patterns or compiled
+        pattern regular regular expressions as values
     min_call_prob : float
         hits from all paralogs that yield a regular expression match
-        are weighted by their relative e-values. Each paralog is
+        are weighted by their relative bit scores. Each paralog is
         assigned a relative probability. This cutoff is the minimum
         probability the best paralog match must have to result in a
         paralog call. Value should be between 0 and 1 (not inclusive),
         where min_call_prob --> 1 increases the stringency.
+    partition_temp : float
+        when calculating posterior probability of the best versus next-best
+        bit score, use this for weighting: 2^(bit_score/partition_temp)
     ncbi_blast_db : str
         database used for ncbi blast. (Used to determine if this should be
         parsed as ncbi vs. local blast inputs)
@@ -311,7 +353,7 @@ def _make_recip_blast_calls(df,
                "recip_hit":[],
                "recip_paralog":[],
                "recip_prob_match":[],
-               "recip_del_best":[]}
+               "recip_bit_score":[]}
 
     for _, hits in enumerate(hit_dfs):
 
@@ -321,123 +363,44 @@ def _make_recip_blast_calls(df,
             results["recip_hit"].append(pd.NA)
             results["recip_paralog"].append(pd.NA)
             results["recip_prob_match"].append(np.nan)
-            results["recip_del_best"].append(np.nan)
+            results["recip_bit_score"].append(np.nan)
             continue
 
-        # Get e value of top hit
-        top_e_value = hits.loc[hits.index[0],"e_value"]
-        top_hit_def = hits.loc[hits.index[0],"hit_def"]
+        posterior_prob, pattern_masks = _calc_hit_post_prob(hits,
+                                                            paralog_patterns,
+                                                            partition_temp)
 
-        # Now go through each regular expression pattern
-        e_values = []
-        hit_defs = []
-        paralogs = []
-        for i, p in enumerate(patterns):
+        best_idx = np.argmax(posterior_prob)
+        recip_prob_match = np.max(posterior_prob)
 
-            for j in range(len(hits)):
+        # If the overall posterior probability for the paralog is better than
+        # min call prob
+        if recip_prob_match > min_call_prob:
 
-                idx = hits.index[j]
-                description = hits.loc[idx,"hit_def"]
+            recip_paralog = list(paralog_patterns.keys())[best_idx]
+            recip_found_paralog = True
 
-                # If the pattern matches this hit description
-                if p[0].search(description):
-
-                    # If this was an NCBI blast, try to parse the NCBI line,
-                    # pulling apart multi-titles
-                    if ncbi_blast_db:
-
-                        title = hits.loc[idx,"title"]
-                        accession = hits.loc[idx,"accession"]
-
-                        hd = parse_ncbi_line(title,accession)
-                        if hd is not None:
-                            description = hd["name"]
-
-                    hit_defs.append(description)
-
-                    # get e value
-                    e_values.append(hits.loc[idx,"e_value"])
-
-                    # Get paralog call
-                    paralogs.append(p[1])
-
-                    break
-
-        # If we got at least one hit that matched
-        recip_found_paralog = False
-        if len(paralogs) > 0:
-
-            # calculate posterior probability
-            e_values = np.array(e_values)
-
-            # If none of the e-values are zero, calculate the posterior
-            # probability of the top hit.
-            if np.sum(e_values == 0) == 0:
-                pp = 1/np.array(e_values)
-                pp = pp/np.sum(pp)
-                match_idx = np.argsort(pp)[-1]
-                match_pp = pp[match_idx]
-
-            # If there is a zero e-value, take the first hit a zero e-value.
-            # This is an (apparently) infinite posterior probaility
-            else:
-                match_idx = np.where(e_values == 0)[0][0]
-                match_pp = np.inf
-
-            # Get the match hit definition, paralog call, match probability
-            # (relative to other possible paralogs), and difference in e value
-            # relative to the best overall hit.
-            recip_hit = hit_defs[match_idx]
-            recip_paralog = paralogs[match_idx]
-            recip_prob_match = match_pp
-            recip_e_value = e_values[match_idx]
-
-            # If the top hit has e-value of zero...
-            if top_e_value == 0:
-
-                # If the recip blast hit matches this, the difference in those
-                # e-values is zero
-                if recip_e_value == 0:
-                    recip_del_best = 0
-
-                # If the recip blast hit does *not* match the top, the
-                # difference in those e-values is
-                else:
-                    recip_del_best = -np.inf
-                    w = "WARNING:\n"
-                    w += "BLAST returned an e-value = 0.0 for the top hit:\n\n"
-                    w += f"  {hits['hit_def'].iloc[0]}\n\n"
-                    w += "This hit does not match any of the patterns in paralog_patterns.\n"
-                    w += "The best hit that matches something in paralog_patterns has\n"
-                    w += f"an e-value of {recip_e_value} and matches '{recip_paralog}'.\n"
-                    w += "These values cannot be quantitatively compared.\n"
-                    w += "Topiary will set recip_found_paralog to 'False' for\n"
-                    w += "this sequence.\n"
-                    print(w)
-
-            # If we get here, neither top_e_value or recip_e_value are zero.
-            # (if recip_e_value was zero, it would be top_e_value and thus be
-            # caught above.)
-            else:
-                recip_del_best = np.log10(top_e_value) - np.log10(recip_e_value)
-
-            # Decide if we can make a paralog call based on del_best and
-            # prob_match
-            if recip_del_best < max_del_best and recip_prob_match > min_call_prob:
-                recip_found_paralog = True
+            # Get best scoring hit for this hit
+            recip_hits = hits.loc[pattern_masks[recip_paralog],:]
+            best_idx = recip_hits.index[np.argmax(recip_hits.loc[:,"bits"])]
+            recip_hit = recip_hits.loc[best_idx,"hit_def"]
+            recip_bit_score = recip_hits.loc[best_idx,"bits"]
 
         else:
-            recip_hit = top_hit_def
+            recip_found_paralog = False
             recip_paralog = None
-            recip_prob_match = None
-            recip_del_best = None
 
-        # Record results of analysis
+            # Get best scoring hit overall
+            best_idx = hits.index[np.argmax(hits.loc[:,"bits"])]
+            recip_hit = hits.loc[best_idx,"hit_def"]
+            recip_bit_score = hits.loc[best_idx,"bits"]
+
+        # Record results
         results["recip_found_paralog"].append(recip_found_paralog)
         results["recip_hit"].append(recip_hit)
         results["recip_paralog"].append(recip_paralog)
         results["recip_prob_match"].append(recip_prob_match)
-        results["recip_del_best"].append(recip_del_best)
+        results["recip_bit_score"].append(recip_bit_score)
 
     # Only load results for values with keep == True
     for k in results:
@@ -454,9 +417,6 @@ def _make_recip_blast_calls(df,
         # Now set keep with the results from this column
         df.loc[df.keep,k] = results[k]
 
-    num_keep_at_start = np.sum(df.keep)
-
-    print("3",df.loc[df.loc[:,"uid"] == "tRUuOXIzEB",:])
 
     # Update keep with recip_found_paralog
     df.loc[:,"keep"] = np.logical_and(df["keep"],df["recip_found_paralog"])
@@ -470,14 +430,6 @@ def _make_recip_blast_calls(df,
                                 pd.isnull(df.loc[:,"recip_paralog"]))
         df.loc[rename,"recip_paralog"] = df.loc[rename,"name"]
 
-    # Write out some summary statistics
-    print(f"{np.sum(df.keep)} of {num_keep_at_start} sequences passed recip blast.\n")
-    print("Found the following numbers of paralogs:")
-    for p in patterns:
-        num_of_p = np.sum(df.recip_paralog == p[1])
-        print(f"    {p[1]}: {num_of_p}")
-    print("",flush=True)
-
     return df
 
 
@@ -487,10 +439,10 @@ def recip_blast(df,
                 ncbi_blast_db=None,
                 ncbi_taxid=None,
                 ignorecase=True,
-                max_del_best=100,
                 min_call_prob=0.95,
+                partition_temp=1,
                 use_start_end=True,
-                hitlist_size=50,
+                hitlist_size=10,
                 e_value_cutoff=0.01,
                 gapcosts=(11,1),
                 num_threads=-1,
@@ -508,9 +460,8 @@ def recip_blast(df,
       (if no match found)
     + `recip_paralog`: string or None. name of paralog from paralog_patterns
     + `recip_prob_match`: float. probability that this is the correct paralog
-      call based on relative evalues of all paralog hits
-    + `recip_del_best`: float. how much worse paralog call is than the best
-      blast hit. log(e_hit_match) - log(e_hit_best)
+      call based on relative evalues of all paralog hits (see Note 2)
+    + `recip_bit_score`: float. bit_score for the paralog hit (if found)
 
     Parameters
     ----------
@@ -521,9 +472,8 @@ def recip_blast(df,
         between start/top (for example: start = 5, stop = 20 would blast
         sequence[5:20]. To turn this off, set use_start_end = False.
     paralog_patterns : dict
-        dictionary with paralogs as values and lists of patterns to look for as
-        values. Keys must be strings. Values may be strings or compiled
-        re.Pattern instances. See Notes for details.
+        dictionary with paralogs as keys and lists of patterns or compiled
+        pattern regular regular expressions as values. See Note 1 for details
     local_blast_db : str or None, default=None
         Local blast database to use. If None, use an NCBI database. Incompatible
         with ncbi_blast_db.
@@ -539,24 +489,24 @@ def recip_blast(df,
         whether to ignore letter case when searching blast. NOTE: if you pass
         in compiled regular expressions, the flags (such as re.IGNORECASE) on
         the *last* pattern for each paralog will be used for all patterns.
-    max_del_best : float, default=100
-        maximum value for log(e_hit_match) - log(e_hit_best) that
-        allows for paralog call. This means the matched recip blast
-        hit does not have to be the best hit, but must be within this
-        e-value difference of the best hit. A higher number means a
-        less stringent cutoff. A value of 0 would require the matched
-        hit be the best hit.
-    min_call_prob: float, default=0.95
+    min_call_prob : float, default=0.95
         hits from all paralogs that yield a regular expression match
-        are weighted by their relative e-values. Each paralog is
+        are weighted by their relative bit scores. Each paralog is
         assigned a relative probability. This cutoff is the minimum
         probability the best paralog match must have to result in a
         paralog call. Value should be between 0 and 1 (not inclusive),
         where min_call_prob --> 1 increases the stringency.
+    partition_temp : float, default=1,
+        when calculating posterior probability of the paralog call, use this for
+        weighting: 2^(bit_score/partition_temp). partition_temp should be a
+        float > 0. A higher value corresponds to a higher stringency. (The bit
+        score difference between the best hit and the rest would have to be
+        higher to be significant). This is a minium value: it may be adjusted
+        on-the-fly to avoid numerical problems in the calculation. See Note 2.
     use_start_end : bool, default=True
         whether or not to use start/stop columns in dataframe (if present) to
         slice subset of sequence for reciprocal blast.
-    hitlist_size : int, default=100
+    hitlist_size : int, default=10
         return only the top hitlist_size hits
     e_value_cutoff : float, default=0.001
         only return hits with e_value better than e_value_cutoff
@@ -579,28 +529,35 @@ def recip_blast(df,
 
     Notes
     -----
-    :code:`paralog_patterns` are used to match reciprocal blast hits. For
-    example:
 
-    .. code-block:: python
+    1. :code:`paralog_patterns` are used to match reciprocal blast hits. We
+       strongly recommend that you use the patterns generated automatically by
+       io.read_seed, as this will find patterns that are unique to each
+       paralog. If you want to specify them manually, however, use something
+       like:
 
-        paralog_patterns = {"LY96":["lymphocyte antigen 96","MD-2"],
-                            "LY86":["lymphocyte antigen 86","MD-1"]}
+       .. code-block:: python
 
+            paralog_patterns = {"LY96":["lymphocyte antigen 96","MD-2"],
+                                "LY86":["lymphocyte antigen 86","MD-1"]}
 
-    This would mean hits with 'lymphocyte antigen 96' or 'MD-2' will map to
-    LY96; hits with 'lymphocyte antigen 86' or 'MD-1' will map to LY86. Hits
-    that match neither would not be assigned a paralog.
+       This would mean hits with 'lymphocyte antigen 96' or 'MD-2' will map to
+       LY96; hits with 'lymphocyte antigen 86' or 'MD-1' will map to LY86. Hits
+       that match neither would not be assigned a paralog. String patterns are
+       interpreted literally. The pattern :code:`"[A-Z]"` would be escaped to
+       look for :code:`"\[A\-Z\]"`. If you want to use regular expressions in
+       your patterns, pass them in as compiled regular expressions. For example,
 
-    NOTE: string patterns are interpreted literally. The pattern :code:`"[A-Z]"`
-    would be escaped to look for :code:`"\[A\-Z\]"`. If you want to use regular
-    expressions in your patterns, pass them in as compiled regular expressions.
-    For example,
+       .. code-block:: python
 
-    .. code-block:: python
+            my_pattern = re.compile("[A-Z]")
 
-        my_pattern = re.compile("[A-Z]")
-
+    2. The posterior probability of a given call is calculated using a weighted
+       bit score. For each blast hit, we calculate w = 2^(bit_score/partition_temp).
+       We then calculate the posterior probability for each paralog match as
+       w_paralog/sum(w_all). See
+       MC Frith (2020) Bioinformatics. https://doi.org/10.1093/bioinformatics/btz576
+       By increasing the partition_temp parameter, you increase stringency.
 
     """
 
@@ -616,12 +573,11 @@ def recip_blast(df,
                              local_blast_db,
                              ncbi_blast_db,
                              ignorecase,
-                             max_del_best,
                              min_call_prob,
+                             partition_temp,
                              use_start_end)
 
-    df, sequence_list, patterns, max_del_best, min_call_prob = out
-
+    df, sequence_list, paralog_patterns, min_call_prob, partition_temp = out
 
     # Run BLAST on sequence list, returning list of dataframes -- one for each
     # seqeunce in sequence_list
@@ -636,12 +592,23 @@ def recip_blast(df,
                          keep_blast_xml,
                          **kwargs)
 
+
+    num_keep_at_start = np.sum(df.keep)
+
     # Make paralog calls given blast output and list of patterns
     out_df = _make_recip_blast_calls(df,
-                                       hit_dfs,
-                                       patterns,
-                                       max_del_best,
-                                       min_call_prob,
-                                       ncbi_blast_db)
+                                     hit_dfs,
+                                     paralog_patterns,
+                                     min_call_prob,
+                                     partition_temp,
+                                     ncbi_blast_db)
+
+    # Write out some summary statistics
+    print(f"{np.sum(out_df.keep)} of {num_keep_at_start} sequences passed recip blast.\n")
+    print("Found the following numbers of paralogs:")
+    for p in paralog_patterns:
+        num_of_p = np.sum(out_df.recip_paralog == p)
+        print(f"    {p}: {num_of_p}")
+    print("",flush=True)
 
     return out_df

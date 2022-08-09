@@ -80,10 +80,10 @@ def ncbi_ftp_download(full_url,
     md5_dict = _read_md5_file(md5_file)
 
     counter = 0
-    md5_fail = False
     success = False
     while counter < num_attempts:
 
+        print(f"Attempt {counter + 1} of {num_attempts}.")
         ftp_download(file_name,path,url,resume=True,silent=False)
 
         # Make sure it downloaded
@@ -94,12 +94,13 @@ def ncbi_ftp_download(full_url,
         # Check md5sum
         file_md5 = calc_md5(file_name)
         if md5_dict[file_name] != file_md5:
+            print("md5 hash does not match.")
+            print(f"Expected {md5_dict[file_name]}")
+            print(f"Got {file_md5}")
+            print("Trying again...")
 
-            # If we've already failed once on the md5 stage, nuke local file
-            if md5_fail:
-                os.remove(file_name)
+            os.remove(file_name)
 
-            md5_fail = True
             counter += 1
             continue
 

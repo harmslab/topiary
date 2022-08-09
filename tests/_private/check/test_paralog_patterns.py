@@ -31,48 +31,42 @@ def test_check_paralog_patterns():
     # Various paralog_patterns calls hould work
     patterns = check_paralog_patterns(paralog_patterns={"test":"this"})
     assert len(patterns) == 1
-    assert patterns[0][0].search("string matches this") is not None
-    assert patterns[0][0].search("string does not match") is None
-    assert patterns[0][1] == "test"
+    assert patterns["test"].search("string matches this") is not None
+    assert patterns["test"].search("string does not match") is None
 
     patterns = check_paralog_patterns(paralog_patterns={"test":["this","other"]})
     assert len(patterns) == 1
-    assert patterns[0][0].search("string matches this") is not None
-    assert patterns[0][0].search("string matches other") is not None
-    assert patterns[0][0].search("string does not match") is None
-    assert patterns[0][1] == "test"
+    assert patterns["test"].search("string matches this") is not None
+    assert patterns["test"].search("string matches other") is not None
+    assert patterns["test"].search("string does not match") is None
 
     patterns = check_paralog_patterns(paralog_patterns={"test":("this","other")})
     assert len(patterns) == 1
-    assert patterns[0][0].search("string matches this") is not None
-    assert patterns[0][0].search("string matches other") is not None
-    assert patterns[0][0].search("string does not match") is None
-    assert patterns[0][1] == "test"
+    assert patterns["test"].search("string matches this") is not None
+    assert patterns["test"].search("string matches other") is not None
+    assert patterns["test"].search("string does not match") is None
 
     patterns = check_paralog_patterns(paralog_patterns={"test":(re.compile("this"),"other")})
     assert len(patterns) == 1
-    assert patterns[0][0].search("string matches this") is not None
-    assert patterns[0][0].search("string matches other") is not None
-    assert patterns[0][0].search("string does not match") is None
-    assert patterns[0][1] == "test"
+    assert patterns["test"].search("string matches this") is not None
+    assert patterns["test"].search("string matches other") is not None
+    assert patterns["test"].search("string does not match") is None
 
     patterns = check_paralog_patterns(paralog_patterns={"test":"this",
                                                           "thing":"other"})
     assert len(patterns) == 2
-    assert patterns[0][0].search("string matches this") is not None
-    assert patterns[0][0].search("string matches other") is None
-    assert patterns[0][1] == "test"
-    assert patterns[1][0].search("string matches other") is not None
-    assert patterns[1][0].search("string does not match") is None
-    assert patterns[1][1] == "thing"
+    assert patterns["test"].search("string matches this") is not None
+    assert patterns["test"].search("string matches other") is None
+    assert patterns["thing"].search("string matches other") is not None
+    assert patterns["thing"].search("string does not match") is None
 
     patterns = check_paralog_patterns(paralog_patterns={"test":"this"})
-    assert patterns[0][0].flags == re.compile("a",flags=re.IGNORECASE).flags
+    assert patterns["test"].flags == re.compile("a",flags=re.IGNORECASE).flags
 
     patterns = check_paralog_patterns(paralog_patterns={"test":"this"},
                                               ignorecase=True)
-    assert patterns[0][0].flags == re.compile("a",flags=re.IGNORECASE).flags
+    assert patterns["test"].flags == re.compile("a",flags=re.IGNORECASE).flags
 
     patterns = check_paralog_patterns(paralog_patterns={"test":"this"},
                                               ignorecase=False)
-    assert patterns[0][0].flags == re.compile("a").flags
+    assert patterns["test"].flags == re.compile("a").flags
