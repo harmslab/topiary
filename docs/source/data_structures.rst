@@ -9,20 +9,29 @@
 Data structures
 ===============
 
-Under the hood, topiary uses `pandas <pandas-link_>`_ dataframes to manage the phylogenetic data
-in the project. For those unfamiliar with dataframes, these are essentially
-spreadsheets with a row for each sequence and columns holding various features
-of that sequence. These dataframes can be readily written out and read from
-spreadsheet files (.csv, .tsv, .xlsx).
+Under the hood, topiary uses `pandas <pandas-link_>`_ dataframes to manage the
+phylogenetic data in the project. For those unfamiliar with dataframes, these are
+essentially spreadsheets with a row for each sequence and columns holding various
+features of that sequence. These dataframes can be readily written out and read
+from spreadsheet files (.csv, .tsv, .xlsx).
 
-There are two key dataframes you will encounter using topiary:
+Topiary is built around two types of dataframes:
 
-+ :emph:`topiary dataframe`: The main structure for holding sequences and information
-  about those sequences for the project. You can think of it as a giant
-  spreadsheet of sequences.
 + :emph:`seed dataframe`: A manually constructed dataframe containing seed sequences
-  that topiary will then use to construct a full topiary dataframe for the
+  that topiary uses as input to construct a full topiary dataframe for the
   project.
++ :emph:`topiary dataframe`: The main structure for holding sequences and
+  information about those sequences for the project. Each step in the pipeline
+  saves out, then edits, the main dataframe. This allows one to follow
+  the steps and/or manually introduce changes.
+
+Design
+======
+
+
+
+
+
 
 topiary dataframe
 =================
@@ -122,4 +131,4 @@ Example seed dataframe
 | LY86 | lymphocyte antigen 86;MD1;Myeloid Differentiation Protein-1       | Danio rerio  | MKTYFNM... |
 +------+-------------------------------------------------------------------+--------------+------------+
 
-See protocol for description of how to make these dataframes. 
+See protocol for description of how to make these dataframes.
