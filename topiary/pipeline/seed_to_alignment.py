@@ -36,17 +36,18 @@ def seed_to_alignment(seed_df,
                       ncbi_blast_db="nr",
                       local_blast_db=None,
                       blast_xml=None,
+                      move_mrca_up_by=2,
                       local_recip_blast_db=None,
                       min_call_prob=0.95,
                       partition_temp=1,
                       hitlist_size=5000,
                       e_value_cutoff=0.001,
                       gapcosts=(11,1),
-                      num_ncbi_threads=1,
-                      num_recip_blast_threads=-1,
+                      num_ncbi_blast_threads=1,
+                      num_local_blast_threads=-1,
                       restart=False,
                       overwrite=False,
-                      keep_blast_xml=False,
+                      keep_recip_blast_xml=False,
                       verbose=False):
     """
     Pipeline that takes a seed dataframe, BLASTs to find sequence hits,
@@ -86,11 +87,9 @@ def seed_to_alignment(seed_df,
         front and the last 0.02 off the back.
 
     ncbi_blast_db : str or None, default="nr"
-        NCBI blast database to use. If None, use a local database. Incompatible
-        with local_blast_db.
+        NCBI blast database to use.
     local_blast_db : str, optional
-        Local blast database to use. If None, use an NCBI database. Incompatible
-        with ncbi_blast_db.
+        Local blast database to use.
     blast_xml : str or list, optional
         previously generated blast xml files to load. This argument can be:
 
@@ -98,6 +97,12 @@ def seed_to_alignment(seed_df,
          + list of xml files (list of str)
          + directory (str). Code will grab all .xml files in the directory.
 
+    move_mrca_up_by : int, default=2
+        when inferring the phylogenetic context from the seed dataframe, get the
+        most recent common ancestor of the seed species, then find the taxonomic
+        rank "move_mrca_up_by" levels above that ancestor. For example, if the
+        key species all come from marsupials (Theria) and move_mrca_up_by == 2,
+        the context will be Amniota (Theria -> Mammalia -> Amniota).
     local_recip_blast_db : str, optional
         Local blast database to use for reciprocal blast. If None, construct a
         reciprocal blast database by downloading the proteomes of the key
@@ -108,33 +113,34 @@ def seed_to_alignment(seed_df,
         bit scores. Each paralog is assigned a relative probability. This cutoff
         is the minimum probability the best paralog match must have to result in
         a paralog call. Value should be between 0 and 1 (not inclusive), where
-        min_call_prob --> 1 increases the stringency.
+        increasing min_call_prob increases the stringency.
     partition_temp : float, default=1
-        when calculating posterior probability of the paralog call, use this for
-        weighting: 2^(bit_score/partition_temp). partition_temp should be a
-        float > 0. A higher value corresponds to a higher stringency. (The bit
-        score difference between the best hit and the rest would have to be
-        higher to be significant). This is a minium value: it may be adjusted
-        on-the-fly to avoid numerical problems in the calculation.
+        when calculating posterior probability of the reciprocal blast paralog
+        call, use this for weighting: 2^(bit_score/partition_temp).
+        partition_temp should be a float > 0. A higher value corresponds to a
+        higher stringency. (The bit score difference between the best hit and
+        the bit scores of other hits would have to be higher to be significant).
+        This is a minium value. It may be adjusted automatically to avoid
+        numerical problems in the calculation.
 
     hitlist_size : int, default=5000
-        download only the top hitlist_size hits
+        download only the top hitlist_size hits in initial blast
     e_value_cutoff : float, default=0.001
-        only take hits with e_value better than e_value_cutoff
+        only take hits with e_value better than e_value_cutoff in initial blast
     gapcost : tuple, default=(11,1)
-        BLAST gapcosts (length 2 tuple of ints)
-    num_ncbi_threads : int, default=1
-        number of threads to use for the NCBI blast. -1 means use all available.
+        BLAST gapcosts (length 2 tuple of ints) in initial blast
+    num_ncbi_blast_threads : int, default=1
+        number of threads to use for NCBI blast. -1 means use all available.
         (Multithreading rarely speeds up remote BLAST).
-    num_recip_blast_threads : int, default=-1
-        number of threads to use for local reciprocal blast. -1 means all
-        available.
+    num_local_blast_threads : int, default=-1
+        number of threads to use for local blast. -1 means all available.
+
     restart : bool, default=False
         restart job from where it stopped in output directory. incompatible with
         overwrite
     overwrite : bool, default=False
         overwrite out_dir if it already exists. incompatible with restart
-    keep_blast_xml : bool, default=False
+    keep_recip_blast_xml : bool, default=False
         whether or not to keep raw blast xml output
     verbose : bool, default=False
         verbosity of output
@@ -225,11 +231,13 @@ def seed_to_alignment(seed_df,
                   "ncbi_blast_db":ncbi_blast_db,
                   "local_blast_db":local_blast_db,
                   "blast_xml":blast_xml,
+                  "move_mrca_up_by":move_mrca_up_by,
                   "hitlist_size":hitlist_size,
                   "e_value_cutoff":e_value_cutoff,
                   "gapcosts":gapcosts,
-                  "num_threads":num_ncbi_threads,
-                  "keep_blast_xml":keep_blast_xml}
+                  "num_ncbi_blast_threads":num_ncbi_blast_threads,
+                  "num_local_blast_threads":num_local_blast_threads,
+                  "keep_blast_xml":True}
 
         out = topiary.df_from_seed(**kwargs)
 
@@ -279,8 +287,8 @@ def seed_to_alignment(seed_df,
         df = topiary.recip_blast(df,
                                  paralog_patterns=paralog_patterns,
                                  local_blast_db=local_recip_blast_db,
-                                 num_threads=num_recip_blast_threads,
-                                 keep_blast_xml=keep_blast_xml)
+                                 num_threads=num_local_blast_threads,
+                                 keep_blast_xml=keep_recip_blast_xml)
 
         topiary.write_dataframe(df,expected_output)
 

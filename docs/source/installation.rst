@@ -13,6 +13,7 @@ Cross-platform installation instructions
 .. note::
   A conda-forge package is in the works that will make this a single-line
   conda command (:code:`conda install topiary-asr -c conda-forge`). Stay tuned.
+  For now...
 
 We recommend using conda to install topiary on all operating systems. (Some
 system-specific instructions for installation of wrapped software packages
@@ -26,9 +27,10 @@ the following commands.
 
 .. code-block:: shell-session
 
+  conda install git
   git clone https://github.com/harmslab/topiary
 
-You can install via conda:
+You can then install topiary via conda:
 
 .. code-block:: shell-session
 
@@ -37,11 +39,9 @@ You can install via conda:
   conda activate topiary
   python -m pip install . -vv
 
-If you are on macos or linux, you can install the core software by:
-
-.. code-block:: shell-session
-
-  conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+At this point, you have topiary, but not the software packages it wraps,
+installed. The next sections describe how to install the entire software
+stack.
 
 .. comment out for now
   .. code-block:: shell-session
@@ -52,8 +52,7 @@ If you are on macos or linux, you can install the core software by:
 Validate the installation
 =========================
 
-You can validate the installation of topiary and the software it uses by
-running:
+You can check which software packages are visible to topiary by:
 
 .. code-block:: shell-session
 
@@ -65,58 +64,35 @@ The output should look something like this:
   :align: center
   :alt: topiary-check-installed terminal output
 
-If you are running a linux machine or intel mac (i.e. pre-M1), all packages
-should have been installed automatically and you are likely done with the
-installation.
-
 If some of the packages are not installed (:code:`passes: N`), proceed to the
 sections below. :emph:`Note`: if generax indicates the binary is installed
 (:code:`installed: Y`) but that the binary does not run (:code:`binary runs: N`),
 please see the :ref:`MPI section<mpi-section>` below.
 
-.. _windows-section:
-
-Windows instructions
-====================
-
 .. important::
 
-  RAxML-NG and GeneRax do :emph:`not` run on windows. To generate trees and
-  ancestors, you must run topiary on a linux or macOS machine. Topiary can be
-  used on a local windows computer to generate an alignment, which can then be
-  passed to a linux or macOS cluster for the ancestral inference. Tree plotting
-  can also be run on a windows machine.
+  Windows users must specify the complete path to each script when running
+  topiary commands. To run the above command (:code:`topiary-check-installed`)
+  please type: :code:`python c:\users\harmsm\topiary\bin\topiary-check-installed`,
+  replacing the first part of the path (:code:`:c\users\harmsm`) with the path
+  on your system.
 
-To use topiary on windows, you need to install two packages using conventional
-exe installers:
-
-+ `muscle >= 5.0 <muscle-download_>`_.
-+ `NCBI blast+ >=2.0 <blast-download_>`_. (This will install both the blastp and
-  makeblastdb programs.)
-
-After you have installed blast+ and muscle, restart the Anaconda Prompt and run:
-
-.. code-block:: shell-session
-
-  conda activate topiary
-  topiary-check-installed
-
-If the *muscle*, *blastp* and/or *makeblastdb* binaries are still not found,
-you likely need to add the directories containing the blast and muscle binaries
-to the :code:`$PATH` variable. This `stackoverflow thread <windows-path_>`_
-gives detailed instructions on how to accomplish this. Once you have added the
-directories containing muscle and blast+ to the :code:`$PATH` variable,
-:emph:`you need to restart your Anaconda Prompt to make sure the changes have
-taken effect.`
 
 .. _macos-linux-section:
 
 macOS and linux instructions
 ============================
 
-If any of the binaries were not installed (:code:`topiary-check-installed` gave
-:code:`installed: N`), you might first check whether the conda binary directory
-is in your :code:`$PATH`. To do so, type the following. (This assumes you
+You can install the software packages with:
+
+.. code-block:: shell-session
+
+  conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+
+If, after running this command, any of the binaries were not installed
+(:code:`topiary-check-installed` gives :code:`installed: N`), you might check
+whether the conda binary directory is in your :code:`$PATH`. To do so, type the
+following. (This assumes you
 installed topiary into a conda environment called topiary).
 
 .. code-block:: shell-session
@@ -129,8 +105,8 @@ If this command works, you'll need to set your :code:`$PATH` variable to point
 correct directory when you activate your conda environment. See the discussion
 `here <conda-setenv-variables_>`_ for how to go about this.
 
-If these packages were truly not installed, you can install them directly from
-the following links:
+If any of these packages were not installed by conda, you can install them
+manually using the following links:
 
 + `NCBI blast+ >= 2.2 <blast-download_>`_. (This will install both the blastp and
   makeblastdb programs.)
@@ -148,6 +124,44 @@ instructions).
   muscle, or blast+ on an arm64 mac (aka Apple Silicon, M1, M2, etc.). These
   packages must be installed  manually. The RAxML-NG and GeneRax binaries remain
   experimental, so use with caution.
+
+.. _windows-section:
+
+Windows instructions
+====================
+
+.. important::
+
+  RAxML-NG and GeneRax do :emph:`not` run on windows. To generate trees and
+  ancestors, you must run topiary on a linux or macOS machine. Topiary can be
+  used on a local windows computer to generate an alignment, which can then be
+  passed to a linux or macOS cluster for the ancestral inference. Tree plotting
+  can also be run on a windows machine.
+
+To use topiary on windows, you need to install two packages:
+
++ `muscle >= 5.0 <muscle-download_>`_. This binary comes as a single, read-to-run
+  file. Download the file and place it in a convenient folder somewhere on
+  your computer. :emph:`Rename the file to muscle.exe`.
++ `NCBI blast+ >=2.0 <blast-download_>`_. This is a conventional package
+  installer. Follow the on-screen prompts to install the program. This will
+  install both the blastp and makeblastdb).
+
+After you have installed blast+ and muscle,
+:emph:`close and reopen the Anaconda Prompt`. Then run:
+
+.. code-block:: shell-session
+
+  conda activate topiary
+  python c:\Users\harmsm\topiary\bin\topiary-check-installed
+
+If the *muscle*, *blastp* and/or *makeblastdb* binaries are not found,
+you likely need to add the directories containing the blast and muscle binaries
+to the :code:`$PATH` variable. This `stackoverflow thread <windows-path_>`_
+gives detailed instructions on how to accomplish this. Once you have added the
+directories containing muscle and blast+ to the :code:`$PATH` variable,
+:emph:`you need to close and reopen your Anaconda Prompt.` Then check to see
+if the packages are installed.
 
 
 .. _mpi-section:

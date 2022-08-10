@@ -196,7 +196,7 @@ def alignment_to_ancestors(df,
     # If we're doing a reconciliation, make sure we can actually get placement
     # of all species on the tree.
     if do_reconcile:
-        species_tree, dropped = topiary.get_species_tree(df,strict=True)
+        species_tree, dropped = topiary.df_to_species_tree(df,strict=True)
 
     # --------------------------------------------------------------------------
     # Deal with output directory

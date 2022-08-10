@@ -7,6 +7,7 @@ from .alignment import score_alignment
 from .taxonomic import get_merge_blocks
 
 from .shrink import shrink_dataset
+from .shrink import shrink_in_species
 from .shrink import shrink_redundant
 from .shrink import shrink_aligners
 

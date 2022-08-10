@@ -73,7 +73,7 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
 
     # Get species tree corresponding to uid seen
     if species_tree is None:
-        species_tree, dropped = topiary.get_species_tree(df)
+        species_tree, dropped = topiary.df_to_species_tree(df)
     else:
         species_tree = topiary.io.read_tree(species_tree,fmt=5)
         for n in species_tree.traverse():

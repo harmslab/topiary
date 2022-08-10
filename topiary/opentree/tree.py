@@ -4,7 +4,7 @@ Get a species tree given a topiary dataframe.
 
 import topiary
 from topiary._private import check
-from .util import ott_species_tree
+from .util import ott_to_species_tree
 
 from opentree import taxonomy_helpers
 import dendropy as dp
@@ -16,7 +16,7 @@ import numpy as np
 import re, copy
 
 
-def get_species_tree(df,strict=False):
+def df_to_species_tree(df,strict=False):
     """
     Return an ete3 cladogram of species in tree. The leaves on the tree will
     have the following features:
@@ -47,7 +47,7 @@ def get_species_tree(df,strict=False):
     df = check.check_topiary_dataframe(df)
     if "ott" not in df.columns:
         err = "\ndataframe must contain an ott column. This can be generated\n"
-        err += "using topiary.opentree.get_ott\n\n"
+        err += "using topiary.opentree.get_df_ott\n\n"
         raise ValueError(err)
 
     # Only get keep = True
@@ -97,7 +97,7 @@ def get_species_tree(df,strict=False):
 
     ott_as_int = [int(o[3:]) for o in ott_ids]
 
-    final_tree, results = ott_species_tree(ott_list=ott_as_int)
+    final_tree, results = ott_to_species_tree(ott_list=ott_as_int)
 
     # Clean up the tree
     ott_seen = []

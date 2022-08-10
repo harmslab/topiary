@@ -4,7 +4,7 @@ Functions for reading and writing alignments to files.
 
 import topiary
 from topiary._private import check
-from topiary.opentree.util import taxonomic_sort
+from topiary.opentree.util import sort_df_by_taxa
 
 import pandas as pd
 import numpy as np
@@ -170,7 +170,7 @@ def write_fasta(df,out_file,seq_column=None,label_columns=["species","name"],
         sort_on_taxa = False
 
     if sort_on_taxa:
-        df = taxonomic_sort(df,only_keepers=write_only_keepers)
+        df = sort_df_by_taxa(df,only_keepers=write_only_keepers)
 
     # Construct fasta output
     out = []

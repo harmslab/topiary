@@ -1,12 +1,12 @@
 import pytest
 import topiary
-from topiary.opentree.util import _validate_ott_vs_species
-from topiary.opentree.util import ott_mrca
-from topiary.opentree.util import ott_resolvable
+from topiary.opentree.util import _validate_ott_or_species
+from topiary.opentree.util import ott_to_mrca
+from topiary.opentree.util import ott_to_resolvable
 from topiary.opentree.util import species_to_ott
-from topiary.opentree.util import ott_species_tree
-from topiary.opentree.util import get_taxa_order
-from topiary.opentree.util import taxonomic_sort
+from topiary.opentree.util import ott_to_species_tree
+from topiary.opentree.util import tree_to_taxa_order
+from topiary.opentree.util import sort_df_by_taxa
 
 import ete3
 
@@ -16,41 +16,59 @@ import numpy as np
 import re
 import string
 
-def test__validate_ott_vs_species():
+def test__validate_ott_or_species():
 
     # Nothing in
     with pytest.raises(ValueError):
-        _validate_ott_vs_species(None,None)
+        _validate_ott_or_species(None,None)
 
     # Both in
     with pytest.raises(ValueError):
-        _validate_ott_vs_species([],[])
+        _validate_ott_or_species([],[])
 
     # Bad ott
     with pytest.raises(ValueError):
-        _validate_ott_vs_species(ott_list=["Homo sapiens","Gallus gallus"])
+        _validate_ott_or_species(ott_list=["Homo sapiens","Gallus gallus"])
 
     # Bad species
     with pytest.raises(ValueError):
-        _validate_ott_vs_species(species_list=[111,222])
+        _validate_ott_or_species(species_list=[111,222])
+
+    # Bad species
+    with pytest.raises(ValueError):
+        _validate_ott_or_species(species_list=1.0)
+
+    # Bad ott
+    with pytest.raises(ValueError):
+        _validate_ott_or_species(ott_list=["ott"])
+
+    # Bad ott
+    with pytest.raises(ValueError):
+        _validate_ott_or_species(ott_list=1.0)
 
     # Good ott
-    ott_list = _validate_ott_vs_species(ott_list=[111,222])
+    ott_list = _validate_ott_or_species(ott_list=[111,222])
+    assert len(ott_list) == 2
+    assert ott_list[0] == 111
+    assert ott_list[1] == 222
+
+    # Good ott
+    ott_list = _validate_ott_or_species(ott_list=["ott111",222])
     assert len(ott_list) == 2
     assert ott_list[0] == 111
     assert ott_list[1] == 222
 
     # Good species
-    ott_list = _validate_ott_vs_species(species_list=["Homo sapiens"])
+    ott_list = _validate_ott_or_species(species_list=["Homo sapiens"])
     assert len(ott_list) == 1
     assert ott_list[0] == 770315
 
     # empty ott
-    ott_list = _validate_ott_vs_species(ott_list=[])
+    ott_list = _validate_ott_or_species(ott_list=[])
     assert len(ott_list) == 0
 
     # empty species
-    ott_list = _validate_ott_vs_species(species_list=[])
+    ott_list = _validate_ott_or_species(species_list=[])
     assert len(ott_list) == 0
 
 
@@ -118,11 +136,11 @@ def test_species_to_ott():
     assert results["Neosciurus carolinensis"]["msg"].startswith("No exact match")
 
 
-def test_ott_species_tree():
+def test_ott_to_species_tree():
 
     input_ott = [770315,276534,565131,356221]
 
-    T, results = ott_species_tree(input_ott)
+    T, results = ott_to_species_tree(input_ott)
     assert issubclass(type(T),ete3.Tree)
     assert issubclass(type(results),dict)
     seen = list(results["resolved"])
@@ -143,7 +161,7 @@ def test_ott_species_tree():
 
      # Send in a bad ott
     input_ott = [770315,276534,565131,356221,9999999999999999999999]
-    T, results = ott_species_tree(input_ott)
+    T, results = ott_to_species_tree(input_ott)
 
     seen = list(results["resolved"])
     sent_in = input_ott[:]
@@ -164,7 +182,7 @@ def test_ott_species_tree():
     assert len(results["not_monophyletic"]) == 0
 
     # Make sure it handles empty list gracefully
-    T, results = ott_species_tree([])
+    T, results = ott_to_species_tree([])
     assert T is None
     assert len(results["resolved"]) == 0
     assert len(results["unknown_ids"]) == 0
@@ -173,7 +191,7 @@ def test_ott_species_tree():
 
      # Send in only one ott
     input_ott = [770315]
-    T, results = ott_species_tree(input_ott)
+    T, results = ott_to_species_tree(input_ott)
 
     seen = list(results["resolved"])
     sent_in = input_ott[:]
@@ -193,7 +211,7 @@ def test_ott_species_tree():
 
      # Send in only one ott, but it's bad
     input_ott = [9999999999999999999999]
-    T, results = ott_species_tree(input_ott)
+    T, results = ott_to_species_tree(input_ott)
     assert T is None
     assert len(results["resolved"]) == 0
     assert len(results["not_resolved"]) == 1
@@ -202,42 +220,42 @@ def test_ott_species_tree():
     assert results["unknown_ids"][0] == 9999999999999999999999
     assert len(results["not_monophyletic"]) == 0
 
-def test_ott_resolvable():
+def test_ott_to_resolvable():
 
     some_good_ott = [770315,276534,565131,356221]
 
     # hybrid that is not on synthetic tree
     bad_ott = [4942641]
 
-    resolvable = ott_resolvable(some_good_ott)
+    resolvable = ott_to_resolvable(some_good_ott)
     assert np.array_equal(np.ones(len(some_good_ott),dtype=bool),resolvable)
 
-    resolvable = ott_resolvable(bad_ott)
+    resolvable = ott_to_resolvable(bad_ott)
     assert np.array_equal(np.zeros(len(bad_ott),dtype=bool),resolvable)
 
     both_together = some_good_ott[:]
     both_together.extend(bad_ott)
-    resolvable = ott_resolvable(both_together)
+    resolvable = ott_to_resolvable(both_together)
     expected = np.array([1,1,1,1,0],dtype=bool)
     assert np.array_equal(resolvable,expected)
 
     replicated = [770315,770315,770315,770315,770315,4942641,4942641,4942641,4942641]
     expected = np.array([1,1,1,1,1,0,0,0,0],dtype=bool)
-    resolvable = ott_resolvable(replicated)
+    resolvable = ott_to_resolvable(replicated)
     assert np.array_equal(expected,resolvable)
 
     # Make sure it handes one good taxa well
-    resolvable = ott_resolvable([770315])
+    resolvable = ott_to_resolvable([770315])
     assert len(resolvable) == 1
     assert resolvable[0] == True
 
     # Make sure it handes one bad taxa well
-    resolvable = ott_resolvable([4942641])
+    resolvable = ott_to_resolvable([4942641])
     assert len(resolvable) == 1
     assert resolvable[0] == False
 
     # Make sure it handles single empty list
-    resolvable = ott_resolvable([])
+    resolvable = ott_to_resolvable([])
     assert len(resolvable) == 0
 
     # Make sure it checks for inputs correctly
@@ -245,10 +263,10 @@ def test_ott_resolvable():
     for b in bad_inputs:
         print("Trying",b)
         with pytest.raises(ValueError):
-            ott_resolvable(b)
+            ott_to_resolvable(b)
 
 
-def test_ott_mrca():
+def test_ott_to_mrca():
 
     vert = [770315, 153563, 1005914]           #["Homo sapiens","Gallus gallus","Danio rerio"]
     amniotes = [770315, 153563]                #["Homo sapiens","Gallus gallus"]
@@ -264,88 +282,88 @@ def test_ott_mrca():
     bacteria = [1090496, 474506]               #["Staphylococcus aureus","Escherichia coli"]
 
     # Get with default args
-    out = ott_mrca(vert)
+    out = ott_to_mrca(vert)
     assert out["ott_name"] == 'Euteleostomi'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 117571
 
     # Move up four ranks from Euteleostomi
-    out = ott_mrca(vert,move_up_by=4)
+    out = ott_to_mrca(vert,move_up_by=4)
     assert out["ott_name"] == 'Craniata'
     assert out["ott_rank"] == 'subphylum'
     assert out["taxid"] == 89593
 
     # Move waaaaay up but do not allow all life (end up on Eukaryota)
-    out = ott_mrca(vert,move_up_by=10000)
+    out = ott_to_mrca(vert,move_up_by=10000)
     assert out["ott_name"] == 'Eukaryota'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2759
 
     # Move waaaaay up, allowing all life
-    out = ott_mrca(vert,avoid_all_life=False,move_up_by=10000)
+    out = ott_to_mrca(vert,avoid_all_life=False,move_up_by=10000)
     assert out["ott_name"] == 'life'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 1
 
     # Try to avoid all life, but we can't because inputs are from all three
     # domains.
-    out = ott_mrca(all_life,avoid_all_life=True)
+    out = ott_to_mrca(all_life,avoid_all_life=True)
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
 
     # Spot check various taxonomic groups
-    out = ott_mrca(amniotes)
+    out = ott_to_mrca(amniotes)
     assert out["ott_name"] == 'Amniota'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 32524
 
-    out = ott_mrca(tetrapods)
+    out = ott_to_mrca(tetrapods)
     assert out["ott_name"] == 'Tetrapoda'
     assert out["ott_rank"] == 'superclass'
     assert out["taxid"] == 32523
 
-    out = ott_mrca(placental_mammals)
+    out = ott_to_mrca(placental_mammals)
     assert out["ott_name"] == 'Euarchontoglires'
     assert out["ott_rank"] == 'superorder'
     assert out["taxid"] == 314146
 
-    out = ott_mrca(therian_mammals)
+    out = ott_to_mrca(therian_mammals)
     assert out["ott_name"] == 'Theria'
     assert out["ott_rank"] == 'subclass'
     assert out["taxid"] == 32525
 
-    out = ott_mrca(human_yeast)
+    out = ott_to_mrca(human_yeast)
     assert out["ott_name"] == 'Opisthokonta'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 33154
 
-    out = ott_mrca(plants)
+    out = ott_to_mrca(plants)
     assert out["ott_name"] == 'Spermatophyta'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 58024
 
-    out = ott_mrca(eukaryotes)
+    out = ott_to_mrca(eukaryotes)
     assert out["ott_name"] == 'Eukaryota'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2759
 
-    out = ott_mrca(archaea)
+    out = ott_to_mrca(archaea)
     assert out["ott_name"] == 'Archaea'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2157
 
-    out = ott_mrca(bacteria)
+    out = ott_to_mrca(bacteria)
     assert out["ott_name"] == 'Bacteria'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2
 
-    out = ott_mrca(not_bacteria)
+    out = ott_to_mrca(not_bacteria)
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
 
-    out = ott_mrca(all_life)
+    out = ott_to_mrca(all_life)
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
@@ -355,67 +373,67 @@ def test_ott_mrca():
     for b in bad_inputs:
         print("Trying",b)
         with pytest.raises(ValueError):
-            ott_mrca(b)
+            ott_to_mrca(b)
 
     # Pass in bad values for move_up_by and avoid_all_life
     with pytest.raises(ValueError):
-        ott_mrca(vert,move_up_by=-1)
+        ott_to_mrca(vert,move_up_by=-1)
 
     with pytest.raises(ValueError):
-        ott_mrca(vert,move_up_by="stupid")
+        ott_to_mrca(vert,move_up_by="stupid")
 
     with pytest.raises(ValueError):
-        ott_mrca(vert,avoid_all_life="True")
+        ott_to_mrca(vert,avoid_all_life="True")
 
     # Send in empty list
-    out = ott_mrca([])
+    out = ott_to_mrca([])
     assert out["ott_name"] == 'life'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 1
 
     # Send in only bad ott
     with pytest.raises(ValueError):
-        out = ott_mrca([99999999999999])
+        out = ott_to_mrca([99999999999999])
 
     # Send in placentl mammals with a bad ott
     to_test = placental_mammals[:]
     to_test.append(99999999999999)
-    out = ott_mrca(to_test)
+    out = ott_to_mrca(to_test)
     assert out["ott_name"] == 'Euarchontoglires'
     assert out["ott_rank"] == 'superorder'
     assert out["taxid"] == 314146
 
-def test_get_taxa_order():
+def test_tree_to_taxa_order():
 
     T = ete3.Tree("((((A,B),(C,D)),Q),(H,(E,F)));")
-    out_order = get_taxa_order(T,ref_name="H")
+    out_order = tree_to_taxa_order(T,ref_name="H")
     assert np.array_equal(out_order[:4],["H","E","F","Q"])
 
-    out_order = get_taxa_order(T,ref_name="A")
+    out_order = tree_to_taxa_order(T,ref_name="A")
     assert np.array_equal(out_order,["A","B","C","D","Q","H","E","F"])
 
-    out_order = get_taxa_order(T,ref_name="B")
+    out_order = tree_to_taxa_order(T,ref_name="B")
     assert np.array_equal(out_order,["B","A","C","D","Q","H","E","F"])
 
-    out_order = get_taxa_order(T,ref_name="F")
+    out_order = tree_to_taxa_order(T,ref_name="F")
     assert np.array_equal(out_order[:4],["F","E","H","Q"])
 
     # ref_name not in tree
-    out_order = get_taxa_order(T,ref_name="X")
+    out_order = tree_to_taxa_order(T,ref_name="X")
     assert isinstance(out_order,list)
     assert len(out_order) == 8
 
     # No ref_name given
-    out_order = get_taxa_order(T)
+    out_order = tree_to_taxa_order(T)
     assert isinstance(out_order,list)
     assert len(out_order) == 8
 
-def test_taxonomic_sort(for_real_inference):
+def test_sort_df_by_taxa(for_real_inference):
 
     df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])
 
     # Make sure it sorts on first key_species ott then recip_paralog
-    new_df = taxonomic_sort(df)
+    new_df = sort_df_by_taxa(df)
     assert new_df.loc[new_df.index[0],"ott"] == "ott770315"
     expected = ["LY86","LY86","LY86","LY86","LY86","LY86","LY86","LY86",
                 "LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96",
@@ -423,7 +441,7 @@ def test_taxonomic_sort(for_real_inference):
     assert np.array_equal(new_df.loc[:,"recip_paralog"],expected)
 
     # Make sure it sorts on given ott then recip_paralog
-    new_df = taxonomic_sort(df,ref_ott="ott490109")
+    new_df = sort_df_by_taxa(df,ref_ott="ott490109")
     assert new_df.loc[new_df.index[0],"ott"] == "ott490109"
     expected = ["LY86","LY86","LY86","LY86","LY86","LY86","LY86","LY86",
                 "LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96","LY96",
@@ -436,7 +454,7 @@ def test_taxonomic_sort(for_real_inference):
     values = np.arange(len(input_df))
     np.random.shuffle(values)
     input_df.loc[:,"nickname"] = values
-    new_df = taxonomic_sort(input_df,ref_ott="ott770315")
+    new_df = sort_df_by_taxa(input_df,ref_ott="ott770315")
     assert np.array_equal(new_df.loc[:,"nickname"],np.arange(len(input_df)))
 
     # Drop recip_paralog and nickname column; should now sort on name
@@ -445,7 +463,7 @@ def test_taxonomic_sort(for_real_inference):
     values = list(string.ascii_lowercase[:len(input_df)])
     np.random.shuffle(values)
     input_df.loc[:,"name"] = values
-    new_df = taxonomic_sort(input_df,ref_ott="ott770315")
+    new_df = sort_df_by_taxa(input_df,ref_ott="ott770315")
     assert np.array_equal(new_df.loc[:,"name"],list(string.ascii_lowercase[:len(input_df)]))
 
     # Short on custom paralog column
@@ -453,23 +471,23 @@ def test_taxonomic_sort(for_real_inference):
     values = np.arange(len(input_df))
     np.random.shuffle(values)
     input_df["rocket"] = values
-    new_df = taxonomic_sort(input_df,paralog_column="rocket")
+    new_df = sort_df_by_taxa(input_df,paralog_column="rocket")
     assert np.array_equal(new_df.loc[:,"rocket"],np.arange(len(input_df)))
 
     # Make sure it's paying attention to only_keepers
     input_df = df.copy()
     input_df.loc[input_df.index[5:],"keep"] = False
-    new_df = taxonomic_sort(input_df)
+    new_df = sort_df_by_taxa(input_df)
     assert len(new_df) == len(input_df)
 
     input_df = df.copy()
     input_df.loc[input_df.index[5:],"keep"] = False
-    new_df = taxonomic_sort(input_df,only_keepers=True)
+    new_df = sort_df_by_taxa(input_df,only_keepers=True)
     assert len(new_df) == 5
 
     input_df = df.copy()
     input_df.loc[input_df.index[5:],"keep"] = False
-    new_df = taxonomic_sort(input_df,only_keepers=False)
+    new_df = sort_df_by_taxa(input_df,only_keepers=False)
     assert len(new_df) == len(input_df)
 
     # Arg checking
@@ -477,16 +495,16 @@ def test_taxonomic_sort(for_real_inference):
     for b in bad_paralog_columns:
         print("passing",b)
         with pytest.raises(ValueError):
-            new_df = taxonomic_sort(df,paralog_column=b)
+            new_df = sort_df_by_taxa(df,paralog_column=b)
 
     bad_ott = [770315,"Homo sapiens",1.1]
     for b in bad_ott:
         print("passing",b)
         with pytest.raises(ValueError):
-            new_df = taxonomic_sort(df,ref_ott=b)
+            new_df = sort_df_by_taxa(df,ref_ott=b)
 
     bad_keep = ["Homo sapiens",1.1,None]
     for b in bad_keep:
         print("passing",b)
         with pytest.raises(ValueError):
-            new_df = taxonomic_sort(df,only_keepers=b)
+            new_df = sort_df_by_taxa(df,only_keepers=b)

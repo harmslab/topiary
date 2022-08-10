@@ -110,7 +110,7 @@ def _prepare_for_bootstrap(previous_dir=None,
     if species_tree_file is not None:
         species_tree = species_tree_file
     else:
-        species_tree, dropped = topiary.get_species_tree(bs_df,strict=True)
+        species_tree, dropped = topiary.df_to_species_tree(bs_df,strict=True)
         species_tree.resolve_polytomy()
 
     # Create replicate directory
