@@ -12,6 +12,7 @@ import os
 import glob
 import shutil
 
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__create_bootstrap_dirs(generax_data,tmpdir):
 
     input_dir = os.path.join(generax_data["toy-input"],"toy-bootstrap")
@@ -77,13 +78,14 @@ def test__create_bootstrap_dirs(generax_data,tmpdir):
             if k in should_be_same:
                 assert ref_check[k] == this_check[k]
 
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__combine_results():
 
     # hard to test this without saving intermediate outputs and checking. Mostly
     # checked by final reconcilation. Deprioritizing test
     pass
 
-
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test_reconcile_bootstrap(generax_data,tmpdir):
 
     input_dir = os.path.join(generax_data["toy-input"],"toy-bootstrap")

@@ -10,6 +10,7 @@ import ete3
 import os
 import shutil
 
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test_reconcile_no_bootstrap(generax_data,tmpdir):
 
     input_dir = os.path.join(generax_data["toy-input"],"toy-ml")

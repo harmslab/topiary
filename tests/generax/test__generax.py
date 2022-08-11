@@ -16,6 +16,7 @@ import json
 import shutil
 import pathlib
 
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__get_link_dict():
 
     df = pd.DataFrame({"ott":["A","B","C","D"],
@@ -83,7 +84,7 @@ def test__get_link_dict():
     assert np.array_equal(uid_in_gene_tree,["0","1","2"])
 
 
-
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test_setup_generax(generax_data,tmpdir):
 
     # Make sure it reads in previous run without error
