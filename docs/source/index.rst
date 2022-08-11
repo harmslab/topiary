@@ -25,9 +25,9 @@ Features
   arcane text files. Outputs are spreadsheets, clean fasta files, pdf trees,
   and graphical summaries of ancestor quality.
 + :emph:`Flexible.` Use as a command line program or do custom analyses
-  and plotting in Jupyter notebooks using the topiary API.
+  and plotting using the topiary API.
 + :emph:`Modern.` Topiary is built around a collection of modern,
-  actively-supported, phylogenetic software tools including
+  actively-supported, phylogenetic software tools:
   `OpenTree <opentree-link_>`_,
   `muscle 5 <muscle-link_>`_, `RAxML-NG <raxml-ng-link_>`_,
   `GeneRax <generax-link_>`_, `PastML <pastml-link_>`_, and `toytree <toytree-link_>`_.

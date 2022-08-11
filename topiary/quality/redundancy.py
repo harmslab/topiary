@@ -16,8 +16,8 @@ from tqdm.auto import tqdm
 import os
 
 # Columns to check in order
-_EXPECTED_COLUMNS = ["structure","low_quality","partial","predicted",
-                     "precursor","hypothetical","isoform"]
+_EXPECTED_COLUMNS = ["low_quality","partial","predicted",
+                     "precursor","hypothetical","isoform","structure"]
 
 def _get_quality_scores(row,
                         key_species={},
@@ -348,12 +348,12 @@ def remove_redundancy(df,
     1. whether sequence is from a key species
     2. whether it is significantly different in length from the median length of
        sequences from key species
-    3. whether it's annotated as structure
-    4. whether it's annotated as low quality
-    5. whether it's annotated as partial
-    6. whether it's annotated as precursor
-    7. whether it's annotated as hypothetical
-    8. whether it's annotated as isoform
+    3. whether it's annotated as low quality
+    4. whether it's annotated as partial
+    5. whether it's annotated as precursor
+    6. whether it's annotated as hypothetical
+    7. whether it's annotated as isoform
+    8. whether it's annotated as structure
     9. sequence length (preferring longer)
 
     Parameters

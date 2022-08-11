@@ -6,7 +6,7 @@ import time, random
 
 import numpy as np
 
-def test_FakeLock():
+def test_DummyLock():
 
     pass
 

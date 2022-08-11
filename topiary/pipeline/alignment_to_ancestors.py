@@ -188,7 +188,7 @@ def alignment_to_ancestors(df,
     # If we got here, reconciliation software is ready to go. Now check to
     # whether mpi can really grab the number of threads requested.
     if do_reconcile:
-        installed.test_mpi_configuration(num_threads,generax_binary)
+        installed.check_mpi_configuration(num_threads,generax_binary)
 
     # --------------------------------------------------------------------------
     # Final sanity checks

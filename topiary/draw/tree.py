@@ -22,7 +22,7 @@ def tree(run_dir,
          pp_label=False,
          event_label=False,
          anc_label=True,
-         tip_columns=["species","recip_paralog"],
+         tip_columns=None,
          tip_name_separator="|",
          disambiguate_tip_names=True,
          node_color=None,
@@ -71,11 +71,13 @@ def tree(run_dir,
         whether or not to write events as text on the tree
     anc_label : bool, default=True
         whether or not to write ancestor names as text on the tree
-    tip_columns: list, default=["species","recip_paralog"]
+    tip_columns: list, optional
         label the tree tips as "|".join(tip_columns). For example, if
         tip_columns is ["species","recip_paralog"], tips will have names like
         'Homo sapiens|LY96'. If the name is not unique, the uid will be
-        appended to the name.
+        appended to the name (see disambiguate_tip_names below). If not
+        specified, try ["species","recip_paralog"], ["species","nickname"],
+        then, finally, ["species","name"].
     tip_name_separator : str, default="|"
         string to separate columns in tip names ("|" in tip_columns example
         above.)
@@ -154,6 +156,14 @@ def tree(run_dir,
     # If df not specified, get from the previous run
     if df is None:
         df = prev_run["df"]
+
+    if tip_columns is None:
+        if "recip_paralog" in df.columns:
+            recip_columns = ["species","recip_paralog"]
+        elif "nickname" in df.columns:
+            recip_columns = ["species","nickname"]
+        else:
+            recip_columns = ["species","name"]
 
     # Create dictionary mapping between uid and pretty name format
     name_dict = create_name_dict(df=df,

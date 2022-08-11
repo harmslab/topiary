@@ -10,11 +10,11 @@ import pandas as pd
 import subprocess, os, sys, time, random, string, shutil, copy, json, glob
 import multiprocessing as mp
 
-class DummyTqdm():
+class MockTqdm():
     """
     Fake tqdm progress bar so we don't have to show a status bar if we don't
     want to. Can be substituted wherever we would use tqdm (i.e.
-    tqdm(range(10)) --> DummyTqdm(range(10)).
+    tqdm(range(10)) --> MockTqdm(range(10)).
     """
 
     def __init__(self,*args,**kwargs):
@@ -26,6 +26,7 @@ class DummyTqdm():
 
     def update(self,value):
         pass
+
 
 def gen_seed():
     """
@@ -435,7 +436,7 @@ def _follow_log_generator(f,queue):
             if counter > 200:
                 break
 
-def launch(cmd,run_directory,log_file=None,suppress_output=False):
+def launch(cmd,run_directory,log_file=None,suppress_output=False,write_to_script=None):
     """
     Launch an external command in a specific directory. If log_file is
     specified, runs command on its own thread, allowing python to capture output
@@ -455,6 +456,10 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
     suppress_output : bool, default=False
         whether or not to capture (and not return) stdout and stderr. Ignored
         if log_file is specified.
+    write_to_script : str, optional
+        instead of running the command, write out the command to the script file
+        in the run directory. this can then be invoked later by something like
+        :code:`bash script_file`.
 
     Returns
     -------
@@ -474,6 +479,18 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
     full_cmd = " ".join(cmd)
     if not suppress_output:
         print(f"Running '{full_cmd}'",flush=True)
+
+    # If write_to_Script is specified, write that out instead of actually
+    # running. Return to starting directory and return None.
+    if write_to_script is not None:
+
+        f = open(str(write_to_script),"w")
+        f.write(full_cmd)
+        f.write("\n")
+        f.close()
+
+        os.chdir(cwd)
+        return None
 
     # If no log file specified, run directly
     if log_file is None:
@@ -513,7 +530,6 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
         ret = queue.get()
         main_process.join()
 
-
     # Check for error on return
     if ret.returncode != 0:
         err = f"ERROR: {cmd[0]} returned {ret.returncode}\n\n"
@@ -529,6 +545,7 @@ def launch(cmd,run_directory,log_file=None,suppress_output=False):
 
     # Leave working directory
     os.chdir(cwd)
+
 
 def write_run_information(outdir,df,calc_type,model,cmd=None,start_time=None):
     """

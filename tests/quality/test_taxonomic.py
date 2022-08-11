@@ -35,7 +35,9 @@ def test__prep_species_tree(test_dataframes):
 
     df, T = tx._prep_species_tree(df,paralog_column="recip_paralog")
     for leaf in T.get_leaves():
-        assert np.array_equal(list(leaf.paralogs.keys()),["LY86","LY96"])
+        paralog_keys = list(leaf.paralogs.keys())
+        paralog_keys.sort()
+        assert np.array_equal(paralog_keys,["LY86","LY96"])
         assert len(leaf.paralogs["LY96"]) == 1
         assert len(leaf.paralogs["LY86"]) == 1
 

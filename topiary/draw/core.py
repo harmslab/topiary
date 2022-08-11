@@ -609,7 +609,8 @@ def load_trees(directory=None,
 
 
     # Copy ancestor to correct node because displayed by rooting
-    if len(stash_values) > 0:
+    if len(stash_values) > 0 and "anc_label" in stash_values:
+
         if stash_values["anc_label"] != "":
 
             for n in out_tree.traverse():

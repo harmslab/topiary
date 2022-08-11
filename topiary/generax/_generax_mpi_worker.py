@@ -9,12 +9,13 @@ import time
 import os
 import sys
 import subprocess
+import pathlib
 
 def main(argv=None):
     """
     Run a generax worker calculation, checking for and avoiding collisions with
     other workers. Also gives complete restart capability to reconcile bootstrap
-    calculation. Generally invoked from a command line with mpirun. 
+    calculation. Generally invoked from a command line with mpirun.
     """
 
     # Get command line arguments
@@ -64,8 +65,7 @@ def main(argv=None):
 
         # Stake a claim
         my_claim_file = f"{claim_base}_by-{rank}"
-        f = open(my_claim_file,"w")
-        f.close()
+        pathlib.Path(my_claim_file).touch()
 
         # Wait a breath to make sure we don't have a collision where more than
         # one worker claimed the same directory
@@ -92,8 +92,8 @@ def main(argv=None):
         subprocess.run(["bash","run_generax.sh"])
 
         # Job is done. (Whohoo!). Create a "completed" file.
-        f = open(f"{complete_base}_run-{run_id}_by-{rank}","w")
-        f.close()
+        my_completed_file = f"{complete_base}_run-{run_id}_by-{rank}"
+        pathlib.Path(my_completed_file).touch()
 
         # Nuke claim file and move on to next directory
         os.remove(my_claim_file)

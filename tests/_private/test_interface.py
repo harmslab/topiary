@@ -8,11 +8,11 @@ import pandas as pd
 
 import warnings, os, shutil, glob, json, sys
 
-def test_DummyTqdm():
+def test_MockTqdm():
 
     pass
 
-def test_DummyTqdm___enter__():
+def test_MockTqdm___enter__():
 
     pass
 
@@ -301,12 +301,13 @@ def test_prep_calc(xml_to_anc_output,tmpdir):
 
 def test__follow_log_subproc_wrapper():
     # Super simple function that would require lots of test infrastructure to
-    # run.
+    # run. Return True so this is not flagged as missing by test_crawler.
     return True
 
 def test__follow_log_generator():
-    # Function that would require lots of test infrastructure to
-    # run. Logging not critical to results, so skipping for now.
+    # Function that would require lots of test infrastructure to run. Logging
+    # not critical to results, so skipping for now. Return True so this is not
+    # flagged as missing by test_crawler.
     return True
 
 

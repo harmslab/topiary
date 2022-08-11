@@ -70,7 +70,7 @@ def seed_to_alignment(seed_df,
     max_seq_number : int, default=500
         maximum number of sequences to get, regardless of seqs_per_column and
         key sequence length.
-    redundancy_cutoff : float, default=0.98
+    redundancy_cutoff : float, default=0.90
         merge sequences from closely related species with sequence identity
         above cutoff.
     worst_align_drop_fx : float, default=0.1

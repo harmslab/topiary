@@ -314,3 +314,18 @@ def ftp_test_files():
         out_dict[key] = f
 
     return out_dict
+
+@pytest.fixture(scope="module")
+def generax_data():
+
+    dir = os.path.dirname(os.path.realpath(__file__))
+
+    base_dir = os.path.abspath(os.path.join(dir,"data","generax"))
+    files = glob.glob(os.path.join(base_dir,"*"))
+
+    out_dict = {}
+    for f in files:
+        key = os.path.basename(f)
+        out_dict[key] = f
+
+    return out_dict
