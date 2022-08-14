@@ -1,7 +1,7 @@
 
 import pytest
 import topiary
-from topiary._private import wrap_function as wf
+from topiary._private.wrap import wrap_function as wf
 
 import numpy as np
 
@@ -183,4 +183,3 @@ def test_IterFromFile():
 def test_IterFromFile___call__():
 
     pass
-

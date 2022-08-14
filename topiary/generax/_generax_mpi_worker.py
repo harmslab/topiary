@@ -69,7 +69,7 @@ def main(argv=None):
 
         # Wait a breath to make sure we don't have a collision where more than
         # one worker claimed the same directory
-        time.sleep(0.25)
+        time.sleep(0.1)
 
         # Make sure there is still only one claim file in this directory. If
         # more than one claim file, the file with lowest rank wins.

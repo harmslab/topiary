@@ -20,5 +20,4 @@ software_requirements = {"blastp":(2,0),
 
 
 from .uid import generate_uid
-from .wrap import wrap_function
-from .threads import get_num_threads
+from .supervisor import Supervisor

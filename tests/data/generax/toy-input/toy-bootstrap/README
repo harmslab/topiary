@@ -1,2 +1,6 @@
-confusingly, "output" is input to this calculation. (It's an output 
-dir from a previous ml run)
+output: confusingly, this is the input for this calculation. It's an "output" 
+        directory from a previous ml_bootstrap run. This contains an extra
+        "species_tree.newick" file I put in here for convenience. 
+generax-bs-replicates_pre-run: bootstrap replicate directories, pre generax
+generax-bs-replicates_post-run: bootstrap replicate directories, post generax
+expected-output: final output we expect in "output" directory

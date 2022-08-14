@@ -210,6 +210,7 @@ def run_generax(run_directory,
                 suppress_output=False,
                 other_args=[],
                 write_to_script=None,
+                supervisor=None,
                 num_threads=1,
                 generax_binary=GENERAX_BINARY):
 
@@ -238,6 +239,8 @@ def run_generax(run_directory,
         instead of running the command, write out the command to the script file
         in the run directory. this can then be invoked later by something like
         :code:`bash script_file`.
+    supervisor : Supervisor, optional
+        supervisor instance to keep track of calculation inputs and outputs
     num_threads : int, default=1
         number of threads. if > 1, execute by mpirun -np num_threads
     generax_binary : str, optional
@@ -248,6 +251,11 @@ def run_generax(run_directory,
     generax_cmd : str
         string representation of command passed to generax
     """
+
+    if write_to_script is not None:
+        if not issubclass(type(write_to_script),str):
+            err = "write_to_script should be None or a string giving script name\n"
+            raise ValueError(err)
 
     if num_threads != 1:
 
@@ -323,11 +331,21 @@ def run_generax(run_directory,
     if log_to_stdout:
         log_file = os.path.join("result","generax.log")
 
+    if supervisor is not None:
+        supervisor.event("launching generax",
+                         cmd=cmd,
+                         num_threads=num_threads)
+
     # Launch run
-    interface.launch(cmd,
-                     run_directory=run_directory,
-                     log_file=log_file,
-                     suppress_output=suppress_output,
-                     write_to_script=write_to_script)
+    try:
+        interface.launch(cmd,
+                         run_directory=run_directory,
+                         log_file=log_file,
+                         suppress_output=suppress_output,
+                         write_to_script=write_to_script)
+    except RuntimeError as e:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        raise RuntimeError from e
 
     return " ".join(cmd)

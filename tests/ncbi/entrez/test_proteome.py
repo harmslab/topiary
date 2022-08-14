@@ -88,7 +88,7 @@ def test_get_proteome(tmpdir):
 
     # Actually pull down the human proteome, making sure it comes down and is
     # written to output.
-    output1 = get_proteome(taxid=9606)
-    assert os.path.isfile(output1)
+    #output1 = get_proteome(taxid=9606)
+    #assert os.path.isfile(output1)
 
     os.chdir(cwd)

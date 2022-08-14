@@ -8,7 +8,7 @@ import os
 import multiprocessing as mp
 from tqdm.auto import tqdm
 
-class DummyLock():
+class MockLock():
     """
     Fake multiprocessing.Lock instance. Used when a function expects a lock but,
     for resource optimization purposes, we drop to one thread.
@@ -98,7 +98,7 @@ def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False
     if num_threads == 1:
 
         if pass_lock:
-            lock = DummyLock()
+            lock = MockLock()
 
         results = []
         if progress_bar:

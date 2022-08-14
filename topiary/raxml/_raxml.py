@@ -9,27 +9,34 @@ RAXML_BINARY = "raxml-ng"
 import topiary
 from topiary._private import interface
 from topiary._private import threads
+from topiary._private import Supervisor
+from topiary._private import check
 
 import os
+import shutil
 
-def run_raxml(algorithm=None,
+def run_raxml(run_directory,
+              algorithm=None,
               alignment_file=None,
               tree_file=None,
               model=None,
-              dir_name=None,
               seed=None,
               log_to_stdout=True,
               suppress_output=False,
               other_args=None,
               other_files=None,
+              write_to_script=None,
+              supervisor=None,
               num_threads=-1,
               raxml_binary=RAXML_BINARY):
     """
-    Run raxml. Creates a working directory, copies in the relevant files, runs
-    there, and then returns to the previous directory.
+    Run raxml. Creates a directory, copies in the relevant files, runs there,
+    and then returns to the previous directory.
 
     Parameters
     ----------
+    run_directory : str
+        Name of the working directory.
     algorithm : str
         algorithm to run (--all, --ancestral, etc.)
     alignment_file : str
@@ -38,8 +45,6 @@ def run_raxml(algorithm=None,
         tree file in .newick format (passed via --tree)
     model : str
         model in format recognized by --model
-    dir_name : str,optional
-        If specified, this will be the name of the working directory.
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
         that as the seed. (passed via --seed)
@@ -52,6 +57,12 @@ def run_raxml(algorithm=None,
     other_files : list-like, optional
         list of files to copy into working directory (besides tree_file and
         alignment_file)
+    write_to_script : str, optional
+        instead of running the command, write out the command to the script file
+        in the run directory. this can then be invoked later by something like
+        :code:`bash script_file`.
+    supervisor : Supervisor, optional
+        instance of Supervisor to record when we start the job
     num_threads : int, default=-1
         number of threads (passed via --threads). if -1, use all available.
     raxml_binary : str, default=RAXML_BINARY
@@ -63,29 +74,31 @@ def run_raxml(algorithm=None,
         command passed to raxml-ng as a string
     """
 
-    # Create directory in which to do calculation
-    dir_name = interface.create_new_dir(dir_name=dir_name)
+    if write_to_script is not None:
+        if not issubclass(type(write_to_script),str):
+            err = "write_to_script should be None or a string giving script name\n"
+            raise ValueError(err)
+
+    # If the run_directory already exists...
+    if os.path.exists(run_directory):
+        err = f"run_directory '{run_directory}' already exists\n"
+        raise FileExistsError(err)
+
+    # Make run directory
+    os.mkdir(run_directory)
 
     # Copy alignment and tree files into the directory (if specified)
     if alignment_file is not None:
-        alignment_file = interface.copy_input_file(alignment_file,
-                                                   dir_name,
-                                                   file_name="alignment.phy",
-                                                   put_in_input_dir=False)
+        shutil.copy(alignment_file,os.path.join(run_directory,"alignment.phy"))
+
     if tree_file is not None:
-        tree_file = interface.copy_input_file(tree_file,
-                                              dir_name,
-                                              file_name="tree.newick",
-                                              put_in_input_dir=False)
+        shutil.copy(tree_file,os.path.join(run_directory,"tree.newick"))
 
     # Copy in any other required files, if requested
     if other_files is not None:
         for i in range(len(other_files)):
-            tail = os.path.split(other_files[i])[-1]
-            other_files[i] = interface.copy_input_file(other_files[i],
-                                                       dir_name,
-                                                       file_name=tail,
-                                                       put_in_input_dir=False)
+            file_name = os.path.basename(other_files[i])
+            shutil.copy(other_files[i],os.path.join(run_directory,file_name))
 
     # Build a command list
     cmd = [raxml_binary]
@@ -94,36 +107,41 @@ def run_raxml(algorithm=None,
         cmd.append(algorithm)
 
     if alignment_file is not None:
-        cmd.extend(["--msa",alignment_file])
+        cmd.extend(["--msa","alignment.phy"])
 
     if tree_file is not None:
-        cmd.extend(["--tree",tree_file])
+        cmd.extend(["--tree","tree.newick"])
 
     if model is not None:
         cmd.extend(["--model",model])
 
     # seed argument is overloaded. Interpret based on type
     if seed is not None:
-        if type(seed) is bool:
+
+        # If bool and True, make the seed
+        try:
+            seed = check.check_bool(seed)
             if seed:
-                cmd.extend(["--seed",interface.gen_seed()])
-        elif type(seed) is int:
-            cmd.extend(["--seed",f"{seed:d}"])
-        elif type(seed) is str:
+                seed = interface.gen_seed()
+            else:
+                seed = 0
+        except ValueError:
+            pass
 
-            try:
-                int(seed)
-            except ValueError:
-                err = f"seed {seed} could not be interpreted as an int\n"
-                raise ValueError(err)
-
-            cmd.extend(["--seed",seed])
-        else:
-            err = "seed must be True/False, int, or string representation of int\n"
+        # Make sure the seed -- whether passed in or generated above -- is
+        # actually an int.
+        try:
+            seed = check.check_int(seed,minimum_allowed=0)
+        except ValueError:
+            err = f"seed '{seed}' invalid. must be True/False or int > 0\n"
             raise ValueError(err)
 
-    num_threads = threads.get_num_threads(num_threads)
+        # If we have a seed > 0, append to command
+        if seed > 0:
+            cmd.extend(["--seed",f"{seed:d}"])
 
+    # Figure out how to treat threads
+    num_threads = threads.get_num_threads(num_threads)
     if algorithm in ["--all","--search"]:
         threads_arg = "auto{" + f"{num_threads:d}" + "}"
     else:
@@ -141,10 +159,21 @@ def run_raxml(algorithm=None,
     if log_to_stdout:
         log_file = "alignment.phy.raxml.log"
 
+    if supervisor is not None:
+        supervisor.event("Launching raxml-ng",
+                         cmd=cmd,
+                         num_threads=num_threads)
+
     # Run job
-    interface.launch(cmd,
-                     run_directory=dir_name,
-                     log_file=log_file,
-                     suppress_output=suppress_output)
+    try:
+        interface.launch(cmd,
+                         run_directory=run_directory,
+                         log_file=log_file,
+                         suppress_output=suppress_output,
+                         write_to_script=write_to_script)
+    except RuntimeError as e:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        raise RuntimeError from e
 
     return " ".join(cmd)

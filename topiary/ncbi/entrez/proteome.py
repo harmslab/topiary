@@ -111,18 +111,31 @@ def get_proteome_ids(taxid=None,species=None):
     # Make sure the taxid is sane
     taxid = check.check_int(taxid,"taxid")
 
-    # Look for assembly ids for this taxid
-    query_text = f"(txid{taxid}[ORGN])"
-    esearch_handle = Entrez.esearch(db="assembly",
-                                    retmax=1000,
-                                    term=query_text,
-                                    idtype="acc")
-    search_record = Entrez.read(esearch_handle)
+    returned_ids = None
 
-    # Get assembly ids
-    try:
-        returned_ids = list(search_record["IdList"])
-    except KeyError:
+    # Look for assembly ids for this taxid. Get reference genome first, then
+    # go on to not reference. Sort
+    filters = ['(latest[filter] AND "reference genome"[filter] AND all[filter] NOT anomalous[filter])',
+               '(latest[filter] AND all[filter] NOT anomalous[filter])']
+    for ref_filter in filters:
+
+        query_text = f"txid{taxid}[ORGN] AND {ref_filter}"
+        esearch_handle = Entrez.esearch(db="assembly",
+                                        retmax=50,
+                                        term=query_text,
+                                        idtype="acc")
+        search_record = Entrez.read(esearch_handle)
+
+        # Get assembly ids
+        try:
+            returned_ids = list(search_record["IdList"])
+        except KeyError:
+            continue
+
+        if len(returned_ids) == 0:
+            continue
+
+    if returned_ids is None:
         err = "\nThe Entrez.esearch query failed.\n\n"
         return None, err
 
@@ -169,6 +182,7 @@ def get_proteome(taxid=None,species=None):
     else:
         print(f"Downloading proteome for taxid '{taxid}'",flush=True)
 
+
     # Now get summary data for these records.
     esummary_query = ",".join(returned_ids)
     esummary_handle = Entrez.esummary(db="assembly",id=esummary_query)
@@ -179,6 +193,7 @@ def get_proteome(taxid=None,species=None):
     except KeyError:
         err = "\nThe Entrez.esummary query failed.\n\n"
         raise RuntimeError(err)
+
 
     # Get list of urls from all records
     urls = []
@@ -206,12 +221,11 @@ def get_proteome(taxid=None,species=None):
         success = True
         break
 
-    # Try to delete random file that gets downloaded when we make this query.
+    # Try to delete random file that can get downloaded when we make this query.
     try:
         os.remove("esummary_assembly.dtd")
     except FileNotFoundError:
         pass
-
 
     if success:
         return out_file

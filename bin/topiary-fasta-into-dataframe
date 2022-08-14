@@ -5,7 +5,7 @@ Command line interface to topiary.io.alignments.read_fasta_into
 
 import topiary
 from topiary.io.alignments import read_fasta_into
-from topiary._private import wrap_function
+from topiary._private.wrap import wrap_function
 
 import sys
 

@@ -42,11 +42,18 @@ def check_bool(value,variable_name=None):
         if issubclass(type(value),type):
             raise ValueError
 
+        # See if this is a float that is really, really close to an integer.
         if value != 0:
             if not np.isclose(round(value,0)/value,1):
                 raise ValueError
 
-        value = bool(int(value))
+        # Final check to make sure it's really a bool not an integer pretending
+        # to be bool
+        value = int(value)
+        if value not in [0,1]:
+            raise ValueError
+
+        value = bool(value)
 
     except (TypeError,ValueError):
 
@@ -158,11 +165,11 @@ def check_float(value,
     return value
 
 def check_int(value,
-                variable_name=None,
-                minimum_allowed=None,
-                maximum_allowed=None,
-                minimum_inclusive=True,
-                maximum_inclusive=True):
+              variable_name=None,
+              minimum_allowed=None,
+              maximum_allowed=None,
+              minimum_inclusive=True,
+              maximum_inclusive=True):
     """
     Process an `int` argument and do error checking.
 

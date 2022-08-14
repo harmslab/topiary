@@ -4,63 +4,52 @@ import topiary
 from topiary.raxml.ancestors import _make_ancestor_summary_trees
 from topiary.raxml.ancestors import _parse_raxml_anc_output
 from topiary.raxml.ancestors import generate_ancestors
-from topiary.raxml.ancestors import _get_ancestral_gaps
+from topiary.raxml import RAXML_BINARY
 
 import numpy as np
 
 import os, ete3
 
-def test__get_ancestral_gaps(tmpdir):
-
-    # Check a variety of gapping
-    alignment = \
-    """6 9
-
-    AAAAAAAAAA
-    Q--QQ-Q-Q
-    BBBBBBBBBB
-    Q--QQ--Q-
-    CCCCCCCCCC
-    Q-Q-Q--QQ
-    DDDDDDDDDD
-    Q-Q-Q--Q-
-    EEEEEEEEEE
-    Q-QQ-Q-QQ
-    FFFFFFFFFF
-    Q-QQ-Q-Q-
-    """
-
-    os.mkdir(os.path.join(tmpdir,"toy-anc-data"))
-    ali_file = os.path.join(tmpdir,"toy-anc-data","alignment.phy")
-    tree_file = os.path.join(tmpdir,"toy-anc-data","tree.newick")
-
-    f = open(ali_file,"w")
-    f.write(alignment)
-    f.close()
-
-    tree = "(((AAAAAAAAAA,BBBBBBBBBB)AB,(CCCCCCCCCC,DDDDDDDDDD)CD)ABCD,(EEEEEEEEEE,FFFFFFFFFF)EF)ABCDEF;"
-    T = ete3.Tree(tree,format=8)
-    T.write(outfile=tree_file,format=8)
-
-    gapping = _get_ancestral_gaps(ali_file,tree_file)
-
-    expected = {'': [False, True, False, False, None, None, True, False, None],
-                'ABCD': [False, True, False, False, False, True, True, False, None],
-                'AB': [False, True, True, False, False, True, True, False, None],
-                'CD': [False, True, False, True, False, True, True, False, None],
-                'EF': [False, True, False, False, True, False, True, False, None]}
-
-    for k in expected:
-        assert np.array_equal(gapping[k],expected[k])
-
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__make_ancestor_summary_trees():
 
     pass
 
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__parse_raxml_anc_output():
 
     pass
 
-def test_generate_ancestors():
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+def test_generate_ancestors(simple_phylo,tmpdir):
 
-    pass
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
+    kwargs = {"previous_dir":None,
+              "df":simple_phylo["dataframe.csv"],
+              "model":"JTT",
+              "tree_file":simple_phylo["tree.newick"],
+              "alt_cutoff":0.25,
+              "calc_dir":"ancestors",
+              "overwrite":False,
+              "supervisor":None,
+              "num_threads":1,
+              "raxml_binary":RAXML_BINARY}
+
+    generate_ancestors(**kwargs)
+
+    output = os.path.join("ancestors","output")
+
+    expected = ["tree_anc-label.newick",
+                "tree_anc-pp.newick",
+                "summary-tree.pdf",
+                "dataframe.csv"]
+
+    expected.append(os.path.join("ancestors","ancestors.fasta"))
+    expected.append(os.path.join("ancestors","ancestor-data.csv"))
+    for i in range(6):
+        expected.append(os.path.join("ancestors",f"anc{i+1}.pdf"))
+
+    for e in expected:
+        assert os.path.isfile(os.path.join(output,e))
