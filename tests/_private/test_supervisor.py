@@ -147,7 +147,7 @@ def test_Supervisor_create_calc_dir(test_dataframes,tmpdir,generax_data):
     assert sv.starting_dir == tmpdir
     assert sv.run_parameters["calc_type"] == "test_no_prev"
     assert sv.status == "running"
-    assert sv.run_parameters["creation_time"] < time.time()
+    assert sv.run_parameters["creation_time"] <= time.time()
 
     json_file = os.path.join(sv.calc_dir,"run_parameters.json")
     f = open(json_file)
@@ -423,7 +423,7 @@ def test_Supervisor_event(tmpdir):
     evt = sv.run_parameters["events"][0]
     assert evt["description"] == "first_event"
     assert evt["local_directory"] == os.getcwd()
-    assert evt["time"] < time.time()
+    assert evt["time"] <= time.time()
     assert evt["keyword"] == "saturn v"
 
 
@@ -434,7 +434,7 @@ def test_Supervisor_event(tmpdir):
     evt = sv.run_parameters["events"][1]
     assert evt["description"] == "second_event"
     assert evt["local_directory"] == "."
-    assert evt["time"] < time.time()
+    assert evt["time"] <= time.time()
     assert evt["keyword"] == "atlas"
 
     # Change directories and see what happens
@@ -444,7 +444,7 @@ def test_Supervisor_event(tmpdir):
     evt = sv.run_parameters["events"][2]
     assert evt["description"] == "third_event"
     assert evt["local_directory"] == "working"
-    assert evt["time"] < time.time()
+    assert evt["time"] <= time.time()
     assert evt["keyword"] == "gemini"
 
     # --------------------------------------------------------------------------
@@ -457,7 +457,7 @@ def test_Supervisor_event(tmpdir):
     evt = sv.run_parameters["events"][0]
     assert evt["description"] == "first_event"
     assert evt["local_directory"] == os.getcwd()
-    assert evt["time"] < time.time()
+    assert evt["time"] <= time.time()
     assert evt["keyword"] == "saturn v"
 
     json_file = os.path.join(sv.calc_dir,"run_parameters.json")
@@ -491,7 +491,7 @@ def test_Supervisor_finalize(tmpdir):
     p = json.load(f)
     f.close()
     assert p["calc_status"] == "complete"
-    assert p["completion_time"] < time.time()
+    assert p["completion_time"] <= time.time()
 
     sv = Supervisor()
     sv.create_calc_dir("stupid2","another")
@@ -505,7 +505,7 @@ def test_Supervisor_finalize(tmpdir):
     p = json.load(f)
     f.close()
     assert p["calc_status"] == "crashed"
-    assert p["completion_time"] < time.time()
+    assert p["completion_time"] <= time.time()
 
     # This tests return-to-starting directory after crash functionality
     assert os.getcwd() == sv.starting_dir
