@@ -250,7 +250,7 @@ def _compare_versions(installed,required):
     Parameters
     ----------
     installed : tuple
-        tuple returned by check_xxx. elements are str.
+        tuple returned by check_{prog}. elements are str.
     required : tuple
         required version as a tuple. elements are int. examples: (1,1) would
         require version 1.1. (1,) would require at least version 1.

@@ -14,12 +14,14 @@ from topiary._private import Supervisor
 from topiary.pastml import get_ancestral_gaps
 
 import ete3
-from ete3 import Tree
 
 import pandas as pd
 import numpy as np
 
-import os, re, glob, shutil
+import os
+import re
+import glob
+import shutil
 
 # -----------------------------------------------------------------------------
 # Data
@@ -60,11 +62,11 @@ def _make_ancestor_summary_trees(df,
     """
 
     # Create label trees
-    t_labeled = Tree(tree_file_with_labels,format=1)
+    t_labeled = ete3.Tree(tree_file_with_labels,format=1)
 
     # Create output trees
-    t_out_label = Tree(tree_file_with_labels,format=1)
-    t_out_pp = Tree(tree_file_with_labels,format=1)
+    t_out_label = ete3.Tree(tree_file_with_labels,format=1)
+    t_out_pp = ete3.Tree(tree_file_with_labels,format=1)
 
     # Main iterator (over main labeled tree)
     input_label_iterator = t_labeled.traverse("preorder")
@@ -364,7 +366,8 @@ def _parse_raxml_anc_output(df,
 def generate_ancestors(previous_dir=None,
                        df=None,
                        model=None,
-                       tree_file=None,
+                       gene_tree=None,
+                       reconciled_tree=None,
                        alt_cutoff=0.25,
                        calc_dir="ancestors",
                        overwrite=False,
@@ -389,9 +392,19 @@ def generate_ancestors(previous_dir=None,
     model : str, optional
         model (i.e. "LG+G8"). Will override model from `previous_dir`
         if specified.
-    tree_file : str
-        tree_file in newick format. Will override tree from `previous_dir` if
-        specified.
+    gene_tree : str or ete3.Tree or dendropy.Tree
+        gene_tree. Reconstruct ancestors on this tree. Will override gene_tree
+        from `previous_dir` if specified. Should be newick with only leaf names
+        and branch lengths. If this an ete3 or dendropy tree, it will be written
+        out with leaf names and branch lengths; all other data will be dropped.
+        NOTE: if reconciled_tree is specified OR is present in the previous_dir,
+        the reconciled tree will take precedence over this gene tree.
+    reconciled_tree : str or ete3.Tree or dendropy.Tree
+        reconciled_tree. Reconstruct ancestors on this tree. Will override
+        reconciled_tree from `previous_dir` if specified. Should be newick with
+        only leaf names and branch lengths. If this an ete3 or dendropy tree, it
+        will be written out with leaf names and branch lengths; all other data
+        will be dropped
     alt_cutoff : float, default=0.25
         cutoff to use for altAll calculation. Should be between 0 and 1.
     calc_dir : str, default="ancestors"
@@ -419,9 +432,9 @@ def generate_ancestors(previous_dir=None,
                                calc_type="ancestors",
                                overwrite=overwrite,
                                df=df,
-                               tree=tree_file)
-    if model is not None:
-        supervisor.update("model",str(model))
+                               gene_tree=gene_tree,
+                               reconciled_tree=reconciled_tree,
+                               model=model)
 
     alt_cutoff = check.check_float(alt_cutoff,
                                    "alt_cutoff",
@@ -429,13 +442,27 @@ def generate_ancestors(previous_dir=None,
                                    maximum_allowed=1)
 
     supervisor.update("alt_cutoff",alt_cutoff)
-
     supervisor.check_required(required_values=["model","alt_cutoff"],
-                              required_files=["alignment.phy","dataframe.csv",
-                                              "tree.newick"])
+                              required_files=["alignment.phy","dataframe.csv"])
+
+    # Figure out which tree to use for the reconstruction
+    try:
+        supervisor.check_required(required_files=["reconciled-tree.newick"])
+        tree_prefix = "reconciled"
+        reconstruct_tree = supervisor.reconciled_tree
+        supervisor.update("calc_type","reconcile_ancestors")
+    except FileNotFoundError:
+        try:
+            supervisor.check_required(required_files=["gene-tree.newick"])
+            tree_prefix = "gene"
+            reconstruct_tree = supervisor.gene_tree
+            supervisor.update("calc_type","ml_ancestors")
+        except FileNotFoundError:
+            err = "\nancestral reconstruction requires an existing reconciled\n"
+            err += "or gene tree.\n\n"
+            raise ValueError(err)
 
     os.chdir(supervisor.working_dir)
-
 
     print("Reconstructing ancestral states.\n",flush=True)
 
@@ -443,7 +470,7 @@ def generate_ancestors(previous_dir=None,
     cmd = run_raxml(run_directory="00_inference",
                     algorithm="--ancestral",
                     alignment_file=supervisor.alignment,
-                    tree_file=supervisor.tree,
+                    tree_file=reconstruct_tree,
                     model=supervisor.model,
                     seed=supervisor.seed,
                     log_to_stdout=False,
@@ -476,12 +503,14 @@ def generate_ancestors(previous_dir=None,
     supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy ancestors with labels and posterior probabilities
-    supervisor.stash(os.path.join("01_parse","tree_anc-label.newick"))
-    supervisor.stash(os.path.join("01_parse","tree_anc-pp.newick"))
+    supervisor.stash(os.path.join("01_parse","tree_anc-label.newick"),
+                     target_name=f"{tree_prefix}-tree_anc-label.newick")
+    supervisor.stash(os.path.join("01_parse","tree_anc-pp.newick"),
+                     target_name=f"{tree_prefix}-tree_anc-pp.newick")
 
     # Copy ancestor files into an ancestors directory
     files_to_grab = glob.glob(os.path.join("01_parse","*.*"))
-    anc_out = os.path.join(supervisor.output_dir,"ancestors")
+    anc_out = os.path.join(supervisor.output_dir,f"{tree_prefix}-tree_ancestors")
     os.mkdir(anc_out)
     for f in files_to_grab:
         shutil.copy(f,os.path.join(anc_out,os.path.basename(f)))

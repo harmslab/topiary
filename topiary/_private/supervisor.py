@@ -46,8 +46,6 @@ class Supervisor:
       + "description" (description of what the calculation is)
       + "local_directory" (directory in which job was run, relative to calc_dir)
       + "time" (time this was recorded)
-      + "cmd" (list of args passed to subprocess.run)
-      + "num_threads" (number of threads used)
       + **kwargs (other keys passed in as meta data)
 
     + "previous_entries" (This is a list holding run_parameters of all previous
@@ -56,6 +54,21 @@ class Supervisor:
       The list is ordered earliest to latest).
 
     These parameters will are written out to run_parameters.json.
+
+    This object also exposes some convenience properties. These are absolute
+    paths to the corresponding file in the input directory. If the file does not
+    exist, these properties are None.
+
+    + gene_tree (input/gene-tree.newick)
+    + species_tree (input/species-tree.newick)
+    + reconciled_tree (input/reconciled_tree.newick)
+    + alignment (input/alignment.py)
+
+    Other important properties are:
+
+    + df (topiary dataframe corresponding to input/dataframe.csv)
+    + model (string model)
+    + seed (seed)
 
     Note this is **not** thread-safe.
     """
@@ -70,7 +83,7 @@ class Supervisor:
         ----------
         calc_dir : str, optional
             load the supervisor from an existing directory
-        seed : bool or int, optional
+        seed : int, optional
             seed for calcultions. if not specified, generate a random seed
         """
 
@@ -78,23 +91,8 @@ class Supervisor:
         if seed is None:
             seed = gen_seed()
 
-        # If bool, generate a random seed
-        if seed is not None:
-            try:
-                check.check_bool(seed)
-                seed = gen_seed()
-            except ValueError:
-                pass
-
         # By this point, seed better be an int ...
-        try:
-            seed = check.check_int(seed,minimum_allowed=0)
-        except ValueError:
-            pass
-
-        if seed is None:
-            err = "seed must be True/False or int > 0\n"
-            raise ValueError(err)
+        seed = check.check_int(seed,minimum_allowed=0)
 
         self._run_parameters = {"calc_status":"empty",
                                 "version":topiary.__version__,
@@ -191,9 +189,10 @@ class Supervisor:
                         overwrite=False,
                         force=False,
                         df=None,
-                        tree=None,
-                        model=None,
-                        other_files=[]):
+                        gene_tree=None,
+                        species_tree=None,
+                        reconciled_tree=None,
+                        model=None):
         """
         Create a calculation directory in a stereotyped way.
 
@@ -211,14 +210,20 @@ class Supervisor:
         df : pandas.DataFrame or str, optional
             dataframe to use for calculation (goes into input/dataframe.csv).
             Overwrites whatever came from previous directory.
-        tree : str, ete3.Tree, dendropy.tree, optional
-            tree file for calculation (goes into input/tree.newick). If this is
-            not a newick file, it will be written out with leaf names and
-            branch lengths; all other data will be dropped
+        gene_tree : str, ete3.Tree, dendropy.tree, optional
+            gene_tree file for calculation (goes into input/gene-tree.newick).
+            If this an ete3 or dendropy tree, it will be written out with leaf
+            names and branch lengths; all other data will be dropped.
+        species_tree : str, ete3.Tree, dendropy.tree, optional
+            species_tree file for calculation (goes into input/species-tree.newick).
+            If this an ete3 or dendropy tree, it will be written out with leaf
+            names; all other data will be dropped.
+        reconciled_tree : str, ete3.Tree, dendropy.tree, optional
+            species_tree file for calculation (goes into input/reconciled-tree.newick).
+            If this an ete3 or dendropy tree, it will be written out with leaf
+            names; all other data will be dropped.
         model : str, optional
             phylogenetic model recognized by raxml and generax
-        other_files : list, default=[]
-            list of files to copy into input
         """
 
         if self.status not in ["complete","empty"]:
@@ -250,7 +255,9 @@ class Supervisor:
 
         # Get ready to load in previous data
         self._df = None
-        self._run_parameters["tree"] = None
+        self._run_parameters["gene_tree"] = None
+        self._run_parameters["species_tree"] = None
+        self._run_parameters["reconciled_tree"] = None
         self._run_parameters["alignment"] = None
         input_dir = os.path.join(self._calc_dir,"input")
 
@@ -269,12 +276,13 @@ class Supervisor:
                 shutil.copy(prev_df,input_df)
                 self._df = topiary.read_dataframe(input_df)
 
-            prev_tree = os.path.join(previous_dir,"tree.newick")
-            if os.path.isfile(prev_tree):
-                input_tree = os.path.join(input_dir,"tree.newick")
-                shutil.copy(prev_tree,input_tree)
-                self._run_parameters["tree"] = input_tree
-
+            trees = ["gene-tree.newick","species-tree.newick","reconciled-tree.newick"]
+            for t in trees:
+                prev_tree = os.path.join(previous_dir,t)
+                if os.path.isfile(prev_tree):
+                    input_tree = os.path.join(input_dir,t)
+                    shutil.copy(prev_tree,input_tree)
+                    self._run_parameters["_".join(t.split(".")[0].split("-"))] = input_tree
 
         # ---------------------------------------------------------------------
         # Load arguments (after we've already processed stuff from previous
@@ -285,29 +293,24 @@ class Supervisor:
             topiary.write_dataframe(df,os.path.join(input_dir,"dataframe.csv"))
             self._df = df
 
-        if tree is not None:
+        tree_names = ["gene-tree","species-tree","reconciled-tree"]
+        for i, tree in enumerate([gene_tree,species_tree,reconciled_tree]):
 
-            # Make sure it is readable (even if a string/file)
-            T = topiary.io.read_tree(tree)
+            if tree is not None:
 
-            out_tree = os.path.join(input_dir,"tree.newick")
-            if os.path.isfile(str(tree)):
-                shutil.copy(tree,out_tree)
-            else:
-                T.write(out_tree,format=5)
+                # Make sure it is readable (even if a string/file)
+                T = topiary.io.read_tree(tree)
 
-            self._run_parameters["tree"] = out_tree
+                out_tree = os.path.join(input_dir,f"{tree_names[i]}.newick")
+                if os.path.isfile(str(tree)):
+                    shutil.copy(tree,out_tree)
+                else:
+                    T.write(outfile=out_tree,format=5)
+
+                self._run_parameters["_".join(tree_names[i].split("-"))] = out_tree
 
         if model is not None:
             self._run_parameters["model"] = model
-
-        for f in other_files:
-            if not os.path.isfile(f):
-                err = f"\nother_files entry '{f}' does not exist\n\n"
-                raise ValueError(err)
-
-            basename = os.path.basename(f)
-            shutil.copy(f,os.path.join(input_dir,basename))
 
         # ---------------------------------------------------------------------
         # Write alignment.phy from dataframe
@@ -324,6 +327,17 @@ class Supervisor:
         self._run_parameters["calc_status"] = "running"
         self._run_parameters["creation_time"] = time.time()
         self.write_json()
+
+        # ---------------------------------------------------------------------
+        # Print status
+
+        d = calc_dir
+        if not d[0] == "/":
+            d = f"./{d}"
+        out = ["\n----------------------------------------------------------------------\n"]
+        out.append(f"topiary is starting a {self.calc_type} calculation in {d}:\n")
+        print("\n".join(out),flush=True)
+
 
 
     def check_required(self,
@@ -537,7 +551,7 @@ class Supervisor:
 
 
         # Print output
-        dt = self._run_parameters["creation_time"] - this_time
+        dt = this_time - self._run_parameters["creation_time"]
         pretty_time = f"{str(datetime.timedelta(seconds=dt))} (H:M:S)"
         print(f"{description}, {pretty_time}",flush=True)
 
@@ -591,8 +605,8 @@ class Supervisor:
         if working_dir[0] != "/":
             working_dir = os.path.join("./",working_dir)
 
-        out = ["\n----------------------------------------------------------------------\n"]
-        out.append(f"The {self.calc_type} calculation running in {calc_dir}:\n")
+        out = ["\n"]
+        out.append(f"topiary ran a {self.calc_type} calculation in {calc_dir}:\n")
         if successful:
             out.append(f"+ Completed in {pretty_time}")
             out.append(f"+ Wrote results to {output_dir}")
@@ -687,16 +701,42 @@ class Supervisor:
             return None
 
     @property
-    def tree(self):
+    def gene_tree(self):
         """
-        Absolute path to input tree for calculation (as reported by
-        run_parameters["tree"])
+        Absolute path to input gene tree for calculation (as reported by
+        run_parameters["gene_tree"])
         """
 
-        if "tree" in self._run_parameters:
-            return self._run_parameters["tree"]
+        if "gene_tree" in self._run_parameters:
+            return self._run_parameters["gene_tree"]
         else:
             return None
+
+
+    @property
+    def species_tree(self):
+        """
+        Absolute path to input species tree for calculation (as reported by
+        run_parameters["species_tree"])
+        """
+
+        if "gene_tree" in self._run_parameters:
+            return self._run_parameters["species_tree"]
+        else:
+            return None
+
+    @property
+    def reconciled_tree(self):
+        """
+        Absolute path to input species tree for calculation (as reported by
+        run_parameters["reconciled_tree"])
+        """
+
+        if "reconciled_tree" in self._run_parameters:
+            return self._run_parameters["reconciled_tree"]
+        else:
+            return None
+
 
     @property
     def alignment(self):
@@ -753,3 +793,23 @@ class Supervisor:
         """
 
         return self._run_parameters
+
+    @property
+    def tree_class(self):
+        """
+        Class of tree from this output. Will be "reconciled", "gene",
+        or None.
+        """
+
+        try:
+            calc_type = self._run_parameters["calc_type"]
+        except KeyError:
+            return None
+
+        if calc_type.split("_")[0] == "ml":
+            return "gene"
+
+        if calc_type.split("_")[0] == "reconcile":
+            return "reconciled"
+
+        return None

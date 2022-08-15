@@ -146,5 +146,6 @@ def test_shrink_dataset(for_real_inference,tmpdir):
         with pytest.raises(ValueError):
             shrink_dataset(df,max_seq_number=b)
 
-    ## XX THIS IS A PARTIAL TEST AT THE MOMENT. FOCUSING ON TESTING LOWER LEVEL
+    ## XX IMPROVE TEST
+    # THIS IS A PARTIAL TEST AT THE MOMENT. FOCUSING ON TESTING LOWER LEVEL
     # FUNCTIONS

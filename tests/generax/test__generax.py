@@ -1,6 +1,7 @@
 import pytest
 
 import topiary
+from topiary.generax._generax import _annotate_species_tree
 from topiary.generax._generax import _get_link_dict
 from topiary.generax._generax import setup_generax
 from topiary.generax._generax import run_generax
@@ -15,6 +16,35 @@ import os
 import json
 import shutil
 import pathlib
+
+@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+def test__annotate_species_tree(generax_data,tmpdir):
+
+    input_dir = os.path.join(generax_data["toy-input"],"toy-ml","output")
+    species_tree = os.path.join(input_dir,"species_tree.newick")
+    df = topiary.read_dataframe(os.path.join(input_dir,"dataframe.csv"))
+
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
+    os.mkdir("test0")
+    _annotate_species_tree(df,species_tree=None,out_dir="test0")
+    assert os.path.isfile(os.path.join("test0","species_tree.newick"))
+
+    os.mkdir("test1")
+    _annotate_species_tree(df,species_tree=species_tree,out_dir="test1")
+    assert os.path.isfile(os.path.join("test1","species_tree.newick"))
+
+    os.mkdir("test2")
+
+    T = ete3.Tree(species_tree)
+    for n in T.get_leaves():
+        n.name = "not_ott"
+    with pytest.raises(ValueError):
+        _annotate_species_tree(df,species_tree=T,out_dir="test2")
+
+    os.chdir(current_dir)
+
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__get_link_dict():
@@ -209,16 +239,16 @@ def test_setup_generax(generax_data,tmpdir):
 
     shutil.rmtree(toy_out)
 
-    # Send in wacky keep mask and gene_tree as newick. (That file is just to
-    # make sure it's actually being copied in; contents don't really matter for
-    # this test; this function does not validate file type/content.)
+    # Send in test data to make sure files are copied/validated properly
     in_keep_mask = np.array([0,1,0,1,0,1,0,1],dtype=bool)
-    in_mapping_link = os.path.join(toy_inputs,"..","expected-output","gene_tree.newick")
+    mapping_link_expected = os.path.join(toy_inputs,"..","expected-output","mapping.link")
+    gene_tree_expected = os.path.join(toy_inputs,"..","expected-output","gene_tree.newick")
+    species_tree_expected = os.path.join(toy_inputs,"..","expected-output","species_tree.newick")
     keep_mask = setup_generax(df=df,
                               gene_tree=gene_tree,
                               model=model,
                               out_dir=toy_out,
-                              mapping_link_file=in_mapping_link,
+                              mapping_link_file=mapping_link_expected,
                               keep_mask=in_keep_mask)
 
     assert np.array_equal(in_keep_mask,keep_mask)
@@ -228,7 +258,7 @@ def test_setup_generax(generax_data,tmpdir):
     out_link = [line.strip() for line in f.readlines()]
     f.close()
 
-    f = open(os.path.join(in_mapping_link))
+    f = open(os.path.join(mapping_link_expected))
     expected_link = [line.strip() for line in f.readlines()]
     f.close()
 
@@ -237,15 +267,14 @@ def test_setup_generax(generax_data,tmpdir):
 
     shutil.rmtree(toy_out)
 
-    # Send in file for species_tree_file too
+    # Send in file for species_tree too
     in_keep_mask = np.array([0,1,0,1,0,1,0,1],dtype=bool)
-    in_mapping_link = os.path.join(toy_inputs,"..","expected-output","gene_tree.newick")
     keep_mask = setup_generax(df=df,
                               gene_tree=gene_tree,
                               model=model,
                               out_dir=toy_out,
-                              species_tree_file=in_mapping_link,
-                              mapping_link_file=in_mapping_link,
+                              species_tree=species_tree_expected,
+                              mapping_link_file=mapping_link_expected,
                               keep_mask=in_keep_mask)
 
     assert np.array_equal(in_keep_mask,keep_mask)
@@ -255,7 +284,7 @@ def test_setup_generax(generax_data,tmpdir):
     out_link = [line.strip() for line in f.readlines()]
     f.close()
 
-    f = open(os.path.join(in_mapping_link))
+    f = open(os.path.join(mapping_link_expected))
     expected_link = [line.strip() for line in f.readlines()]
     f.close()
 
@@ -269,16 +298,15 @@ def test_setup_generax(generax_data,tmpdir):
 
     shutil.rmtree(toy_out)
 
-    # Send in file for species_tree_file too
+    # Send in file for species_tree too
     in_keep_mask = np.array([0,1,0,1,0,1,0,1],dtype=bool)
-    in_mapping_link = os.path.join(toy_inputs,"..","expected-output","gene_tree.newick")
     keep_mask = setup_generax(df=df,
                               gene_tree=gene_tree,
                               model=model,
                               out_dir=toy_out,
-                              control_file=in_mapping_link,
-                              species_tree_file=in_mapping_link,
-                              mapping_link_file=in_mapping_link,
+                              control_file=gene_tree_expected,
+                              species_tree=species_tree_expected,
+                              mapping_link_file=mapping_link_expected,
                               keep_mask=in_keep_mask)
 
     assert np.array_equal(in_keep_mask,keep_mask)
@@ -288,7 +316,7 @@ def test_setup_generax(generax_data,tmpdir):
     out_link = [line.strip() for line in f.readlines()]
     f.close()
 
-    f = open(os.path.join(in_mapping_link))
+    f = open(os.path.join(mapping_link_expected))
     expected_link = [line.strip() for line in f.readlines()]
     f.close()
 
@@ -417,7 +445,7 @@ def test_run_generax(generax_data,tmpdir):
     f.close()
     model = params['model']
 
-    species_tree_file = os.path.join(input_dir,"species_tree.newick")
+    species_tree = os.path.join(input_dir,"species_tree.newick")
 
     run_directory = os.path.join(tmpdir,"real-generax-toy-test")
     if os.path.exists(run_directory):
@@ -427,7 +455,7 @@ def test_run_generax(generax_data,tmpdir):
     keep_mask = setup_generax(df=df,
                               gene_tree=gene_tree,
                               model=model,
-                              species_tree_file=species_tree_file,
+                              species_tree=species_tree,
                               out_dir=run_directory)
 
     # Run the calculation

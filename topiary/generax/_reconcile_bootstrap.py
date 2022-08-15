@@ -40,13 +40,15 @@ def _check_calc_completeness(output_directory):
     with tqdm(total=num_directories) as pbar:
         while num_complete < num_directories:
             num_complete = len(glob.glob(os.path.join(output_directory,"0*","complete*")))
+            pbar.n = num_complete
+            pbar.refresh() 
             time.sleep(1)
 
 
 def _create_bootstrap_dirs(df,
                            model,
-                           tree_file,
-                           species_tree_file,
+                           gene_tree,
+                           species_tree,
                            allow_horizontal_transfer,
                            bootstrap_directory,
                            overwrite,
@@ -56,7 +58,27 @@ def _create_bootstrap_dirs(df,
     Do a dummy run of generax in each one, creating a file called run_generax.sh
     that can be invoked later.
 
-    XXX
+    Parameters
+    ----------
+    df : pandas.DataFrame or str, optional
+        topiary data frame or csv written out from topiary df. Will override
+        dataframe from `previous_dir` if specified.
+    model : str, optional
+        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        if specified.
+    gene_tree : str, optional
+        gene tree in newick format.
+    species_tree : str, optional
+        species tree in newick format.
+    allow_horizontal_transfer : bool, default=True
+        whether to allow horizontal transfer during reconcilation. If True, use
+        the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    bootstrap_directory : str
+        directory with gene tree bootstrap replicates
+    overwrite : bool, default=False
+        whether or not to overwrite existing calc_dir directory
+    generax_binary : str, optional
+        what generax binary to use
 
     Returns
     -------
@@ -70,8 +92,8 @@ def _create_bootstrap_dirs(df,
     bs_df = df.loc[df.keep,:]
 
     # Read species tree
-    if species_tree_file is not None:
-        species_tree = species_tree_file
+    if species_tree is not None:
+        species_tree = species_tree
     else:
         species_tree, dropped = topiary.df_to_species_tree(bs_df,strict=True)
         species_tree.resolve_polytomy()
@@ -88,9 +110,9 @@ def _create_bootstrap_dirs(df,
     alignment_files = [a[1] for a in alignment_files]
 
     # Load bootstrap trees
-    tree_file = glob.glob(os.path.join(bootstrap_directory,"*.newick"))[0]
+    tree_files = glob.glob(os.path.join(bootstrap_directory,"*.newick"))[0]
     trees = []
-    with open(tree_file) as f:
+    with open(tree_files) as f:
         for line in f:
             trees.append(ete3.Tree(line.strip()))
 
@@ -120,7 +142,7 @@ def _create_bootstrap_dirs(df,
                                   model,
                                   out_dir,
                                   keep_mask=template_keep_mask,
-                                  species_tree_file=template_species_tree,
+                                  species_tree=template_species_tree,
                                   mapping_link_file=template_link_file,
                                   control_file=template_control_file)
 
@@ -158,7 +180,14 @@ def _create_bootstrap_dirs(df,
 
 def _run_bootstrap_calculations(replicate_dir,num_threads):
     """
-    XXX
+    Run generax in parallel using mpirun for all directories.
+
+    Parameters
+    ----------
+    replicate_dir : str
+        directory with bootstrap replicates for reconcilations
+    num_threads : int
+        number of mpi slots (passed to mpirun -np num_threads)
     """
 
     print("\nGenerating reconciliation bootstraps.\n",flush=True)
@@ -206,11 +235,16 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
         os.environ["TMPDIR"] = old_tmpdir
 
 
-def _combine_bootstrap_calculations(replicate_dir,tree_file):
+def _combine_bootstrap_calculations(replicate_dir,reconciled_tree):
     """
     Combine the results from the parallel generax bootstrap runs.
 
-    XXX
+    replicate_dir : str
+        directory containing the replicated generax reconcilation directories
+        for the parallel bootstrap reconciliation calculation
+    reconciled_tree : str
+        newick file holding ML reconciled tree on which the bootstrap branch
+        supports will be loaded
 
     Returns
     -------
@@ -267,13 +301,13 @@ def _combine_bootstrap_calculations(replicate_dir,tree_file):
             f.write(f"{tree_stack[key]}\n")
 
     # Combine bootstrap replicates using raxml
-    if os.path.isdir("combine_with_raaxml"):
+    if os.path.isdir("combine_with_raxml"):
         shutil.rmtree("combine_with_raxml")
 
     # Combine bootstrap replicates into a set of supports
     cmd = run_raxml(run_directory="combine_with_raxml",
                     algorithm="--support",
-                    tree_file=tree_file,
+                    tree_file=reconciled_tree,
                     num_threads=1,
                     log_to_stdout=False,
                     suppress_output=True,
@@ -283,7 +317,7 @@ def _combine_bootstrap_calculations(replicate_dir,tree_file):
     # Grab support tree out of raxml directory
     shutil.copy(os.path.join("combine_with_raxml",
                              "tree.newick.raxml.support"),
-                "tree_supports.newick")
+                "reconciled-tree_supports.newick")
 
     # Test for convergence
     # Combine bootstrap replicates using raxml
@@ -310,8 +344,9 @@ def _combine_bootstrap_calculations(replicate_dir,tree_file):
 
 def reconcile_bootstrap(df,
                         model,
-                        tree_file,
-                        species_tree_file,
+                        gene_tree,
+                        species_tree,
+                        reconciled_tree,
                         allow_horizontal_transfer,
                         bootstrap_directory,
                         overwrite,
@@ -320,20 +355,37 @@ def reconcile_bootstrap(df,
                         generax_binary):
     """
     Reconcile gene and species trees using generax with bootstrap replicates
-    of the gene tree and alignments. Should be invoked by
-    generax.reconcile.reconcile. XXXX ; clean up, switch to supervisor.events model
+    of the gene tree and alignments.
 
     Parameters
     ----------
-    supervisor : Supervisor
-        supervisor instance to keep track of inputs and outputs
-    calc_dir: str, optional
-        calculation directory. If not specified, create an calculation directory
-        with form "generax_bootstrap_reconcilation_{randomletters}"
+    df : pandas.DataFrame or str, optional
+        topiary data frame or csv written out from topiary df. Will override
+        dataframe from `previous_dir` if specified.
+    model : str, optional
+        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        if specified.
+    gene_tree : str, ete3.Tree, dendropy.tree, optional
+        gene tree file for calculation. Will override tree in `previous_dir`.
+        If this an ete3 or dendropy tree, it will be written out with leaf
+        names and branch lengths; all other data will be dropped.
+    species_tree : str, ete3.Tree, dendropy.tree, optional
+        species tree file for calculation. Will override tree in `previous_dir`.
+        If this an ete3 or dendropy tree, it will be written out with leaf
+        names; all other data will be dropped.
+    reconciled_tree : str, ete3.Tree, dendropy.tree, optional
+        reconciled tree file for calculation. Will override tree in `previous_dir`.
+        If this an ete3 or dendropy tree, it will be written out with leaf
+        names; all other data will be dropped.
+    allow_horizontal_transfer : bool, default=True
+        whether to allow horizontal transfer during reconcilation. If True, use
+        the "UndatedDTL" model. If False, use the "UndatedDL" model.
     overwrite : bool, default=False
-        whether or not to overwrite existing output directory
-    num_threads : int, default=1
-        number of threads to use.
+        whether or not to overwrite existing calc_dir directory
+    supervisor : Supervisor, optional
+        supervisor instance to keep track of inputs and outputs
+    num_threads : int, default=-1
+        number of threads to use. if -1 use all available.
     generax_binary : str, optional
         what generax binary to use
 
@@ -350,8 +402,8 @@ def reconcile_bootstrap(df,
     supervisor.event("Setting up bootstrap replicates directories.")
     replicate_dir = _create_bootstrap_dirs(df=df,
                                            model=model,
-                                           tree_file=tree_file,
-                                           species_tree_file=species_tree_file,
+                                           gene_tree=gene_tree,
+                                           species_tree=species_tree,
                                            allow_horizontal_transfer=allow_horizontal_transfer,
                                            bootstrap_directory=bootstrap_directory,
                                            overwrite=overwrite,
@@ -361,7 +413,7 @@ def reconcile_bootstrap(df,
     _run_bootstrap_calculations(replicate_dir,num_threads)
 
     supervisor.event("Combining bootstrap calculations.")
-    converged = _combine_bootstrap_calculations(replicate_dir,tree_file)
+    converged = _combine_bootstrap_calculations(replicate_dir,reconciled_tree)
 
     # Compress big, complicated replicates directory and delete
     print("\nCompressing replicates.\n",flush=True)
@@ -372,10 +424,12 @@ def reconcile_bootstrap(df,
 
     # Get newick files from previous output directory and put in new output
     supervisor.copy_output_to_output("*.newick")
+    supervisor.stash(supervisor.gene_tree)
+    supervisor.stash(os.path.join(supervisor.input_dir,"species-tree.newick"))
     supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy in tree with supports
-    supervisor.stash(os.path.join(supervisor.working_dir,"tree_supports.newick"))
+    supervisor.stash(os.path.join(supervisor.working_dir,"reconciled-tree_supports.newick"))
 
     # Record whether bootstrapping converged
     supervisor.update("bootstrap_converged",converged)
@@ -384,7 +438,7 @@ def reconcile_bootstrap(df,
     msg = "For more information on the reconcilation events (orthgroups,\n"
     msg += "event counts, full nhx files, etc.) please check the maximum\n"
     msg += "likelihood reconciliation output directory that was used as\n"
-    msg += "input for this bootstrap calcultion.\n"
+    msg += "input for this bootstrap calculation.\n"
 
     f = open(os.path.join(supervisor.output_dir,"reconciliations.txt"),"w")
     f.write(msg)

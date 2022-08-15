@@ -8,7 +8,10 @@ import toytree
 import toyplot
 
 import numpy as np
-import re, os, copy, glob
+import re
+import os
+import copy
+import glob
 
 def _protect_name(name):
     """
@@ -395,6 +398,7 @@ def ete3_to_toytree(T):
     return tT
 
 def load_trees(directory=None,
+               tree_class=None,
                T_clean=None,
                T_support=None,
                T_anc_label=None,
@@ -415,22 +419,27 @@ def load_trees(directory=None,
     Parameters
     ----------
     directory : str
-        "output" directory from a topiary calculation that has .newick files
+        output directory from a topiary calculation that has .newick files
         in it. Function will load all trees in that directory.
+    tree_class : str, optional
+        what type of trees to plot from the directory. should be "reconciled"
+        or "gene". If None, looks for reconciled trees. If it finds any, these
+        tree_class = "reconciled"
     T_clean : ete3.Tree, optional
         clean tree (leaf labels and branch lengths, nothing else). Stored as
-        tree.newick in output directories.
+        {}-tree.newick in output directories.
     T_support : ete3.Tree, optional
         support tree (leaf labels, branch lengths, supports). Stored as
-        tree_supports.newick in output directories.
+        {}-tree_supports.newick in output directories.
     T_anc_label : ete3.Tree, optional
         ancestor label tree (leaf labels, branch lengths, internal names)
+        Stored as {}-tree_anc-label.newick.
     T_anc_pp : ete3.Tree, optional
         ancestor posterior probability tree (leaf labels, branch lengths,
-        posterior probabilities as supports)
+        posterior probabilities as supports) Stored as {}-tree_anc-pp.newick.
     T_event : ete3.Tree, optional
         tree with reconciliation events as internal labels (leaf labels,
-        branch lengths, event labels)
+        branch lengths, event labels). Stored as reconciled-tree_events.newick
 
     Returns
     -------
@@ -439,39 +448,49 @@ def load_trees(directory=None,
         are passed in.
     """
 
+    prefix = tree_class
+
     # Load trees from the directory
     if directory is not None:
 
         tree_files = glob.glob(os.path.join(directory,"*.newick"))
         to_path = dict([(os.path.split(t)[-1],t) for t in tree_files])
 
+        if prefix is None:
+
+            num_rec = len([t for t in tree_files if t.startswith("reconciled")])
+            if num_rec > 0:
+                prefix = "reconciled"
+            else:
+                prefix = "gene"
+
         if T_clean is None:
             try:
-                T_clean = ete3.Tree(to_path["tree.newick"],format=0)
+                T_clean = ete3.Tree(to_path[f"{prefix}-tree.newick"],format=0)
             except KeyError:
                 pass
 
         if T_support is None:
             try:
-                T_support = ete3.Tree(to_path["tree_supports.newick"],format=0)
+                T_support = ete3.Tree(to_path[f"{prefix}-tree_supports.newick"],format=0)
             except KeyError:
                 pass
 
         if T_event is None:
             try:
-                T_event = ete3.Tree(to_path["tree_events.newick"],format=1)
+                T_event = ete3.Tree(to_path[f"{prefix}-tree_events.newick"],format=1)
             except KeyError:
                 pass
 
         if T_anc_label is None:
             try:
-                T_anc_label = ete3.Tree(to_path["tree_anc-label.newick"],format=1)
+                T_anc_label = ete3.Tree(to_path[f"{prefix}-tree_anc-label.newick"],format=1)
             except KeyError:
                 pass
 
         if T_anc_pp is None:
             try:
-                T_anc_pp = ete3.Tree(to_path["tree_anc-pp.newick"],format=0)
+                T_anc_pp = ete3.Tree(to_path[f"{prefix}-tree_anc-pp.newick"],format=0)
             except KeyError:
                 pass
 
@@ -494,18 +513,18 @@ def load_trees(directory=None,
             raise ValueError(err)
 
     # If we have an event tree, root all trees on that rooted tree
-    if T_event is not None:
+    if prefix == "reconciled":
 
         # Get left and right descendants of the root node
         root_on = []
-        for n in T_event.get_tree_root().iter_descendants():
+        for n in T_clean.get_tree_root().iter_descendants():
             leaves = n.get_leaf_names()
             leaves.sort()
             root_on.append(tuple(leaves))
             if len(root_on) == 2:
                 break
 
-    # If no event tree, do midpoint rooting using first tree in list.
+    # If not a reconciled tree, do midpoint rooting using first tree in list.
     else:
         root_on = [T_list[0].get_midpoint_outgroup().get_leaf_names()]
         root_on.append(list(set(T_list[0].get_leaf_names()) - set(root_on[0])))
@@ -571,7 +590,7 @@ def load_trees(directory=None,
         root_allowed = features_to_load[T][2]
 
         # Since all have the same root and descendants, tree nodes should be
-        # identical between trees and uniquely identified by the
+        # identical between trees and uniquely identified by their descendants
         shared, T_alone, out_alone = map_tree_to_tree(T,out_tree)
         if len(T_alone) > 0 or len(out_alone) > 0:
             err = "Cannot merge trees with different topologies.\n"

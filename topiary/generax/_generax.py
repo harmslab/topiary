@@ -13,6 +13,49 @@ import numpy as np
 
 import subprocess, os, sys, time, random, string, shutil, copy
 
+def _annotate_species_tree(df,species_tree,out_dir):
+    """
+    Clean up a species tree, making sure it is a cladogram and that the
+    leaf.name attributes of the leaves are the ott. Writes to working directory.
+
+    df : pandas.DataFrame
+        topiary dataframe
+    species_tree : str or ete3.Tree or dendropy.tree, optional
+        species_tree to clean up and annotate. if None, pull down from the
+        Open Tree of Life database.
+    """
+
+    if species_tree is not None:
+        T = topiary.io.read_tree(species_tree)
+
+    else:
+        # Get species tree corresponding to uid seen
+        T, dropped = topiary.df_to_species_tree(df)
+
+        # Go across tree and set taxon names to ott, supports to 1, and branch
+        # lengths to 1.
+        for n in T.traverse():
+            if n.is_leaf():
+                n.name = copy.deepcopy(n.ott)
+            if n.dist != 1:
+                n.dist = 1
+            if n.support != 1:
+                n.support = 1
+
+    # Resolve polytomies and make sure all branch lenghts/supports have values
+    T.resolve_polytomy()
+
+    # Make sure the leaves are formatted correctly
+    for n in T.get_leaves():
+        if n.name[:3] != "ott":
+            err = "\nspecies tree tips must have ott labels with format ottINTEGER\n\n"
+            raise ValueError(err)
+
+    # Write out species tree
+    species_tree_out = os.path.join(out_dir,"species_tree.newick")
+    T.write(outfile=species_tree_out,format=5)
+
+
 def _get_link_dict(df,gene_tree):
     """
     Get a dictionary linking ott (key) to a list of uid values that have that
@@ -64,7 +107,7 @@ def setup_generax(df,
                   model,
                   out_dir,
                   keep_mask=None,
-                  species_tree_file=None,
+                  species_tree=None,
                   mapping_link_file=None,
                   control_file=None):
     """
@@ -84,7 +127,7 @@ def setup_generax(df,
     keep_mask : numpy.ndarray, optional
         bool array indicating which rows of the dataframe to keep. Note: if
         mapping_link_file is None, this mask will be ignored and recalculated.
-    species_tree_file : str, optional
+    species_tree : str, optional
         species tree as newick file. assumes this is correctly formatted for
         a generax calculation and is copied in. if not specified, download
         species tree from opentree and annotate with ott etc
@@ -152,30 +195,7 @@ def setup_generax(df,
     # -------------------------------------------------------------------------
     # Species tree
 
-    species_tree_out = os.path.join(out_dir,"species_tree.newick")
-    if species_tree_file is not None:
-        shutil.copy(species_tree_file,species_tree_out)
-
-    else:
-
-        # Get species tree corresponding to uid seen
-        species_tree, dropped = topiary.df_to_species_tree(df)
-
-        # Resolve polytomies and make sure all branch lenghts/supports have values
-        species_tree.resolve_polytomy()
-
-        # Go across tree and set taxon names to ott, supports to 1, and branch
-        # lengths to 1.
-        for n in species_tree.traverse():
-            if n.is_leaf():
-                n.name = copy.deepcopy(n.ott)
-            if n.dist != 1:
-                n.dist = 1
-            if n.support != 1:
-                n.support = 1
-
-        # Write out species tree
-        species_tree.write(outfile=species_tree_out,format=5)
+    species_tree = _annotate_species_tree(df,species_tree,out_dir)
 
     # -------------------------------------------------------------------------
     # Write out generax input

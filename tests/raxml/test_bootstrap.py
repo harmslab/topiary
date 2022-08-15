@@ -16,7 +16,7 @@ def test_generate_bootstraps(simple_phylo,tmpdir):
     kwargs = {"previous_dir":None,
               "df":simple_phylo["dataframe.csv"],
               "model":"JTT",
-              "tree_file":simple_phylo["tree_ml.newick"],
+              "gene_tree":simple_phylo["tree_ml.newick"],
               "calc_dir":"bootstraps",
               "overwrite":False,
               "num_bootstraps":10,
@@ -27,7 +27,7 @@ def test_generate_bootstraps(simple_phylo,tmpdir):
     generate_bootstraps(**kwargs)
 
     expected_files = ["summary-tree.pdf",
-                      "tree_supports.newick",
+                      "gene-tree_supports.newick",
                       "dataframe.csv"]
     for e in expected_files:
         assert os.path.isfile(os.path.join("bootstraps","output",e))

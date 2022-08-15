@@ -30,14 +30,14 @@ def test__create_bootstrap_dirs(generax_data,tmpdir):
     input_dir = os.path.abspath(os.path.join(generax_data["toy-input"],"toy-bootstrap","output"))
     df = topiary.read_dataframe(os.path.join(input_dir,"dataframe.csv"))
     model = "JTT"
-    tree_file = os.path.join(input_dir,"tree.newick")
-    species_tree_file = os.path.join(input_dir,"species_tree.newick")
+    gene_tree = os.path.join(input_dir,"tree.newick")
+    species_tree = os.path.join(input_dir,"species_tree.newick")
     bootstrap_directory = os.path.join(input_dir,"bootstrap_replicates")
 
     kwargs_template = {"df":df,
                        "model":model,
-                       "tree_file":tree_file,
-                       "species_tree_file":species_tree_file,
+                       "gene_tree":gene_tree,
+                       "species_tree":"species_tree",
                        "allow_horizontal_transfer":True,
                        "bootstrap_directory":bootstrap_directory,
                        "overwrite":False,
@@ -146,11 +146,11 @@ def test__combine_bootstrap_calculations(generax_data,tmpdir):
 
     input_dir = os.path.abspath(os.path.join(generax_data["toy-input"],"toy-bootstrap"))
     replicate_dir = os.path.join(input_dir,"generax-bs-replicates_post-run")
-    tree_file = os.path.join(input_dir,"output","tree.newick")
+    gene_tree = os.path.join(input_dir,"output","tree.newick")
 
     shutil.copytree(replicate_dir,"replicates")
 
-    converged = _combine_bootstrap_calculations("replicates",tree_file)
+    converged = _combine_bootstrap_calculations("replicates",gene_tree)
 
     # Make sure we made a bs-trees.newick file with 4 different lines
     f = open("bs-trees.newick")
@@ -182,14 +182,16 @@ def test_reconcile_bootstrap(generax_data,tmpdir):
     input_dir = os.path.abspath(os.path.join(generax_data["toy-input"],"toy-bootstrap","output"))
     df = topiary.read_dataframe(os.path.join(input_dir,"dataframe.csv"))
     model = "JTT"
-    tree_file = os.path.join(input_dir,"tree.newick")
-    species_tree_file = os.path.join(input_dir,"species_tree.newick")
+    gene_tree = os.path.join(input_dir,"tree.newick")
+    species_tree = os.path.join(input_dir,"species_tree.newick")
+    reconciled_tree = os.path.join(generax_data["toy-input"],"toy-ml","expected-output","gene_tree.newick")
     bootstrap_directory = os.path.join(input_dir,"bootstrap_replicates")
 
     kwargs_template = {"df":df,
                        "model":model,
-                       "tree_file":tree_file,
-                       "species_tree_file":species_tree_file,
+                       "gene_tree":gene_tree,
+                       "species_tree":species_tree,
+                       "reconciled_tree":reconciled_tree,
                        "allow_horizontal_transfer":True,
                        "bootstrap_directory":bootstrap_directory,
                        "overwrite":False,
@@ -201,7 +203,7 @@ def test_reconcile_bootstrap(generax_data,tmpdir):
     supervisor.create_calc_dir("test0",
                                calc_type="test0",
                                df=df,
-                               tree=tree_file,
+                               gene_tree=gene_tree,
                                model=model)
 
     kwargs = copy.deepcopy(kwargs_template)
@@ -213,11 +215,11 @@ def test_reconcile_bootstrap(generax_data,tmpdir):
     expected_files = ["dataframe.csv",
                       "reconciliations.txt",
                       "summary-tree.pdf",
-                      "tree_supports.newick"]
+                      "reconciled-tree_supports.newick"]
     for f in expected_files:
         assert os.path.isfile(os.path.join(output_dir,f))
 
-    new_T = ete3.Tree(os.path.join(output_dir,"tree_supports.newick"),format=0)
+    new_T = ete3.Tree(os.path.join(output_dir,"reconciled-tree_supports.newick"),format=0)
     old_T = ete3.Tree(os.path.join(input_dir,"tree.newick"))
 
     # Topology should *not* have changed

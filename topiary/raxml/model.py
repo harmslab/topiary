@@ -123,7 +123,7 @@ def _model_thread_function(kwargs):
 
 
 def find_best_model(df,
-                    tree_file=None,
+                    gene_tree=None,
                     model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                     "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                     "mtART","mtMAM","mtREV","mtZOA","PMB",
@@ -132,7 +132,7 @@ def find_best_model(df,
                     model_freqs=["","FC","FO"],
                     model_invariant=["","IC","IO"],
                     seed=None,
-                    calc_dir=None,
+                    calc_dir="find_best_model",
                     overwrite=False,
                     supervisor=None,
                     num_threads=-1,
@@ -145,20 +145,20 @@ def find_best_model(df,
     ----------
     df : pandas.DataFrame or str
         topiary data frame or csv written out from topiary df.
-    tree_file : str
-        tree_file in newick format. If not specified, parsimony tree is
+    gene_tree : str
+        gene_tree in newick format. If not specified, parsimony tree is
         generated and used
     model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
         list of model matrices to check
     model_rates : list, default=["","G8"]
-        ways to treat model rates
+        ways to treat model rates. If None, do not include a model rate param.
     model_freqs : list, default=["","FC","FO"]
-        ways to treat model freqs.
+        ways to treat model freqs. If None, use the matrix frequencies.
     model_invariant : list, default=["","IC","IO"]
-        ways to treat invariant alignment columns
-    calc_dir : str, optional
-        calculation directory. If not specified, create an calculation directory
-        with form find_best_model_{randomletters}
+        ways to treat invariant alignment columns. If None, do not have an
+        invariant class.
+    calc_dir : str, default="find_best_model"
+        calculation directory.
     overwrite : bool, default=False
         whether or not to overwrite existing output
     supervisor : Supervisor, optional
@@ -182,10 +182,9 @@ def find_best_model(df,
                                calc_type="find_best_model",
                                overwrite=overwrite,
                                df=df,
-                               tree=tree_file)
+                               gene_tree=gene_tree)
 
     supervisor.check_required(required_files=["alignment.phy","dataframe.csv"])
-
 
     os.chdir(supervisor.working_dir)
 
@@ -195,6 +194,9 @@ def find_best_model(df,
                                       required_value_type=str)
 
     # Deal with model rates
+    if model_rates is None:
+        model_rates = [""]
+
     model_rates = check.check_iter(model_rates,
                                    "model_rates",
                                    required_value_type=str)
@@ -203,6 +205,9 @@ def find_best_model(df,
         model_rates.insert(0,"")
 
     # Deal with model freqs
+    if model_freqs is None:
+        model_freqs = [""]
+
     model_freqs = check.check_iter(model_freqs,
                                    "model_freqs",
                                    required_value_type=str)
@@ -211,6 +216,9 @@ def find_best_model(df,
         model_freqs.insert(0,"")
 
     # Deal with model invariant
+    if model_invariant is None:
+        model_invariant = [""]
+
     model_invariant = check.check_iter(model_invariant,
                                        "model_invariant",
                                        required_value_type=str)
@@ -221,8 +229,8 @@ def find_best_model(df,
     num_threads = threads.get_num_threads(num_threads)
 
     # If we already have a tree, use it
-    if supervisor.tree is not None:
-        tree_file = supervisor.tree
+    if supervisor.gene_tree is not None:
+        gene_tree = supervisor.gene_tree
 
     # Generate a parsimony tree if not was specified
     else:
@@ -235,7 +243,7 @@ def find_best_model(df,
                                  supervisor=supervisor,
                                  num_threads=num_threads,
                                  raxml_binary=raxml_binary)
-        tree_file = os.path.join("max-parsimony",
+        gene_tree = os.path.join("max-parsimony",
                                  "alignment.phy.raxml.startTree")
 
     print("Constructing set of possible models.")
@@ -269,7 +277,7 @@ def find_best_model(df,
                     kwargs = {"run_directory":run_directory,
                               "algorithm":"--evaluate",
                               "alignment_file":supervisor.alignment,
-                              "tree_file":tree_file,
+                              "tree_file":gene_tree,
                               "model":model,
                               "seed":supervisor.seed,
                               "num_threads":1,

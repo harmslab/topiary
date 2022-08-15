@@ -17,8 +17,8 @@ import os, glob, shutil
 
 def reconcile_no_bootstrap(df,
                            model,
-                           tree_file,
-                           species_tree_file,
+                           gene_tree,
+                           species_tree,
                            allow_horizontal_transfer,
                            overwrite,
                            supervisor,
@@ -35,10 +35,9 @@ def reconcile_no_bootstrap(df,
     model : str, optional
         model (i.e. "LG+G8"). Will override model from `previous_dir`
         if specified.
-    tree_file : str, optional
-        tree_file in newick format. Will override tree from `previous_dir` if
-        specified.
-    species_tree_file : str, optional
+    gene_tree : str, optional
+        gene_tree in newick format.
+    species_tree : str, optional
         species tree in newick format.
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
@@ -51,6 +50,7 @@ def reconcile_no_bootstrap(df,
         number of threads to use. if -1 use all available.
     generax_binary : str
         what generax binary to use
+
     Returns
     -------
     plot : toyplot.canvas or None
@@ -64,10 +64,10 @@ def reconcile_no_bootstrap(df,
 
     # Set up generax directory
     setup_generax(df=df,
-                  gene_tree=tree_file,
+                  gene_tree=gene_tree,
                   model=model,
                   out_dir="generax",
-                  species_tree_file=species_tree_file)
+                  species_tree=species_tree)
 
     # Actually run generax
     cmd = run_generax(run_directory="generax",
@@ -78,6 +78,8 @@ def reconcile_no_bootstrap(df,
 
     # Get newick files from previous output directory and put in new output
     supervisor.copy_output_to_output("*.newick")
+    supervisor.stash(supervisor.gene_tree)
+    supervisor.stash(os.path.join(supervisor.working_dir,"generax","species_tree.newick"),"species-tree.newick")
     supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy in tree.newick
@@ -87,7 +89,7 @@ def reconcile_no_bootstrap(df,
                                   "results",
                                   "reconcile",
                                   "geneTree.newick"),
-                     "tree.newick")
+                     "reconciled-tree.newick")
 
     # Copy reconcilation information
     reconcile_dir = os.path.join(supervisor.working_dir,
@@ -95,7 +97,7 @@ def reconcile_no_bootstrap(df,
                                  "result",
                                  "reconciliations")
     supervisor.stash(os.path.join(reconcile_dir,"reconcile_events.newick"),
-                     "tree_events.newick")
+                     "reconciled-tree_events.newick")
     supervisor.stash(reconcile_dir,"reconcilations")
 
     os.chdir(supervisor.starting_dir)

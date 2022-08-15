@@ -17,7 +17,7 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
     kwargs = {"previous_dir":None,
               "df":simple_phylo["dataframe.csv"],
               "model":"JTT",
-              "calc_dir":"ml_tree_0",
+              "calc_dir":"test0",
               "overwrite":False,
               "bootstrap":False,
               "supervisor":None,
@@ -28,11 +28,11 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
 
     expected_files = ["dataframe.csv",
                       "summary-tree.pdf",
-                      "tree.newick"]
+                      "gene-tree.newick"]
     for e in expected_files:
-        assert os.path.isfile(os.path.join("ml_tree_0","output",e))
+        assert os.path.isfile(os.path.join("test0","output",e))
 
-    json_file = os.path.join("ml_tree_0","run_parameters.json")
+    json_file = os.path.join("test0","run_parameters.json")
     assert os.path.isfile(json_file)
     f = open(json_file,"r")
     param = json.load(f)
@@ -46,7 +46,7 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
     kwargs = {"previous_dir":None,
               "df":simple_phylo["dataframe.csv"],
               "model":"LG",
-              "calc_dir":"ml_tree",
+              "calc_dir":"test1",
               "overwrite":False,
               "bootstrap":False,
               "supervisor":supervisor,
@@ -56,18 +56,54 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
     generate_ml_tree(**kwargs)
 
     assert supervisor.starting_dir == os.path.abspath(os.getcwd())
-    assert supervisor.calc_dir == os.path.abspath("ml_tree")
-    expected_files = ["dataframe.csv","summary-tree.pdf","tree.newick"]
+    assert supervisor.calc_dir == os.path.abspath("test1")
+    expected_files = ["dataframe.csv","summary-tree.pdf","gene-tree.newick"]
     for e in expected_files:
-        assert os.path.isfile(os.path.join("ml_tree","output",e))
+        assert os.path.isfile(os.path.join("test1","output",e))
 
-    json_file = os.path.join("ml_tree","run_parameters.json")
+    json_file = os.path.join("test1","run_parameters.json")
     assert os.path.isfile(json_file)
     f = open(json_file,"r")
     param = json.load(f)
     f.close()
 
     assert param["calc_type"] == "ml_tree"
+    assert param["model"] == "LG"
+
+
+    supervisor = Supervisor()
+
+    kwargs = {"previous_dir":None,
+              "df":simple_phylo["dataframe.csv"],
+              "model":"LG",
+              "calc_dir":"test2",
+              "overwrite":False,
+              "bootstrap":True,
+              "supervisor":supervisor,
+              "num_threads":1,
+              "raxml_binary":RAXML_BINARY}
+
+    generate_ml_tree(**kwargs)
+
+    assert supervisor.starting_dir == os.path.abspath(os.getcwd())
+    assert supervisor.calc_dir == os.path.abspath("test2")
+    expected_files = ["dataframe.csv",
+                      "summary-tree.pdf",
+                      "gene-tree.newick",
+                      "gene-tree_supports.newick"]
+    for e in expected_files:
+        assert os.path.isfile(os.path.join("test2","output",e))
+
+    assert os.path.isdir(os.path.join("test2","output","bootstrap_replicates"))
+    assert os.path.isfile(os.path.join("test2","output","bootstrap_replicates","bootstraps.newick"))
+
+    json_file = os.path.join("test2","run_parameters.json")
+    assert os.path.isfile(json_file)
+    f = open(json_file,"r")
+    param = json.load(f)
+    f.close()
+
+    assert param["calc_type"] == "ml_bootstrap"
     assert param["model"] == "LG"
 
     os.chdir(current_dir)

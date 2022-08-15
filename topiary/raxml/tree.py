@@ -14,7 +14,7 @@ import os, shutil, glob
 def generate_ml_tree(previous_dir=None,
                      df=None,
                      model=None,
-                     tree_file=None,
+                     gene_tree=None,
                      calc_dir="ml_tree",
                      overwrite=False,
                      bootstrap=False,
@@ -30,16 +30,18 @@ def generate_ml_tree(previous_dir=None,
     previous_dir : str, optional
         directory containing previous calculation. function will grab the the
         csv, model, and tree from the previous run. If this is not specified,
-        `df`, `model`, and `tree_file` arguments must be specified.
+        `df`, `model`, and `gene_tree` arguments must be specified.
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
         dataframe from `previous_dir` if specified.
     model : str, optional
         model (i.e. "LG+G8"). Will override model from `previous_dir`
         if specified.
-    tree_file : str
-        tree_file in newick format. Used as starting point for calculation.
-        Will override tree from `previous_dir` if specified.
+    gene_tree : str or ete3.Tree or dendropy.Tree
+        gene_tree. Used as starting point for calculation. Will override tree
+        from `previous_dir` if specified. Should be newick with only leaf names
+        and branch lengths. If this an ete3 or dendropy tree, it will be written
+        out with leaf names and branch lengths; all other data will be dropped
     calc_dir : str, default="ml_tree"
         calculation directory. Will be created.
     overwrite : bool, default=False
@@ -63,14 +65,16 @@ def generate_ml_tree(previous_dir=None,
     if supervisor is None:
         supervisor = Supervisor(calc_dir=previous_dir)
 
+    calc_type = "ml_tree"
+    if bootstrap:
+        calc_type = "ml_bootstrap"
+
     supervisor.create_calc_dir(calc_dir=calc_dir,
-                               calc_type="ml_tree",
+                               calc_type=calc_type,
                                overwrite=overwrite,
                                df=df,
-                               tree=tree_file)
-
-    if model is not None:
-        supervisor.update("model",str(model))
+                               gene_tree=gene_tree,
+                               model=model)
 
     supervisor.check_required(required_values=["model"],
                               required_files=["alignment.phy","dataframe.csv"])
@@ -90,7 +94,7 @@ def generate_ml_tree(previous_dir=None,
     cmd = run_raxml(run_directory="infer-ml-tree",
                     algorithm=algorithm,
                     alignment_file=supervisor.alignment,
-                    tree_file=supervisor.tree,
+                    tree_file=supervisor.gene_tree,
                     model=supervisor.model,
                     seed=supervisor.seed,
                     supervisor=supervisor,
@@ -104,13 +108,13 @@ def generate_ml_tree(previous_dir=None,
 
     # Grab the final tree and store as tree.newick
     supervisor.stash(os.path.join("infer-ml-tree","alignment.phy.raxml.bestTree"),
-                     target_name="tree.newick")
+                     target_name="gene-tree.newick")
 
     # If we ran bootstrap, get tree with supports and bootstrap information
     if bootstrap:
 
         supervisor.stash(os.path.join("infer-ml-tree","alignment.phy.raxml.support"),
-                         target_name="tree_supports.newick")
+                         target_name="gene-tree_supports.newick")
 
         bsmsa = glob.glob(os.path.join("infer-ml-tree",
                                        "alignment.phy.raxml.bootstrapMSA.*.phy"))

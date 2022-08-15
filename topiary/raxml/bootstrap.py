@@ -15,8 +15,8 @@ import glob
 def generate_bootstraps(previous_dir=None,
                         df=None,
                         model=None,
-                        tree_file=None,
-                        calc_dir="generate_bootstraps",
+                        gene_tree=None,
+                        calc_dir="ml_bootstrap",
                         overwrite=False,
                         num_bootstraps=None,
                         supervisor=None,
@@ -38,10 +38,12 @@ def generate_bootstraps(previous_dir=None,
     model : str, optional
         model (i.e. "LG+G8"). Will override model from `previous_dir`
         if specified.
-    tree_file : str
-        tree_file in newick format. Used as starting point for calculation.
-        Will override tree from `previous_dir` if specified.
-    calc_dir : str, default="generate_bootstraps"
+    gene_tree : str or ete3.Tree or dendropy.Tree
+        gene_tree. Used as starting point for calculation. Will override tree
+        from `previous_dir` if specified. Should be newick with only leaf names
+        and branch lengths. If this an ete3 or dendropy tree, it will be written
+        out with leaf names and branch lengths; all other data will be dropped
+    calc_dir : str, default="ml_bootstrap"
         directory in which to do calculation.
     overwrite : bool, default=False
         whether or not to overwrite existing calc_dir
@@ -69,13 +71,12 @@ def generate_bootstraps(previous_dir=None,
                                calc_type="ml_bootstrap",
                                overwrite=overwrite,
                                df=df,
-                               tree=tree_file)
-    if model is not None:
-        supervisor.update("model",str(model))
+                               gene_tree=gene_tree,
+                               model=model)
 
     supervisor.check_required(required_values=["model"],
                               required_files=["alignment.phy","dataframe.csv",
-                                              "tree.newick"])
+                                              "gene-tree.newick"])
 
     os.chdir(supervisor.working_dir)
 
@@ -93,7 +94,7 @@ def generate_bootstraps(previous_dir=None,
     cmd1 = run_raxml(run_directory="00_generate-replicates",
                      algorithm=algorithm,
                      alignment_file=supervisor.alignment,
-                     tree_file=supervisor.tree,
+                     tree_file=supervisor.gene_tree,
                      model=supervisor.model,
                      seed=supervisor.seed,
                      other_args=other_args,
@@ -107,7 +108,7 @@ def generate_bootstraps(previous_dir=None,
 
     cmd2 = run_raxml(run_directory="01_combine-bootstraps",
                      algorithm="--support",
-                     tree_file=supervisor.tree,
+                     tree_file=supervisor.gene_tree,
                      log_to_stdout=False,
                      suppress_output=True,
                      other_args=["--bs-trees","alignment.phy.raxml.bootstraps","--redo"],
@@ -124,7 +125,7 @@ def generate_bootstraps(previous_dir=None,
     # Grab tree with bootstraps and store as tree_supports.newick
     supervisor.stash(os.path.join("01_combine-bootstraps",
                                   "tree.newick.raxml.support"),
-                     "tree_supports.newick")
+                     "gene-tree_supports.newick")
 
     # Copy bootstrap results to the output directory
     bs_out = "bootstrap_replicates"
@@ -136,7 +137,7 @@ def generate_bootstraps(previous_dir=None,
 
     supervisor.stash(os.path.join("01_combine-bootstraps",
                                   "alignment.phy.raxml.bootstraps"),
-                     os.path.join(bs_out,"bootstraps.newick"))
+                     os.path.join(bs_out,"bs-trees.newick"))
 
     os.chdir(supervisor.starting_dir)
     return supervisor.finalize(successful=True,plot_if_success=True)

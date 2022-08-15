@@ -253,6 +253,8 @@ def launch(cmd,
 
         f = open(str(write_to_script),"w")
         f.write(full_cmd)
+        if suppress_output:
+            f.write(" &> topiary.log")
         f.write("\n")
         f.close()
 
