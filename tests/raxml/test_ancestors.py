@@ -25,15 +25,20 @@ def test__parse_raxml_anc_output():
     pass
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_generate_ancestors(simple_phylo,generax_data,tmpdir):
+def test_generate_ancestors(tiny_phylo,tmpdir):
+
+    df = tiny_phylo["initial-input/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["initial-input/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
     kwargs_template = {"previous_dir":None,
-                       "df":simple_phylo["dataframe.csv"],
+                       "df":df,
                        "model":"JTT",
-                       "gene_tree":simple_phylo["gene-tree.newick"],
+                       "gene_tree":gene_tree,
                        "alt_cutoff":0.25,
                        "calc_dir":"ancestors",
                        "overwrite":False,
@@ -72,13 +77,10 @@ def test_generate_ancestors(simple_phylo,generax_data,tmpdir):
     # --------------------------------------------------------------------------
     # Make sure reconciled tree takes precendence over gene tree
 
-    reconciled_tree = os.path.join(generax_data["toy-input"],"toy-ml",
-                                   "expected-output","reconciled-tree.newick")
-
     kwargs = copy.deepcopy(kwargs_template)
-    kwargs["gene_tree"] = simple_phylo["gene-tree.newick"]
+    kwargs["gene_tree"] = gene_tree
     kwargs["reconciled_tree"] = reconciled_tree
-    kwargs["model"] = "JTT"
+    kwargs["model"] = "LG"
     kwargs["alt_cutoff"] = 0.20
     kwargs["calc_dir"] = "test1"
 

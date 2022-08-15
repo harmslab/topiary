@@ -143,6 +143,8 @@ def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False
     while not queue.empty():
         results.append(queue.get())
 
+    print(results)
+
     # Sort results
     results.sort()
 

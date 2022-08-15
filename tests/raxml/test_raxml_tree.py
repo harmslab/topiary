@@ -9,13 +9,15 @@ import os
 import json
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_generate_ml_tree(simple_phylo,tmpdir):
+def test_generate_ml_tree(tiny_phylo,tmpdir):
+
+    df = tiny_phylo["initial-input/dataframe.csv"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
     kwargs = {"previous_dir":None,
-              "df":simple_phylo["dataframe.csv"],
+              "df":df,
               "model":"JTT",
               "calc_dir":"test0",
               "overwrite":False,
@@ -44,7 +46,7 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
     supervisor = Supervisor()
 
     kwargs = {"previous_dir":None,
-              "df":simple_phylo["dataframe.csv"],
+              "df":df,
               "model":"LG",
               "calc_dir":"test1",
               "overwrite":False,
@@ -74,7 +76,7 @@ def test_generate_ml_tree(simple_phylo,tmpdir):
     supervisor = Supervisor()
 
     kwargs = {"previous_dir":None,
-              "df":simple_phylo["dataframe.csv"],
+              "df":df,
               "model":"LG",
               "calc_dir":"test2",
               "overwrite":False,

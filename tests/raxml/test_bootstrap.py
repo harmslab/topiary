@@ -8,15 +8,18 @@ import os
 import json
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_generate_bootstraps(simple_phylo,tmpdir):
+def test_generate_bootstraps(tiny_phylo,tmpdir):
+
+    df = tiny_phylo["initial-input/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
     kwargs = {"previous_dir":None,
-              "df":simple_phylo["dataframe.csv"],
+              "df":df,
               "model":"JTT",
-              "gene_tree":simple_phylo["tree_ml.newick"],
+              "gene_tree":gene_tree,
               "calc_dir":"bootstraps",
               "overwrite":False,
               "num_bootstraps":10,

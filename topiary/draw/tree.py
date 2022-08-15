@@ -153,7 +153,7 @@ def tree(calculation,
     # anc_label, anc_pp) on internal nodes. None if those parameters were not
     # calculated in at this point in the pipeline.
     T = load_trees(directory=supervisor.output_dir,
-                   tree_class=supervisor.tree_class)
+                   prefix=supervisor.tree_prefix)
 
     # If df not specified, get from the previous run
     if df is None:

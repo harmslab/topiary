@@ -8,7 +8,7 @@ import os
 import copy
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_run_raxml(simple_phylo,tmpdir):
+def test_run_raxml(tiny_phylo,tmpdir):
 
     def _read_log_file(out_dir):
 
@@ -17,6 +17,12 @@ def test_run_raxml(simple_phylo,tmpdir):
         f.close()
 
         return out.strip()
+
+    df = tiny_phylo["final-output/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["final-output/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
+    alignment = tiny_phylo["final-output/alignment.phy"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -72,7 +78,7 @@ def test_run_raxml(simple_phylo,tmpdir):
     # Send in alignment only
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test2"
-    kwargs["alignment_file"] = simple_phylo["alignment.phy"]
+    kwargs["alignment_file"] = alignment
     run_raxml(**kwargs)
     output = _read_log_file("test2")
     assert output == "raxml-ng --msa alignment.phy --threads 1"
@@ -81,7 +87,7 @@ def test_run_raxml(simple_phylo,tmpdir):
     # Send in tree only
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test3"
-    kwargs["tree_file"] = simple_phylo["tree.newick"]
+    kwargs["tree_file"] = gene_tree
     run_raxml(**kwargs)
     output = _read_log_file("test3")
     assert output == "raxml-ng --tree tree.newick --threads 1"
@@ -90,12 +96,12 @@ def test_run_raxml(simple_phylo,tmpdir):
     # Send in other_files only
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test4"
-    kwargs["other_files"] = [simple_phylo["dataframe.csv"],simple_phylo["species_tree.newick"]]
+    kwargs["other_files"] = [df,species_tree]
     run_raxml(**kwargs)
     output = _read_log_file("test4")
     assert output == "raxml-ng --threads 1"
     assert os.path.isfile(os.path.join("test4","dataframe.csv"))
-    assert os.path.isfile(os.path.join("test4","species_tree.newick"))
+    assert os.path.isfile(os.path.join("test4","species-tree.newick"))
 
     # Send in algorithm only
     kwargs = copy.deepcopy(kwargs_template)
@@ -117,8 +123,8 @@ def test_run_raxml(simple_phylo,tmpdir):
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test7"
     kwargs["algorithm"] = "--somealgorithm"
-    kwargs["alignment_file"] = simple_phylo["alignment.phy"]
-    kwargs["tree_file"] = simple_phylo["tree.newick"]
+    kwargs["alignment_file"] = alignment
+    kwargs["tree_file"] = gene_tree
     kwargs["model"] = "PRETEND_MODEL"
     run_raxml(**kwargs)
     output = _read_log_file("test7")
@@ -280,16 +286,16 @@ def test_run_raxml(simple_phylo,tmpdir):
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test22"
     kwargs["algorithm"] = "--search"
-    kwargs["tree_file"] = simple_phylo["tree.newick"]
-    kwargs["alignment_file"] = simple_phylo["alignment.phy"]
-    kwargs["model"] = "JTT"
+    kwargs["alignment_file"] = alignment
+    kwargs["model"] = "LG"
     kwargs["write_to_script"] = None
-    kwargs["seed"] = 12345
+    kwargs["seed"] = 3688946479
 
     output = run_raxml(**kwargs)
-    assert output == "raxml-ng --search --msa alignment.phy --tree tree.newick --model JTT --seed 12345 --threads auto{1}"
+    assert output == "raxml-ng --search --msa alignment.phy --model LG --seed 3688946479 --threads auto{1}"
+    assert os.path.isfile(os.path.join("test22","alignment.phy.raxml.bestTree"))
 
-    f = open(simple_phylo["ml-raxml-jtt-output.newick"])
+    f = open(gene_tree)
     expected = f.read().strip()
     f.close()
 

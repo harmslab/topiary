@@ -41,7 +41,7 @@ def _check_calc_completeness(output_directory):
         while num_complete < num_directories:
             num_complete = len(glob.glob(os.path.join(output_directory,"0*","complete*")))
             pbar.n = num_complete
-            pbar.refresh() 
+            pbar.refresh()
             time.sleep(1)
 
 
@@ -216,8 +216,13 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
     # crashed)
     run_id = "".join([random.choice(string.ascii_letters) for _ in range(10)])
 
-    # Run the worker script with mpirun
-    cmd = ["mpirun","-np",f"{num_threads}","python",script_to_run]
+    # Run the worker script with mpirun if more than one thread is requested
+    if num_threads > 1:
+        cmd = ["mpirun","-np",f"{num_threads}"]
+    else:
+        cmd = []
+
+    cmd.extend(["python",script_to_run])
     cmd.append(replicate_dir)
     cmd.append(run_id)
 
@@ -415,18 +420,16 @@ def reconcile_bootstrap(df,
     supervisor.event("Combining bootstrap calculations.")
     converged = _combine_bootstrap_calculations(replicate_dir,reconciled_tree)
 
+    # Grab species tree before compressing replicates
+    supervisor.stash(os.path.join(replicate_dir,"00001","species_tree.newick"),
+                     "species-tree.newick")
+
     # Compress big, complicated replicates directory and delete
     print("\nCompressing replicates.\n",flush=True)
     f = tarfile.open("replicates.tar.gz","w:gz")
     f.add("replicates")
     f.close()
     shutil.rmtree("replicates")
-
-    # Get newick files from previous output directory and put in new output
-    supervisor.copy_output_to_output("*.newick")
-    supervisor.stash(supervisor.gene_tree)
-    supervisor.stash(os.path.join(supervisor.input_dir,"species-tree.newick"))
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy in tree with supports
     supervisor.stash(os.path.join(supervisor.working_dir,"reconciled-tree_supports.newick"))

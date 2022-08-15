@@ -13,24 +13,17 @@ import shutil
 import glob
 import pathlib
 import ete3
+import time
 
-def test_Supervisor(test_dataframes,tmpdir,generax_data):
+def test_Supervisor(tiny_phylo,tmpdir):
+
+    df_csv = tiny_phylo["initial-input/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["initial-input/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
-
-    df_csv = test_dataframes["good-df_real-alignment"]
-    gene_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                             "output","tree.newick")
-
-    # Not really a species tree, but fine for copying newick in and out
-    species_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                                "output","tree.newick")
-
-    # Not really a reconciled tree, but fine for copying newick in and out
-    reconciled_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                                "output","tree.newick")
-
 
     sv = Supervisor()
 
@@ -150,31 +143,24 @@ def test_Supervisor__increment(tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_create_calc_dir(test_dataframes,tmpdir,generax_data):
+def test_Supervisor_create_calc_dir(tiny_phylo,tmpdir):
+
+    df_csv = tiny_phylo["initial-input/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["initial-input/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
-    df_csv = test_dataframes["good-df_real-alignment"]
-    gene_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                             "output","tree.newick")
-
-    # Not really a species tree, but fine for copying newick in and out
-    species_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                                "output","tree.newick")
-
-    # Not really a reconciled tree, but fine for copying newick in and out
-    reconciled_tree = os.path.join(generax_data["prev-ml-run"],"01_ml-tree",
-                                "output","tree.newick")
-
     sv = Supervisor()
     assert sv.status == "empty"
 
-    sv.create_calc_dir("test0x","test_no_prev")
+    sv.create_calc_dir("test0","test_no_prev")
     assert os.path.isdir(sv.input_dir)
     assert os.path.isdir(sv.working_dir)
     assert os.path.isdir(sv.output_dir)
-    assert os.path.isfile(os.path.join("test0x","run_parameters.json"))
+    assert os.path.isfile(os.path.join("test0","run_parameters.json"))
     assert sv.gene_tree is None
     assert sv.species_tree is None
     assert sv.reconciled_tree is None
@@ -182,7 +168,8 @@ def test_Supervisor_create_calc_dir(test_dataframes,tmpdir,generax_data):
     assert sv.starting_dir == tmpdir
     assert sv.run_parameters["calc_type"] == "test_no_prev"
     assert sv.status == "running"
-    assert sv.run_parameters["creation_time"] <= time.time()
+    time.sleep(0.01)
+    assert sv.run_parameters["creation_time"] < time.time()
 
     json_file = os.path.join(sv.calc_dir,"run_parameters.json")
     f = open(json_file)
@@ -196,44 +183,48 @@ def test_Supervisor_create_calc_dir(test_dataframes,tmpdir,generax_data):
     # should not work because dir already exists
     sv = Supervisor()
     with pytest.raises(FileExistsError):
-        sv.create_calc_dir("test0x","test_no_prev_2",df=df_csv)
+        sv.create_calc_dir("test0","overwrite_prev",df=df_csv)
 
     # overwrite
     sv = Supervisor()
-    sv.create_calc_dir("test0x","test_no_prev_2",overwrite=True,df=df_csv)
-    assert sv.run_parameters["calc_type"] == "test_no_prev_2"
+    sv.create_calc_dir("test0","overwrite_prev",overwrite=True,df=df_csv)
+    assert sv.run_parameters["calc_type"] == "overwrite_prev"
 
     # Declare it had an error, then try to make new. should throw error we can
     # overcome via force
     sv.finalize(successful=False)
     with pytest.raises(ValueError):
-        sv.create_calc_dir("test1x","test_no_prev_3")
-    sv.create_calc_dir("test1x","test_no_prev_3",force=True)
+        sv.create_calc_dir("test1","force_create")
+    sv.create_calc_dir("test1","force_create",force=True)
 
     # Create a dataset to copy in
     sv = Supervisor()
-    sv.create_calc_dir("test2x","something",df=df_csv,gene_tree=gene_tree)
-    shutil.copy(os.path.join(sv.input_dir,"dataframe.csv"),
-                os.path.join(sv.output_dir,"dataframe.csv"))
-    shutil.copy(os.path.join(sv.input_dir,"gene-tree.newick"),
-                os.path.join(sv.output_dir,"gene-tree.newick"))
+    sv.create_calc_dir("test2","first_calc",
+                       df=df_csv,
+                       gene_tree=gene_tree)
+    pathlib.Path(os.path.join(sv.working_dir,"working_file.txt")).touch()
+    pathlib.Path(os.path.join(sv.output_dir,"output_file.txt")).touch()
     sv.finalize()
 
-    # make sure dataframe and tree are properly copied in; other files
-    sv.create_calc_dir("test3x","something_else")
+    # make sure dataframe and tree are properly copied in; other files are not
+    sv.create_calc_dir("test3","second_calc")
     assert os.path.isfile(os.path.join(sv.input_dir,"dataframe.csv"))
     assert os.path.isfile(os.path.join(sv.input_dir,"gene-tree.newick"))
+    assert not os.path.isfile(os.path.join(sv.input_dir,"working_file.txt"))
+    assert not os.path.isfile(os.path.join(sv.input_dir,"output_file.txt"))
+
     sv.finalize()
 
-    # Make sure we can load in a model
+    # Make sure we can load in a model at call
     assert sv.model is None
-    sv.create_calc_dir("test4","something_else_again",model="october")
+    sv.create_calc_dir("test4","load_model",model="october")
     assert sv.model == "october"
     sv.finalize()
 
-    # Make sure we can load gene, species, and reconciled trees
+    # Make sure we can load gene, species, and reconciled tree. Make sure the
+    # new model takes precedence over the old model
     sv.create_calc_dir("test5",
-                       calc_type="load it all",
+                       calc_type="load_all",
                        df=df_csv,
                        gene_tree=gene_tree,
                        species_tree=species_tree,
@@ -247,8 +238,9 @@ def test_Supervisor_create_calc_dir(test_dataframes,tmpdir,generax_data):
     assert sv.model == "november"
     sv.finalize()
 
+    # Make sure we can pass in a gene tree as an ete3.Tree object
     new_tree = ete3.Tree("((A,B),(C,D));")
-    sv.create_calc_dir("test6",calc_type="yo",gene_tree=new_tree)
+    sv.create_calc_dir("test6",calc_type="load_ete3",gene_tree=new_tree)
     assert os.path.isfile(os.path.join(sv.input_dir,"gene-tree.newick"))
     assert sv.gene_tree == os.path.join(sv.input_dir,"gene-tree.newick")
 
@@ -288,7 +280,7 @@ def test_Supervisor_copy_output_to_output(tmpdir):
 
     for x in ["a","b","c"]:
 
-        f = open(os.path.join(sv.output_dir,f"{x}.newick"),"w")
+        f = open(os.path.join(sv.output_dir,f"{x}.csv"),"w")
         f.write("")
         f.close()
 
@@ -299,13 +291,13 @@ def test_Supervisor_copy_output_to_output(tmpdir):
     sv.finalize()
 
     sv.create_calc_dir("test2","test")
-    sv.copy_output_to_output("*.newick")
+    sv.copy_output_to_output("*.csv")
 
-    old_newick = set([os.path.basename(n) for n in glob.glob(os.path.join("test1","output","*.newick"))])
-    new_newick = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.newick"))])
-    assert old_newick == new_newick
-    assert len(old_newick) == 3
-    assert len(new_newick) == 3
+    old_csv = set([os.path.basename(n) for n in glob.glob(os.path.join("test1","output","*.csv"))])
+    new_csv = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.csv"))])
+    assert old_csv == new_csv
+    assert len(old_csv) == 3
+    assert len(new_csv) == 3
 
     old_txt = set([os.path.basename(n) for n in glob.glob(os.path.join("test1","output","*.txt"))])
     new_txt = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.txt"))])
@@ -320,7 +312,7 @@ def test_Supervisor_copy_output_to_output(tmpdir):
 
     for x in ["a","b","c"]:
 
-        f = open(os.path.join(sv.output_dir,f"{x}.newick"),"w")
+        f = open(os.path.join(sv.output_dir,f"{x}.csv"),"w")
         f.write("")
         f.close()
 
@@ -333,11 +325,11 @@ def test_Supervisor_copy_output_to_output(tmpdir):
     sv.create_calc_dir("test4","test")
     sv.copy_output_to_output("*.txt")
 
-    old_newick = set([os.path.basename(n) for n in glob.glob(os.path.join("test3","output","*.newick"))])
-    new_newick = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.newick"))])
-    assert old_newick != new_newick
-    assert len(old_newick) == 3
-    assert len(new_newick) == 0
+    old_csv = set([os.path.basename(n) for n in glob.glob(os.path.join("test3","output","*.csv"))])
+    new_csv = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.csv"))])
+    assert old_csv != new_csv
+    assert len(old_csv) == 3
+    assert len(new_csv) == 0
 
     old_txt = set([os.path.basename(n) for n in glob.glob(os.path.join("test3","output","*.txt"))])
     new_txt = set([os.path.basename(n) for n in glob.glob(os.path.join(sv.output_dir,"*.txt"))])
@@ -567,7 +559,9 @@ def test_Supervisor_finalize(tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_alignment(simple_phylo,tmpdir):
+def test_Supervisor_alignment(tiny_phylo,tmpdir):
+
+    df_csv = tiny_phylo["initial-input/dataframe.csv"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -575,12 +569,14 @@ def test_Supervisor_alignment(simple_phylo,tmpdir):
     sv = Supervisor()
     assert sv.alignment is None
 
-    sv.create_calc_dir("test0","test0",df=simple_phylo["dataframe.csv"])
+    sv.create_calc_dir("test0","test0",df=df_csv)
     assert sv.alignment == os.path.join(sv.input_dir,"alignment.phy")
 
     os.chdir(current_dir)
 
-def test_Supervisor_df(simple_phylo,tmpdir):
+def test_Supervisor_df(tiny_phylo,tmpdir):
+
+    df_csv = tiny_phylo["initial-input/dataframe.csv"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -588,12 +584,14 @@ def test_Supervisor_df(simple_phylo,tmpdir):
     sv = Supervisor()
     assert sv.df is None
 
-    sv.create_calc_dir("test0","test0",df=simple_phylo["dataframe.csv"])
+    sv.create_calc_dir("test0","test0",df=df_csv)
     assert issubclass(type(sv.df),pd.DataFrame)
 
     os.chdir(current_dir)
 
-def test_Supervisor_gene_tree(simple_phylo,tmpdir):
+def test_Supervisor_gene_tree(tiny_phylo,tmpdir):
+
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -601,12 +599,14 @@ def test_Supervisor_gene_tree(simple_phylo,tmpdir):
     sv = Supervisor()
     assert sv.gene_tree is None
 
-    sv.create_calc_dir("test0","test0",gene_tree=simple_phylo["tree.newick"])
+    sv.create_calc_dir("test0","test0",gene_tree=gene_tree)
     assert sv.gene_tree == os.path.join(sv.input_dir,"gene-tree.newick")
 
     os.chdir(current_dir)
 
-def test_Supervisor_species_tree(simple_phylo,tmpdir):
+def test_Supervisor_species_tree(tiny_phylo,tmpdir):
+
+    species_tree = tiny_phylo["initial-input/species-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -615,12 +615,14 @@ def test_Supervisor_species_tree(simple_phylo,tmpdir):
     assert sv.species_tree is None
 
     # Just testing load, not type of tree, so okay to bring in this tree
-    sv.create_calc_dir("test0","test0",species_tree=simple_phylo["tree.newick"])
+    sv.create_calc_dir("test0","test0",species_tree=species_tree)
     assert sv.species_tree == os.path.join(sv.input_dir,"species-tree.newick")
 
     os.chdir(current_dir)
 
-def test_Supervisor_reconciled_tree(simple_phylo,tmpdir):
+def test_Supervisor_reconciled_tree(tiny_phylo,tmpdir):
+
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -629,12 +631,12 @@ def test_Supervisor_reconciled_tree(simple_phylo,tmpdir):
     assert sv.reconciled_tree is None
 
     # Just testing load, not type of tree, so okay to bring in this tree
-    sv.create_calc_dir("test0","test0",reconciled_tree=simple_phylo["tree.newick"])
+    sv.create_calc_dir("test0","test0",reconciled_tree=reconciled_tree)
     assert sv.reconciled_tree == os.path.join(sv.input_dir,"reconciled-tree.newick")
 
     os.chdir(current_dir)
 
-def test_Supervisor_calc_dir(simple_phylo,tmpdir):
+def test_Supervisor_calc_dir(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -647,7 +649,7 @@ def test_Supervisor_calc_dir(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_model(simple_phylo,tmpdir):
+def test_Supervisor_model(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -660,7 +662,7 @@ def test_Supervisor_model(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_calc_type(simple_phylo,tmpdir):
+def test_Supervisor_calc_type(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -674,7 +676,7 @@ def test_Supervisor_calc_type(simple_phylo,tmpdir):
     os.chdir(current_dir)
 
 
-def test_Supervisor_previous_entries(simple_phylo,tmpdir):
+def test_Supervisor_previous_entries(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -692,7 +694,7 @@ def test_Supervisor_previous_entries(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_run_parameters(simple_phylo,tmpdir):
+def test_Supervisor_run_parameters(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -706,7 +708,7 @@ def test_Supervisor_run_parameters(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_seed(simple_phylo,tmpdir):
+def test_Supervisor_seed(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -722,7 +724,7 @@ def test_Supervisor_seed(simple_phylo,tmpdir):
     os.chdir(current_dir)
 
 
-def test_Supervisor_status(simple_phylo,tmpdir):
+def test_Supervisor_status(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -735,7 +737,7 @@ def test_Supervisor_status(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_update(simple_phylo,tmpdir):
+def test_Supervisor_update(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -771,7 +773,7 @@ def test_Supervisor_update(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_input_dir(simple_phylo,tmpdir):
+def test_Supervisor_input_dir(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -785,7 +787,7 @@ def test_Supervisor_input_dir(simple_phylo,tmpdir):
     os.chdir(current_dir)
 
 
-def test_Supervisor_output_dir(simple_phylo,tmpdir):
+def test_Supervisor_output_dir(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -798,7 +800,7 @@ def test_Supervisor_output_dir(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_starting_dir(simple_phylo,tmpdir):
+def test_Supervisor_starting_dir(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -811,7 +813,7 @@ def test_Supervisor_starting_dir(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_working_dir(simple_phylo,tmpdir):
+def test_Supervisor_working_dir(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -824,24 +826,24 @@ def test_Supervisor_working_dir(simple_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-def test_Supervisor_tree_class(simple_phylo,tmpdir):
+def test_Supervisor_tree_prefix(tmpdir):
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
     sv = Supervisor()
-    assert sv.tree_class is None
+    assert sv.tree_prefix is None
 
     sv.create_calc_dir("test0","ml_tree")
-    assert sv.tree_class == "gene"
+    assert sv.tree_prefix == "gene"
     sv.finalize()
 
     sv.create_calc_dir("test2","reconcile_tree")
-    assert sv.tree_class == "reconciled"
+    assert sv.tree_prefix == "reconciled"
     sv.finalize()
 
     sv.create_calc_dir("test3","something")
-    assert sv.tree_class is None
+    assert sv.tree_prefix is None
     sv.finalize()
 
     os.chdir(current_dir)

@@ -290,7 +290,8 @@ class Supervisor:
 
         if df is not None:
             df = topiary.read_dataframe(df)
-            topiary.write_dataframe(df,os.path.join(input_dir,"dataframe.csv"))
+            topiary.write_dataframe(df,os.path.join(input_dir,"dataframe.csv"),
+                                    overwrite=True)
             self._df = df
 
         tree_names = ["gene-tree","species-tree","reconciled-tree"]
@@ -327,6 +328,25 @@ class Supervisor:
         self._run_parameters["calc_status"] = "running"
         self._run_parameters["creation_time"] = time.time()
         self.write_json()
+
+        # ---------------------------------------------------------------------
+        # Copy input files we are going to want in output
+
+        # First, get newick files from previous output directory and put in new
+        # output. These might get wiped out by new files, but we want to make
+        # sure everything comes in appropriately.
+        self.copy_output_to_output("*.newick")
+
+        # Next get newick files from the input directory.
+        for n in glob.glob(os.path.join(self.input_dir,"*.newick")):
+            self.stash(n)
+
+        # Finaly get input/dataframe.csv if one was passed in
+        try:
+            self.stash(os.path.join(self.input_dir,"dataframe.csv"))
+        except FileNotFoundError:
+            pass
+
 
         # ---------------------------------------------------------------------
         # Print status
@@ -795,7 +815,7 @@ class Supervisor:
         return self._run_parameters
 
     @property
-    def tree_class(self):
+    def tree_prefix(self):
         """
         Class of tree from this output. Will be "reconciled", "gene",
         or None.

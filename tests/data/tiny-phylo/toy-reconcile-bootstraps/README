@@ -1,0 +1,3 @@
+Four bootstrap replicates lifted directly out of a reconcile_bootstrap 
+calculation. This is the exact contents of working/ after replicate
+reconciliation has been run but before combining values

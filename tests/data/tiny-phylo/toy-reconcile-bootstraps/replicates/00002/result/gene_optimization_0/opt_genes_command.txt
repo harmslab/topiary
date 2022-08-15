@@ -1,0 +1,1 @@
+reconcile 1 8 optimizeGeneTrees gene_tree.newick mapping.link alignment.phy result/species_trees/inferred_species_tree.newick LG result/gene_optimization_0/dtl_rates.txt 1 0 0 1 0 0.000001 NONE 0 -1 1 1 1 1 result/results/reconcile/geneTree.newick result/results/reconcile/stats.txt 0

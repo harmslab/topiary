@@ -398,7 +398,7 @@ def ete3_to_toytree(T):
     return tT
 
 def load_trees(directory=None,
-               tree_class=None,
+               prefix=None,
                T_clean=None,
                T_support=None,
                T_anc_label=None,
@@ -421,10 +421,10 @@ def load_trees(directory=None,
     directory : str
         output directory from a topiary calculation that has .newick files
         in it. Function will load all trees in that directory.
-    tree_class : str, optional
+    prefix : str, optional
         what type of trees to plot from the directory. should be "reconciled"
         or "gene". If None, looks for reconciled trees. If it finds any, these
-        tree_class = "reconciled"
+        prefix = "reconciled"
     T_clean : ete3.Tree, optional
         clean tree (leaf labels and branch lengths, nothing else). Stored as
         {}-tree.newick in output directories.
@@ -447,8 +447,6 @@ def load_trees(directory=None,
         rooted tree with features on internal nodes. Return None if no trees
         are passed in.
     """
-
-    prefix = tree_class
 
     # Load trees from the directory
     if directory is not None:

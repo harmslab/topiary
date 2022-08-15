@@ -76,11 +76,8 @@ def reconcile_no_bootstrap(df,
                       num_threads=num_threads,
                       generax_binary=generax_binary)
 
-    # Get newick files from previous output directory and put in new output
-    supervisor.copy_output_to_output("*.newick")
-    supervisor.stash(supervisor.gene_tree)
+    # Get species tree used for this calculation
     supervisor.stash(os.path.join(supervisor.working_dir,"generax","species_tree.newick"),"species-tree.newick")
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy in tree.newick
     supervisor.stash(os.path.join(supervisor.working_dir,

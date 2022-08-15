@@ -29,16 +29,17 @@ def test__parse_raxml_info_for_aic():
 
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_find_best_model(tmpdir,test_dataframes):
+def test_find_best_model(tiny_phylo,tmpdir):
 
-
-    df = test_dataframes["good-df_real-alignment"]
+    df = tiny_phylo["initial-input/dataframe.csv"]
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
 
     model_matrices = ["LG","JTT"]
     model_rates = ["","G8"]
     model_freqs = ["","FO"]
     model_invariant = ["","IO"]
-    calc_dir = os.path.join(tmpdir,"test_out")
+    calc_dir = "test_out"
 
     find_best_model(df,
                     model_matrices=model_matrices,
@@ -57,7 +58,7 @@ def test_find_best_model(tmpdir,test_dataframes):
                     all_models.append("+".join(model))
 
     # Read output dataframe
-    out_df = pd.read_csv(os.path.join(tmpdir,"test_out","output","model-comparison.csv"))
+    out_df = pd.read_csv(os.path.join("test_out","output","model-comparison.csv"))
 
     # Make sure it is the right length, sorted correctly, and has all models
     assert len(out_df) == len(all_models)
@@ -65,7 +66,7 @@ def test_find_best_model(tmpdir,test_dataframes):
     assert len(set(all_models).intersection(set(out_df["model"]))) == len(all_models)
 
     # Make sure we can read sane json
-    f = open(os.path.join(tmpdir,"test_out","run_parameters.json"))
+    f = open(os.path.join("test_out","run_parameters.json"))
     out_json = json.load(f)
     f.close()
 
@@ -73,3 +74,5 @@ def test_find_best_model(tmpdir,test_dataframes):
     best_model = out_df["model"].iloc[0]
     assert out_json["model"] == best_model
     assert out_json["calc_status"] == "complete"
+
+    os.chdir(current_dir)

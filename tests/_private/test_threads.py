@@ -30,7 +30,7 @@ def test_get_num_threads():
         with pytest.raises(ValueError):
             threads.get_num_threads(b,manual_num_cores=10)
 
-def _function_to_thread(rocking,usa=False,lock=None):
+def _function_to_thread(value,some_option=False,lock=None):
     """
     Function for testing thread_manager.
     """
@@ -41,31 +41,30 @@ def _function_to_thread(rocking,usa=False,lock=None):
         # testing locking -- that will depend too much on specific function).
         lock.acquire()
         try:
-            rocking = 2*rocking
+            value = 2*value
         finally:
             lock.release()
 
-    if usa:
-        rocking = 3*rocking
+    if some_option:
+        value = 3*value
 
     # Sleep for a random time to knock multithreaded-order out of sync
-    time.sleep(random.choice([0,0.2,0.4,0.6,0.8]))
+    time.sleep(random.choice([0,0.01]))
 
-    return rocking
+    return value
 
 def test_thread_manager():
 
-    kwargs_list = [{"rocking":2,"usa":False},
-                   {"rocking":2,"usa":True},
-                   {"rocking":3,"usa":False},
-                   {"rocking":3,"usa":True}]
+    kwargs_list = [{"value":2,"some_option":False},
+                   {"value":2,"some_option":True},
+                   {"value":3,"some_option":False}]
 
     # Run on single thread. (This will not use pool)
     output = threads.thread_manager(kwargs_list,
                                     _function_to_thread,
                                     num_threads=1,
                                     progress_bar=False)
-    assert np.array_equal(output,[2,6,3,9])
+    assert np.array_equal(output,[2,6,3])
 
     # Run on single thread. (This will not use pool; make sure progress bar at
     # least accepted).
@@ -73,25 +72,26 @@ def test_thread_manager():
                                     _function_to_thread,
                                     num_threads=1,
                                     progress_bar=True)
-    assert np.array_equal(output,[2,6,3,9])
+    assert np.array_equal(output,[2,6,3])
 
-    # Run five times on two threads to make sure order is preserved
-    for i in range(5):
+    # Run twice on two threads to make sure order is preserved
+    for i in range(2):
         output = threads.thread_manager(kwargs_list,
                                         _function_to_thread,
                                         num_threads=2,
                                         progress_bar=True,
                                         pass_lock=False)
-        assert np.array_equal(output,[2,6,3,9])
+        assert np.array_equal(output,[2,6,3])
 
-    # Run five times to make sure order is preserved
-    for i in range(5):
+    # Run twice on two threads make sure order is preserved
+    for i in range(2):
         output = threads.thread_manager(kwargs_list,
                                         _function_to_thread,
                                         num_threads=2,
                                         progress_bar=False,
                                         pass_lock=True)
-        assert np.array_equal(output,[4,12,6,18])
+        assert np.array_equal(output,[4,12,6])
+
 
 def test__thread():
     # tested implicitly in test_thread_manager.

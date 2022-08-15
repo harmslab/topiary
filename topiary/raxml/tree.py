@@ -102,9 +102,6 @@ def generate_ml_tree(previous_dir=None,
                     raxml_binary=raxml_binary,
                     other_args=other_args)
 
-    # Get newick files from previous output directory and put in new output
-    supervisor.copy_output_to_output("*.newick")
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Grab the final tree and store as tree.newick
     supervisor.stash(os.path.join("infer-ml-tree","alignment.phy.raxml.bestTree"),

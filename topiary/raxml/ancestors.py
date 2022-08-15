@@ -498,9 +498,6 @@ def generate_ancestors(previous_dir=None,
                             run_directory=analysis_dir,
                             alt_cutoff=supervisor.run_parameters["alt_cutoff"])
 
-    # Get newick files from previous output directory and put in new output
-    supervisor.copy_output_to_output("*.newick")
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
 
     # Copy ancestors with labels and posterior probabilities
     supervisor.stash(os.path.join("01_parse","tree_anc-label.newick"),

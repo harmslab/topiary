@@ -118,10 +118,6 @@ def generate_bootstraps(previous_dir=None,
                      raxml_binary=raxml_binary)
 
 
-    # Get newick files from previous output directory and put in new output
-    supervisor.copy_output_to_output("*.newick")
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
-
     # Grab tree with bootstraps and store as tree_supports.newick
     supervisor.stash(os.path.join("01_combine-bootstraps",
                                   "tree.newick.raxml.support"),

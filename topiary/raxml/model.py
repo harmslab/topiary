@@ -330,8 +330,6 @@ def find_best_model(df,
 
     # Record model in supervisor so it will appear in run_parameters.json
     supervisor.update("model",best_model)
-    supervisor.stash(os.path.join(supervisor.input_dir,"dataframe.csv"))
-
 
     # Close out
     os.chdir(supervisor.starting_dir)

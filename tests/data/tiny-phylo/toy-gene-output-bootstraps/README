@@ -1,0 +1,3 @@
+Four bootstrap replicates lifted out of a full bootstrap calculation. This
+is the processed replicate directory that appears in output/ and gets
+passed into a reconciliation bootstrap directory.

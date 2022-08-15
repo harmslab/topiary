@@ -15,6 +15,10 @@ import glob
 import shutil
 import copy
 
+# XX IMPROVE TEST
+# Currently relies on creaky generax_data test data. Migrate to tiny_phylo
+# test data when next editing.
+
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__check_calc_completeness():
     # Status bar runs on it's own thread. Low priority (and pain) to test.
@@ -162,7 +166,7 @@ def test__combine_bootstrap_calculations(generax_data,tmpdir):
 
     # Make sure that we loaded supports on that are different from each other
     supports = []
-    T = ete3.Tree("tree_supports.newick")
+    T = ete3.Tree("reconciled-tree_supports.newick")
     for n in T.traverse():
         if not n.is_leaf():
             supports.append(n.support)
@@ -174,18 +178,20 @@ def test__combine_bootstrap_calculations(generax_data,tmpdir):
 
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
-def test_reconcile_bootstrap(generax_data,tmpdir):
+def test_reconcile_bootstrap(tiny_phylo,tmpdir):
+
+    df_csv = tiny_phylo["initial-input/dataframe.csv"]
+    df = topiary.read_dataframe(df_csv)
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["initial-input/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
+    input_bootstrap_directory = tiny_phylo["toy-gene-output-bootstraps"]
+    f = open(tiny_phylo["model.txt"],"r")
+    model = f.read().strip()
+    f.close()
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
-
-    input_dir = os.path.abspath(os.path.join(generax_data["toy-input"],"toy-bootstrap","output"))
-    df = topiary.read_dataframe(os.path.join(input_dir,"dataframe.csv"))
-    model = "JTT"
-    gene_tree = os.path.join(input_dir,"tree.newick")
-    species_tree = os.path.join(input_dir,"species_tree.newick")
-    reconciled_tree = os.path.join(generax_data["toy-input"],"toy-ml","expected-output","gene_tree.newick")
-    bootstrap_directory = os.path.join(input_dir,"bootstrap_replicates")
 
     kwargs_template = {"df":df,
                        "model":model,
@@ -193,7 +199,7 @@ def test_reconcile_bootstrap(generax_data,tmpdir):
                        "species_tree":species_tree,
                        "reconciled_tree":reconciled_tree,
                        "allow_horizontal_transfer":True,
-                       "bootstrap_directory":bootstrap_directory,
+                       "bootstrap_directory":input_bootstrap_directory,
                        "overwrite":False,
                        "supervisor":None,
                        "num_threads":1,
@@ -220,7 +226,7 @@ def test_reconcile_bootstrap(generax_data,tmpdir):
         assert os.path.isfile(os.path.join(output_dir,f))
 
     new_T = ete3.Tree(os.path.join(output_dir,"reconciled-tree_supports.newick"),format=0)
-    old_T = ete3.Tree(os.path.join(input_dir,"tree.newick"))
+    old_T = ete3.Tree(reconciled_tree)
 
     # Topology should *not* have changed
     assert new_T.robinson_foulds(old_T,unrooted_trees=True)[0] == 0

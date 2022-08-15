@@ -1,0 +1,3 @@
+Four bootstrap replicates lifted out of a full bootstrap calculation. Has 
+everything except the log file. This sort of directory typically appears
+as working/00_generate-replicates. 

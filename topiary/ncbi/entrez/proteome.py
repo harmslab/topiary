@@ -115,7 +115,7 @@ def get_proteome_ids(taxid=None,species=None):
 
     # Look for assembly ids for this taxid. Get reference genome first, then
     # go on to not reference. Sort
-    filters = ['(latest[filter] AND "reference genome"[filter] AND all[filter] NOT anomalous[filter])',
+    filters = ['("latest refseq"[filter] AND all[filter] NOT anomalous[filter])',
                '(latest[filter] AND all[filter] NOT anomalous[filter])']
     for ref_filter in filters:
 

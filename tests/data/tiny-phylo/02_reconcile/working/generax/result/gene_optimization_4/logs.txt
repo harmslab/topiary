@@ -1,0 +1,12 @@
+The master process runs on node  and on pid 11024
+Remaining commands: 1
+## Started reconcile on [0:0] 
+All commands were launched
+End of reconcile after 41ms  (1/1)
+end of run
+Finished running commands. Total elasped time: 0s
+Load balance ratio: 1
+Saving svg output in result/gene_optimization_4/statistics.svg
+total width 2
+Time spent writting svg: 0s
+End of Multiraxml run
