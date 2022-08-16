@@ -51,17 +51,21 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
 
     # -------------------------------------------------------------------------
     # reconcile
-
-    topiary.reconcile(prev_calculation="01_gene-tree/",
+    # if num_threads > 1 can run into errors because this calculation is so
+    # small. generax crashes because it tries to read file on one thread when
+    # it hasn't yet finished writing on another thread. not really thread safe
+    # :grimace:
+    topiary.reconcile(prev_calculation="01_gene-tree",
                       calc_dir="02_reconcile",
-                      species_tree=species_tree)
+                      species_tree=species_tree,
+                      num_threads=1)
 
     _check_out_files(tiny_phylo,"02_reconcile")
 
     # -------------------------------------------------------------------------
     # infer ancestors
 
-    topiary.generate_ancestors(prev_calculation="02_reconcile/",
+    topiary.generate_ancestors(prev_calculation="02_reconcile",
                                calc_dir="03_ancestors")
 
     _check_out_files(tiny_phylo,"03_ancestors")
@@ -69,18 +73,25 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # gene tree bootstraps
 
-    topiary.generate_bootstraps(prev_calculation="03_ancestors/",
-                                calc_dir="04_bootstraps")
+    topiary.generate_bootstraps(prev_calculation="03_ancestors",
+                                calc_dir="04_bootstraps",
+                                num_threads=-1)
 
     _check_out_files(tiny_phylo,"04_bootstraps")
 
     # -------------------------------------------------------------------------
     # reconcile bootstraps
 
-    topiary.reconcile(prev_calculation="04_bootstraps/",
+    topiary.reconcile(prev_calculation=tiny_phylo["04_bootstraps_toy"],
                       calc_dir="05_reconcile-bootstraps",
                       bootstrap=True)
 
-    _check_out_files(tiny_phylo,"05_reconcile-bootstraps")
+    # Because we are using the topy bootstraps rather than real bootstrap from
+    # last step, only check for primary expected output; don't worry about
+    # other files that could be in that directory.
+    assert os.path.isfile(os.path.join("05_reconcile-bootstraps",
+                                       "output",
+                                       "reconciled-tree_supports.newick"))
+
 
     os.chdir(current_dir)

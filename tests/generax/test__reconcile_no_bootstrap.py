@@ -35,7 +35,7 @@ def test_reconcile_no_bootstrap(generax_data,tmpdir):
               "allow_horizontal_transfer":True,
               "seed":True,
               "overwrite":False,
-              "num_threads":2,
+              "num_threads":1,
               "generax_binary":GENERAX_BINARY}
 
     tT = reconcile_no_bootstrap(**kwargs)

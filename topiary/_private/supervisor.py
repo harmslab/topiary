@@ -600,6 +600,11 @@ class Supervisor:
         if self.status in ["complete","crashed","empty"]:
             return None
 
+        if self.status == "empty":
+            came_in_empty = True
+        else:
+            came_in_empty = False
+
         # Update json
         self._run_parameters["completion_time"] = time.time()
         if successful:
@@ -609,6 +614,10 @@ class Supervisor:
 
             # Return to starting directory, whatever that was
             os.chdir(self.starting_dir)
+
+        # Don't do anything else if we were empty we came in
+        if came_in_empty:
+            return None
 
         self.write_json()
 

@@ -3,7 +3,7 @@ Run raxml. Creates a working directory, copies in the relevant files, runs
 there, and then returns to the previous directory.
 """
 
-# raxml binary to use it not specified by user
+# raxml binary to use if not specified by user
 RAXML_BINARY = "raxml-ng"
 
 import topiary
@@ -76,11 +76,15 @@ def run_raxml(run_directory,
 
     if write_to_script is not None:
         if not issubclass(type(write_to_script),str):
+            if supervisor is not None:
+                supervisor.finalize(successful=False)
             err = "write_to_script should be None or a string giving script name\n"
             raise ValueError(err)
 
     # If the run_directory already exists...
     if os.path.exists(run_directory):
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
         err = f"run_directory '{run_directory}' already exists\n"
         raise FileExistsError(err)
 
@@ -100,8 +104,15 @@ def run_raxml(run_directory,
             file_name = os.path.basename(other_files[i])
             shutil.copy(other_files[i],os.path.join(run_directory,file_name))
 
-    # Build a command list
-    cmd = [raxml_binary]
+    # Build a command list. Put in full path to raxml_binary
+    abs_path_raxml_binary = shutil.which(raxml_binary)
+    if abs_path_raxml_binary is None:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        err = f"\nraxml_binary '{raxml_binary}' could not be found in the PATH\n\n"
+        raise FileNotFoundError(err)
+
+    cmd = [abs_path_raxml_binary]
 
     if algorithm is not None:
         cmd.append(algorithm)
@@ -133,6 +144,8 @@ def run_raxml(run_directory,
         try:
             seed = check.check_int(seed,minimum_allowed=0)
         except ValueError:
+            if supervisor is not None:
+                supervisor.finalize(successful=False)
             err = f"seed '{seed}' invalid. must be True/False or int > 0\n"
             raise ValueError(err)
 
@@ -141,7 +154,14 @@ def run_raxml(run_directory,
             cmd.extend(["--seed",f"{seed:d}"])
 
     # Figure out how to treat threads
-    num_threads = threads.get_num_threads(num_threads)
+    try:
+        num_threads = threads.get_num_threads(num_threads)
+    except ValueError as e:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        raise ValueError from e
+
+
     if algorithm in ["--all","--search"]:
         threads_arg = "auto{" + f"{num_threads:d}" + "}"
     else:

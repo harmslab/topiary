@@ -342,6 +342,7 @@ def test_run_generax(generax_data,tmpdir):
     prev_ml_dir = generax_data["prev-ml-run"]
     ml_only = os.path.join(prev_ml_dir,"01_ml-tree")
     ml_bs = os.path.join(prev_ml_dir,"04_bootstraps")
+    generax_binary = shutil.which(GENERAX_BINARY)
 
     for i, d in enumerate([ml_only,ml_bs]):
 
@@ -372,7 +373,7 @@ def test_run_generax(generax_data,tmpdir):
 
         # Make sure command is being constructed correctly and that it is being
         # written properly to the script
-        assert cmd == "generax --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDTL"
+        assert cmd == f"{generax_binary} --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDTL"
         f = open(os.path.join(out_dir,"run_generax.sh"))
         content = f.read()
         f.close()
@@ -385,7 +386,7 @@ def test_run_generax(generax_data,tmpdir):
                           generax_binary=GENERAX_BINARY,
                           write_to_script="run_generax.sh")
 
-        assert cmd == "generax --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDL"
+        assert cmd == f"{generax_binary} --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDL"
 
         # Validate num_threads
         cmd = run_generax(run_directory=out_dir,
@@ -394,7 +395,7 @@ def test_run_generax(generax_data,tmpdir):
                           generax_binary=GENERAX_BINARY,
                           write_to_script="run_generax.sh")
 
-        assert cmd == "mpirun -np 2 generax --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDTL"
+        assert cmd == f"mpirun -np 2 {generax_binary} --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDTL"
 
         with pytest.raises(ValueError):
             cmd = run_generax(run_directory=out_dir,
@@ -403,7 +404,7 @@ def test_run_generax(generax_data,tmpdir):
                               generax_binary=GENERAX_BINARY,
                               write_to_script="run_generax.sh")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(FileNotFoundError):
             cmd = run_generax(run_directory=out_dir,
                               allow_horizontal_transfer=True,
                               num_threads=1,

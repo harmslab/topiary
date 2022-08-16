@@ -2,7 +2,7 @@
 Wrapper for generax to perform gene/species tree reconcilation.
 """
 
-# raxml binary to use it not specified by user
+# raxml binary to use if not specified by user
 GENERAX_BINARY = "generax"
 
 import topiary
@@ -12,7 +12,14 @@ from topiary._private import check
 
 import numpy as np
 
-import subprocess, os, sys, time, random, string, shutil, copy
+import subprocess
+import os
+import sys
+import time
+import random
+import string
+import shutil
+import copy
 
 def _annotate_species_tree(df,species_tree,out_dir):
     """
@@ -278,15 +285,24 @@ def run_generax(run_directory,
             err = "write_to_script should be None or a string giving script name\n"
             raise ValueError(err)
 
+    # Make sure we have full path to generax_binary
+    abs_path_generax_binary = shutil.which(generax_binary)
+    if abs_path_generax_binary is None:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        err = f"\nrgenerax_binary '{generax_binary}' could not be found in the PATH\n\n"
+        raise FileNotFoundError(err)
+
+
     if num_threads != 1:
 
         # Make sure we have this number of threads
-        check_mpi_configuration(num_threads,GENERAX_BINARY)
+        check_mpi_configuration(num_threads,abs_path_generax_binary)
 
-        cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
+        cmd = ["mpirun","-np",f"{num_threads:d}",abs_path_generax_binary]
 
     else:
-        cmd = ["generax"]
+        cmd = [abs_path_generax_binary]
 
     cmd.extend(["--families","control.txt"])
     cmd.extend(["--species-tree","species_tree.newick"])
@@ -324,13 +340,6 @@ def run_generax(run_directory,
 
     # Grab other args
     cmd.extend(other_args)
-
-    # Make sure that generax is in the path
-    try:
-        subprocess.run([generax_binary],capture_output=True)
-    except FileNotFoundError:
-        err = f"\ngenerax binary '{generax_binary}' not found in path\n\n"
-        raise ValueError(err)
 
     if not os.path.exists(run_directory):
         err = f"\nrun_directory '{run_directory}' not found.\n\n"
