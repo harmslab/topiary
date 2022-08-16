@@ -73,25 +73,25 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # gene tree bootstraps
 
-    topiary.generate_bootstraps(prev_calculation="03_ancestors",
-                                calc_dir="04_bootstraps",
-                                num_threads=-1)
-
-    _check_out_files(tiny_phylo,"04_bootstraps")
-
-    # -------------------------------------------------------------------------
-    # reconcile bootstraps
-
-    topiary.reconcile(prev_calculation=tiny_phylo["04_bootstraps_toy"],
-                      calc_dir="05_reconcile-bootstraps",
-                      bootstrap=True)
-
-    # Because we are using the topy bootstraps rather than real bootstrap from
-    # last step, only check for primary expected output; don't worry about
-    # other files that could be in that directory.
-    assert os.path.isfile(os.path.join("05_reconcile-bootstraps",
-                                       "output",
-                                       "reconciled-tree_supports.newick"))
+    # topiary.generate_bootstraps(prev_calculation="03_ancestors",
+    #                             calc_dir="04_bootstraps",
+    #                             num_threads=-1)
+    #
+    # _check_out_files(tiny_phylo,"04_bootstraps")
+    #
+    # # -------------------------------------------------------------------------
+    # # reconcile bootstraps
+    #
+    # topiary.reconcile(prev_calculation=tiny_phylo["04_bootstraps_toy"],
+    #                   calc_dir="05_reconcile-bootstraps",
+    #                   bootstrap=True)
+    #
+    # # Because we are using the topy bootstraps rather than real bootstrap from
+    # # last step, only check for primary expected output; don't worry about
+    # # other files that could be in that directory.
+    # assert os.path.isfile(os.path.join("05_reconcile-bootstraps",
+    #                                    "output",
+    #                                    "reconciled-tree_supports.newick"))
 
 
     os.chdir(current_dir)
