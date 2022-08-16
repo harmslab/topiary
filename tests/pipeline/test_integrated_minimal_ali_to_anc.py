@@ -72,8 +72,8 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
 
     _check_out_files(tiny_phylo,"03_ancestors")
 
-    -------------------------------------------------------------------------
-    gene tree bootstraps
+    # -------------------------------------------------------------------------
+    # gene tree bootstraps
 
     topiary.generate_bootstraps(prev_calculation="03_ancestors",
                                 calc_dir="04_bootstraps",
