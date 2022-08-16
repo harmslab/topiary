@@ -77,7 +77,7 @@ def alignment_to_ancestors(df,
     no_horizontal_transfer : bool, default=False
         whether to allow horizontal transfer during reconcilation. Default is
         to allow transfer (UndatedDTL; recommended). If flat set, use UndatedDL
-        model. 
+        model.
     alt_cutoff : float, default=0.25
         cutoff to use for altAll alternate ancestral protein sequence
         generation. Should be between 0 and 1.
@@ -145,8 +145,12 @@ def alignment_to_ancestors(df,
     # --------------------------------------------------------------------------
     # Validate calculation arguments
 
-    allow_horizontal_transfer = check.check_bool(allow_horizontal_transfer,
-                                                 "allow_horizontal_transfer")
+    # Convert to allow_horizontal_transfer
+    no_horizontal_transfer = check.check_bool(no_horizontal_transfer,
+                                              "no_horizontal_transfer")
+    allow_horizontal_transfer = not no_horizontal_transfer
+
+    # alt-all cutoff
     alt_cutoff = check.check_float(alt_cutoff,
                                    "alt_cutoff",
                                    minimum_allowed=0,
