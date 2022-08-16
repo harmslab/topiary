@@ -1,8 +1,8 @@
 import pytest
 import topiary
 
-from topiary.pipeline.alignment_to_ancestors import _check_restart
-from topiary.pipeline.alignment_to_ancestors import alignment_to_ancestors
+#from topiary.pipeline.alignment_to_ancestors import _check_restart
+#from topiary.pipeline.alignment_to_ancestors import alignment_to_ancestors
 
 def test__check_restart():
 
