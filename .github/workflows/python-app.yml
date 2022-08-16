@@ -15,17 +15,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest] #ubuntu-latest] #,
         python-version: ['3.8', '3.9', '3.10' ]
 
     steps:
     - name: checkout
       uses: actions/checkout@v3.0.0
-
-    - name: Setup MPI
-      uses: mpi4py/setup-mpi@v1
-      with:
-          mpi: openmpi
 
     - name: set up miniconda
       uses: conda-incubator/setup-miniconda@v2
@@ -39,7 +34,8 @@ jobs:
       shell: bash -l {0}
       run: |
         # platform specific packages
-        conda install -c conda-forge -c bioconda "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2" 
+        brew install openmpi
+        conda install -c conda-forge -c bioconda "mpi4py" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
         python -m pip install . -vv
 
     - name: run flake8
