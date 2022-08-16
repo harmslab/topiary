@@ -10,6 +10,7 @@ import os
 import sys
 import subprocess
 import pathlib
+import glob
 
 def main(argv=None):
     """
@@ -44,36 +45,43 @@ def main(argv=None):
     # Filenames for workers staking claims or declaring completion will start
     # with ...
     claim_base = f"claimed_run-{run_id}"
-    complete_base = "completed"
+    complete_base = f"completed"
+    skip_base = f"skipped"
+
+    print(dirs)
+
 
     # Go through each directory
     for d in dirs:
 
-        os.chdir(d)
-
         # If this directory has already been run
-        completed_files  = [f for f in os.listdir(".") if f.startswith(complete_base)]
+        completed_files = glob.glob(os.path.join(d,f"{complete_base}*"))
         if len(completed_files) > 0:
-            os.chdir("..")
             continue
 
         # See if another worker has claimed this directory
-        claim_files = [f for f in os.listdir(".") if f.startswith(claim_base)]
+        claim_files  = glob.glob(os.path.join(d,f"{claim_base}*"))
         if len(claim_files) > 0:
-            os.chdir("..")
+            continue
+
+        # See if another worker has claimed this directory
+        skip_files = glob.glob(os.path.join(d,f"{skip_base}*"))
+        if len(skip_files) > 0:
             continue
 
         # Stake a claim
+        os.chdir(d)
         my_claim_file = f"{claim_base}_by-{rank}"
         pathlib.Path(my_claim_file).touch()
+        print(my_claim_file,os.path.isfile(my_claim_file))
 
-        # Wait a breath to make sure we don't have a collision where more than
+        # Wait a second to make sure we don't have a collision where more than
         # one worker claimed the same directory
-        time.sleep(0.1)
+        time.sleep(1)
 
         # Make sure there is still only one claim file in this directory. If
         # more than one claim file, the file with lowest rank wins.
-        claim_files = [f for f in os.listdir(".") if f.startswith(claim_base)]
+        claim_files = glob.glob(f"{claim_base}*")
         if len(claim_files) > 1:
 
             # Get ranks for all claim files.

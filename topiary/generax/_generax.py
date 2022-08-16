@@ -8,6 +8,7 @@ GENERAX_BINARY = "generax"
 import topiary
 from topiary._private import interface
 from topiary._private.mpi import check_mpi_configuration
+from topiary._private import check
 
 import numpy as np
 
@@ -245,9 +246,9 @@ def run_generax(run_directory,
     allow_horizontal_transfer : bool, default=True
         whether or not to allow horizontal gene transfer. This corresponds to
         the UndatedDTL (horizontal) vs UndatedDL (no horizontal) models
-    seed : bool or int or str, optional
-        If true, pass a randomly generated seed to generax. If int or str, use
-        that as the seed (passed via --seed).
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
     log_to_stdout : bool, default=True
         capture log and write to std out.
     suppress_output : bool, default=False
@@ -298,23 +299,28 @@ def run_generax(run_directory,
 
     # seed argument is overloaded. Interpret based on type
     if seed is not None:
-        if type(seed) is int:
-            cmd.extend(["--seed",f"{seed:d}"])
-        elif type(seed) is str:
 
-            try:
-                int(seed)
-            except ValueError:
-                err = f"seed {seed} could not be interpreted as an int\n"
-                raise ValueError(err)
-
-            cmd.extend(["--seed",seed])
-        elif type(seed) is bool:
+        # If bool and True, make the seed
+        try:
+            seed = check.check_bool(seed)
             if seed:
-                cmd.extend(["--seed",interface.gen_seed()])
-        else:
-            err = "seed must be True/False, int, or string representation of int\n"
+                seed = interface.gen_seed()
+            else:
+                seed = 0
+        except ValueError:
+            pass
+
+        # Make sure the seed -- whether passed in or generated above -- is
+        # actually an int.
+        try:
+            seed = check.check_int(seed,minimum_allowed=0)
+        except ValueError:
+            err = f"seed '{seed}' invalid. must be True/False or int > 0\n"
             raise ValueError(err)
+
+        # If we have a seed > 0, append to command
+        if seed > 0:
+            cmd.extend(["--seed",f"{seed:d}"])
 
     # Grab other args
     cmd.extend(other_args)

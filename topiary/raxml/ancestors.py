@@ -363,7 +363,7 @@ def _parse_raxml_anc_output(df,
     os.chdir(cwd)
 
 
-def generate_ancestors(previous_dir=None,
+def generate_ancestors(prev_calculation=None,
                        df=None,
                        model=None,
                        gene_tree=None,
@@ -371,48 +371,51 @@ def generate_ancestors(previous_dir=None,
                        alt_cutoff=0.25,
                        calc_dir="ancestors",
                        overwrite=False,
-                       supervisor=None,
                        num_threads=-1,
                        raxml_binary=RAXML_BINARY):
     """
     Generate ancestors and various summary outputs. Creates fasta file and csv
     file with ancestral sequences, set of ancestor plots, and a tree with
-    ancestral names and posterior probabilities.
+    ancestral names and posterior probabilities. Note: this will always
+    reconstruct on the reconciled tree if present (either passed in via
+    prev_calculation or via the reconciled_tree argument).
 
     Parameters
     ----------
-    previous_dir : str, optional
-        directory containing previous calculation. function will grab the the
-        csv, model, and tree from the previous run. If this is not specified,
-        :code:`df`, :code:`model`, and :code:`tree_file` arguments must be
+    prev_calculation : str or Supervisor, optional
+        previously completed calculation. Should either be a directory
+        containing the calculation (e.g. the directory with run_parameters.json,
+        input, working, output) or a Supervisor instance with a calculation
+        loaded. Function will load dataframe, model, gene_tree, and
+        reconciled_tree from the previous run. If this is not specified, `df`,
+        `model`, and `gene_tree` or `reconciled_tree` arguments must be
         specified.
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
-        dataframe from `previous_dir` if specified.
+        dataframe from `prev_calculation` if specified.
     model : str, optional
-        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        model (i.e. "LG+G8"). Will override model from `prev_calculation`
         if specified.
     gene_tree : str or ete3.Tree or dendropy.Tree
         gene_tree. Reconstruct ancestors on this tree. Will override gene_tree
-        from `previous_dir` if specified. Should be newick with only leaf names
-        and branch lengths. If this an ete3 or dendropy tree, it will be written
-        out with leaf names and branch lengths; all other data will be dropped.
-        NOTE: if reconciled_tree is specified OR is present in the previous_dir,
-        the reconciled tree will take precedence over this gene tree.
+        from `prev_calculation` if specified. Should be newick with only leaf
+        names and branch lengths. If this an ete3 or dendropy tree, it will be
+        written out with leaf names and branch lengths; all other data will be
+        dropped. NOTE: if reconciled_tree is specified OR is present in the
+        prev_calculation, the reconciled tree will take precedence over this
+        gene tree.
     reconciled_tree : str or ete3.Tree or dendropy.Tree
         reconciled_tree. Reconstruct ancestors on this tree. Will override
-        reconciled_tree from `previous_dir` if specified. Should be newick with
-        only leaf names and branch lengths. If this an ete3 or dendropy tree, it
-        will be written out with leaf names and branch lengths; all other data
-        will be dropped
+        reconciled_tree from `prev_calculation` if specified. Should be newick
+        with only leaf names and branch lengths. If this an ete3 or dendropy
+        tree, it will be written out with leaf names and branch lengths; all
+        other data will be dropped
     alt_cutoff : float, default=0.25
         cutoff to use for altAll calculation. Should be between 0 and 1.
     calc_dir : str, default="ancestors"
         calculation directory.
     overwrite : bool, default=False
         whether or not to overwrite existing calc_dir
-    supervisor : Supervisor, optional
-        Supervisor instance for keeping track of inputs and outputs
     num_threads : int, default=-1
         number of threads to use. if -1, use all avaialable
     raxml_binary : str, optional
@@ -425,8 +428,13 @@ def generate_ancestors(previous_dir=None,
         None.
     """
 
-    if supervisor is None:
-        supervisor = Supervisor(calc_dir=previous_dir)
+    # Load in previous calculation. Three possibilities here: prev_calculation
+    # is a supervisor (just use it); prev_calculation is a directory (create a
+    # supervisor from it); prev_calculation is None (create an empty supervisor).
+    if isinstance(prev_calculation,Supervisor):
+        supervisor = prev_calculation
+    else:
+        supervisor = Supervisor(calc_dir=prev_calculation)
 
     supervisor.create_calc_dir(calc_dir=calc_dir,
                                calc_type="ancestors",

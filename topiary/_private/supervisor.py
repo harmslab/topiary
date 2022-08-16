@@ -73,7 +73,11 @@ class Supervisor:
     Note this is **not** thread-safe.
     """
 
-    keep_on_increment = ["model","version","seed"]
+    keep_on_increment = ["version",
+                         "model",
+                         "seed",
+                         "alt_cutoff",
+                         "allow_horizontal_transfer"]
 
     def __init__(self,calc_dir=None,seed=None):
         """

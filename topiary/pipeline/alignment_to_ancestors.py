@@ -7,9 +7,17 @@ and then infers ancestral proteins.
 import topiary
 from topiary.raxml import RAXML_BINARY
 from topiary.generax import GENERAX_BINARY
-from topiary._private import installed, software_requirements, check
+from topiary._private import installed
+from topiary._private import software_requirements
+from topiary._private import check
+from topiary._private.mpi import check_mpi_configuration
+from topiary._private import Supervisor
 
-import os, random, string, shutil, time
+import os
+import random
+import string
+import shutil
+import time
 
 def _check_restart(output,restart):
 
@@ -32,7 +40,7 @@ def alignment_to_ancestors(df,
                            starting_tree=None,
                            no_bootstrap=False,
                            no_reconcile=False,
-                           allow_horizontal_transfer=False,
+                           no_horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                            "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
@@ -57,7 +65,7 @@ def alignment_to_ancestors(df,
         topiary data frame or csv written out from topiary df.
     out_dir : str, optional
         output directory. If not specified, create an output directory with the
-        format "alignment_to_ancestors_randomletters"
+        format "alignment_to_ancestors_{randomletters}"
     starting_tree : str, optional
         tree in newick format. This will be used for the best model
         inference and starting tree for the maximum likelihood tree estimation.
@@ -66,9 +74,10 @@ def alignment_to_ancestors(df,
         do not do bootstrap replicates
     no_reconcile : bool, default=False
         do not reconcile gene and species trees
-    allow_horizontal_transfer : bool, default=False
-        whether to allow horizontal transfer during reconcilation. If True, use
-        the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    no_horizontal_transfer : bool, default=False
+        whether to allow horizontal transfer during reconcilation. Default is
+        to allow transfer (UndatedDTL; recommended). If flat set, use UndatedDL
+        model. 
     alt_cutoff : float, default=0.25
         cutoff to use for altAll alternate ancestral protein sequence
         generation. Should be between 0 and 1.
@@ -188,7 +197,7 @@ def alignment_to_ancestors(df,
     # If we got here, reconciliation software is ready to go. Now check to
     # whether mpi can really grab the number of threads requested.
     if do_reconcile:
-        installed.check_mpi_configuration(num_threads,generax_binary)
+        check_mpi_configuration(num_threads,generax_binary)
 
     # --------------------------------------------------------------------------
     # Final sanity checks
@@ -246,24 +255,24 @@ def alignment_to_ancestors(df,
     run_calc = _check_restart(output,restart)
     if run_calc:
         topiary.find_best_model(df,
-                                tree_file=starting_tree,
+                                gene_tree=starting_tree,
                                 model_matrices=model_matrices,
                                 model_rates=model_rates,
                                 model_freqs=model_freqs,
                                 model_invariant=model_invariant,
-                                output=output,
+                                calc_dir=output,
                                 num_threads=num_threads,
                                 raxml_binary=raxml_binary)
     counter += 1
 
     # Generate the maximum likelihood tree without bootstraps
-    previous_dir = output
+    prev_calculation = output
     output = f"{counter:02d}_ml-tree"
 
     run_calc = _check_restart(output,restart)
     if run_calc:
-        topiary.generate_ml_tree(previous_dir=previous_dir,
-                                 output=output,
+        topiary.generate_ml_tree(prev_calculation=prev_calculation,
+                                 calc_dir=output,
                                  num_threads=num_threads,
                                  raxml_binary=raxml_binary,
                                  bootstrap=False)
@@ -273,26 +282,25 @@ def alignment_to_ancestors(df,
     if do_reconcile:
 
         # Reconcile without bootstrap.
-        previous_dir = output
+        prev_calculation = output
         output = f"{counter:02d}_reconciliation"
         run_calc = _check_restart(output,restart)
         if run_calc:
-            topiary.reconcile(previous_dir=previous_dir,
-                              output=output,
+            topiary.reconcile(prev_calculation=prev_calculation,
+                              calc_dir=output,
                               allow_horizontal_transfer=allow_horizontal_transfer,
                               generax_binary=generax_binary,
-                              num_threads=num_threads,
-                              use_mpi=True,
+                              num_threads=1, #num_threads, XXX HACK HACK HACK
                               bootstrap=False)
         counter += 1
 
     # Generate ancestors
-    previous_dir = output
+    prev_calculation = output
     output = f"{counter:02d}_ancestors"
     run_calc = _check_restart(output,restart)
     if run_calc:
-        topiary.generate_ancestors(previous_dir=previous_dir,
-                                   output=output,
+        topiary.generate_ancestors(prev_calculation=prev_calculation,
+                                   calc_dir=output,
                                    num_threads=num_threads,
                                    alt_cutoff=alt_cutoff)
     counter += 1
@@ -302,46 +310,14 @@ def alignment_to_ancestors(df,
     if do_bootstrap:
 
         # Generate bootstrap replicates for the tree
-        previous_dir = output
+        prev_calculation = output
         output = f"{counter:02d}_bootstraps"
         run_calc = _check_restart(output,restart)
         if run_calc:
-            topiary.generate_bootstraps(previous_dir=previous_dir,
-                                        output=output,
+            topiary.generate_bootstraps(prev_calculation=prev_calculation,
+                                        calc_dir=output,
                                         num_threads=num_threads,
                                         raxml_binary=raxml_binary)
         counter += 1
-
-        # Generate bootstraps for reconciliation
-        if do_reconcile:
-            previous_dir = output
-            output = f"{counter:02d}_reconciliation-bootstraps"
-            run_calc = _check_restart(output,restart)
-            if run_calc:
-
-                # set mpi to false because we are going to run each calculation
-                # on it's own thread. But send in num_cores = num_threads to
-                # cause python to launch num_threads `mpirun -np 1 generax`
-                # jobs. If we did not pass in num_cores, python would detect
-                # it only had num_threads on whatever core the main job was
-                # running on and not send jobs out to other cores.
-                topiary.reconcile(previous_dir=previous_dir,
-                                  output=output,
-                                  allow_horizontal_transfer=allow_horizontal_transfer,
-                                  generax_binary=generax_binary,
-                                  num_threads=num_threads,
-                                  use_mpi=False,
-                                  bootstrap=do_bootstrap)
-            counter += 1
-
-        # Generate final ancestors on tree with branch supports
-        previous_dir = output
-        output = f"{counter:02d}_ancestors_with_branch_supports"
-        run_calc = _check_restart(output,restart)
-        if run_calc:
-            topiary.generate_ancestors(previous_dir=previous_dir,
-                                       output=output,
-                                       num_threads=num_threads,
-                                       alt_cutoff=alt_cutoff)
 
     os.chdir(current_dir)

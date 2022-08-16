@@ -6,6 +6,7 @@ from topiary.generax._reconcile_bootstrap import _run_bootstrap_calculations
 from topiary.generax._reconcile_bootstrap import _combine_bootstrap_calculations
 from topiary.generax._reconcile_bootstrap import reconcile_bootstrap
 from topiary.generax._generax import GENERAX_BINARY
+from topiary.raxml import RAXML_BINARY
 from topiary._private import Supervisor
 
 import ete3
@@ -15,7 +16,7 @@ import glob
 import shutil
 import copy
 
-# XX IMPROVE TEST
+# IMPROVE TEST
 # Currently relies on creaky generax_data test data. Migrate to tiny_phylo
 # test data when next editing.
 
@@ -27,6 +28,7 @@ def test__check_calc_completeness():
 
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__create_bootstrap_dirs(generax_data,tmpdir):
+
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -43,6 +45,7 @@ def test__create_bootstrap_dirs(generax_data,tmpdir):
                        "gene_tree":gene_tree,
                        "species_tree":"species_tree",
                        "allow_horizontal_transfer":True,
+                       "seed":12345,
                        "bootstrap_directory":bootstrap_directory,
                        "overwrite":False,
                        "generax_binary":GENERAX_BINARY}
@@ -200,10 +203,13 @@ def test_reconcile_bootstrap(tiny_phylo,tmpdir):
                        "reconciled_tree":reconciled_tree,
                        "allow_horizontal_transfer":True,
                        "bootstrap_directory":input_bootstrap_directory,
+                       "seed":True,
+                       "restart":False,
                        "overwrite":False,
                        "supervisor":None,
                        "num_threads":1,
-                       "generax_binary":GENERAX_BINARY}
+                       "generax_binary":GENERAX_BINARY,
+                       "raxml_binary":RAXML_BINARY}
 
     supervisor = Supervisor()
     supervisor.create_calc_dir("test0",

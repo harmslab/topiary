@@ -167,7 +167,7 @@ def test_write_fasta(test_dataframes,tmpdir):
     # Should work because we have the file in place
     io.write_fasta(df,out_file,overwrite=True)
 
-    # XX IMPROVE TEST
+    # IMPROVE TEST
     # NEED TO TEST TAXONOMIC ORDERING
 
 def test_write_phy(test_dataframes,tmpdir):

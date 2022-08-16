@@ -12,7 +12,10 @@ from topiary._private import check
 import numpy as np
 import pandas as pd
 
-import random, string, os, shutil
+import random
+import string
+import os
+import shutil
 
 def _check_restart(expected_output,restart):
 
@@ -26,7 +29,7 @@ def _check_restart(expected_output,restart):
     return run_calc
 
 def seed_to_alignment(seed_df,
-                      out_dir,
+                      out_dir=None,
                       seqs_per_column=1,
                       max_seq_number=500,
                       redundancy_cutoff=0.90,
@@ -59,9 +62,9 @@ def seed_to_alignment(seed_df,
     seed_df : pandas.DataFrame or str
         dataframe with at least four columns: name, species, sequence,
         and aliases. See documentation on seed dataframes for details.
-    out_dir : str
-        output directory
-
+    out_dir : str, optional
+        output directory. If not specified, create an output directory with the
+        format "seed_to_alignment_{randomletters}"
     seqs_per_column : float, default=1
         aim to have this number of sequences per column in the key species
         sequences. (For example, if the key sequence is 100 amino acids long,
@@ -172,7 +175,13 @@ def seed_to_alignment(seed_df,
         err = "overwrite and restart flags are incompatible.\n"
         raise ValueError(err)
 
-    out_dir = str(out_dir)
+    # If no output directory is specified, make up a name
+    if out_dir is None:
+        if restart:
+            err = "To use restart, you must specify an out_dir.\n"
+            raise ValueError(err)
+        rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
+        out_dir = f"seed_to_alignment_{rand}"
 
     step_counter = 0
     expected_output = os.path.join(out_dir,f"{step_counter:02d}_{os.path.split(seed_df)[-1]}")
@@ -370,5 +379,12 @@ def seed_to_alignment(seed_df,
         print(f"Loading existing file {expected_output}.")
 
     os.chdir(cwd)
+
+    pretty_name = os.path.join(out_dir,"05_clean-aligned-dataframe.csv")
+
+    print("\n-------------------------------------------------------------------")
+    print(f"Dataset in {pretty_name}.")
+    print("-------------------------------------------------------------------")
+    print("",flush=True)
 
     return df

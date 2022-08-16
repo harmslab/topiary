@@ -188,10 +188,10 @@ def test_run_raxml(tiny_phylo,tmpdir):
     # Specific number of threads
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test14"
-    kwargs["num_threads"] = 5
+    kwargs["num_threads"] = 2
     run_raxml(**kwargs)
     output = _read_log_file("test14")
-    assert output == "raxml-ng --threads 5"
+    assert output == "raxml-ng --threads 2"
 
     # Bad number of threads (this is tested by get_num_threads call, but
     # pretty important in this context; so check)

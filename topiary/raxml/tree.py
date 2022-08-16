@@ -11,14 +11,13 @@ from topiary._private.supervisor import Supervisor
 
 import os, shutil, glob
 
-def generate_ml_tree(previous_dir=None,
+def generate_ml_tree(prev_calculation=None,
                      df=None,
                      model=None,
                      gene_tree=None,
                      calc_dir="ml_tree",
                      overwrite=False,
                      bootstrap=False,
-                     supervisor=None,
                      num_threads=-1,
                      raxml_binary=RAXML_BINARY):
     """
@@ -27,19 +26,21 @@ def generate_ml_tree(previous_dir=None,
 
     Parameters
     ----------
-    previous_dir : str, optional
-        directory containing previous calculation. function will grab the the
-        csv, model, and tree from the previous run. If this is not specified,
-        `df`, `model`, and `gene_tree` arguments must be specified.
+    prev_calculation : str or Supervisor, optional
+        previously completed calculation. Should either be a directory
+        containing the calculation (e.g. the directory with run_parameters.json,
+        input, working, output) or a Supervisor instance with a calculation loaded.
+        Function will load dataframe and model from the previous run. If this is
+        not specified, `df` and `model` arguments must be specified.
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
-        dataframe from `previous_dir` if specified.
+        dataframe from `prev_calculation` if specified.
     model : str, optional
-        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        model (i.e. "LG+G8"). Will override model from `prev_calculation`
         if specified.
     gene_tree : str or ete3.Tree or dendropy.Tree
         gene_tree. Used as starting point for calculation. Will override tree
-        from `previous_dir` if specified. Should be newick with only leaf names
+        from `prev_calculation` if specified. Should be newick with only leaf names
         and branch lengths. If this an ete3 or dendropy tree, it will be written
         out with leaf names and branch lengths; all other data will be dropped
     calc_dir : str, default="ml_tree"
@@ -62,8 +63,13 @@ def generate_ml_tree(previous_dir=None,
         None.
     """
 
-    if supervisor is None:
-        supervisor = Supervisor(calc_dir=previous_dir)
+    # Load in previous calculation. Three possibilities here: prev_calculation
+    # is a supervisor (just use it); prev_calculation is a directory (create a
+    # supervisor from it); prev_calculation is None (create an empty supervisor).
+    if isinstance(prev_calculation,Supervisor):
+        supervisor = prev_calculation
+    else:
+        supervisor = Supervisor(calc_dir=prev_calculation)
 
     calc_type = "ml_tree"
     if bootstrap:

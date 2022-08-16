@@ -18,8 +18,8 @@ SCRIPT = os.path.join(os.path.dirname(__file__),
 @pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test_main(generax_data,tmpdir):
 
-    def _check_dir(dir_name,num_workers,run_id,already_complete=[]):
 
+    def _check_dir(dir_name,num_workers,run_id,already_complete=[]):
 
         workers_seen = []
         for d in os.listdir(dir_name):
@@ -41,7 +41,7 @@ def test_main(generax_data,tmpdir):
 
                 continue
 
-            # Only one complted file
+            # Only one completed file
             completed_files = glob.glob(os.path.join(this_dir,"completed*"))
             assert len(completed_files) == 1
 
@@ -62,16 +62,18 @@ def test_main(generax_data,tmpdir):
         # Make sure all workers ran
         assert len(set(workers_seen)) == num_workers
 
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
     # Get path to mpirun so we know what it is if bad things happen
     mpirun = shutil.which("mpirun")
 
     test_dir = generax_data["test-dir"]
-    gen_tmp = os.path.join(tmpdir,"generax")
-    os.mkdir(gen_tmp)
+    os.mkdir("generax")
 
     for i in [1,2]:
 
-        this_test_dir = os.path.join(gen_tmp,f"test_worker_{i}")
+        this_test_dir = f"test_worker_{i}"
         shutil.copytree(test_dir,this_test_dir)
 
         run_id = f"testid{i}"
@@ -79,12 +81,17 @@ def test_main(generax_data,tmpdir):
 
         print("Running:"," ".join(cmd))
         ret = subprocess.run(cmd,capture_output=True)
+        if ret.returncode != 0:
+            err = "mpi script failed.\n\n"
+            err += f"stderr:\n {ret.stderr.decode()}\n"
+            err += f"stdout:\n {ret.stdout.decode()}\n"
+            raise RuntimeError(err)
 
         _check_dir(this_test_dir,i,run_id)
 
     for i in [1,2]:
 
-        this_test_dir = os.path.join(gen_tmp,f"test_worker_{i}_inject_claim")
+        this_test_dir = f"test_worker_{i}_inject_claim"
         shutil.copytree(test_dir,this_test_dir)
 
         # Inject a competing run file but *not* complete into directory 0.
@@ -99,6 +106,11 @@ def test_main(generax_data,tmpdir):
 
         print("Running:"," ".join(cmd))
         ret = subprocess.run(cmd,capture_output=True)
+        if ret.returncode != 0:
+            err = "mpi script failed.\n\n"
+            err += f"stderr:\n {ret.stderr.decode()}\n"
+            err += f"stdout:\n {ret.stdout.decode()}\n"
+            raise RuntimeError(err)
 
         _check_dir(this_test_dir,i,run_id)
 
@@ -106,7 +118,7 @@ def test_main(generax_data,tmpdir):
 
     for i in [1,2]:
 
-        this_test_dir = os.path.join(gen_tmp,f"test_worker_{i}_inject_completed")
+        this_test_dir = f"test_worker_{i}_inject_completed"
         shutil.copytree(test_dir,this_test_dir)
 
         # Inject a competing complete. Should run others but leave this alone.
@@ -117,6 +129,11 @@ def test_main(generax_data,tmpdir):
 
         run_id = f"testid{i}"
         cmd = [mpirun,"-np",f"{i}",sys.executable,SCRIPT,this_test_dir,run_id]
+        if ret.returncode != 0:
+            err = "mpi script failed.\n\n"
+            err += f"stderr:\n {ret.stderr.decode()}\n"
+            err += f"stdout:\n {ret.stdout.decode()}\n"
+            raise RuntimeError(err)
 
         print("Running:"," ".join(cmd))
         ret = subprocess.run(cmd,capture_output=True)
@@ -125,3 +142,5 @@ def test_main(generax_data,tmpdir):
 
         # Should not have touched this other complete file
         assert os.path.isfile(other_completed)
+
+    os.chdir(current_dir)

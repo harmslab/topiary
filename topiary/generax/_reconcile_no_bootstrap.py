@@ -20,6 +20,7 @@ def reconcile_no_bootstrap(df,
                            gene_tree,
                            species_tree,
                            allow_horizontal_transfer,
+                           seed,
                            overwrite,
                            supervisor,
                            num_threads,
@@ -31,9 +32,9 @@ def reconcile_no_bootstrap(df,
     ----------
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
-        dataframe from `previous_dir` if specified.
+        dataframe from `prev_calculation` if specified.
     model : str, optional
-        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        model (i.e. "LG+G8"). Will override model from `prev_calculation`
         if specified.
     gene_tree : str, optional
         gene_tree in newick format.
@@ -42,6 +43,9 @@ def reconcile_no_bootstrap(df,
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
     overwrite : bool
         whether or not to overwrite existing output directory
     supervisor : Supervisor
@@ -72,6 +76,7 @@ def reconcile_no_bootstrap(df,
     # Actually run generax
     cmd = run_generax(run_directory="generax",
                       allow_horizontal_transfer=allow_horizontal_transfer,
+                      seed=seed,
                       supervisor=supervisor,
                       num_threads=num_threads,
                       generax_binary=generax_binary)

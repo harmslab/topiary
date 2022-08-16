@@ -33,6 +33,7 @@ def test_reconcile_no_bootstrap(generax_data,tmpdir):
               "gene_tree":supervisor.gene_tree,
               "species_tree":os.path.join(input_dir,"species_tree.newick"),
               "allow_horizontal_transfer":True,
+              "seed":True,
               "overwrite":False,
               "num_threads":2,
               "generax_binary":GENERAX_BINARY}

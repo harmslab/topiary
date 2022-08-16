@@ -223,8 +223,6 @@ def merge_and_annotate(blast_df_list,blast_source_list=None):
         merged blast dataframe
     """
 
-    ### VALIDATE BLAST_SOURCE_LIST XXX
-
     # Go through each blast dataframe
     for i in range(len(blast_df_list)):
 

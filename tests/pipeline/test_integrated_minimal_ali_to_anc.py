@@ -11,7 +11,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     etc. Goal is to catch major problems or changes to core functionality
     linking pieces together. The generax steps are all set to have thread = 1
     to avoid any mpi complexity. We also pass in a known species tree to
-    avoid any interaction with open tree of life. 
+    avoid any interaction with open tree of life.
     """
 
     df = tiny_phylo["initial-input/dataframe.csv"]
@@ -45,7 +45,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # generate ml tree
 
-    topiary.generate_ml_tree(previous_dir="00_find-best-model",
+    topiary.generate_ml_tree(prev_calculation="00_find-best-model",
                              calc_dir="01_gene-tree")
 
     _check_out_files(tiny_phylo,"01_gene-tree")
@@ -53,7 +53,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # reconcile
 
-    topiary.reconcile(previous_dir="01_gene-tree/",
+    topiary.reconcile(prev_calculation="01_gene-tree/",
                       calc_dir="02_reconcile",
                       species_tree=species_tree,
                       num_threads=1)
@@ -63,7 +63,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # infer ancestors
 
-    topiary.generate_ancestors(previous_dir="02_reconcile/",
+    topiary.generate_ancestors(prev_calculation="02_reconcile/",
                                calc_dir="03_ancestors")
 
     _check_out_files(tiny_phylo,"03_ancestors")
@@ -71,7 +71,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # gene tree bootstraps
 
-    topiary.generate_bootstraps(previous_dir="03_ancestors/",
+    topiary.generate_bootstraps(prev_calculation="03_ancestors/",
                                 calc_dir="04_bootstraps")
 
     _check_out_files(tiny_phylo,"04_bootstraps")
@@ -79,7 +79,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     # -------------------------------------------------------------------------
     # reconcile bootstraps
 
-    topiary.reconcile(previous_dir="04_bootstraps/",
+    topiary.reconcile(prev_calculation="04_bootstraps/",
                       calc_dir="05_reconcile-bootstraps",
                       num_threads=1,
                       bootstrap=True)

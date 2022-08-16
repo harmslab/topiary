@@ -16,14 +16,13 @@ def test_generate_bootstraps(tiny_phylo,tmpdir):
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
-    kwargs = {"previous_dir":None,
+    kwargs = {"prev_calculation":None,
               "df":df,
               "model":"JTT",
               "gene_tree":gene_tree,
               "calc_dir":"bootstraps",
               "overwrite":False,
               "num_bootstraps":10,
-              "supervisor":None,
               "num_threads":1,
               "raxml_binary":RAXML_BINARY}
 

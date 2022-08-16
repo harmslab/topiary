@@ -13,7 +13,6 @@ from topiary.generax._generax import setup_generax
 from topiary.generax._generax import run_generax
 from topiary.generax._generax import GENERAX_BINARY
 
-
 import ete3
 
 from tqdm.auto import tqdm
@@ -50,6 +49,7 @@ def _create_bootstrap_dirs(df,
                            gene_tree,
                            species_tree,
                            allow_horizontal_transfer,
+                           seed,
                            bootstrap_directory,
                            overwrite,
                            generax_binary):
@@ -62,9 +62,9 @@ def _create_bootstrap_dirs(df,
     ----------
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
-        dataframe from `previous_dir` if specified.
+        dataframe from `prev_calculation` if specified.
     model : str, optional
-        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        model (i.e. "LG+G8"). Will override model from `prev_calculation`
         if specified.
     gene_tree : str, optional
         gene tree in newick format.
@@ -73,6 +73,9 @@ def _create_bootstrap_dirs(df,
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
     bootstrap_directory : str
         directory with gene tree bootstrap replicates
     overwrite : bool, default=False
@@ -168,6 +171,7 @@ def _create_bootstrap_dirs(df,
         # this job should run on a single thread.
         cmd = run_generax(run_directory=out_dir,
                           allow_horizontal_transfer=allow_horizontal_transfer,
+                          seed=seed,
                           generax_binary=generax_binary,
                           num_threads=1,
                           log_to_stdout=False,
@@ -353,11 +357,14 @@ def reconcile_bootstrap(df,
                         species_tree,
                         reconciled_tree,
                         allow_horizontal_transfer,
+                        seed,
                         bootstrap_directory,
+                        restart,
                         overwrite,
                         supervisor,
                         num_threads,
-                        generax_binary):
+                        generax_binary,
+                        raxml_binary):
     """
     Reconcile gene and species trees using generax with bootstrap replicates
     of the gene tree and alignments.
@@ -366,25 +373,34 @@ def reconcile_bootstrap(df,
     ----------
     df : pandas.DataFrame or str, optional
         topiary data frame or csv written out from topiary df. Will override
-        dataframe from `previous_dir` if specified.
+        dataframe from `prev_calculation` if specified.
     model : str, optional
-        model (i.e. "LG+G8"). Will override model from `previous_dir`
+        model (i.e. "LG+G8"). Will override model from `prev_calculation`
         if specified.
     gene_tree : str, ete3.Tree, dendropy.tree, optional
-        gene tree file for calculation. Will override tree in `previous_dir`.
+        gene tree file for calculation. Will override tree in `prev_calculation`.
         If this an ete3 or dendropy tree, it will be written out with leaf
         names and branch lengths; all other data will be dropped.
     species_tree : str, ete3.Tree, dendropy.tree, optional
-        species tree file for calculation. Will override tree in `previous_dir`.
+        species tree file for calculation. Will override tree in `prev_calculation`.
         If this an ete3 or dendropy tree, it will be written out with leaf
         names; all other data will be dropped.
     reconciled_tree : str, ete3.Tree, dendropy.tree, optional
-        reconciled tree file for calculation. Will override tree in `previous_dir`.
+        reconciled tree file for calculation. Will override tree in `prev_calculation`.
         If this an ete3 or dendropy tree, it will be written out with leaf
         names; all other data will be dropped.
     allow_horizontal_transfer : bool, default=True
         whether to allow horizontal transfer during reconcilation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
+    bootstrap: bool, default=False
+        whether or not to do bootstrap replicates. if True, prev_calculation must
+        point to a raxml ml_bootstrap run
+    restart : bool, default=False
+        restart job from where it stopped in output directory. incompatible with
+        overwrite
     overwrite : bool, default=False
         whether or not to overwrite existing calc_dir directory
     supervisor : Supervisor, optional
@@ -403,16 +419,19 @@ def reconcile_bootstrap(df,
 
     os.chdir(supervisor.working_dir)
 
-    # Create stack of directories
-    supervisor.event("Setting up bootstrap replicates directories.")
-    replicate_dir = _create_bootstrap_dirs(df=df,
-                                           model=model,
-                                           gene_tree=gene_tree,
-                                           species_tree=species_tree,
-                                           allow_horizontal_transfer=allow_horizontal_transfer,
-                                           bootstrap_directory=bootstrap_directory,
-                                           overwrite=overwrite,
-                                           generax_binary=generax_binary)
+    if not restart:
+
+        # Create stack of directories
+        supervisor.event("Setting up bootstrap replicates directories.")
+        replicate_dir = _create_bootstrap_dirs(df=df,
+                                               model=model,
+                                               gene_tree=gene_tree,
+                                               species_tree=species_tree,
+                                               allow_horizontal_transfer=allow_horizontal_transfer,
+                                               seed=seed,
+                                               bootstrap_directory=bootstrap_directory,
+                                               overwrite=overwrite,
+                                               generax_binary=generax_binary)
 
     supervisor.event("Running bootstrap calculations.")
     _run_bootstrap_calculations(replicate_dir,num_threads)

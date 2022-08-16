@@ -16,13 +16,12 @@ def test_generate_ml_tree(tiny_phylo,tmpdir):
     current_dir = os.getcwd()
     os.chdir(tmpdir)
 
-    kwargs = {"previous_dir":None,
+    kwargs = {"prev_calculation":None,
               "df":df,
               "model":"JTT",
               "calc_dir":"test0",
               "overwrite":False,
               "bootstrap":False,
-              "supervisor":None,
               "num_threads":1,
               "raxml_binary":RAXML_BINARY}
 
@@ -45,13 +44,12 @@ def test_generate_ml_tree(tiny_phylo,tmpdir):
 
     supervisor = Supervisor()
 
-    kwargs = {"previous_dir":None,
+    kwargs = {"prev_calculation":supervisor,
               "df":df,
               "model":"LG",
               "calc_dir":"test1",
               "overwrite":False,
               "bootstrap":False,
-              "supervisor":supervisor,
               "num_threads":1,
               "raxml_binary":RAXML_BINARY}
 
@@ -75,13 +73,12 @@ def test_generate_ml_tree(tiny_phylo,tmpdir):
 
     supervisor = Supervisor()
 
-    kwargs = {"previous_dir":None,
+    kwargs = {"prev_calculation":supervisor,
               "df":df,
               "model":"LG",
               "calc_dir":"test2",
               "overwrite":False,
               "bootstrap":True,
-              "supervisor":supervisor,
               "num_threads":1,
               "raxml_binary":RAXML_BINARY}
 
