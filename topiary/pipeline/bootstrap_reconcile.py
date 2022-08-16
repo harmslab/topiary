@@ -19,12 +19,12 @@ import glob
 import shutil
 
 
-def reconciliation_boostraps(previous_run_dir,
-                             num_threads,
-                             restart=False,
-                             overwrite=False,
-                             raxml_binary=RAXML_BINARY,
-                             generax_binary=GENERAX_BINARY):
+def bootstrap_reconcile(previous_run_dir,
+                        num_threads,
+                        restart=False,
+                        overwrite=False,
+                        raxml_binary=RAXML_BINARY,
+                        generax_binary=GENERAX_BINARY):
     """
     Perform a bootstrap branch support calculation for the gene/species tree
     reconciliation portion of the analysis.
@@ -106,17 +106,17 @@ def reconciliation_boostraps(previous_run_dir,
     if not os.path.isdir("04_bootstraps"):
         err = f"previous_run_dir '{previous_run_dir}' does not have an 04_bootstraps\n"
         err += "directory. This directory is necessary as the input to the a\n"
-        err += "reconciliation bootstrap calculation\n\n"
+        err += "reconciliation bootstrap calculation.\n\n"
         os.chdir("..")
         raise FileNotFoundError(err)
 
     # Load calculation and make sure it completed
     supervisor = Supervisor("04_bootstraps")
-    if supervisor.calc_status != "complete":
+    if supervisor.status != "complete":
         err = f"{previous_run_dir}/04_bootstraps exists but has status '{supervisor.calc_status}'\n"
-        if supervisor.calc_status == "empty":
+        if supervisor.status == "empty":
             err += "It does not appear this calculation has been run.\n\n"
-        elif supervisor.calc_status == "running":
+        elif supervisor.status == "running":
             err += "This job is either still running or crashed.\n\n"
         else:
             err += "This job crashed before completing.\n\n"
@@ -136,6 +136,7 @@ def reconciliation_boostraps(previous_run_dir,
         os.chdir("..")
         raise ValueError(err)
 
+
     # Try to get a time estimate from supervisor stack
     try:
         for p in supervisor.previous_entries:
@@ -154,18 +155,18 @@ def reconciliation_boostraps(previous_run_dir,
 
                 out = ["\n----------------------------------------------------------------------\n"]
                 out.append(f"The first reconcilation calculation took {pretty_prev}")
-                out.append(f"to complete on {prev_num_threads} threads. Assuming a")
-                out.append("similar machine architecture, topiary predicts the current")
-                out.append(f"calculation should take {pt} to complete on {num_threads}")
-                out.append("threads.")
+                out.append(f"to complete on {prev_num_threads} threads. Assuming a similar machine architecture,")
+                out.append("topiary predicts the current calculation should take ")
+                out.append(f"{pt} to complete on {num_threads} threads.")
                 out.append("\n----------------------------------------------------------------------\n")
-                print()
+                print("\n".join(out))
 
     except (KeyError,IndexError):
         out = ["\n----------------------------------------------------------------------\n"]
         out.append("Could not determine previous run time and thread/counts to")
         out.append("estimate run time for this calculation.")
         out.append("\n----------------------------------------------------------------------\n")
+        print("\n".join(out))
 
     # Make sure the output either exists with --overwrite or --restart or
     # does not exist
@@ -182,7 +183,7 @@ def reconciliation_boostraps(previous_run_dir,
 
     if os.path.isdir(calc_dir) and restart:
 
-        if not os.path.isdir(calc_dir,"working","replicates"):
+        if not os.path.isdir(os.path.join(calc_dir,"working","replicates")):
             err = "\ncould not restart the calculation. Please delete the directory\n"
             err += f"'{previous_run_dir}/{calc_dir}' and try again.\n\n"
             os.chdir("..")
@@ -197,10 +198,10 @@ def reconciliation_boostraps(previous_run_dir,
                             supervisor.gene_tree,
                             supervisor.species_tree,
                             supervisor.reconciled_tree,
-                            supervisor.allow_horizontal_transfer,
+                            supervisor.run_parameters["allow_horizontal_transfer"],
                             supervisor.seed,
                             bootstrap_directory=None,
-                            restart=True,
+                            restart="replicates",
                             overwrite=False,
                             supervisor=supervisor,
                             num_threads=num_threads,
@@ -213,6 +214,7 @@ def reconciliation_boostraps(previous_run_dir,
                           calc_dir=calc_dir,
                           bootstrap=True,
                           overwrite=False,
+                          num_threads=num_threads,
                           raxml_binary=raxml_binary,
                           generax_binary=generax_binary)
 

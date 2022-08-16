@@ -205,26 +205,26 @@ def test_run_raxml(tiny_phylo,tmpdir):
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test16"
     kwargs["algorithm"] = "--all"
-    kwargs["num_threads"] = 5
+    kwargs["num_threads"] = 2
     run_raxml(**kwargs)
     output = _read_log_file("test16")
-    assert output == "raxml-ng --all --threads auto{5}"
+    assert output == "raxml-ng --all --threads auto{2}"
 
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test17"
     kwargs["algorithm"] = "--search"
-    kwargs["num_threads"] = 5
+    kwargs["num_threads"] = 2
     run_raxml(**kwargs)
     output = _read_log_file("test17")
-    assert output == "raxml-ng --search --threads auto{5}"
+    assert output == "raxml-ng --search --threads auto{2}"
 
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["run_directory"] = "test18"
     kwargs["algorithm"] = "--flagwithoutcrosstalk"
-    kwargs["num_threads"] = 5
+    kwargs["num_threads"] = 2
     run_raxml(**kwargs)
     output = _read_log_file("test18")
-    assert output == "raxml-ng --flagwithoutcrosstalk --threads 5"
+    assert output == "raxml-ng --flagwithoutcrosstalk --threads 2"
 
     # Custom args
     kwargs = copy.deepcopy(kwargs_template)

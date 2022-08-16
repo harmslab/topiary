@@ -398,9 +398,9 @@ def reconcile_bootstrap(df,
     bootstrap: bool, default=False
         whether or not to do bootstrap replicates. if True, prev_calculation must
         point to a raxml ml_bootstrap run
-    restart : bool, default=False
-        restart job from where it stopped in output directory. incompatible with
-        overwrite
+    restart : str, optional
+        if specified, should point to replicate_dir for restart. restart the job
+        from where it stopped. incompatible with overwrite
     overwrite : bool, default=False
         whether or not to overwrite existing calc_dir directory
     supervisor : Supervisor, optional
@@ -419,10 +419,19 @@ def reconcile_bootstrap(df,
 
     os.chdir(supervisor.working_dir)
 
-    if not restart:
+    if restart is None:
 
         # Create stack of directories
-        supervisor.event("Setting up bootstrap replicates directories.")
+        supervisor.event("Creating bootstrap directories.",
+                         model=model,
+                         gene_tree=gene_tree,
+                         species_tree=species_tree,
+                         allow_horizontal_transfer=allow_horizontal_transfer,
+                         seed=seed,
+                         bootstrap_directory=bootstrap_directory,
+                         overwrite=overwrite,
+                         generax_binary=generax_binary)
+
         replicate_dir = _create_bootstrap_dirs(df=df,
                                                model=model,
                                                gene_tree=gene_tree,
@@ -433,10 +442,17 @@ def reconcile_bootstrap(df,
                                                overwrite=overwrite,
                                                generax_binary=generax_binary)
 
-    supervisor.event("Running bootstrap calculations.")
+    else:
+        replicate_dir = restart
+
+    supervisor.event("Running bootstrap calculations.",
+                     replicate_dir=replicate_dir,
+                     num_threads=num_threads)
     _run_bootstrap_calculations(replicate_dir,num_threads)
 
-    supervisor.event("Combining bootstrap calculations.")
+    supervisor.event("Combining bootstrap calculations.",
+                     replicate_dir=replicate_dir,
+                     reconciled_tree=reconciled_tree)
     converged = _combine_bootstrap_calculations(replicate_dir,reconciled_tree)
 
     # Grab species tree before compressing replicates

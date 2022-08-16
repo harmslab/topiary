@@ -204,7 +204,7 @@ def test_reconcile_bootstrap(tiny_phylo,tmpdir):
                        "allow_horizontal_transfer":True,
                        "bootstrap_directory":input_bootstrap_directory,
                        "seed":True,
-                       "restart":False,
+                       "restart":None,
                        "overwrite":False,
                        "supervisor":None,
                        "num_threads":1,
