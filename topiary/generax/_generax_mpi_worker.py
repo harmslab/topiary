@@ -48,9 +48,6 @@ def main(argv=None):
     complete_base = f"completed"
     skip_base = f"skipped"
 
-    print(dirs)
-
-
     # Go through each directory
     for d in dirs:
 
@@ -73,7 +70,6 @@ def main(argv=None):
         os.chdir(d)
         my_claim_file = f"{claim_base}_by-{rank}"
         pathlib.Path(my_claim_file).touch()
-        print(my_claim_file,os.path.isfile(my_claim_file))
 
         # Wait a second to make sure we don't have a collision where more than
         # one worker claimed the same directory

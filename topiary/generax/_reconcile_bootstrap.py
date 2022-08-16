@@ -18,6 +18,7 @@ import ete3
 from tqdm.auto import tqdm
 
 import os
+import sys
 import glob
 import shutil
 import copy
@@ -226,7 +227,7 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
     else:
         cmd = []
 
-    cmd.extend(["python",script_to_run])
+    cmd.extend([sys.executable,script_to_run])
     cmd.append(replicate_dir)
     cmd.append(run_id)
 

@@ -9,8 +9,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     """
     Full test of ali_to_anc pipeline without any complexity of arg checking
     etc. Goal is to catch major problems or changes to core functionality
-    linking pieces together. The generax steps are all set to have thread = 1
-    to avoid any mpi complexity. We also pass in a known species tree to
+    linking pieces together. We pass in a known species tree to
     avoid any interaction with open tree of life.
     """
 
@@ -55,8 +54,7 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
 
     topiary.reconcile(prev_calculation="01_gene-tree/",
                       calc_dir="02_reconcile",
-                      species_tree=species_tree,
-                      num_threads=1)
+                      species_tree=species_tree)
 
     _check_out_files(tiny_phylo,"02_reconcile")
 
@@ -81,7 +79,6 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
 
     topiary.reconcile(prev_calculation="04_bootstraps/",
                       calc_dir="05_reconcile-bootstraps",
-                      num_threads=1,
                       bootstrap=True)
 
     _check_out_files(tiny_phylo,"05_reconcile-bootstraps")

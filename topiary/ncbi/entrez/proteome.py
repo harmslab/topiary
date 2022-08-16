@@ -217,6 +217,28 @@ def get_proteome(taxid=None,species=None):
             ncbi_ftp_download(genome_url,file_base="_protein.faa.gz")
         except (ftplib.error_perm,RuntimeError):
             continue
+        except FileNotFoundError:
+
+            if taxid is None:
+                species_flag = f"{species}"
+            else:
+                species_flag = f"taxid = {taxid}"
+
+            err = f"\nCould not download proteome {out_file}.\n"
+            err += "This can happen if an assembly is in the NCBI database but\n"
+            err += "does not have an associated _protein.tar.gz file. If you \n"
+            err += "are running this as part the seed_to_alignment pipeline,\n"
+            err += "you have a couple of options. 1) You can replace the problematic\n"
+            err += f"species ({species_flag}) in your seed dataset and start\n"
+            err += "the pipeline again. 2) You can edit the 01_initial-dataframe.csv\n"
+            err += "file, adding or editing the column 'recip_blast'. Set this to\n"
+            err += "'FALSE' for every row *except* the rows with key_species = 'TRUE'.\n"
+            err += "Set this to 'FALSE' for the problematic species. You\n"
+            err += "can then restart the pipeline with the --restart flag. Topiary\n"
+            err += "will not use this species for reciprocal BLAST, but will still\n"
+            err += "treat it as a key species in other respects.\n\n"
+
+            raise RuntimeError(err)
 
         success = True
         break
