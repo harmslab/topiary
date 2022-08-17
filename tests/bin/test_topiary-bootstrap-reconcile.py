@@ -170,7 +170,7 @@ def test_main(tiny_phylo,tmpdir):
     # assert param["bootstrap_converged"] == False
     #
     # os.chdir("..")
-
+    #
     # print("----> TEST 2")
     #
     # # Test overwrite flag
@@ -220,6 +220,6 @@ def test_main(tiny_phylo,tmpdir):
     # assert param["bootstrap_converged"] == False
     #
     # os.chdir("..")
-    #
+
 
     os.chdir(current_dir)

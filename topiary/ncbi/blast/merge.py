@@ -278,4 +278,8 @@ def merge_and_annotate(blast_df_list,blast_source_list=None):
     df["subject_sequence"] = df.loc[:,"sequence"]
     df.loc[:,"sequence"] = [s[1] for s in downloaded_seq]
 
+    # Drop sequences we were not able to download
+    good_mask = np.logical_not(pd.isnull(df.loc[:,"sequence"]))
+    df = df.loc[good_mask,:]
+
     return df
