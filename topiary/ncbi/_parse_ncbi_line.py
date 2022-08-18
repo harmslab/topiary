@@ -85,6 +85,9 @@ def parse_ncbi_line(line,accession=None):
 
     out = {"raw_line":line}
 
+    if pd.isnull(line):
+        print(line)
+
     # Clean up leading and trailing spaces
     line = line.strip()
 
@@ -146,7 +149,6 @@ def parse_ncbi_line(line,accession=None):
     # misidentified genuses.
     # https://support.nlm.nih.gov/knowledgebase/article/KA-03379/en-us
     species = None
-
 
     # Start with [[genus] species]
     sm = None
