@@ -513,9 +513,14 @@ def load_trees(directory=None,
     # If we have an event tree, root all trees on that rooted tree
     if prefix == "reconciled":
 
+        if T_event is None:
+            err = "\nTree prefix 'reconciled' cannot be used without an event\n"
+            err += "tree in the directory.\n\n"
+            raise ValueError(err)
+
         # Get left and right descendants of the root node
         root_on = []
-        for n in T_clean.get_tree_root().iter_descendants():
+        for n in T_event.get_tree_root().iter_descendants():
             leaves = n.get_leaf_names()
             leaves.sort()
             root_on.append(tuple(leaves))
