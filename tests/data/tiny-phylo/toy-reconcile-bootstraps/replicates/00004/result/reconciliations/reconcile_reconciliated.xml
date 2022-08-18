@@ -22,7 +22,7 @@
 		</clade>
 	</clade>
 	<clade>
-			<name>ott276534</name>
+			<name>ott770315</name>
 	</clade>
 </clade>
 </phylogeny>
@@ -89,7 +89,7 @@
 				<clade>
 					<name>humanBxxxx</name>
 					<eventsRec>
-						<leaf speciesLocation="ott276534"/>
+						<leaf speciesLocation="ott770315"/>
 					</eventsRec>
 				</clade>
 			</clade>
@@ -116,7 +116,7 @@
 	<clade>
 		<name>humanAxxxx</name>
 		<eventsRec>
-			<leaf speciesLocation="ott276534"/>
+			<leaf speciesLocation="ott770315"/>
 		</eventsRec>
 	</clade>
 </clade>

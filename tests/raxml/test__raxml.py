@@ -359,17 +359,5 @@ def test_run_raxml(tiny_phylo,tmpdir):
     assert output == f"{raxml_binary} --search --msa alignment.phy --model LG --seed 3688946479 --threads auto" + "{1}"
     assert os.path.isfile(os.path.join("test22","alignment.phy.raxml.bestTree"))
 
-    f = open(gene_tree)
-    expected = f.read().strip()
-    f.close()
-
-    f = open(os.path.join("test22","alignment.phy.raxml.bestTree"))
-    observed = f.read().strip()
-    f.close()
-
-    # This is an aggressive test that requires raxml output be identical with
-    # the same seed across platforms. Hopefully true. (Might fail on other boxes
-    # because I made test file using experimental arm64 pll library).
-    assert expected == observed
 
     os.chdir(current_dir)
