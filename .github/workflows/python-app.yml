@@ -1,6 +1,9 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
+# NOTE: this does not run with --run-raxml or --run-generax flags, so these
+# tests will be skipped.
+
 name: topiary
 
 on:
@@ -10,12 +13,12 @@ on:
     branches: [ main   ]
 
 jobs:
-  build-linux:
+  build-nix:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest,macos-latest]
         python-version: ['3.8', '3.9', '3.10' ]
 
     steps:
@@ -34,49 +37,7 @@ jobs:
       shell: bash -l {0}
       run: |
         # platform specific packages
-        sudo apt install -y -q openmpi-bin libopenmpi-dev
-        conda install -c conda-forge -c bioconda "mpi4py" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
-        python -m pip install . -vv
-
-    - name: run flake8
-      shell: bash -l {0}
-      run: |
-        conda install flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-    - name: run pytest
-      shell: bash -l {0}
-      run: |
-        conda install pytest
-        export PATH=`which conda | xargs dirname`/envs/topiary/bin/:$PATH
-        pytest
-
-  build-macos:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest] 
-        python-version: ['3.8', '3.9', '3.10' ]
-
-    steps:
-    - name: checkout
-      uses: actions/checkout@v3.0.0
-
-    - name: set up miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: topiary
-        environment-file: environment.yml
-        python-version: ${{ matrix.python-version }}
-        auto-activate-base: false
-
-    - name: install topiary
-      shell: bash -l {0}
-      run: |
-        # platform specific packages
-        brew install openmpi
-        conda install -c conda-forge -c bioconda "mpi4py" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+        conda install -c conda-forge -c bioconda "mpi4py" "openmpi" muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
         python -m pip install . -vv
 
     - name: run flake8

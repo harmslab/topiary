@@ -15,7 +15,7 @@ import sys
 SCRIPT = os.path.join(os.path.dirname(__file__),
                       "..","..","topiary","generax","_generax_mpi_worker.py")
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_main(generax_data,tmpdir):
 
 

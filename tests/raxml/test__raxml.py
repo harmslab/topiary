@@ -9,7 +9,6 @@ import os
 import copy
 import shutil
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test_run_raxml(tiny_phylo,tmpdir):
 
     def _read_log_file(out_dir):
@@ -345,6 +344,42 @@ def test_run_raxml(tiny_phylo,tmpdir):
     # should have returned to starting directory after crash deep in working
     # dir
     assert os.getcwd() == tmpdir
+
+    os.chdir(current_dir)
+
+@pytest.mark.run_raxml
+def test_integrated_run_raxml(tiny_phylo,tmpdir):
+
+    df = tiny_phylo["final-output/dataframe.csv"]
+    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
+    species_tree = tiny_phylo["final-output/species-tree.newick"]
+    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
+    alignment = tiny_phylo["final-output/alignment.phy"]
+    raxml_binary = shutil.which(RAXML_BINARY)
+
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
+    # Real functionality is tested for specific phylogenetic situations via
+    # things like test_raxml_tree, test_bootstrap, etc. Those functions rely
+    # on run_raxml to correctly build raxml-ng commands, so focus on tests
+    # to make sure args are correctly constructed. Rather than actually
+    # running raxml, mostly write to test-log.sh because raxml will complain
+    # about a lot of these command combos
+
+    kwargs_template = {"algorithm":None,
+                       "alignment_file":None,
+                       "tree_file":None,
+                       "model":None,
+                       "seed":None,
+                       "log_to_stdout":True,
+                       "suppress_output":False,
+                       "other_args":None,
+                       "other_files":None,
+                       "write_to_script":"test-log.sh",
+                       "supervisor":None,
+                       "num_threads":1,
+                       "raxml_binary":"raxml-ng"}
 
     # Do one real calculation
     kwargs = copy.deepcopy(kwargs_template)

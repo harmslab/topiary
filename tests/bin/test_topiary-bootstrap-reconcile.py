@@ -10,7 +10,8 @@ import glob
 
 import tarfile
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
+@pytest.mark.run_raxml
 def test_main(tiny_phylo,tmpdir):
 
     prev_bs = tiny_phylo["04_bootstraps_toy"]

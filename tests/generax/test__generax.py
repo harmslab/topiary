@@ -17,7 +17,8 @@ import json
 import shutil
 import pathlib
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+
+@pytest.mark.run_generax
 def test__annotate_species_tree(generax_data,tmpdir):
 
     input_dir = os.path.join(generax_data["toy-input"],"toy-ml","output")
@@ -45,8 +46,7 @@ def test__annotate_species_tree(generax_data,tmpdir):
 
     os.chdir(current_dir)
 
-
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test__get_link_dict():
 
     df = pd.DataFrame({"ott":["A","B","C","D"],
@@ -114,7 +114,7 @@ def test__get_link_dict():
     assert np.array_equal(uid_in_gene_tree,["0","1","2"])
 
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_setup_generax(generax_data,tmpdir):
 
     # Make sure it reads in previous run without error
@@ -334,7 +334,8 @@ def test_setup_generax(generax_data,tmpdir):
 
     np.array_equal(out_ctrl,expected_link)
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+
+@pytest.mark.run_generax
 def test_run_generax(generax_data,tmpdir):
 
     # Validate can run from both ml and ml_bootstraps output
@@ -429,10 +430,15 @@ def test_run_generax(generax_data,tmpdir):
                               generax_binary=GENERAX_BINARY,
                               write_to_script="run_generax.sh")
 
-    # -------------------------------------------------------------------------
-    # Validate one reconcilation toy data. In this dataset, the gene tree has
-    # a (human,mouse),(lemur,rat) topology for one of the paralogs. In test,
-    # make sure the correct topology and evolutionary events are recovered.
+@pytest.mark.run_generax
+def test_integrated_run_generax(generax_data,tmpdir):
+    """
+    Validate one reconcilation toy data. In this dataset, the gene tree has
+    a (human,mouse),(lemur,rat) topology for one of the paralogs. In test,
+    make sure the correct topology and evolutionary events are recovered.
+
+    mark slow to avoid running generax on remote servers
+    """
 
     # Load in toy data
 

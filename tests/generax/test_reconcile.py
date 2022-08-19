@@ -11,7 +11,7 @@ import copy
 import json
 import shutil
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_reconcile(tiny_phylo,tmpdir):
 
     df_csv = tiny_phylo["initial-input/dataframe.csv"]

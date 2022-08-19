@@ -12,23 +12,23 @@ import pandas as pd
 
 import os, json
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test__generate_parsimony_tree():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test__model_thread_function():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test__parse_raxml_info_for_aic():
 
     pass
 
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test_find_best_model(tiny_phylo,tmpdir):
 
     df = tiny_phylo["initial-input/dataframe.csv"]

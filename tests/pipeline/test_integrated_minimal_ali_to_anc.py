@@ -4,7 +4,8 @@ import topiary
 
 import os
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
+@pytest.mark.run_raxml
 def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     """
     Full test of ali_to_anc pipeline without any complexity of arg checking
@@ -14,7 +15,9 @@ def test_integrated_minimal_ali_to_anc(tiny_phylo,tmpdir):
     """
 
 
-    # Hangs dramatically on github workflows. Works fine locally.
+    # Hangs dramatically on github workflows. Works fine locally, probably
+    # because of challenge of configuring MPI remotely. (Not awesome) solution
+    # is to mark as slow and not run slow tests on gh.
 
     df = tiny_phylo["initial-input/dataframe.csv"]
     species_tree = tiny_phylo["initial-input/species-tree.newick"]

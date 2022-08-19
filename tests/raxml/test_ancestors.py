@@ -15,17 +15,14 @@ import os
 import copy
 import json
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__make_ancestor_summary_trees():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__parse_raxml_anc_output():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__get_bad_columns(tmpdir):
 
     current_dir = os.getcwd()
@@ -48,7 +45,7 @@ def test__get_bad_columns(tmpdir):
     os.chdir(current_dir)
 
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test_generate_ancestors(tiny_phylo,tmpdir):
 
     df = tiny_phylo["initial-input/dataframe.csv"]
@@ -94,7 +91,6 @@ def test_generate_ancestors(tiny_phylo,tmpdir):
     f.close()
     assert run_params["model"] == "JTT"
     assert run_params["alt_cutoff"] == 0.25
-
 
 
     # --------------------------------------------------------------------------
