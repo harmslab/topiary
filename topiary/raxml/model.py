@@ -108,13 +108,21 @@ def _model_thread_function(kwargs):
         dictionary with "L", "N", and various AIC scores.
     """
 
-    # Run raxml
-    run_raxml(**kwargs)
+    # Run raxml. We catch with RuntimeError because sometimes a model/dataset
+    # comnbo is so bad it can't optimize. Drop those from further analysis.
+    try:
+        run_raxml(**kwargs)
+        success = True
+    except RuntimeError:
+        success = False
 
     # Get results from the info file
-    tmp_dir = kwargs["run_directory"]
-    info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
-    result = _parse_raxml_info_for_aic(info_file)
+    if success:
+        tmp_dir = kwargs["run_directory"]
+        info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
+        result = _parse_raxml_info_for_aic(info_file)
+    else:
+        result = None
 
     # Nuke temporary directory
     shutil.rmtree(tmp_dir)
@@ -297,6 +305,10 @@ def find_best_model(df,
     # Go through output list and store results in out
     out = {"model":[]}
     for i, result in enumerate(out_list):
+
+        # Skip models that crashed.
+        if results is None:
+            continue
 
         out["model"].append(models[i])
         for r in result:
