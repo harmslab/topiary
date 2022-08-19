@@ -108,13 +108,27 @@ def _model_thread_function(kwargs):
         dictionary with "L", "N", and various AIC scores.
     """
 
-    # Run raxml
-    run_raxml(**kwargs)
+    # Run raxml. We catch with RuntimeError because sometimes a model/dataset
+    # combo is so bad it can't optimize. Drop those from further analysis.
+    current_dir = os.getcwd() 
+    try:
+        run_raxml(**kwargs)
+        success = True
+    except RuntimeError:
+        success = False
+
+    # This makes sure we came back to starting directory, specifically in 
+    # event of a raxml crash
+    os.chdir(current_dir)
 
     # Get results from the info file
     tmp_dir = kwargs["run_directory"]
     info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
-    result = _parse_raxml_info_for_aic(info_file)
+
+    if success:
+        result = _parse_raxml_info_for_aic(info_file)
+    else:
+        result = None
 
     # Nuke temporary directory
     shutil.rmtree(tmp_dir)
@@ -127,7 +141,7 @@ def find_best_model(df,
                     model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                     "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                     "mtART","mtMAM","mtREV","mtZOA","PMB",
-                                    "rtREV","stmtREV","VT","WAG","LG4M","LG4X"],
+                                    "rtREV","stmtREV","VT","WAG"], 
                     model_rates=["","G8"],
                     model_freqs=["","FC","FO"],
                     model_invariant=["","IC","IO"],
@@ -148,7 +162,7 @@ def find_best_model(df,
     gene_tree : str
         gene_tree in newick format. If not specified, parsimony tree is
         generated and used
-    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
+    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG"]
         list of model matrices to check
     model_rates : list, default=["","G8"]
         ways to treat model rates. If None, do not include a model rate param.
@@ -262,12 +276,6 @@ def find_best_model(df,
                     model = [m for m in model if m != ""]
                     model = "+".join(model)
 
-                    # Check for incompatible matrix/freq/rate combos
-                    if matrix in ["LG4M","LG4X"]:
-                        if rate != "" or freq != "" or invariant != "":
-                            print(f"skipping incompatible model combination {model}",flush=True)
-                            continue
-
                     # Make temporary directory
                     rand = "".join([random.choice(string.ascii_letters)
                                     for _ in range(10)])
@@ -297,6 +305,10 @@ def find_best_model(df,
     # Go through output list and store results in out
     out = {"model":[]}
     for i, result in enumerate(out_list):
+
+        # Failed calculation
+        if result is None:
+            continue
 
         out["model"].append(models[i])
         for r in result:

@@ -45,7 +45,7 @@ def alignment_to_ancestors(df,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                            "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                            "mtART","mtMAM","mtREV","mtZOA","PMB",
-                                           "rtREV","stmtREV","VT","WAG","LG4M","LG4X"],
+                                           "rtREV","stmtREV","VT","WAG"],
                            model_rates=["","G8"],
                            model_freqs=["","FC","FO"],
                            model_invariant=["","IC","IO"],
@@ -81,9 +81,9 @@ def alignment_to_ancestors(df,
     alt_cutoff : float, default=0.25
         cutoff to use for altAll alternate ancestral protein sequence
         generation. Should be between 0 and 1.
-    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
+    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG"]
         list of model matrices to check. If calling from command line, these
-        can be specified directly (:code:`--model_matrices LG JTT ...`) or by specifying
+        can be specified directly (:code:`--model_matrices LG ...`) or by specifying
         a file with models on each line (:code:`--model_matrices SOME_FILE`)
     model_rates : list, default=["","G8"]
         ways to treat model rates. If calling from command line, these
