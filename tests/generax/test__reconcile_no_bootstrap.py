@@ -11,7 +11,7 @@ import ete3
 import os
 import shutil
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_reconcile_no_bootstrap(generax_data,tmpdir):
 
     current_dir = os.getcwd()

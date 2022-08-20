@@ -4,14 +4,18 @@ Functions for working with seed dataframes
 
 import topiary
 from topiary._private import check
-from topiary.opentree import species_to_ott, ott_to_resolvable
+from topiary.opentree import species_to_ott
+from topiary.opentree import ott_to_resolvable
 from topiary.ncbi.blast import merge_and_annotate
+from topiary.ncbi.blast import read_blast_xml
 
 import numpy as np
 import pandas as pd
 
 import re, itertools
 from string import ascii_lowercase, digits
+
+import os
 
 compile_err = \
 """
@@ -575,6 +579,8 @@ def df_from_seed(seed_df,
     blast_source = []
     if ncbi_blast_db is not None:
 
+        print(f"BLASTing against NCBI database {ncbi_blast_db}")
+
         # Infer phylogenetic context from key species
         phylo_context = topiary.opentree.ott_to_mrca(species_list=key_species,
                                                   move_up_by=move_mrca_up_by)
@@ -612,6 +618,8 @@ def df_from_seed(seed_df,
     # local blast
     if local_blast_db is not None:
 
+        print(f"BLASTing against local database {local_blast_db}")
+
         tmp_blast_df = topiary.ncbi.local_blast(seed_df.sequence,
                                                 db=local_blast_db,
                                                 hitlist_size=hitlist_size,
@@ -640,7 +648,9 @@ def df_from_seed(seed_df,
     # Load blast xml
     if blast_xml is not None:
 
-        tmp_blast_df, xml_files = topiary.io.read_blast_xml(blast_xml)
+        print(f"Loading existing blast results from from {blast_xml}")
+
+        tmp_blast_df, xml_files = read_blast_xml(blast_xml)
 
         blast_df.extend(tmp_blast_df)
         for x in xml_files:
@@ -655,6 +665,13 @@ def df_from_seed(seed_df,
 
     # Will convert to topiary dataframe
     df = check.check_topiary_dataframe(df)
+
+    # Drop any "synthetic" sequences that came in. (These actually have an OTT
+    # and are placed as an outgroup to all life!)
+    synth_mask = df.species.str.match("synthetic")
+    df[synth_mask,"keep"] = False
+
+    # Combine seed and downloaded sequences.
     df = pd.concat((seed_df,df),ignore_index=True)
 
     # Set always_keep and key_species for new hits

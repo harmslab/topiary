@@ -212,9 +212,16 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
 
     os.environ["TMPDIR"] = "/tmp/"
 
-    # Get full path of script to run
+    # Get real paths of script, mpirun, python, and replicate dir. This should
+    # (hopefully!) mean we don't run into problems when we pop out onto
+    # who-knows-what node...
     script_dir = os.path.dirname(os.path.abspath(__file__))
     script_to_run = os.path.join(script_dir,"_generax_mpi_worker.py")
+    script_to_run = os.path.realpath(script_to_run)
+
+    mpirun = os.path.realpath(shutil.which("mpirun"))
+    python_exec = os.path.realpath(sys.executable)
+    rep_dir = os.path.realpath(replicate_dir)
 
     # Unique run_id so the program can recognize its own claim files (as
     # opposed to claim files left over from previous runs that may have
@@ -223,12 +230,13 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
 
     # Run the worker script with mpirun if more than one thread is requested
     if num_threads > 1:
-        cmd = ["mpirun","-np",f"{num_threads}"]
+        cmd = [mpirun,"-np",f"{num_threads}"]
     else:
         cmd = []
 
-    cmd.extend([sys.executable,script_to_run])
-    cmd.append(replicate_dir)
+    cmd.append(python_exec)
+    cmd.append(script_to_run)
+    cmd.append(rep_dir)
     cmd.append(run_id)
 
     # Launch command

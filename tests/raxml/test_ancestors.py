@@ -3,6 +3,7 @@ import pytest
 import topiary
 from topiary.raxml.ancestors import _make_ancestor_summary_trees
 from topiary.raxml.ancestors import _parse_raxml_anc_output
+from topiary.raxml.ancestors import _get_bad_columns
 from topiary.raxml.ancestors import generate_ancestors
 from topiary.raxml import RAXML_BINARY
 
@@ -14,17 +15,37 @@ import os
 import copy
 import json
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__make_ancestor_summary_trees():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__parse_raxml_anc_output():
 
     pass
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+def test__get_bad_columns(tmpdir):
+
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
+    bad_file = ["",""]
+    bad_file.extend(["seq1","AXAAAXXXA-AAA---X-XXX---"])
+    bad_file.extend(["seq2","AAXAXAXXAA-A-A--XX-X-X--"])
+    bad_file.extend(["seq3","AAAXXXAXAAA---A-XXX---X-"])
+    expected_bad = np.array([int(x) for x in list("000000010000000111111111")],dtype=bool)
+    expected_bad = np.arange(len(expected_bad),dtype=int)[expected_bad]
+
+    f = open("bad-file.phy","w")
+    f.write("\n".join(bad_file))
+    f.close()
+
+    observed_bad = _get_bad_columns("bad-file.phy")
+    assert np.array_equal(observed_bad,expected_bad)
+
+    os.chdir(current_dir)
+
+
+@pytest.mark.run_raxml
 def test_generate_ancestors(tiny_phylo,tmpdir):
 
     df = tiny_phylo["initial-input/dataframe.csv"]
@@ -70,7 +91,6 @@ def test_generate_ancestors(tiny_phylo,tmpdir):
     f.close()
     assert run_params["model"] == "JTT"
     assert run_params["alt_cutoff"] == 0.25
-
 
 
     # --------------------------------------------------------------------------

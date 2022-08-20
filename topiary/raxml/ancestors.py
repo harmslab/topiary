@@ -114,6 +114,57 @@ def _make_ancestor_summary_trees(df,
     t_out_pp.write(format=2,format_root_node=True,outfile="tree_anc-pp.newick")
     t_out_label.write(format=3,format_root_node=True,outfile="tree_anc-label.newick")
 
+def _get_bad_columns(phy_file):
+    """
+    Get columns that are only {"-","X"}. (RAxML drops these; PastML does not.)
+
+    Parameters
+    ----------
+    phy_file : str
+        .phy file used for the analysis. parses assuming sequence names and
+        alignments are on separate lines (what topiary uses and raxml dumps out).
+
+    Returns
+    -------
+    bad_columns : numpy.ndarray
+        integer array indexing bad columns in phy file.
+    """
+
+    # Load the phy file into a sequence array
+    counter = 0
+    name = None
+    out = {}
+    with open(phy_file) as f:
+        for line in f:
+
+            # Skip first two lines
+            if counter < 2:
+                counter += 1
+                continue
+
+            # Alternate between name and sequence lines.
+            if name is None:
+                name = line.strip()
+                continue
+
+            out[name] = line.strip()
+            name = None
+
+    # Convert to an array
+    seq_array = []
+    for k in out:
+        seq_array.append(np.array(list(out[k])))
+    seq_array = np.array(seq_array)
+
+    # Get columns in array that only have {"-","X"}
+    bad_values = set({"-","X"})
+    bad_columns = []
+    for i in range(seq_array.shape[1]):
+        if set(seq_array[:,i]).issubset(bad_values):
+            bad_columns.append(i)
+
+    return np.array(bad_columns,dtype=int)
+
 
 def _parse_raxml_anc_output(df,
                             anc_prob_file,
@@ -158,12 +209,16 @@ def _parse_raxml_anc_output(df,
     # Get gaps, reconstructed by ACR
     gap_anc_dict = get_ancestral_gaps(alignment_file,tree_file_with_labels)
 
+    # Get indexes of columns that RAXML will have dropped
+    bad_columns = _get_bad_columns(alignment_file)
+
     # Read pp file into a list of ancestors (anc_list) and posterior
     # probabilities for amino acids at each site
     anc_list = []
     anc_all_pp = []
     last_line = ""
     first_line = True
+    counter = 0
     with open(anc_prob_file) as f:
         for l in f:
             line = l.strip()
@@ -181,15 +236,28 @@ def _parse_raxml_anc_output(df,
 
             col = line.split()
 
+            # First ancestor, initialize
             if len(anc_list) == 0:
+                counter = 0
                 anc_list.append(col[0])
                 anc_all_pp.append([])
 
+            # Subsequent ancestors, where the ancestor name changes from what
+            # it was before. Initialize
             if col[0] != anc_list[-1]:
+                counter = 0
                 anc_list.append(col[0])
                 anc_all_pp.append([])
 
+            # Add nan values for the posterior probability for any columns that
+            # raxml skipped
+            while counter in bad_columns:
+                anc_all_pp[-1].append(np.nan*np.ones(20,dtype=float))
+                counter += 1
+
+            # Record posterior probability from this row
             anc_all_pp[-1].append(np.array([float(c) for c in col[3:]]))
+            counter += 1
 
 
     # Create data structures for output
@@ -264,7 +332,6 @@ def _parse_raxml_anc_output(df,
         for_df["anc"] = [anc_name for _ in range(len(anc_all_pp[i]))]
         for_df["site"] = [j for j in range(len(anc_all_pp[i]))]
         for_df["gap"] = gap_anc_dict[anc]
-
         for_df["ml_state"] = list(ml_seq)
         for_df["ml_pp"] = list(ml_pp)
         for_df["alt_state"] = list(alt_seq)

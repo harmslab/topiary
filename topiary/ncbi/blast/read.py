@@ -166,7 +166,7 @@ def records_to_df(blast_records):
         # Port to DataFrame.
         out_df.append(pd.DataFrame(data))
 
-    out_df = pd.concat(out_df)
+    out_df = pd.concat(out_df,ignore_index=True)
 
     return out_df
 
@@ -197,7 +197,7 @@ def read_blast_xml(xml_input,do_cpu_check=False):
     """
 
     xml_files = []
-    if isinstance(xml_input,str):
+    if issubclass(type(xml_input),str):
 
         # Looks like a file; treat as one
         if os.path.isfile(xml_input):

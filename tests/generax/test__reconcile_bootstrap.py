@@ -20,15 +20,13 @@ import copy
 # Currently relies on creaky generax_data test data. Migrate to tiny_phylo
 # test data when next editing.
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
 def test__check_calc_completeness():
     # Status bar runs on it's own thread. Low priority (and pain) to test.
     pass
 
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test__create_bootstrap_dirs(generax_data,tmpdir):
-
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -115,7 +113,7 @@ def test__create_bootstrap_dirs(generax_data,tmpdir):
 
     os.chdir(current_dir)
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test__run_bootstrap_calculations(generax_data,tmpdir):
 
     # This basically makes sure that a calculation is run in every directory.
@@ -145,7 +143,7 @@ def test__run_bootstrap_calculations(generax_data,tmpdir):
 
     os.chdir(current_dir)
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test__combine_bootstrap_calculations(generax_data,tmpdir):
 
     current_dir = os.getcwd()
@@ -179,8 +177,8 @@ def test__combine_bootstrap_calculations(generax_data,tmpdir):
 
     os.chdir(current_dir)
 
-
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
+@pytest.mark.run_generax
 def test_reconcile_bootstrap(tiny_phylo,tmpdir):
 
     df_csv = tiny_phylo["initial-input/dataframe.csv"]

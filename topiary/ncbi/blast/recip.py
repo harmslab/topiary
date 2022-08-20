@@ -286,9 +286,9 @@ def _calc_hit_post_prob(hits,paralog_patterns,partition_temp):
         all_weights = np.power(2,hits.loc[:,"bits"]/partition_temp)
         Q = np.sum(all_weights)
 
-    if partition_temp != initial_partition_temp:
-        print(f"Adjusted partition_temp from {initial_partition_temp:.3e} to ")
-        print(f"{partition_temp:.3e} to avoid a numerical overflow.\n")
+    # if partition_temp != initial_partition_temp:
+    #     print(f"Adjusted partition_temp from {initial_partition_temp:.3e} to ")
+    #     print(f"{partition_temp:.3e} to avoid a numerical overflow.\n")
 
     # Go through all patterns
     pattern_masks = []

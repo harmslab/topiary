@@ -432,7 +432,7 @@ class Supervisor:
 
     def stash(self,to_stash,target_name=None,target_dir="output"):
         """
-        Copy the file or directory to_stash into the run directory. This will
+        Copy the file or directory to_stash into calc_dir/target_dir. This will
         overwrite without warning.
 
         Parameters
@@ -527,15 +527,12 @@ class Supervisor:
 
     def event(self,description,**kwargs):
         """
-        Start an individual calculation.
+        Record an event in run_parameters. This will append a description,
+        the directory relative to the calc_dir, the time, and any kwargs as
+        key/value pairs.
 
         Parameters
         ----------
-        local_directory : str
-            directory (relative to starting_dir) in which a calculation is
-            running. This is relative if the directory is in a supervisor
-            directory. It will be absolute if the current working directory
-            is outside.
         description : str, optional
             string description of what is being gone
         **kwargs : kwargs useful for keeping track of whatever is being run
@@ -830,8 +827,7 @@ class Supervisor:
     @property
     def tree_prefix(self):
         """
-        Class of tree from this output. Will be "reconciled", "gene",
-        or None.
+        Class of tree from this output. Will be "reconciled", "gene", or None.
         """
 
         try:

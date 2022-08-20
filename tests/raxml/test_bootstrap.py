@@ -7,7 +7,7 @@ from topiary.raxml import RAXML_BINARY
 import os
 import json
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test_generate_bootstraps(tiny_phylo,tmpdir):
 
     df = tiny_phylo["initial-input/dataframe.csv"]

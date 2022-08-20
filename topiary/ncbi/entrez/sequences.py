@@ -75,6 +75,43 @@ def _get_sequences_thread_function(ids,num_tries_allowed,lock):
         sequence = str(record.seq)
         seq_output.append((seq_id,sequence))
 
+    # Make sure we brought down as many sequences as input ids. If we didn't,
+    # figure out which one(s) we are missing and append None for the missing
+    # sequences.
+    id_list = ids.split(",")
+    if len(id_list) != len(seq_output):
+
+        # Create dictionary keying ids we pulled down to their seq_id,sequence
+        # entry. We have to slice out the sequence id part to actually do the
+        # matching.  (pdb|1STN|A --> 1STN_A, XX|blah.1 --> blah)
+        seq_dict = {}
+        for s in seq_output:
+            seq_id = s[0]
+            split_list = seq_id.split(".")[0].split("|")
+            if len(split_list) == 1:
+                this_id = split_list[0]
+            elif len(split_list) == 2:
+                this_id = split_list[1]
+            elif len(split_list) == 3:
+                this_id = "{}_{}".format(*split_list[1:])
+            else:
+                err = f"\ncould not parse ncbi sequence identifier '{s}'\n\n"
+                raise ValueError(err)
+
+            seq_dict[this_id] = (s[0],s[1])
+
+        # Now try to match input to the output. If this does not work, append
+        # None.
+        final_output = []
+        for id in id_list:
+            try:
+                final_output.append(seq_dict[id])
+            except KeyError:
+                print(f"No sequence pulled down for query '{id}'",flush=True)
+                final_output.append((id,None))
+
+        seq_output = final_output
+
     return seq_output
 
 def get_sequences(to_download,

@@ -237,6 +237,9 @@ def merge_and_annotate(blast_df_list,blast_source_list=None):
         keep = []
         out_dict = None
         for idx in blast_df_list[i].index:
+            if pd.isnull(blast_df_list[i].loc[idx,"title"]):
+                print(i,idx,blast_df_list[i].loc[idx,"blast_source"])
+                print(blast_df_list[i].loc[idx,:])
             parsed = parse_ncbi_line(blast_df_list[i].loc[idx,"title"])
 
             if parsed is None:
@@ -277,5 +280,9 @@ def merge_and_annotate(blast_df_list,blast_source_list=None):
     downloaded_seq = get_sequences(df.loc[:,"accession"])
     df["subject_sequence"] = df.loc[:,"sequence"]
     df.loc[:,"sequence"] = [s[1] for s in downloaded_seq]
+
+    # Drop sequences we were not able to download
+    good_mask = np.logical_not(pd.isnull(df.loc[:,"sequence"]))
+    df = df.loc[good_mask,:]
 
     return df

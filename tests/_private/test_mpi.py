@@ -8,7 +8,7 @@ from topiary.generax import GENERAX_BINARY
 
 import os
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_get_num_slots():
 
     # Should fail and catch because binary not good
@@ -20,8 +20,7 @@ def test_get_num_slots():
     assert num_slots > 1
 
 
-
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_check_mpi_configuration():
 
     # This should run fine

@@ -9,7 +9,7 @@
 	<clade>
 			<name>node_0</name>
 		<clade>
-				<name>ott276534</name>
+				<name>ott770315</name>
 		</clade>
 		<clade>
 				<name>ott913930</name>
@@ -65,7 +65,7 @@
 			<clade>
 				<name>humanBxxxx</name>
 				<eventsRec>
-					<leaf speciesLocation="ott276534"/>
+					<leaf speciesLocation="ott770315"/>
 				</eventsRec>
 			</clade>
 			<clade>
@@ -95,7 +95,7 @@
 			<clade>
 				<name>humanAxxxx</name>
 				<eventsRec>
-					<leaf speciesLocation="ott276534"/>
+					<leaf speciesLocation="ott770315"/>
 				</eventsRec>
 			</clade>
 		</clade>

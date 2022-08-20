@@ -36,7 +36,7 @@ def seed_to_alignment(seed_df,
                       worst_align_drop_fx=0.1,
                       sparse_column_cutoff=0.80,
                       align_trim=(0.05,0.95),
-                      ncbi_blast_db="nr",
+                      ncbi_blast_db=None,
                       local_blast_db=None,
                       blast_xml=None,
                       move_mrca_up_by=2,
@@ -89,8 +89,9 @@ def seed_to_alignment(seed_df,
         (0.0,1.0) would not trim; (0.05,0,98) would trim the first 0.05 off the
         front and the last 0.02 off the back.
 
-    ncbi_blast_db : str or None, default="nr"
-        NCBI blast database to use.
+    ncbi_blast_db : str, optional
+        NCBI blast database to use. (If ncbi_blast_db, local_blast_db and
+        blast_xml are all None, ncbi_blast_db is automatically set to "nr").
     local_blast_db : str, optional
         Local blast database to use.
     blast_xml : str or list, optional
@@ -221,6 +222,14 @@ def seed_to_alignment(seed_df,
         df, key_species, paralog_patterns = topiary.io.read_seed(expected_output)
         seed_df = os.path.split(expected_output)[-1]
 
+
+    # append paths to local blast resources
+    if not blast_xml is None:
+        blast_xml = os.path.abspath(blast_xml)
+
+    if not local_blast_db is None:
+        local_blast_db = os.path.abspath(local_blast_db)
+
     # Change into the output directory
     cwd = os.getcwd()
     os.chdir(out_dir)
@@ -235,6 +244,10 @@ def seed_to_alignment(seed_df,
         print("Building initial topiary dataframe.")
         print("-------------------------------------------------------------------")
         print("",flush=True)
+
+        # If no blast resource specified, default to nr
+        if ncbi_blast_db is None and local_blast_db is None and blast_xml is None:
+            ncbi_blast_db = "nr"
 
         kwargs = {"seed_df":seed_df,
                   "ncbi_blast_db":ncbi_blast_db,

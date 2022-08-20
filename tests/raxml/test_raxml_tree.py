@@ -8,7 +8,7 @@ from topiary._private import Supervisor
 import os
 import json
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test_generate_ml_tree(tiny_phylo,tmpdir):
 
     df = tiny_phylo["initial-input/dataframe.csv"]

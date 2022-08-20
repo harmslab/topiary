@@ -74,7 +74,7 @@ def test_check_muscle():
     if version == (0,0,0):
         raise RuntimeError("muscle is installed but we cannot parse its version string!")
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_generax
 def test_check_generax():
 
     binary, version = check_generax()
@@ -88,7 +88,7 @@ def test_check_generax():
     if version == (0,0,0):
         raise RuntimeError("generax is installed but we cannot parse its version string!")
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+@pytest.mark.run_raxml
 def test_check_raxml():
 
     binary, version = check_raxml()
@@ -141,7 +141,9 @@ def test_check_git():
     if version == (0,0,0):
         raise RuntimeError("git is installed but we cannot parse its version string!")
 
-@pytest.mark.skipif(os.name == "nt",reason="cannot run on windows")
+# mark for run_generax because that's why we worry about MPI in the first place.
+# this will avoid a warning on windows tests. 
+@pytest.mark.run_generax
 def test_check_mpirun():
 
     binary, version = check_mpirun()
