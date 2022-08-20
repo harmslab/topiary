@@ -102,7 +102,7 @@ def alignment_to_ancestors(df,
         overwrite
     overwrite : bool, default=False
         whether or not to overwrite existing output. incompatible with restart
-    threads : int, default=-1
+    num_threads : int, default=-1
         number of threads to use. if -1 use all available
     raxml_binary : str, optional
         raxml binary to use

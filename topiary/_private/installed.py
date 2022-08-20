@@ -4,7 +4,10 @@ Check for installed external software in the path.
 
 import topiary
 import numpy as np
-import subprocess, shutil, os, re
+import subprocess
+import shutil
+import os
+import re
 
 
 def _version_checker(cmd,version_slicer):
@@ -100,10 +103,11 @@ def check_generax(binary=None):
     """
 
     def _version_slicer(ret):
+
         lines = ret.stdout.decode().split("\n")
         for line in lines:
             if re.search("generax",line,flags=re.IGNORECASE):
-                return line.split()[2:][0].strip()
+                return line.split()[2].strip()
         return None
 
     if binary is None:
