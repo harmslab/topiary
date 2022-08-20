@@ -37,7 +37,7 @@ jobs:
       shell: bash -l {0}
       run: |
         # platform specific packages
-        conda install -c conda-forge -c bioconda "mpi4py" "openmpi" muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+        conda install -c conda-forge -c bioconda "mpi4py" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
         python -m pip install . -vv
 
     - name: run flake8
