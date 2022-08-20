@@ -25,6 +25,7 @@ def test__check_calc_completeness():
     pass
 
 
+@pytest.mark.run_generax
 def test__create_bootstrap_dirs(generax_data,tmpdir):
 
     current_dir = os.getcwd()

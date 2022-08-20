@@ -9,6 +9,7 @@ import os
 import copy
 import shutil
 
+@pytest.mark.run_raxml
 def test_run_raxml(tiny_phylo,tmpdir):
 
     def _read_log_file(out_dir):
