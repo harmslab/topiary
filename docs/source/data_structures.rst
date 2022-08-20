@@ -88,7 +88,7 @@ There are two basic ways to construct a topiary dataframe:
 + :code:`io.df_from_seed`: construct topiary dataframe from a seed dataframe.
   Depending on the options selected, topiary will add sequences using BLAST or
   will read sequences from a list of pre-prepared BLAST xml files.
-+ Construct the dataframe manually. 
++ Construct the dataframe manually.
 
 
 Reading and writing
@@ -143,3 +143,24 @@ Example seed dataframe
 +------+-------------------------------------------------------------------+--------------+------------+
 
 See protocol for description of how to make these dataframes.
+
+
+Run directories
+===============
+
+run_directory
++ input
++ working
++ output
++ run_parameters.json
+
+.. code_block::
+    run_parameters = {"files":["files"] <<- relative
+                      "version":
+                      "calc_type":
+                      "kwargs":
+                      "start_time":
+                      "end_time":
+                      "model":
+                      "cmd":
+                      "previous_entries":[]}
