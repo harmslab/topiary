@@ -1,6 +1,6 @@
 # topiary
 
-![Testing status](https://github.com/harmslab/topiary/actions/workflows/python-app.yml/badge.svg) ![Coverage](reports/badges/coverage-badge.svg) ![Number of tests](reports/badges/tests-badge.svg) ![Documentation Status](https://readthedocs.org/projects/topiary-asr/badge/?version=latest)
+![Testing status](https://github.com/harmslab/topiary/actions/workflows/python-app.yml/badge.svg) ![Coverage](docs/badges/coverage-badge.svg) ![Number of tests](docs/badges/tests-badge.svg) ![Documentation Status](https://readthedocs.org/projects/topiary-asr/badge/?version=latest)
 
 [Documentation](https://topiary-asr.readthedocs.io/en/latest/)
 
