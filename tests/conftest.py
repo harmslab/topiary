@@ -445,3 +445,7 @@ def generax_data():
 def tiny_phylo():
 
     return get_files(os.path.join("data","tiny-phylo"))
+
+@pytest.fixture(scope="module")
+def raxml_output():
+    return get_files(os.path.join("data","raxml-output"))

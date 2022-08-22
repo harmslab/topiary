@@ -171,6 +171,9 @@ def find_best_model(df,
     model_invariant : list, default=["","IC","IO"]
         ways to treat invariant alignment columns. If None, do not have an
         invariant class.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
     calc_dir : str, default="find_best_model"
         calculation directory.
     overwrite : bool, default=False
