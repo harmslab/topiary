@@ -15,12 +15,12 @@ dependencies:
   - dendropy
   - toytree
   - pastml
-  - openmpi<4.1.3
-  - blast    # [not win]
-  - muscle   # [not win]
-  - generax  # [not win]
-  - raxml-ng # [not win]
-  - mpi4py
+  #- openmpi<4.1.3
+  #- blast    # [not win]
+  #- muscle   # [not win]
+  #- generax  # [not win]
+  #- raxml-ng # [not win]
+  #- mpi4py
   - pip
   - pip:
     - opentree
