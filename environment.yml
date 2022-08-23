@@ -22,5 +22,5 @@ dependencies:
   #- mpi4py
   - pip
   - pip:
-    - pastml
+    - pastml==1.9.34
     - opentree
