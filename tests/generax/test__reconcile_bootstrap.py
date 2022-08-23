@@ -72,7 +72,7 @@ def test__progress_bar(tiny_phylo,tmpdir):
 
     # Add timeout loop in case it takes a moment to finish
     start_time = time.time()
-    while (time.time() - start_time) < 4:
+    while (time.time() - start_time) < 6:
         if not status_bar.is_alive():
             break
         time.sleep(0.2)
@@ -103,7 +103,7 @@ def test__progress_bar(tiny_phylo,tmpdir):
 
     # Add timeout loop in case it takes a moment to finish
     start_time = time.time()
-    while (time.time() - start_time) < 4:
+    while (time.time() - start_time) < 6:
         if not status_bar.is_alive():
             break
         time.sleep(0.2)
@@ -119,7 +119,7 @@ def test__progress_bar(tiny_phylo,tmpdir):
 
     os.chdir(current_dir)
 
-@pytest.mark.run_raml
+@pytest.mark.run_raxml
 def test__check_convergence(tiny_phylo,tmpdir):
 
     template = tiny_phylo["toy-reconcile-bootstraps-running/replicates"]
