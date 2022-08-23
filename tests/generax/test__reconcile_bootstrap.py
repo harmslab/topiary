@@ -119,6 +119,7 @@ def test__progress_bar(tiny_phylo,tmpdir):
 
     os.chdir(current_dir)
 
+@pytest.mark.run_raml
 def test__check_convergence(tiny_phylo,tmpdir):
 
     template = tiny_phylo["toy-reconcile-bootstraps-running/replicates"]
@@ -475,6 +476,7 @@ def test__clean_replicate_dir(tiny_phylo,tmpdir):
 
     os.chdir(current_dir)
 
+@pytest.mark.run_generax
 def test__construct_args():
 
     kwargs_template = {"replicate_dir":"test",
