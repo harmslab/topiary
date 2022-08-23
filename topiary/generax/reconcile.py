@@ -26,9 +26,11 @@ def reconcile(prev_calculation=None,
               allow_horizontal_transfer=None,
               seed=None,
               bootstrap=False,
+              converge_cutoff=0.03,
               calc_dir="reconcile",
               overwrite=False,
               num_threads=-1,
+              threads_per_rep=1,
               generax_binary=GENERAX_BINARY,
               raxml_binary=RAXML_BINARY):
     """
@@ -74,6 +76,9 @@ def reconcile(prev_calculation=None,
     bootstrap: bool, default=False
         whether or not to do bootstrap replicates. if True, prev_calculation must
         point to a raxml ml_bootstrap run
+    converge_cutoff : float, default=0.03
+        bootstrap convergence criterion. only used of bootstrap = True. This is
+        RAxML-NG default, passed to --bs-cutoff.
     calc_dir: str, default="reconcile"
         name of calc_dir directory
     overwrite : bool, default=False
@@ -82,6 +87,8 @@ def reconcile(prev_calculation=None,
         supervisor instance to keep track of inputs and outputs
     num_threads : int, default=-1
         number of threads to use. if -1 use all available.
+    threads_per_rep : int, default=1
+        number of threads to use per replicate. only used if bootstrap = True
     generax_binary : str, optional
         what generax binary to use
     raxml_binary : str, optional
@@ -201,6 +208,7 @@ def reconcile(prev_calculation=None,
         # this will the ML reconciled tree from a previous reconciliation
         # calculation in the pipeline.
         supervisor.check_required(required_files=["reconciled-tree.newick"])
+        supervisor.update('converge_cutoff',converge_cutoff)
 
         return reconcile_bootstrap(df=supervisor.df,
                                    model=supervisor.model,
@@ -210,9 +218,11 @@ def reconcile(prev_calculation=None,
                                    allow_horizontal_transfer=allow_ht,
                                    seed=supervisor.seed,
                                    bootstrap_directory=bs_dir,
+                                   converge_cutoff=converge_cutoff,
                                    restart=None,
                                    overwrite=overwrite,
                                    supervisor=supervisor,
                                    num_threads=num_threads,
+                                   threads_per_rep=threads_per_rep,
                                    generax_binary=generax_binary,
                                    raxml_binary=raxml_binary)

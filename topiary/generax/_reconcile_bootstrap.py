@@ -5,10 +5,12 @@ of the gene tree and alignments.
 
 import topiary
 
-from topiary._private import threads
 from topiary._private import Supervisor
+from topiary._private import threads
+from topiary._private import mpi
 
 from topiary.raxml._raxml import run_raxml
+from topiary.raxml import check_convergence
 from topiary.generax._generax import setup_generax
 from topiary.generax._generax import run_generax
 from topiary.generax._generax import GENERAX_BINARY
@@ -27,37 +29,294 @@ import random
 import string
 import subprocess
 import time
+import pathlib
 import multiprocessing as mp
 
-def _check_calc_completeness(output_directory):
+
+def _progress_bar(replicate_dir):
     """
     Check to see how far along the calculation is.
+
+    Parameters
+    ----------
+    replicate_dir : str
+        directory containing replicates
     """
 
-    num_directories = len(glob.glob(os.path.join(output_directory,"0*")))
-    num_complete = 0
+    total_calcs = len(glob.glob(os.path.join(replicate_dir,"0*")))
 
-    with tqdm(total=num_directories) as pbar:
-        while num_complete < num_directories:
-            num_complete = len(glob.glob(os.path.join(output_directory,"0*","complete*")))
+    num_complete = 0
+    skipped_added = False
+    with tqdm(total=total_calcs) as pbar:
+        while num_complete < total_calcs:
+
+            num_complete = len(glob.glob(os.path.join(replicate_dir,"0*","completed")))
+            num_running = len(glob.glob(os.path.join(replicate_dir,"0*","running")))
+            num_skipped = len(glob.glob(os.path.join(replicate_dir,"0*","skipped")))
+
+            # Num skipped just added in
+            if num_skipped > 0 and not skipped_added:
+
+                skipped_added = True
+                total_calcs = num_complete + num_running
+
+                pbar.reset(total_calcs)
+                pbar.update(num_complete)
+                pbar.refresh()
+
             pbar.n = num_complete
             pbar.refresh()
-            time.sleep(1)
+            time.sleep(0.5)
 
-
-def _create_bootstrap_dirs(df,
-                           model,
-                           gene_tree,
-                           species_tree,
-                           allow_horizontal_transfer,
-                           seed,
-                           bootstrap_directory,
-                           overwrite,
-                           generax_binary):
+def _check_convergence(replicate_dir,
+                       converge_cutoff,
+                       lock=None):
     """
-    Prepare for generax bootstrap by constructing all bootstrap directories.
-    Do a dummy run of generax in each one, creating a file called run_generax.sh
-    that can be invoked later.
+    Check for convergence and indicate to all threads to terminate if true.
+
+    Parameters
+    ----------
+    replicate_dir : str
+        directory containing replicates
+    converge_cutoff : float
+        bootstrap convergence criterion. passed to --bs-cutoff
+    lock : multiprocessing.Manager().Lock(), optional
+        lock to control file
+
+    Returns
+    -------
+    converged : bool
+        whether or not the bootstraps are converged
+    df : pandas.DataFrame
+        dataframe holding convergence results
+    """
+
+    if lock is None:
+        lock = threads.MockLock()
+
+    # Grab copy of the newick file with lock to avoid collisons with threads
+    # that might be writing to it.
+    lock.acquire()
+    try:
+        shutil.copy(os.path.join(replicate_dir,"bs-trees.newick"),"tmp.newick")
+    finally:
+        lock.release()
+
+    # Don't do calculation of the number of trees is only one
+    f = open('tmp.newick')
+    lines = [line for line in f.readlines() if line.strip() != ""]
+    f.close()
+
+    if len(lines) < 2:
+        os.remove("tmp.newick")
+        return False, None
+
+    # Check for convergence
+    converged, df = check_convergence("tmp.newick",
+                                      converge_cutoff=converge_cutoff)
+
+    # Delete temporary newick file
+    os.remove("tmp.newick")
+
+    # If calculation has converged...
+    if converged:
+
+        # Get list of directories
+        dirs = [os.path.join(replicate_dir,d) for d in os.listdir(replicate_dir)]
+        dirs = [d for d in dirs if os.path.isdir(d)]
+        dirs.sort()
+
+        num_completed = 0
+        num_running = 0
+
+        # Lock to prevent other threads from starting a calculation or updating
+        # the progress bar while this is running.
+        lock.acquire()
+        try:
+
+            # Go through all directories
+            for d in dirs:
+
+                # Is calculation done?
+                if os.path.isfile(os.path.join(d,"completed")):
+                    num_completed += 1
+
+                # if not...
+                else:
+
+                    # If calculation running?
+                    if os.path.isfile(os.path.join(d,"running")):
+                        num_running += 1
+
+                    # if not, write file telling other threads to skip
+                    else:
+                        pathlib.Path(os.path.join(d,"skipped")).touch()
+
+        # Release lock
+        finally:
+            lock.release()
+
+    return converged, df
+
+
+def _generax_thread_function(replicate_dir,
+                             converge_cutoff,
+                             is_manager,
+                             hosts,
+                             lock=None):
+    """
+    Run a generax calculation in parallel, checking for and avoiding collisions
+    with other workers.
+
+    Parameters
+    ----------
+
+    replicate_dir : str
+        directory containing replicates
+    converge_cutoff : float
+        bootstrap convergence criterion. passed to --bs-cutoff
+    is_manager : bool
+        whether or not this is the manager thread that will check for
+        convergence.
+    hosts : list
+        list of hosts on which to run the calculation. passed to mpirun via
+        --hosts ",".join(hosts)
+    lock : multiprocessing.Manager().Lock()
+        lock to allow multiple threads to access files
+    """
+
+    if lock is None:
+        lock = threads.MockLock()
+
+    # Change into replicate_directory and get sorted list of bootstrap
+    # replicates.
+    os.chdir(replicate_dir)
+    dirs = [d for d in os.listdir(".") if os.path.isdir(d)]
+    dirs.sort()
+
+    # Construct a base mpirun command that the generax commands will be
+    # appended to
+    host = ",".join(hosts)
+    base_cmd = ["mpirun","--host",",".join(hosts)]
+
+    # Path to result tree within each directory
+    result_tree = os.path.join("result","results","reconcile","geneTree.newick")
+
+    # Go through each directory
+    converged = None
+    df = None
+    for d in dirs:
+
+        # figure out what directory to go into. Use the lock to make sure only
+        # one process is staking a claim at a time.
+        lock.acquire()
+        try:
+
+            # If this directory has already been run
+            if os.path.isfile(os.path.join(d,"completed")):
+                continue
+
+            # If this directory is already running
+            if os.path.isfile(os.path.join(d,"running")):
+                continue
+
+            # If this directory has already been set to skip
+            if os.path.isfile(os.path.join(d,"skipped")):
+                continue
+
+            # Stake a claim
+            os.chdir(d)
+            pathlib.Path("running").touch()
+
+        finally:
+            lock.release()
+
+        # If we got all the way here, this directory is ours to run in.
+
+        # Read run_generax.sh script and construct an mpirun command with the
+        # contents of the scripts
+        f = open("run_generax.sh")
+        contents = f.read()
+        f.close()
+
+        # Split on "\n" and strip redirect if presents
+        bash_cmd = contents.split("\n")[0].strip()
+        bash_cmd = bash_cmd.split("&>")[0]
+        bash_cmd = bash_cmd.split()
+        bash_cmd = [c.strip() for c in bash_cmd if c.strip() != ""]
+        cmd = base_cmd[:]
+        cmd.extend(bash_cmd)
+
+        # Launch as a subprocess
+        ret = subprocess.run(cmd,capture_output=True)
+
+        # Write stdout and stderr
+        f = open("stdout.log","w")
+        f.write(ret.stdout.decode())
+        f.close()
+
+        f = open("stderr.log","w")
+        f.write(ret.stderr.decode())
+        f.close()
+
+        # If failure, raise a RuntimeError
+        if ret.returncode != 0:
+            err = f"\ngenerax crashed in directory {d}. Writing stderr and\n"
+            err += "stout there.\n\n"
+            raise RuntimeError(err)
+
+        # Grab result tree
+        f = open(result_tree,'r')
+        tree = f.read().strip()
+        f.close()
+
+        # Update status bar and final tree file
+        lock.acquire()
+        try:
+
+            # Update replicates tree file
+            f = open(os.path.join("..","bs-trees.newick"),"a")
+            f.write(f"{tree}\n")
+            f.close()
+
+        finally:
+            lock.release()
+
+        # Create a completed file, nuke running file, move to next directory.
+        pathlib.Path("completed").touch()
+        os.remove("running")
+        os.chdir("..")
+
+        # For the manager thread, check for convergence
+        if is_manager:
+            converged, df = _check_convergence(replicate_dir=".",
+                                               converge_cutoff=converge_cutoff,
+                                               lock=lock)
+            if converged:
+                break
+
+    os.chdir("..")
+
+    if is_manager:
+        return (converged, df)
+
+    return None
+
+
+
+def _build_replicate_dirs(df,
+                          model,
+                          gene_tree,
+                          species_tree,
+                          allow_horizontal_transfer,
+                          seed,
+                          bootstrap_directory,
+                          overwrite,
+                          generax_binary):
+    """
+    Prepare for generax bootstrap by constructing individual directories that
+    hold each bootstrap replicate. Do a dummy run of generax in each one,
+    creating a file called run_generax.sh that can be invoked later.
 
     Parameters
     ----------
@@ -86,8 +345,8 @@ def _create_bootstrap_dirs(df,
 
     Returns
     -------
-    calc_dirs : list
-        list of directories in which to do calculations
+    replicate_dir : str
+        directory containing replicate directories
     """
 
     starting_dir = os.getcwd()
@@ -168,8 +427,7 @@ def _create_bootstrap_dirs(df,
 
         # This is a dummy run -- exactly as it would be called in a standard
         # reconciliation -- but now we're writing resulting command to
-        # run_generax.sh in the run directory. Send in with 1 thread because
-        # this job should run on a single thread.
+        # run_generax.sh in the run directory.
         cmd = run_generax(run_directory=out_dir,
                           allow_horizontal_transfer=allow_horizontal_transfer,
                           seed=seed,
@@ -183,7 +441,73 @@ def _create_bootstrap_dirs(df,
 
     return replicate_dir
 
-def _run_bootstrap_calculations(replicate_dir,num_threads):
+def _clean_replicate_dir(replicate_dir):
+    """
+    Remove previous run information.
+
+    Parameters
+    ----------
+    replicate_dir : str
+        directory containing replicates
+    """
+
+    running = glob.glob(os.path.join(replicate_dir,"0*","running"))
+    for f in running:
+        os.remove(f)
+
+    skipped = glob.glob(os.path.join(replicate_dir,"0*","skipped"))
+    for f in skipped:
+        os.remove(f)
+
+
+def _construct_args(replicate_dir,
+                    converge_cutoff,
+                    num_threads,
+                    threads_per_rep):
+    """
+    Construct a list of arguments to pass to each thread in the pool.
+
+    Parameters
+    ----------
+    replicate_dir: str
+        directory containing replicates
+    converge_cutoff : float
+        bootstrap convergence criterion. passed to --bs-cutoff
+    num_threads : int
+        total number of mpi slots to use for the calculation
+    threads_per_rep : int
+        number of slots to use per replicate.
+
+    Returns
+    -------
+    kwargs_list : list
+        list of dictionaries with kwargs to pass for each calculation
+    num_threads : int
+        number of total calculations to start via thread_manager
+    """
+
+    hosts = mpi.get_hosts(num_threads)
+
+    kwargs_list = []
+    for i in range(0,len(hosts),threads_per_rep):
+
+        if i == 0:
+            is_manager = True
+        else:
+            is_manager = False
+
+        kwargs_list.append({"replicate_dir":replicate_dir,
+                            "is_manager":is_manager,
+                            "hosts":hosts[i:i+threads_per_rep],
+                            "converge_cutoff":converge_cutoff})
+
+    return kwargs_list, len(kwargs_list)
+
+
+def _run_bootstrap_calculations(replicate_dir,
+                                converge_cutoff,
+                                num_threads,
+                                threads_per_rep):
     """
     Run generax in parallel using mpirun for all directories.
 
@@ -191,16 +515,19 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
     ----------
     replicate_dir : str
         directory with bootstrap replicates for reconcilations
+    converge_cutoff : float
+        bootstrap convergence criterion. passed to --bs-cutoff
     num_threads : int
-        number of mpi slots (passed to mpirun -np num_threads)
+        number of parallel jobs to start
+    threads_per_rep : int
+        number of threads to use per replicate. only used if bootstrap = True
     """
 
     print("\nGenerating reconciliation bootstraps.\n",flush=True)
 
     # This is a status bar that we spawn on its own thread that will spew onto
     # stderr as the calculations are completed in each directory.
-    status_bar = mp.Process(target=_check_calc_completeness,
-                            args=(replicate_dir,))
+    status_bar = mp.Process(target=_progress_bar,args=(replicate_dir,))
     status_bar.start()
 
     # This TMPDIR insanity is to prevent MPI from choking because temporary
@@ -209,38 +536,27 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
         old_tmpdir = os.environ["TMPDIR"]
     except KeyError:
         old_tmpdir = None
-
     os.environ["TMPDIR"] = "/tmp/"
 
-    # Get real paths of script, mpirun, python, and replicate dir. This should
-    # (hopefully!) mean we don't run into problems when we pop out onto
-    # who-knows-what node...
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    script_to_run = os.path.join(script_dir,"_generax_mpi_worker.py")
-    script_to_run = os.path.realpath(script_to_run)
 
-    mpirun = os.path.realpath(shutil.which("mpirun"))
-    python_exec = os.path.realpath(sys.executable)
-    rep_dir = os.path.realpath(replicate_dir)
+    kwargs_list, num_threads = _construct_args(replicate_dir,
+                                               converge_cutoff,
+                                               num_threads,
+                                               threads_per_rep)
 
-    # Unique run_id so the program can recognize its own claim files (as
-    # opposed to claim files left over from previous runs that may have
-    # crashed)
-    run_id = "".join([random.choice(string.ascii_letters) for _ in range(10)])
+    # Launch calculation.
+    try:
+        results = threads.thread_manager(kwargs_list,
+                                         _generax_thread_function,
+                                         num_threads=num_threads,
+                                         progress_bar=False,
+                                         pass_lock=True)
 
-    # Run the worker script with mpirun if more than one thread is requested
-    if num_threads > 1:
-        cmd = [mpirun,"-np",f"{num_threads}"]
-    else:
-        cmd = []
-
-    cmd.append(python_exec)
-    cmd.append(script_to_run)
-    cmd.append(rep_dir)
-    cmd.append(run_id)
-
-    # Launch command
-    subprocess.run(cmd)
+    # This clean up step makes sure we kill the status bar thread if the
+    # calculation crashes.
+    except Exception as e:
+        status_bar.kill()
+        raise e
 
     # If we get here, the job is done whether the status bar is or not. Wait
     # two seconds to let the status bar finish if it's going to so the log
@@ -252,112 +568,16 @@ def _run_bootstrap_calculations(replicate_dir,num_threads):
     if old_tmpdir is not None:
         os.environ["TMPDIR"] = old_tmpdir
 
+    # Only the first thread will spit out results: a tuple with convergence
+    # status (True or False) and the dataframe corresponding to last convergence
+    # test. Get those results. If df is None, convergence test not run yet;
+    # run it.
+    converged, df = results[0]
+    if df is None:
+        converged, df = _check_convergence(replicate_dir=replicate_dir,
+                                           converge_cutoff=converge_cutoff)
 
-def _combine_bootstrap_calculations(replicate_dir,reconciled_tree):
-    """
-    Combine the results from the parallel generax bootstrap runs.
-
-    replicate_dir : str
-        directory containing the replicated generax reconcilation directories
-        for the parallel bootstrap reconciliation calculation
-    reconciled_tree : str
-        newick file holding ML reconciled tree on which the bootstrap branch
-        supports will be loaded
-
-    Returns
-    -------
-    converged : bool
-        whether or not the autoMRE a posterior convergence test indicates
-        converged bootstrap values
-
-    Notes
-    -----
-    This is not thread-safe. The generax bootstrap code uses an embarrassingly
-    parallel strategy: each directory is running on its on MPI slot. This
-    combining code goes through those directories and assembles the resulting
-    output, even if not all directory calculations are complete. It does not
-    write those directories, so it should be safe there, BUT it writes its
-    results without any worry about collisions with other instances of
-    _combine_results. Do not run this on more than one process.
-    """
-
-    # Paths within replicates directory we care about
-    gene_tree_path = os.path.join("result",
-                                  "results",
-                                  "reconcile",
-                                  "geneTree.newick")
-
-    reconcile_path = os.path.join("result",
-                                  "reconciliations")
-
-    # Load strings for each bootstrap replicate into tree_stack
-    tree_stack = {}
-    for d in os.listdir(replicate_dir):
-
-        rep = os.path.join(replicate_dir,d)
-        if not os.path.isdir(rep):
-            continue
-
-        # See if this replicate has completed its run.
-        has_run = glob.glob(os.path.join(rep,"completed_run-*"))
-        if len(has_run) == 0:
-            continue
-
-        # Read file into tree_stack dict
-        f = open(os.path.join(rep,gene_tree_path))
-        tree_stack[d] = f.read().strip()
-        f.close()
-
-    # Sort by tree name (00001, 00002, ...)
-    bs_keys = list(tree_stack.keys())
-    bs_keys.sort()
-
-    # Construct a single newick file with bootstrap replicate trees loaded in
-    # line-by-line
-    with open("bs-trees.newick","w") as f:
-        for key in bs_keys:
-            f.write(f"{tree_stack[key]}\n")
-
-    # Combine bootstrap replicates using raxml
-    if os.path.isdir("combine_with_raxml"):
-        shutil.rmtree("combine_with_raxml")
-
-    # Combine bootstrap replicates into a set of supports
-    cmd = run_raxml(run_directory="combine_with_raxml",
-                    algorithm="--support",
-                    tree_file=reconciled_tree,
-                    num_threads=1,
-                    log_to_stdout=False,
-                    suppress_output=True,
-                    other_files=["bs-trees.newick"],
-                    other_args=["--bs-trees","bs-trees.newick","--redo"])
-
-    # Grab support tree out of raxml directory
-    shutil.copy(os.path.join("combine_with_raxml",
-                             "tree.newick.raxml.support"),
-                "reconciled-tree_supports.newick")
-
-    # Test for convergence
-    # Combine bootstrap replicates using raxml
-    if os.path.isdir("test_convergence"):
-        shutil.rmtree("test_convergence")
-
-    cmd = run_raxml(run_directory="test_convergence",
-                    algorithm="--bsconverge",
-                    tree_file=None,
-                    num_threads=1,
-                    log_to_stdout=False,
-                    suppress_output=True,
-                    other_files=["bs-trees.newick"],
-                    other_args=["--bs-trees","bs-trees.newick"])
-
-    converged = False
-    with open(os.path.join("test_convergence","bs-trees.newick.raxml.log")) as f:
-        for line in f:
-            if line.startswith("Bootstrapping test converged"):
-                converged = True
-
-    return converged
+    return converged, df
 
 
 def reconcile_bootstrap(df,
@@ -368,10 +588,12 @@ def reconcile_bootstrap(df,
                         allow_horizontal_transfer,
                         seed,
                         bootstrap_directory,
+                        converge_cutoff,
                         restart,
                         overwrite,
                         supervisor,
                         num_threads,
+                        threads_per_rep,
                         generax_binary,
                         raxml_binary):
     """
@@ -407,6 +629,9 @@ def reconcile_bootstrap(df,
     bootstrap: bool, default=False
         whether or not to do bootstrap replicates. if True, prev_calculation must
         point to a raxml ml_bootstrap run
+    converge_cutoff : float, default=0.03
+        bootstrap convergence criterion. This is RAxML-NG default, passed to
+        --bs-cutoff.
     restart : str, optional
         if specified, should point to replicate_dir for restart. restart the job
         from where it stopped. incompatible with overwrite
@@ -416,6 +641,8 @@ def reconcile_bootstrap(df,
         supervisor instance to keep track of inputs and outputs
     num_threads : int, default=-1
         number of threads to use. if -1 use all available.
+    threads_per_rep : int, default=1
+        number of threads to use per replicate.
     generax_binary : str, optional
         what generax binary to use
 
@@ -441,28 +668,57 @@ def reconcile_bootstrap(df,
                          overwrite=overwrite,
                          generax_binary=generax_binary)
 
-        replicate_dir = _create_bootstrap_dirs(df=df,
-                                               model=model,
-                                               gene_tree=gene_tree,
-                                               species_tree=species_tree,
-                                               allow_horizontal_transfer=allow_horizontal_transfer,
-                                               seed=seed,
-                                               bootstrap_directory=bootstrap_directory,
-                                               overwrite=overwrite,
-                                               generax_binary=generax_binary)
+        replicate_dir = _build_replicate_dirs(df=df,
+                                              model=model,
+                                              gene_tree=gene_tree,
+                                              species_tree=species_tree,
+                                              allow_horizontal_transfer=allow_horizontal_transfer,
+                                              seed=seed,
+                                              bootstrap_directory=bootstrap_directory,
+                                              overwrite=overwrite,
+                                              generax_binary=generax_binary)
 
     else:
+
+        # Restart, making sure any leftover claim/skipped files are removed
         replicate_dir = restart
+        _clean_replicate_dir(replicate_dir)
+
+
 
     supervisor.event("Running bootstrap calculations.",
                      replicate_dir=replicate_dir,
-                     num_threads=num_threads)
-    _run_bootstrap_calculations(replicate_dir,num_threads)
+                     converge_cutoff=converge_cutoff,
+                     num_threads=num_threads,
+                     threads_per_rep=threads_per_rep)
+    converged, df = _run_bootstrap_calculations(replicate_dir,
+                                                converge_cutoff,
+                                                num_threads,
+                                                threads_per_rep)
 
+    # Write convergence report and whether this converged or not
+    df.to_csv("bootstrap-convergence-report.txt")
+    supervisor.stash("bootstrap-convergence-report.txt")
+    supervisor.update("bootstrap_converged",bool(converged))
+
+    # Combine bootstrap replicates into a set of supports
     supervisor.event("Combining bootstrap calculations.",
                      replicate_dir=replicate_dir,
                      reconciled_tree=reconciled_tree)
-    converged = _combine_bootstrap_calculations(replicate_dir,reconciled_tree)
+
+    bs_trees = os.path.join(replicate_dir,"bs-trees.newick")
+    cmd = run_raxml(run_directory="combine_with_raxml",
+                    algorithm="--support",
+                    tree_file=reconciled_tree,
+                    num_threads=1,
+                    log_to_stdout=False,
+                    suppress_output=True,
+                    other_files=[bs_trees],
+                    other_args=["--bs-trees","bs-trees.newick","--redo"])
+
+    # Copy reconciled tree with suppports into output
+    supervisor.stash(os.path.join("combine_with_raxml","tree.newick.raxml.support"),
+                     target_name="reconciled-tree_supports.newick")
 
     # Grab species tree before compressing replicates
     supervisor.stash(os.path.join(replicate_dir,"00001","species_tree.newick"),
@@ -474,12 +730,6 @@ def reconcile_bootstrap(df,
     f.add("replicates")
     f.close()
     shutil.rmtree("replicates")
-
-    # Copy in tree with supports
-    supervisor.stash(os.path.join(supervisor.working_dir,"reconciled-tree_supports.newick"))
-
-    # Record whether bootstrapping converged
-    supervisor.update("bootstrap_converged",converged)
 
     # Write message indicating where to look for further output
     msg = "For more information on the reconcilation events (orthgroups,\n"

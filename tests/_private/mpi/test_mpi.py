@@ -1,12 +1,26 @@
 
 import pytest
 
+from topiary._private.mpi import get_hosts
 from topiary._private.mpi import get_num_slots
 from topiary._private.mpi import check_mpi_configuration
 
 from topiary.generax import GENERAX_BINARY
 
 import os
+
+@pytest.mark.run_generax
+def test_get_hosts():
+
+    hosts = get_hosts(1)
+    assert len(hosts) == 1
+    assert isinstance(hosts[0],str)
+
+    hosts = get_hosts(2)
+    assert len(hosts) == 2
+    assert isinstance(hosts[0],str)
+    assert isinstance(hosts[1],str)
+
 
 @pytest.mark.run_generax
 def test_get_num_slots():

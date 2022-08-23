@@ -20,7 +20,7 @@ def test_reconcile(tiny_phylo,tmpdir):
     gene_tree_wrong = tiny_phylo["final-output/gene-tree_wrong.newick"]
     species_tree = tiny_phylo["initial-input/species-tree.newick"]
     reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
-    bootstrap_directory = tiny_phylo["toy-gene-output-bootstraps"]
+    bootstrap_directory = tiny_phylo["04_bootstraps_toy/output/bootstrap_replicates"]
     f = open(tiny_phylo["model.txt"],"r")
     model = f.read().strip()
     f.close()
