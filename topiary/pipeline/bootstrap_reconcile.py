@@ -154,7 +154,7 @@ def bootstrap_reconcile(previous_run_dir,
                 pt = f"{str(datetime.timedelta(seconds=t_per_slot))} (D:H:M:S)"
 
                 out = ["\n----------------------------------------------------------------------\n"]
-                out.append(f"The first reconcilation calculation took {pretty_prev}")
+                out.append(f"The first reconciliation calculation took {pretty_prev}")
                 out.append(f"to complete on {prev_num_threads} threads. Assuming a similar machine architecture,")
                 out.append("topiary predicts the current calculation should take ")
                 out.append(f"{pt} to complete on {num_threads} threads.")

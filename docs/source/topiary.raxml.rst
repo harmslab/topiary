@@ -25,6 +25,14 @@ topiary.raxml.bootstrap
    :undoc-members:
    :show-inheritance:
 
+topiary.raxml.convergence
+--------------------------------
+
+.. automodule:: topiary.raxml.convergence
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.raxml.model
 --------------------------
 

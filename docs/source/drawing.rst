@@ -17,7 +17,7 @@ following python generates the following output
 .. code-block:: python
 
   import topiary
-  topiary.draw.tree("06_ancestors_with_branch_supports")
+  topiary.draw.tree("05_reconcile-bootstraps")
 
 .. image:: _static/img/final-tree.svg
   :align: center

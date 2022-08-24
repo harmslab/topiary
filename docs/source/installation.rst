@@ -1,6 +1,9 @@
 
 .. include:: links.rst
 
+.. role:: raw-html(raw)
+    :format: html
+
 .. _installation-doc:
 
 ============
@@ -11,9 +14,8 @@ Cross-platform installation instructions
 ========================================
 
 .. note::
-  A conda-forge package is in the works that will make this a single-line
-  conda command (:code:`conda install topiary-asr -c conda-forge`). Stay tuned.
-  For now...
+  A conda package is in the works that will make installation a single-line
+  command.
 
 We recommend using conda to install topiary on all operating systems. (Some
 system-specific instructions for installation of wrapped software packages
@@ -35,6 +37,7 @@ You can then install topiary via conda:
 .. code-block:: shell-session
 
   cd topiary
+  conda config --set channel_priority strict
   conda env create -f environment.yml
   conda activate topiary
   python -m pip install . -vv
@@ -43,11 +46,6 @@ At this point, you have topiary, but not the software packages it wraps,
 installed. The next sections describe how to install the entire software
 stack.
 
-.. comment out for now
-  .. code-block:: shell-session
-
-    conda create -n topiary topiary-asr -c conda-forge
-    conda activate topiary
 
 Validate the installation
 =========================
@@ -64,17 +62,16 @@ The output should look something like this:
   :align: center
   :alt: topiary-check-installed terminal output
 
+:raw-html:`<br />`
 If some of the packages are not installed (:code:`passes: N`), proceed to the
-sections below. :emph:`Note`: if generax indicates the binary is installed
-(:code:`installed: Y`) but that the binary does not run (:code:`binary runs: N`),
-please see the :ref:`MPI section<mpi-section>` below.
+sections below.
 
 .. important::
 
   Windows users must specify the complete path to each script when running
   topiary commands. To run the above command (:code:`topiary-check-installed`)
-  please type: :code:`python c:\users\harmsm\topiary\bin\topiary-check-installed`,
-  replacing the first part of the path (:code:`:c\users\harmsm`) with the path
+  please type: :code:`python c:\\users\\harmsm\\topiary\\bin\\topiary-check-installed`,
+  replacing the first part of the path (:code:`:c\\users\\harmsm`) with the path
   on your system.
 
 
@@ -87,26 +84,16 @@ You can install the software packages with:
 
 .. code-block:: shell-session
 
-  conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+  conda install -c conda-forge -c bioconda "mpi4py" "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
 
-If, after running this command, any of the binaries were not installed
-(:code:`topiary-check-installed` gives :code:`installed: N`), you might check
-whether the conda binary directory is in your :code:`$PATH`. To do so, type the
-following. (This assumes you
-installed topiary into a conda environment called topiary).
+You can then check to make sure everything installed correctly by running:
 
 .. code-block:: shell-session
 
-  export PATH=`which conda | xargs dirname`/envs/topiary/bin/:$PATH
-  conda activate topiary
   topiary-check-installed
 
-If this command works, you'll need to set your :code:`$PATH` variable to point
-correct directory when you activate your conda environment. See the discussion
-`here <conda-setenv-variables_>`_ for how to go about this.
-
-If any of these packages were not installed by conda, you can install them
-manually using the following links:
+If any of these packages were not installed by conda--or you wish to install
+them yourself--you can install them manually using the following links:
 
 + `NCBI blast+ >= 2.2 <blast-download_>`_. (This will install both the blastp and
   makeblastdb programs.)
@@ -163,17 +150,6 @@ directories containing muscle and blast+ to the :code:`$PATH` variable,
 :emph:`you need to close and reopen your Anaconda Prompt.` Then check to see
 if the packages are installed.
 
-
-.. _mpi-section:
-
-MPI
-===
-
-.. note::
-
-  A discussion of MPI and generax is coming soon.
-
-
 .. _install-source-section:
 
 Install from source
@@ -209,7 +185,7 @@ macos or linux, you can install the core software by:
 
   conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
 
-If you are on windows, please see the :ref:`windows<windows-section>`.
+If you are on windows, please see the :ref:`windows section<windows-section>`.
 
 ------------------
 Required libraries
@@ -234,5 +210,5 @@ Required libraries
   + `muscle >= 5.0 <muscle-download_>`_
   + `GeneRax >= 2.0 <generax-download_>`_
   + `RAxML-NG >= 1.1 <raxml-ng-download_>`_
-  + `pastml <pastml-link>`_
+  + `pastml <pastml-link_>`_
   + `python-opentree <opentree-link_>`_

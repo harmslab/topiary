@@ -331,7 +331,7 @@ def _build_replicate_dirs(df,
     species_tree : str, optional
         species tree in newick format.
     allow_horizontal_transfer : bool, default=True
-        whether to allow horizontal transfer during reconcilation. If True, use
+        whether to allow horizontal transfer during reconciliation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
@@ -514,7 +514,7 @@ def _run_bootstrap_calculations(replicate_dir,
     Parameters
     ----------
     replicate_dir : str
-        directory with bootstrap replicates for reconcilations
+        directory with bootstrap replicates for reconciliations
     converge_cutoff : float
         bootstrap convergence criterion. passed to --bs-cutoff
     num_threads : int
@@ -621,7 +621,7 @@ def reconcile_bootstrap(df,
         If this an ete3 or dendropy tree, it will be written out with leaf
         names; all other data will be dropped.
     allow_horizontal_transfer : bool, default=True
-        whether to allow horizontal transfer during reconcilation. If True, use
+        whether to allow horizontal transfer during reconciliation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
@@ -697,8 +697,8 @@ def reconcile_bootstrap(df,
                                                 threads_per_rep)
 
     # Write convergence report and whether this converged or not
-    df.to_csv("bootstrap-convergence-report.txt")
-    supervisor.stash("bootstrap-convergence-report.txt")
+    df.to_csv("bootstrap-convergence-report.csv")
+    supervisor.stash("bootstrap-convergence-report.csv")
     supervisor.update("bootstrap_converged",bool(converged))
 
     # Combine bootstrap replicates into a set of supports
@@ -732,7 +732,7 @@ def reconcile_bootstrap(df,
     shutil.rmtree("replicates")
 
     # Write message indicating where to look for further output
-    msg = "For more information on the reconcilation events (orthgroups,\n"
+    msg = "For more information on the reconciliation events (orthgroups,\n"
     msg += "event counts, full nhx files, etc.) please check the maximum\n"
     msg += "likelihood reconciliation output directory that was used as\n"
     msg += "input for this bootstrap calculation.\n"

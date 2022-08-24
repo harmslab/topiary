@@ -75,7 +75,7 @@ def alignment_to_ancestors(df,
     no_reconcile : bool, default=False
         do not reconcile gene and species trees
     no_horizontal_transfer : bool, default=False
-        whether to allow horizontal transfer during reconcilation. Default is
+        whether to allow horizontal transfer during reconciliation. Default is
         to allow transfer (UndatedDTL; recommended). If flat set, use UndatedDL
         model.
     alt_cutoff : float, default=0.25
@@ -126,7 +126,7 @@ def alignment_to_ancestors(df,
 
     # --------------------------------------------------------------------------
     # Flip logic from user interface (where flags turn off bootstrap and
-    # reconcilation) to more readable flags that turn on (do_bootstrap,
+    # reconciliation) to more readable flags that turn on (do_bootstrap,
     # do_reconcile)
 
     no_bootstrap = check.check_bool(no_bootstrap,"no_bootstrap")

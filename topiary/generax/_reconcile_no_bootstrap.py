@@ -41,7 +41,7 @@ def reconcile_no_bootstrap(df,
     species_tree : str, optional
         species tree in newick format.
     allow_horizontal_transfer : bool, default=True
-        whether to allow horizontal transfer during reconcilation. If True, use
+        whether to allow horizontal transfer during reconciliation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model.
     seed : bool,int,str
         If true, pass a randomly generated seed to raxml. If int or str, use
@@ -64,7 +64,7 @@ def reconcile_no_bootstrap(df,
 
     os.chdir(supervisor.working_dir)
 
-    supervisor.event("Setting up reconcilation directory")
+    supervisor.event("Setting up reconciliation directory")
 
     # Set up generax directory
     setup_generax(df=df,
@@ -93,14 +93,14 @@ def reconcile_no_bootstrap(df,
                                   "geneTree.newick"),
                      "reconciled-tree.newick")
 
-    # Copy reconcilation information
+    # Copy reconciliation information
     reconcile_dir = os.path.join(supervisor.working_dir,
                                  "generax",
                                  "result",
                                  "reconciliations")
     supervisor.stash(os.path.join(reconcile_dir,"reconcile_events.newick"),
                      "reconciled-tree_events.newick")
-    supervisor.stash(reconcile_dir,"reconcilations")
+    supervisor.stash(reconcile_dir,"reconciliations")
 
     os.chdir(supervisor.starting_dir)
     return supervisor.finalize(successful=True,plot_if_success=True)

@@ -49,7 +49,7 @@ def test_reconcile_no_bootstrap(generax_data,tmpdir):
     for f in expected_files:
         assert os.path.isfile(os.path.join(supervisor.output_dir,f))
 
-    assert os.path.isdir(os.path.join(supervisor.output_dir,"reconcilations"))
+    assert os.path.isdir(os.path.join(supervisor.output_dir,"reconciliations"))
 
     output_T = ete3.Tree(os.path.join(supervisor.output_dir,"reconciled-tree.newick"),format=0)
     input_T = ete3.Tree(os.path.join(supervisor.input_dir,"gene-tree.newick"))

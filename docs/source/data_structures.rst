@@ -9,20 +9,6 @@
 Patterns and data structures
 ============================
 
-Patterns
-===============
-
-Operates on a copy
-
-
-.. code::
-
-  df = topiary.do_something(df,args)
-
-
-
-
-
 Data structures
 ===============
 
@@ -145,22 +131,50 @@ Example seed dataframe
 See protocol for description of how to make these dataframes.
 
 
+Patterns
+========
+
+The core pattern in the topiary pipeline is as follows:
+
+.. code-block:: python
+
+  df = topiary.do_something(df,args)
+  topiary.write_csv(df,"current-state.csv")
+
+The main topiary functions take a topiary dataframe as their first argument,
+other arguments needed by the function, and then return an appropriately
+modified copy of the dataframe. Topiary functions generally modify dataframes by
+adding columns with new information and/or by setting the :code:`keep` column to
+:code:`True` or :code:`False`. The modified dataframe can then be written out to
+a csv file to preserve the current state of the dataframe.
+
+The following code block shows the core of the alignment redundancy reduction
+pipeline as one might run it via the API:
+
+.. code-block:: python
+
+  import topiary
+
+  df = topiary.read_dataframe("some_dataframe.csv")
+
+  df = topiary.quality.shrink_in_species(df)
+  topiary.write_csv(df,"after-first-shrink.csv")
+
+  df = topiary.quality.shrink_redundant(df)
+  topiary.write_csv(df,"after-second-shrink.csv")
+
+  df = topiary.quality.shrink_aligners(df)
+  topiary.write_csv(df,"after-third-shrink.csv")
+
+See the API examples page for details.
+
 Run directories
 ===============
 
-run_directory
-+ input
-+ working
-+ output
-+ run_parameters.json
+A topiary output directory has a standard organization:
 
-.. code_block::
-    run_parameters = {"files":["files"] <<- relative
-                      "version":
-                      "calc_type":
-                      "kwargs":
-                      "start_time":
-                      "end_time":
-                      "model":
-                      "cmd":
-                      "previous_entries":[]}
+run_directory
++ *input*: input files for the calculation
++ *working*: temporary files used when doing the calculation
++ *output*: final output files for the calculation
++ *run_parameters.json*: file holding the run parameters

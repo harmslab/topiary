@@ -433,7 +433,7 @@ def test_run_generax(generax_data,tmpdir):
 @pytest.mark.run_generax
 def test_integrated_run_generax(generax_data,tmpdir):
     """
-    Validate one reconcilation on toy data. In this dataset, the gene tree has
+    Validate one reconciliation on toy data. In this dataset, the gene tree has
     a (human,mouse),(lemur,rat) topology for one of the paralogs. In test,
     make sure the correct topology and evolutionary events are recovered.
 

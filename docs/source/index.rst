@@ -42,13 +42,9 @@ Example input/output
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 | LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Homo sapiens  | MLPFLFF... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
-| LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Gallus gallus | MFEFVFF... |
-+------+--------------------------------------------------------------------------------------------+---------------+------------+
 | LY96 | ESOP1;Myeloid Differentiation Protein-2;MD-2;lymphocyte antigen 96;LY-96                   | Danio rerio   | MALWCPS... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 | LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Homo sapiens  | MKGFTAT... |
-+------+--------------------------------------------------------------------------------------------+---------------+------------+
-| LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Gallus gallus | MKTLNVL... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 | LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Danio rerio   | MKTYFNM... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
@@ -59,14 +55,18 @@ Example input/output
   :align: center
   :alt: Topiary tree drawing
 
-.. note::
+:emph:`Example ancestor quality summary graph`
 
-    More pretty examples coming soon.
+.. image:: _static/img/ali-to-anc/anc-plot.svg
+  :align: center
+  :alt: Graph showing ancestral quality
+  :width: 100%
+
 
 Quick start
 ===========
 
-The topiary pipeline consists of two halves:
+The topiary pipeline has two stages:
 
 1. Going from seed sequence to alignment (blasting, sequence quality control,
    reducing redundancy, and alignment). This can be run on a user's windows,
@@ -74,18 +74,12 @@ The topiary pipeline consists of two halves:
 2. Going from alignment to ancestors (building a gene tree, reconciling with the
    species tree, inferring ancestors, and calculating bootstraps). This requires
    macOS or linux; windows is *not* supported. This step should usually be run
-   on a computer cluster.
+   on a high performance computing cluster.
 
 Installation
 ------------
 
-.. note::
-
-  A conda-forge package is in the works that will turn this into a one-line
-  call: :code:`conda create -n topiary topiary-asr -c conda-forge`. Stay tuned.
-
 See the :ref:`installation<installation-doc>` page.
-
 
 .. commenting ...
 
@@ -93,7 +87,7 @@ See the :ref:`installation<installation-doc>` page.
 
   .. code-block:: shell-session
 
-    conda create -n topiary topiary-asr -c conda-forge
+    conda create -n topiary topiary-asr -c bioconda
     conda activate topiary
 
   Windows users and silicon macOS users will need to manually install
@@ -115,7 +109,7 @@ For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
    .. code-block:: shell-session
 
-      topiary-seed-to-alignment seed.xlsx output
+      topiary-seed-to-alignment seed.xlsx --out_dir output
 
 #. If desired, visually inspect and edit the alignment in an external alignment
    viewer. (We recommend `aliview <aliview-link_>`_.) Load the edited alignment
@@ -130,19 +124,14 @@ For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
    .. code-block:: shell-session
 
-      topiary-alignment-to-ancestors final-dataframe.csv
+      topiary-alignment-to-ancestors final-dataframe.csv --out_dir ali_to_anc
 
 #. Generate bootstrap replicates to measure branch support. This is usually run
    on a cluster.
 
    .. code-block:: shell-session
 
-      topiary-alignment-to-ancestors aligned-dataframe.csv
-
-.. note::
-
-  A quick summary of outputs coming soon.
-
+      topiary-bootstrap-reconcile ali_to_anc
 
 
 How to cite
@@ -184,16 +173,6 @@ Topiary is built around two types of dataframes:
   information about those sequences for the project. Each step in the pipeline
   saves out, then edits, the main dataframe. This allows one to follow
   the steps and/or manually introduce changes.
-
-Topiary represents trees in two different ways:
-
-+ `ete3.Tree <ete3-tree-link_>`_ instances for tree manipulations
-+ `toytree.tree <toytree-tree-link_>`_ instances for drawing trees.
-
-.. note::
-
-  jupyter example coming soon.
-
 
 
 .. toctree::
