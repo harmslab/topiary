@@ -10,6 +10,7 @@ from topiary._private import check
 import ete3
 
 import numpy as np
+import pandas as pd
 
 import copy
 
@@ -38,10 +39,10 @@ def _prep_species_tree(df,paralog_column):
 
     # Make sure df has ott
     if "ott" not in df.columns:
-        df = topiary.opentree.get_ott(df)
+        df = topiary.opentree.get_df_ott(df)
 
     # Get species tree
-    species_tree, dropped = topiary.opentree.get_species_tree(df)
+    species_tree, dropped = topiary.opentree.df_to_species_tree(df)
 
     # Drop sequences for species that cannot be resolved on the tree
     df = df.loc[np.logical_not(df.ott.isin(dropped)),:]
@@ -51,7 +52,8 @@ def _prep_species_tree(df,paralog_column):
         err = "Could not place any species onto a species tree.\n"
         raise ValueError(err)
 
-    all_paralogs = list(np.unique(df.loc[:,paralog_column]))
+    bad_mask = np.logical_not(pd.isnull(df[paralog_column]))
+    all_paralogs = list(set(df.loc[bad_mask,paralog_column]))
     paralogs_seen = dict([(p,[]) for p in all_paralogs])
     for leaf in species_tree.get_leaves():
         leaf.paralogs = copy.deepcopy(paralogs_seen)

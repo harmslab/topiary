@@ -5,7 +5,24 @@
 
 .. _data-structures-doc:
 
+============================
+Patterns and data structures
+============================
+
+Patterns
 ===============
+
+Operates on a copy
+
+
+.. code::
+
+  df = topiary.do_something(df,args)
+
+
+
+
+
 Data structures
 ===============
 
@@ -17,24 +34,17 @@ from spreadsheet files (.csv, .tsv, .xlsx).
 
 Topiary is built around two types of dataframes:
 
-+ :emph:`seed dataframe`: A manually constructed dataframe containing seed sequences
-  that topiary uses as input to construct a full topiary dataframe for the
-  project.
++ :emph:`seed dataframe`: A manually constructed dataframe containing seed
+  sequences that topiary uses as input to construct a full topiary dataframe for
+  the project.
 + :emph:`topiary dataframe`: The main structure for holding sequences and
-  information about those sequences for the project. Each step in the pipeline
-  saves out, then edits, the main dataframe. This allows one to follow
+  information about those sequences. Each step in the pipeline edits, saves
+  out, and then returns the main dataframe. This allows one to follow
   the steps and/or manually introduce changes.
 
-Design
-======
-
-
-
-
-
-
+-----------------
 topiary dataframe
-=================
+-----------------
 
 A topiary dataframe must have three columns:
 
@@ -63,23 +73,24 @@ Topiary reserves a few more columns that may or may not be used:
 + :code:`always_keep`: a boolean (True/False) column indicating whether or not
   topiary can drop the sequence from the analysis.
 
-Other user-specified columns are allowed. In addition, specific topiary analyses
-may add new columns. For example, `recip_blast` will add multiple columns
-such as `recip_paralog` and `recip_prob_match`.
+In addition, specific topiary analyses may add new columns. For example,
+:code:`recip_blast` will add multiple columns such as :code:`recip_paralog` and
+:code:`recip_prob_match`.
 
-------------
+Other user-specified columns are allowed.
+
+
 Constructing
 ------------
 
 There are two basic ways to construct a topiary dataframe:
 
 + :code:`io.df_from_seed`: construct topiary dataframe from a seed dataframe.
-  Depending on the options selected, topiary will add sequences by automatic
-  BLAST or read sequences from a list of pre-prepared BLAST xml files.
-+ Coming soon: how to construct dataframes manually. (Basically, we recommend
-  starting with a seed regardless. )
+  Depending on the options selected, topiary will add sequences using BLAST or
+  will read sequences from a list of pre-prepared BLAST xml files.
++ Construct the dataframe manually.
 
--------------------
+
 Reading and writing
 -------------------
 
@@ -89,7 +100,7 @@ built-in functions to read and write the dataframes (`topiary.read_dataframe`
 and `topiary.write_dataframe`). These functions will preserve/check column
 formats etc.
 
--------
+
 Editing
 -------
 
@@ -101,9 +112,9 @@ column, if present, have identical length.
 
 .. _seed dataframe:
 
-
+--------------
 seed dataframe
-==============
+--------------
 
 A seed dataframe must have four columns:
 
@@ -115,7 +126,7 @@ A seed dataframe must have four columns:
   databases/species, separated by :code:`;`.
 + :code:`sequence`: amino acid sequences for these proteins.
 
-----------------------
+
 Example seed dataframe
 ----------------------
 
@@ -132,3 +143,24 @@ Example seed dataframe
 +------+-------------------------------------------------------------------+--------------+------------+
 
 See protocol for description of how to make these dataframes.
+
+
+Run directories
+===============
+
+run_directory
++ input
++ working
++ output
++ run_parameters.json
+
+.. code_block::
+    run_parameters = {"files":["files"] <<- relative
+                      "version":
+                      "calc_type":
+                      "kwargs":
+                      "start_time":
+                      "end_time":
+                      "model":
+                      "cmd":
+                      "previous_entries":[]}

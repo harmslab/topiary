@@ -1,0 +1,23 @@
+Starting optimizeGeneTreesSlave
+LibpllModel JTT
+Starting optimizing gene tree
+Number of ranks 1
+(1e-07, 0.00472198, 0.440914, score = 0)
+Taxa number: 8
+joint: -160.287  libpll: -146.836  reconciliation: -13.4508  
+Initial ll = -160.287
+Start SPR round (std::hash=34634, (best ll=-160.287, radius=1, possible moves: 10)
+best;; -158.546 0
+Start SPR round (std::hash=52676, (best ll=-158.546, radius=1, possible moves: 10)
+best;; -146.491 0
+Start SPR round (std::hash=32368, (best ll=-146.491, radius=1, possible moves: 10)
+best;; -138.981 0
+Start SPR round (std::hash=96897, (best ll=-138.981, radius=1, possible moves: 10)
+best;; -137.692 0
+Start SPR round (std::hash=60605, (best ll=-137.692, radius=1, possible moves: 10)
+best;; -137.692 0
+joint: -137.692  libpll: -128.463  reconciliation: -9.22906  
+Saving tree in result/results/reconcile/geneTree.newick
+Finished saving  result/results/reconcile/geneTree.newick
+End of optimizing gene tree
+End of optimizeGeneTreesSlave

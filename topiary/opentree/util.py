@@ -15,7 +15,7 @@ import numpy as np
 
 import re, copy, time
 
-def _validate_ott_vs_species(ott_list=None,species_list=None):
+def _validate_ott_or_species(ott_list=None,species_list=None):
     """
     Take the ott_list and species_list input, validate, and return an ott_list.
 
@@ -47,9 +47,30 @@ def _validate_ott_vs_species(ott_list=None,species_list=None):
     if species_list is not None:
         ott_list = species_to_ott(species_list)[0]
 
-    ott_list = check.check_iter(ott_list,"ott_list",required_value_type=int)
+    ott_list = check.check_iter(ott_list,"ott_list")
 
-    return ott_list
+    final_ott_list = []
+    for ott in ott_list:
+
+        check_ott = ott
+        if issubclass(type(ott),str):
+            if ott[:3] == "ott":
+                check_ott = ott[3:]
+            else:
+                err = f"\nCould not process ott {ott}. Should be an integer\n"
+                err += "or string with format ottINTEGER\n\n"
+                raise ValueError(err)
+
+        try:
+            check_ott = int(check_ott)
+        except (ValueError,TypeError):
+            err = f"\nCould not process ott {ott}. Should be an integer\n"
+            err += "or string with format ottINTEGER\n\n"
+            raise ValueError(err)
+
+        final_ott_list.append(check_ott)
+
+    return final_ott_list
 
 
 def species_to_ott(species):
@@ -195,7 +216,7 @@ def species_to_ott(species):
 
     return ott_list, species_list, results
 
-def ott_species_tree(ott_list=None,species_list=None):
+def ott_to_species_tree(ott_list=None,species_list=None):
     """
     Get a species tree from a list of ott.
 
@@ -215,14 +236,7 @@ def ott_species_tree(ott_list=None,species_list=None):
         ott.
     """
 
-    ott_list = _validate_ott_vs_species(ott_list,species_list)
-
-    # Check type of ott list
-    try:
-        ott_list = [int(o) for o in ott_list]
-    except (ValueError,TypeError):
-        err = "\nott_list should be a list of integer ott values\n\n"
-        raise ValueError(err)
+    ott_list = _validate_ott_or_species(ott_list,species_list)
 
     # If length of ott_list is zero
     if len(ott_list) == 0:
@@ -316,7 +330,7 @@ def ott_species_tree(ott_list=None,species_list=None):
     return final_tree, results
 
 
-def ott_resolvable(ott_list=None,species_list=None):
+def ott_to_resolvable(ott_list=None,species_list=None):
     """
     Get whether or not taxa are resolvable on the synthetic ott tree.
 
@@ -334,20 +348,14 @@ def ott_resolvable(ott_list=None,species_list=None):
     """
 
     # Check ott list
-    ott_list = _validate_ott_vs_species(ott_list,species_list)
-
-    try:
-        ott_list = [int(o) for o in ott_list]
-    except (ValueError,TypeError):
-        err = "\nott_list should be a list of integer ott values\n\n"
-        raise ValueError(err)
+    ott_list = _validate_ott_or_species(ott_list,species_list)
 
     # Return empty list if empty input
     if len(ott_list) == 0:
         return []
 
     # Get tree and metadata
-    final_tree, results = ott_species_tree(ott_list)
+    final_tree, results = ott_to_species_tree(ott_list)
 
     # Dictionary of resolved/not resolved keyed to ott
     resolved_dict = dict([(r,True) for r in results["resolved"]])
@@ -362,7 +370,7 @@ def ott_resolvable(ott_list=None,species_list=None):
     return resolvable
 
 
-def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
+def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
     """
     Get the most recent common ancestor given a list of ott. Unrecognized ott
     are dropped with a warning.
@@ -387,7 +395,7 @@ def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
         dictionary with keys ott_name, ott_id, ott_rank, lineage, and taxid.
     """
 
-    ott_list = _validate_ott_vs_species(ott_list,species_list)
+    ott_list = _validate_ott_or_species(ott_list,species_list)
 
     avoid_all_life = check.check_bool(avoid_all_life,
                                       "avoid_all_life")
@@ -467,7 +475,7 @@ def ott_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
 
     return out
 
-def get_taxa_order(T,ref_name=None):
+def tree_to_taxa_order(T,ref_name=None):
     """
     Get taxa in a stereotypical order given a tree.
 
@@ -578,7 +586,7 @@ def get_taxa_order(T,ref_name=None):
 
     return [n.name for n in node_list]
 
-def taxonomic_sort(df,paralog_column=None,ref_ott=None,only_keepers=False):
+def sort_df_by_taxa(df,paralog_column=None,ref_ott=None,only_keepers=False):
     """
     Sort a dataframe according to paralog call and then species phylogeny. If a
     dataframe has two paralogs A and B, this will return the dataframe with all
@@ -655,8 +663,8 @@ def taxonomic_sort(df,paralog_column=None,ref_ott=None,only_keepers=False):
 
     # Get a species tree from ott and then get leaf order relative to
     # reference species
-    T, results = ott_species_tree(ott_list=ott_array)
-    leaf_order = get_taxa_order(T,ref_name=ref_ott)
+    T, results = ott_to_species_tree(ott_list=ott_array)
+    leaf_order = tree_to_taxa_order(T,ref_name=ref_ott)
 
     # Append any ott that were not resolved on the tree to the list of
     # leaves.

@@ -83,7 +83,7 @@ def align(input,
         # Create temporary input file
         tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
         input_fasta = "topiary-tmp_{}_align-in.fasta".format(tmp_file_root)
-        topiary.write_fasta(df,input_fasta)
+        topiary.write_fasta(df,input_fasta,sort_on_taxa=False)
 
         # Create temporary output file name if required.
         temporary_output = False

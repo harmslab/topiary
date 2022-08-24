@@ -1,0 +1,41 @@
+
+RAxML-NG v. 1.1.0 released on 29.11.2021 by The Exelixis Lab.
+Developed by: Alexey M. Kozlov and Alexandros Stamatakis.
+Contributors: Diego Darriba, Tomas Flouri, Benoit Morel, Sarah Lutteropp, Ben Bettisworth.
+Latest version: https://github.com/amkozlov/raxml-ng
+Questions/problems/suggestions? Please visit: https://groups.google.com/forum/#!forum/raxml
+
+System: Intel(R) Xeon(R) CPU E5-2690 v4 @ 2.60GHz, 28 cores, 125 GB RAM
+
+RAxML-NG was called at 18-Aug-2022 21:05:13 as follows:
+
+raxml-ng --bsconverge --bs-trees bs-trees.newick
+
+Analysis options:
+  run mode: A posteriori bootstrap convergence test
+  start tree(s): 
+  random seed: 1660881913
+  SIMD kernels: AVX2
+  parallelization: coarse-grained (auto), PTHREADS (auto)
+
+Reading bootstrap trees from file: bs-trees.newick
+Loaded 1000 trees with 39 taxa.
+
+Performing bootstrap convergence assessment using autoMRE criterion
+
+ # trees        avg WRF       avg WRF in %       # perms: wrf <= 3.00 %     converged?  
+      50         48.640              2.702                          602        NO
+     100         63.684              1.769                          916        NO
+     150        111.245              2.060                          909        NO
+     200        172.316              2.393                          947        NO
+     250        172.135              1.913                          983        NO
+     300        187.421              1.735                          994        YES
+Bootstopping test converged after 300 trees
+
+
+Execution log saved to: /gpfs/projects/harmslab/harms/topi.2/ancestors/iapp/ali-to-anc/05_reconcile-bootstraps/working/replicates/bs-trees.newick.raxml.log
+
+Analysis started: 18-Aug-2022 21:05:13 / finished: 18-Aug-2022 21:05:14
+
+Elapsed time: 1.021 seconds
+

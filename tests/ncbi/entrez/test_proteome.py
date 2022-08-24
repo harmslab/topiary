@@ -86,9 +86,9 @@ def test_get_proteome(tmpdir):
     with pytest.raises(ValueError):
         get_proteome(species="Homo sapiens",taxid="9606")
 
-    # Actually pull down the human proteome, making sure it comes down and is
+    # Actually pull down the E. coli proteome, making sure it comes down and is
     # written to output.
-    output1 = get_proteome(taxid=9606)
+    output1 = get_proteome(taxid=83333)
     assert os.path.isfile(output1)
 
     os.chdir(cwd)

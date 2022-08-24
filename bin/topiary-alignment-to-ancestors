@@ -5,7 +5,7 @@ Command line interface to pipeline.alignment_to_ancestors
 
 import topiary
 from topiary.pipeline import alignment_to_ancestors
-from topiary._private import wrap_function
+from topiary._private.wrap import wrap_function
 
 import sys
 

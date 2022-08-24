@@ -12,7 +12,10 @@ from topiary.ncbi import parse_ncbi_line
 import pandas as pd
 import numpy as np
 
-import re, sys, copy
+import re
+import sys
+import copy
+import itertools
 
 def _prepare_for_blast(df,
                        paralog_patterns,
@@ -21,6 +24,7 @@ def _prepare_for_blast(df,
                        ignorecase,
                        min_call_prob,
                        partition_temp,
+                       drop_combo_fx,
                        use_start_end):
     """
     Check sanity of input parameters and compile patterns. Return a validated
@@ -56,6 +60,9 @@ def _prepare_for_blast(df,
         float > 0. A higher value corresponds to a higher stringency. (The bit
         score difference between the best hit and the rest would have to be
         higher to be significant).
+    drop_combo_fx : float
+        when deciding whether to call a paralog as a combo (i.e. A/B) versus
+        singleton (i.e. A), prefer A if pp_A/pp_AB > drop_combo_fx.
     use_start_end : bool
         whether or not to use start/stop columns in
         dataframe (if present) to slice subset of sequence to blast.
@@ -70,6 +77,7 @@ def _prepare_for_blast(df,
         valiated paralog_patterns
     min_call_prob : float
     partition_temp : float
+    drop_combo_fx : float
     """
 
     # Make sure dataframe is a topiary dataframe
@@ -105,6 +113,11 @@ def _prepare_for_blast(df,
                                        "partition_temp",
                                        minimum_allowed=0,
                                        minimum_inclusive=False)
+
+    drop_combo_fx = check.check_float(drop_combo_fx,
+                                      "drop_combo_fx",
+                                      minimum_allowed=0,
+                                      maximum_allowed=1)
 
     use_start_end = check.check_bool(use_start_end,"use_start_end")
 
@@ -147,7 +160,7 @@ def _prepare_for_blast(df,
             err += f"row: {df.loc[idx,:]}\n\n"
             raise ValueError(err)
 
-    return df, sequence_list, paralog_patterns, min_call_prob, partition_temp
+    return df, sequence_list, paralog_patterns, min_call_prob, partition_temp, drop_combo_fx
 
 
 def _run_blast(sequence_list,
@@ -254,13 +267,14 @@ def _calc_hit_post_prob(hits,paralog_patterns,partition_temp):
 
     Returns
     -------
+    paralogs : numpy.ndarray
+        paralogs, sorted alphabetically/numerically
     posterior_prob : numpy.ndarray
-        array of posterior probabilities for each paralog (in order of keys in
-        paralog_patterns)
-    pattern_masks : dict
-        dictionary keying paralogs to arrays of bools. The True/False in each
-        array records whether each row in the dataframe was matched by that
-        paralog. 
+        array of posterior probabilities for each paralog
+    pattern_masks : list
+        list of numpy arrays (bool), one array for each paralog. The True/False
+        in each array records whether each row in the dataframe was matched by
+        that paralog.
     """
 
     # Get weighted bits for all hits in the dataframe
@@ -272,38 +286,41 @@ def _calc_hit_post_prob(hits,paralog_patterns,partition_temp):
         all_weights = np.power(2,hits.loc[:,"bits"]/partition_temp)
         Q = np.sum(all_weights)
 
-    if partition_temp != initial_partition_temp:
-        print(f"Adjusted partition_temp from {initial_partition_temp:.3e} to ")
-        print(f"{partition_temp:.3e} to avoid a numerical overflow.\n")
+    # if partition_temp != initial_partition_temp:
+    #     print(f"Adjusted partition_temp from {initial_partition_temp:.3e} to ")
+    #     print(f"{partition_temp:.3e} to avoid a numerical overflow.\n")
 
     # Go through all patterns
-    pattern_masks = {}
+    pattern_masks = []
     posterior_prob = []
-    for p in paralog_patterns:
+    paralogs = list(paralog_patterns.keys())
+    paralogs.sort()
+    for p in paralogs:
 
         # Make a mask for whether this paralog_patterns hits or not along each
         # description.
-        pattern_masks[p] = []
+        mask = []
         for i in range(len(hits)):
             description = hits.loc[hits.index[i],"hit_def"]
             if paralog_patterns[p].search(description):
-                pattern_masks[p].append(True)
+                mask.append(True)
             else:
-                pattern_masks[p].append(False)
+                mask.append(False)
 
         # Final mask is value keyed to paralog name
-        pattern_masks[p] = np.array(pattern_masks[p],dtype=bool)
+        pattern_masks.append(np.array(mask,dtype=bool))
 
         # Posterior probability is vector with sums of weights for all
         # hits from this paralog
-        posterior_prob.append(np.sum(all_weights[pattern_masks[p]]))
+        posterior_prob.append(np.sum(all_weights[mask]))
 
     # Weight posterior probability all hits from each paralog to all other
     # hits.
     posterior_prob = np.array(posterior_prob)
     posterior_prob = posterior_prob/(np.sum(all_weights))
+    paralogs = np.array(paralogs)
 
-    return posterior_prob, pattern_masks
+    return paralogs, posterior_prob, pattern_masks
 
 
 
@@ -312,6 +329,7 @@ def _make_recip_blast_calls(df,
                             paralog_patterns,
                             min_call_prob,
                             partition_temp,
+                            drop_combo_fx,
                             ncbi_blast_db):
     """
     Make paralog calls given blast output and list of patterns.
@@ -335,6 +353,9 @@ def _make_recip_blast_calls(df,
     partition_temp : float
         when calculating posterior probability of the best versus next-best
         bit score, use this for weighting: 2^(bit_score/partition_temp)
+    drop_combo_fx : float
+        when deciding whether to call a paralog as a combo (i.e. A/B) versus
+        singleton (i.e. A), prefer A if pp_A/pp_AB > drop_combo_fx.
     ncbi_blast_db : str
         database used for ncbi blast. (Used to determine if this should be
         parsed as ncbi vs. local blast inputs)
@@ -366,22 +387,56 @@ def _make_recip_blast_calls(df,
             results["recip_bit_score"].append(np.nan)
             continue
 
-        posterior_prob, pattern_masks = _calc_hit_post_prob(hits,
-                                                            paralog_patterns,
-                                                            partition_temp)
+        paralogs, posterior_prob, pattern_masks = _calc_hit_post_prob(hits,
+                                                                      paralog_patterns,
+                                                                      partition_temp)
 
-        best_idx = np.argmax(posterior_prob)
-        recip_prob_match = np.max(posterior_prob)
+        # Get all possible combinations of the paralogs
+        combinations = []
+        indexes = range(len(paralogs))
+        for i in range(1,len(indexes)+1):
+            combinations.extend(list(itertools.combinations(indexes,i)))
+
+        # Get the total posterior probability each combination
+        combo_pp = []
+        for i, c in enumerate(combinations):
+            idx = np.array(c,dtype=int)
+            pp_to_add = posterior_prob[idx]
+            combo_pp.append((np.sum(pp_to_add),i))
+
+        # Sort by total posterior probability from best to worst. Combos with
+        # more paralogs will always be higher, so this will effectively be
+        # ordered from N, N-1, N-2 etc. paralogs included in the combo. This
+        # checks to see if a paralog combo with fewer paralogs is basically
+        # just as good as a paralog with more.
+        combo_pp.sort(reverse=True)
+        best_combo_index = 0
+        for i in range(1,len(combo_pp)):
+            this_pp = combo_pp[best_combo_index][0]
+            if not np.isclose(this_pp,0):
+                if combo_pp[i][0]/combo_pp[best_combo_index][0] > drop_combo_fx:
+                    best_combo_index = i
+
+        # Get best posterior probability, best name of paralog (possibly a
+        # combination of more than one paralog separated by "/"), and mask for
+        # the overall match (possibly a combination of multiple paralog matches)
+        recip_prob_match, best_combo = combo_pp[best_combo_index]
+        paralog_indexes = np.array(combinations[best_combo],dtype=int)
+        best_paralog = "/".join(paralogs[paralog_indexes])
+        best_mask = np.ones(len(pattern_masks[0]),dtype=bool)
+        for p in paralog_indexes:
+            best_mask = np.logical_or(best_mask,
+                                      pattern_masks[p])
 
         # If the overall posterior probability for the paralog is better than
         # min call prob
         if recip_prob_match > min_call_prob:
 
-            recip_paralog = list(paralog_patterns.keys())[best_idx]
+            recip_paralog = best_paralog
             recip_found_paralog = True
 
             # Get best scoring hit for this hit
-            recip_hits = hits.loc[pattern_masks[recip_paralog],:]
+            recip_hits = hits.loc[best_mask,:]
             best_idx = recip_hits.index[np.argmax(recip_hits.loc[:,"bits"])]
             recip_hit = recip_hits.loc[best_idx,"hit_def"]
             recip_bit_score = recip_hits.loc[best_idx,"bits"]
@@ -441,6 +496,7 @@ def recip_blast(df,
                 ignorecase=True,
                 min_call_prob=0.95,
                 partition_temp=1,
+                drop_combo_fx=0.9,
                 use_start_end=True,
                 hitlist_size=10,
                 e_value_cutoff=0.01,
@@ -503,6 +559,9 @@ def recip_blast(df,
         score difference between the best hit and the rest would have to be
         higher to be significant). This is a minium value: it may be adjusted
         on-the-fly to avoid numerical problems in the calculation. See Note 2.
+    drop_combo_fx : float, default=0.90
+        when deciding whether to call a paralog as a combination (i.e. A/B)
+        versus singleton (i.e. A), prefer A if pp_A/pp_AB > drop_combo_fx.
     use_start_end : bool, default=True
         whether or not to use start/stop columns in dataframe (if present) to
         slice subset of sequence for reciprocal blast.
@@ -575,9 +634,10 @@ def recip_blast(df,
                              ignorecase,
                              min_call_prob,
                              partition_temp,
+                             drop_combo_fx,
                              use_start_end)
 
-    df, sequence_list, paralog_patterns, min_call_prob, partition_temp = out
+    df, sequence_list, paralog_patterns, min_call_prob, partition_temp, drop_combo_fx = out
 
     # Run BLAST on sequence list, returning list of dataframes -- one for each
     # seqeunce in sequence_list
@@ -601,6 +661,7 @@ def recip_blast(df,
                                      paralog_patterns,
                                      min_call_prob,
                                      partition_temp,
+                                     drop_combo_fx,
                                      ncbi_blast_db)
 
     # Write out some summary statistics

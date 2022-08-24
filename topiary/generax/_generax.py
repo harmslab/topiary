@@ -2,54 +2,97 @@
 Wrapper for generax to perform gene/species tree reconcilation.
 """
 
-# raxml binary to use it not specified by user
+# raxml binary to use if not specified by user
 GENERAX_BINARY = "generax"
 
 import topiary
 from topiary._private import interface
+from topiary._private.mpi import check_mpi_configuration
+from topiary._private import check
 
 import numpy as np
 
-import subprocess, os, sys, time, random, string, shutil, copy
+import subprocess
+import os
+import sys
+import time
+import random
+import string
+import shutil
+import copy
 
-def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
+def _annotate_species_tree(df,species_tree,out_dir):
     """
-    Setup a generax run directory.
+    Clean up a species tree, making sure it is a cladogram and that the
+    leaf.name attributes of the leaves are the ott. Writes to working directory.
+
+    df : pandas.DataFrame
+        topiary dataframe
+    species_tree : str or ete3.Tree or dendropy.tree, optional
+        species_tree to clean up and annotate. if None, pull down from the
+        Open Tree of Life database.
+    """
+
+    if species_tree is not None:
+        T = topiary.io.read_tree(species_tree)
+
+    else:
+        # Get species tree corresponding to uid seen
+        T, dropped = topiary.df_to_species_tree(df)
+
+        # Go across tree and set taxon names to ott, supports to 1, and branch
+        # lengths to 1.
+        for n in T.traverse():
+            if n.is_leaf():
+                n.name = copy.deepcopy(n.ott)
+            if n.dist != 1:
+                n.dist = 1
+            if n.support != 1:
+                n.support = 1
+
+    # Resolve polytomies and make sure all branch lenghts/supports have values
+    T.resolve_polytomy()
+
+    # Make sure the leaves are formatted correctly
+    for n in T.get_leaves():
+        if n.name[:3] != "ott":
+            err = "\nspecies tree tips must have ott labels with format ottINTEGER\n\n"
+            raise ValueError(err)
+
+    # Write out species tree
+    species_tree_out = os.path.join(out_dir,"species_tree.newick")
+    T.write(outfile=species_tree_out,format=5)
+
+
+def _get_link_dict(df,gene_tree):
+    """
+    Get a dictionary linking ott (key) to a list of uid values that have that
+    ott. (What genes are in a given species).
 
     Parameters
     ----------
     df : pandas.DataFrame
         topiary data frame
-    gene_tree : ete3.Tree or dendropy.Tree or str
-        gene_tree with uid as taxon names. can be ete3 tree, dendropy tree, or
-        newick file.
-    model : str
-        phylogenetic model to use (should match model used to generate gene_tree)
-    out_dir : str
-        output directory
-    species_tree : ete3.Tree or dendropy.Tree or str, optional
-        species tree as a tree or newick file. if not specified, download from
-        opentree
+    gene_tree : ete3.Tree
+        gene_tree with uid as taxon names.
+
+    Returns
+    -------
+    link_dict : dict
+        dictionary mapping ott to lists of uid
+    uid_in_gene_tree : list
+        uids seen in the gene tree
     """
-
-    # -------------------------------------------------------------------------
-    # Create generax data structures
-
-    # Load gene tree
-    gene_tree = topiary.io.read_tree(gene_tree)
-
-    # Arbitrarily resolve any polytomies in gene tree
-    gene_tree.resolve_polytomy()
 
     # Map uid to ott in the dataframe
     uid_to_ott = {}
-    for i in range(len(df)):
-        uid = df.uid.iloc[i]
-        ott = df.ott.iloc[i]
+    for i in df.index:
+        uid = df.loc[i,"uid"]
+        ott = df.loc[i,"ott"]
         uid_to_ott[uid] = ott
 
     # For generating mapping file, record which uid are associated with
-    # which ott
+    # which ott in gene tree we are using
     uid_in_gene_tree = []
     link_dict = {}
     for l in gene_tree.get_leaves():
@@ -65,73 +108,128 @@ def setup_generax(df,gene_tree,model,out_dir,species_tree=None):
         # Record that we saw this uid
         uid_in_gene_tree.append(uid)
 
+    return link_dict, uid_in_gene_tree
 
-    # Make df only have uid seen (will automatically trim down to only ott
-    # of interest)
-    mask = np.array([u in uid_in_gene_tree for u in df.uid],dtype=np.bool)
-    df = df.loc[mask]
+def setup_generax(df,
+                  gene_tree,
+                  model,
+                  out_dir,
+                  keep_mask=None,
+                  species_tree=None,
+                  mapping_link_file=None,
+                  control_file=None):
+    """
+    Setup a generax run directory.
 
-    # Get species tree corresponding to uid seen
-    if species_tree is None:
-        species_tree, dropped = topiary.get_species_tree(df)
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary data frame
+    gene_tree : ete3.Tree or dendropy.Tree or str
+        gene_tree with uid as taxon names. can be ete3 tree, dendropy tree, or
+        newick file.
+    model : str
+        phylogenetic model to use (should match model used to generate gene_tree)
+    out_dir : str
+        output directory
+    keep_mask : numpy.ndarray, optional
+        bool array indicating which rows of the dataframe to keep. Note: if
+        mapping_link_file is None, this mask will be ignored and recalculated.
+    species_tree : str, optional
+        species tree as newick file. assumes this is correctly formatted for
+        a generax calculation and is copied in. if not specified, download
+        species tree from opentree and annotate with ott etc
+    mapping_link_file : str, optional
+        mapping.link file. assumes this is correctly formatted and copied in.
+        if not specified, construct.
+    control_file : str, optional
+        control.txt file. Assumes it is correctly formatted for a generax
+        calculation and is copied in. If not specified, create.
+
+    Returns
+    -------
+    keep_mask : numpy.ndarray
+        bool array indicating which rows in the input datframe were kept after
+        getting species etc.
+    """
+
+    # -------------------------------------------------------------------------
+    # Create output directory
+
+    os.mkdir(out_dir)
+
+    # -------------------------------------------------------------------------
+    # gene tree
+
+    # Load gene tree, arbitrarily resolve polytomies, write out
+    gene_tree = topiary.io.read_tree(gene_tree)
+    gene_tree.resolve_polytomy()
+    gene_tree.write(outfile=os.path.join(out_dir,"gene_tree.newick"),format=5)
+
+    # -------------------------------------------------------------------------
+    # mapping_link
+
+    map_out = os.path.join(out_dir,"mapping.link")
+    if mapping_link_file is not None:
+
+        shutil.copy(mapping_link_file,map_out)
+
     else:
-        species_tree = topiary.io.read_tree(species_tree,fmt=5)
-        for n in species_tree.traverse():
-            if n.is_leaf():
-                n.add_feature("ott",n.name)
 
-    # Resolve polytomies and make sure all branch lenghts/supports have values
-    species_tree.resolve_polytomy()
+        link_dict, uid_in_gene_tree = _get_link_dict(df,gene_tree)
 
-    # Go across tree and set taxon names to ott, supports to 1, and branch
-    # lengths to 1.
-    for n in species_tree.traverse():
-        if n.is_leaf():
-            n.name = copy.deepcopy(n.ott)
-        if n.dist != 1:
-            n.dist = 1
-        if n.support != 1:
-            n.support = 1
+        # Write out link file
+        f = open(map_out,"w")
+        for k in link_dict:
+            f.write(f"{k}:")
+            f.write(";".join(link_dict[k]))
+            f.write("\n")
+        f.close()
+
+        # Make df only have uid seen (will automatically trim down to only ott
+        # of interest)
+        keep_mask = df.uid.isin(uid_in_gene_tree)
+
+    # -------------------------------------------------------------------------
+    # Mask dataframe and write out alignment
+
+    df = df.loc[keep_mask]
+
+    # Write out .phy file
+    topiary.write_phy(df,os.path.join(out_dir,"alignment.phy"),
+                      seq_column="alignment",)
+
+
+    # -------------------------------------------------------------------------
+    # Species tree
+
+    species_tree = _annotate_species_tree(df,species_tree,out_dir)
 
     # -------------------------------------------------------------------------
     # Write out generax input
 
-    os.mkdir(out_dir)
+    control_out_file = os.path.join(out_dir,"control.txt")
+    if control_file is not None:
 
-    # Construct the control file for generax
-    control_out = []
-    control_out.append("[FAMILIES]")
-    control_out.append("- reconcile")
-    control_out.append("starting_gene_tree = gene_tree.newick")
-    control_out.append("alignment = alignment.phy")
-    control_out.append("mapping = mapping.link")
-    control_out.append(f"subst_model = {model}")
+        shutil.copy(control_file,control_out_file)
 
-    # Write out control file
-    f = open(os.path.join(out_dir,"control.txt"),"w")
-    f.write("\n".join(control_out))
-    f.close()
+    else:
 
-    # Write out .phy file
-    topiary.write_phy(df,os.path.join(out_dir,"alignment.phy"),
-                      seq_column="alignment")
+        # Construct the control file for generax
+        control_out = []
+        control_out.append("[FAMILIES]")
+        control_out.append("- reconcile")
+        control_out.append("starting_gene_tree = gene_tree.newick")
+        control_out.append("alignment = alignment.phy")
+        control_out.append("mapping = mapping.link")
+        control_out.append(f"subst_model = {model}")
 
-    # Write out gene tree
-    gene_tree.write(outfile=os.path.join(out_dir,"gene_tree.newick"),
-                    format=5)
+        # Write out control file
+        f = open(control_out_file,"w")
+        f.write("\n".join(control_out))
+        f.close()
 
-    # Write out species tree
-    species_tree.write(outfile=os.path.join(out_dir,"species_tree.newick"),
-                       format=5)
-
-    # Write out link file
-    f = open(os.path.join(out_dir,"mapping.link"),"w")
-    for k in link_dict:
-        f.write(f"{k}:")
-        f.write(";".join(link_dict[k]))
-        f.write("\n")
-    f.close()
-
+    return keep_mask
 
 def run_generax(run_directory,
                 allow_horizontal_transfer=True,
@@ -139,6 +237,8 @@ def run_generax(run_directory,
                 log_to_stdout=True,
                 suppress_output=False,
                 other_args=[],
+                write_to_script=None,
+                supervisor=None,
                 num_threads=1,
                 generax_binary=GENERAX_BINARY):
 
@@ -153,9 +253,9 @@ def run_generax(run_directory,
     allow_horizontal_transfer : bool, default=True
         whether or not to allow horizontal gene transfer. This corresponds to
         the UndatedDTL (horizontal) vs UndatedDL (no horizontal) models
-    seed : bool or int or str, optional
-        If true, pass a randomly generated seed to generax. If int or str, use
-        that as the seed (passed via --seed).
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
     log_to_stdout : bool, default=True
         capture log and write to std out.
     suppress_output : bool, default=False
@@ -163,6 +263,12 @@ def run_generax(run_directory,
         (ignored if log_to_stdout is True)
     other_args : list, optional
         other arguments to pass to generax
+    write_to_script : str, optional
+        instead of running the command, write out the command to the script file
+        in the run directory. this can then be invoked later by something like
+        :code:`bash script_file`.
+    supervisor : Supervisor, optional
+        supervisor instance to keep track of calculation inputs and outputs
     num_threads : int, default=1
         number of threads. if > 1, execute by mpirun -np num_threads
     generax_binary : str, optional
@@ -174,7 +280,29 @@ def run_generax(run_directory,
         string representation of command passed to generax
     """
 
-    cmd = ["mpirun","-np",f"{num_threads:d}","generax"]
+    if write_to_script is not None:
+        if not issubclass(type(write_to_script),str):
+            err = "write_to_script should be None or a string giving script name\n"
+            raise ValueError(err)
+
+    # Make sure we have full path to generax_binary
+    abs_path_generax_binary = shutil.which(generax_binary)
+    if abs_path_generax_binary is None:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        err = f"\nrgenerax_binary '{generax_binary}' could not be found in the PATH\n\n"
+        raise FileNotFoundError(err)
+
+
+    if num_threads != 1:
+
+        # Make sure we have this number of threads
+        check_mpi_configuration(num_threads,abs_path_generax_binary)
+
+        cmd = ["mpirun","-np",f"{num_threads:d}",abs_path_generax_binary]
+
+    else:
+        cmd = [abs_path_generax_binary]
 
     cmd.extend(["--families","control.txt"])
     cmd.extend(["--species-tree","species_tree.newick"])
@@ -187,40 +315,38 @@ def run_generax(run_directory,
 
     # seed argument is overloaded. Interpret based on type
     if seed is not None:
-        if type(seed) is int:
-            cmd.extend(["--seed",f"{seed:d}"])
-        elif type(seed) is str:
 
-            try:
-                int(seed)
-            except ValueError:
-                err = f"seed {seed} could not be interpreted as an int\n"
-                raise ValueError(err)
-
-            cmd.extend(["--seed",seed])
-        elif type(seed) is bool:
+        # If bool and True, make the seed
+        try:
+            seed = check.check_bool(seed)
             if seed:
-                cmd.extend(["--seed",interface.gen_seed()])
-        else:
-            err = "seed must be True/False, int, or string representation of int\n"
+                seed = interface.gen_seed()
+            else:
+                seed = 0
+        except ValueError:
+            pass
+
+        # Make sure the seed -- whether passed in or generated above -- is
+        # actually an int.
+        try:
+            seed = check.check_int(seed,minimum_allowed=0)
+        except ValueError:
+            err = f"seed '{seed}' invalid. must be True/False or int > 0\n"
             raise ValueError(err)
+
+        # If we have a seed > 0, append to command
+        if seed > 0:
+            cmd.extend(["--seed",f"{seed:d}"])
 
     # Grab other args
     cmd.extend(other_args)
-
-    # Make sure that generax is in the path
-    try:
-        subprocess.run([generax_binary],capture_output=True)
-    except FileNotFoundError:
-        err = f"\ngenerax binary '{generax_binary}' not found in path\n\n"
-        raise ValueError(err)
 
     if not os.path.exists(run_directory):
         err = f"\nrun_directory '{run_directory}' not found.\n\n"
         raise FileNotFoundError(err)
 
     if not os.path.isdir(run_directory):
-        err = f"\nrun_directory must be a directory not found.\n\n"
+        err = f"\nrun_directory must be a directory.\n\n"
         raise ValueError(err)
 
     required_files = ["control.txt","alignment.phy",
@@ -240,10 +366,21 @@ def run_generax(run_directory,
     if log_to_stdout:
         log_file = os.path.join("result","generax.log")
 
+    if supervisor is not None:
+        supervisor.event("launching generax",
+                         cmd=cmd,
+                         num_threads=num_threads)
+
     # Launch run
-    interface.launch(cmd,
-                     run_directory=run_directory,
-                     log_file=log_file,
-                     suppress_output=suppress_output)
+    try:
+        interface.launch(cmd,
+                         run_directory=run_directory,
+                         log_file=log_file,
+                         suppress_output=suppress_output,
+                         write_to_script=write_to_script)
+    except RuntimeError as e:
+        if supervisor is not None:
+            supervisor.finalize(successful=False)
+        raise RuntimeError from e
 
     return " ".join(cmd)

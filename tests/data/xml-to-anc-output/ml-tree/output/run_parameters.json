@@ -1,1 +1,0 @@
-{"calc_type": "ml_tree", "model": "JTT", "cmd": "raxml-ng --search --msa alignment.phy --model JTT --seed 1194296009 --threads 10", "version": "0.0.1", "outgroup": null}

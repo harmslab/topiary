@@ -1,0 +1,1 @@
+{"calc_type": "ml_tree", "model": "DEN+G8+FO+IO", "cmd": "raxml-ng --search --msa /gpfs/projects/harmslab/harms/topi.2/small/alignment_to_ancestors_hpDashaDmQ/01_ml-tree/working/alignment.phy --model DEN+G8+FO+IO --seed 9772710490 --threads auto{28}", "version": "0.0.2", "end_time": 1659653975.2545598, "start_time": 1659653958.6739783}

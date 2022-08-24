@@ -5,14 +5,14 @@ Get OTT ids given a topiary dataframe.
 import topiary
 from topiary._private import check
 from topiary.opentree.util import species_to_ott
-from .util import species_to_ott, ott_resolvable
+from .util import species_to_ott, ott_to_resolvable
 
 import pandas as pd
 import numpy as np
 
 import re, copy
 
-def get_ott(df,verbose=True):
+def get_df_ott(df,verbose=True):
     """
     Return a copy of df with an ott column holding open tree of life
     names for each species. It also adds a "resolvable" column indicating
@@ -68,7 +68,7 @@ def get_ott(df,verbose=True):
     # Figure out which species are resolvable
     good_mask = np.array([o is not None for o in ott_list],dtype=bool)
     ott_array = np.array(ott_list)
-    resolvable = np.array(ott_resolvable(ott_array[good_mask]),dtype=bool)
+    resolvable = np.array(ott_to_resolvable(ott_array[good_mask]),dtype=bool)
     local_df["resolvable"] = False
     local_df.loc[good_mask,"resolvable"] = np.array(resolvable)
 
@@ -148,7 +148,7 @@ def get_ott(df,verbose=True):
         ```
         df.loc[df.species == "Apteryx mantelli mantelli","species"] = "Apteryx australis mantelli"
         df.loc[df.species == "Apteryx australis mantelli","keep"] = True
-        df = topiary.get_ott(df)
+        df = topiary.get_df_ott(df)
         ```
         \n""")
 

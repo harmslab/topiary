@@ -77,12 +77,12 @@ def test_shrink_redundant(for_real_inference):
     assert np.array_equal(out_df.keep,np.array([False,False,True,True,False]))
 
     # All have identical sequence and paralog. Take first because it is the
-    # best -- not structure
+    # best -- not low_quality
     test_df_2 = test_df.copy()
     test_df_2.loc[:,"recip_paralog"] = "LY96"
     test_df_2.loc[:,"sequence"] = test_df_2.loc[8,"sequence"]
-    test_df_2.loc[:,"structure"] = True
-    test_df_2.loc[8,"structure"] = False
+    test_df_2.loc[:,"low_quality"] = True
+    test_df_2.loc[8,"low_quality"] = False
     out_df = shrink_redundant(test_df_2,redundancy_cutoff=0.05)
     assert np.array_equal(out_df.keep,np.array([True,False,False,False,False]))
 
@@ -91,20 +91,17 @@ def test_shrink_redundant(for_real_inference):
     test_df_2 = test_df.copy()
     test_df_2.loc[:,"recip_paralog"] = "LY96"
     test_df_2.loc[:,"sequence"] = test_df_2.loc[8,"sequence"]
-    test_df_2.loc[:,"structure"] = False
-    test_df_2.loc[:,"low_quality"] = True
-    test_df_2.loc[9,"low_quality"] = False
+    test_df_2.loc[:,"low_quality"] = False
+    test_df_2.loc[:,"partial"] = True
+    test_df_2.loc[9,"partial"] = False
     out_df = shrink_redundant(test_df_2,redundancy_cutoff=0.05)
     assert np.array_equal(out_df.keep,np.array([False,True,False,False,False]))
 
 def test_shrink_aligners():
     pass
 
+@pytest.mark.skipif(os.name == "nt",reason="muscle cannot be installed via conda on windows")
 def test_shrink_dataset(for_real_inference,tmpdir):
-
-    # Skip test of windows because muscle cannot be installed by conda
-    if os.name == "nt":
-        return
 
     df = topiary.read_dataframe(for_real_inference["small-pre-redundancy.csv"])
     df.loc[df["recip_paralog"] == "unassigned","recip_paralog"] = "LY96"
@@ -149,5 +146,6 @@ def test_shrink_dataset(for_real_inference,tmpdir):
         with pytest.raises(ValueError):
             shrink_dataset(df,max_seq_number=b)
 
-    ## XX THIS IS A PARTIAL TEST AT THE MOMENT. FOCUSING ON TESTING LOWER LEVEL
+    # IMPROVE TEST
+    # THIS IS A PARTIAL TEST AT THE MOMENT. FOCUSING ON TESTING LOWER LEVEL
     # FUNCTIONS

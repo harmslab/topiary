@@ -4,7 +4,10 @@ Check for installed external software in the path.
 
 import topiary
 import numpy as np
-import subprocess, shutil, os, re
+import subprocess
+import shutil
+import os
+import re
 
 
 def _version_checker(cmd,version_slicer):
@@ -100,10 +103,11 @@ def check_generax(binary=None):
     """
 
     def _version_slicer(ret):
+
         lines = ret.stdout.decode().split("\n")
         for line in lines:
             if re.search("generax",line,flags=re.IGNORECASE):
-                return line.split()[2:][0].strip()
+                return line.split()[2].strip()
         return None
 
     if binary is None:
@@ -250,7 +254,7 @@ def _compare_versions(installed,required):
     Parameters
     ----------
     installed : tuple
-        tuple returned by check_xxx. elements are str.
+        tuple returned by check_{prog}. elements are str.
     required : tuple
         required version as a tuple. elements are int. examples: (1,1) would
         require version 1.1. (1,) would require at least version 1.
@@ -401,36 +405,3 @@ def validate_stack(to_check):
         err += f"    {os.environ['PATH']}"
         err += "\n"
         raise RuntimeError(err)
-
-def test_mpi_configuration(num_threads,test_binary):
-    """
-    Make sure mpi configuration allows the requested number of threads.
-    """
-
-    # if threads were not passed in directly, infer from the environment
-    if num_threads == -1:
-        num_threads = topiary._private.threads.get_num_threads(num_threads)
-
-    # Run ls on num_threads.
-    cmd = ["mpirun","-np",f"{num_threads}",test_binary]
-    ret = subprocess.run(cmd,capture_output=True)
-
-    # If mpirun failed,
-    if ret.returncode != 0:
-
-        err = "\n\nmpirun is not working. See error below. This could because you\n"
-        err += "set --num_threads to be more than the number of nodes you have\n"
-        err += "allocated on your cluster. If you did not set --num_threads\n"
-        err += "specifically, try setting it rather than having topiary try to\n"
-        err += "figure out the number of processors. Another issue could be subtle\n"
-        err += "problems with how processors are being requested via your job\n"
-        err += "management software. Maybe play with flags like --ntasks-per-node\n"
-        err += "or talk to your cluster administrator. mpirun stdout and stderr\n"
-        err += "follows:\n\n"
-        err += "stdout:\n\n"
-        err += f"{ret.stdout.decode()}"
-        err += "\nstderr:\n\n"
-        err += f"{ret.stderr.decode()}"
-        err += "\n"
-
-        raise ValueError(err)

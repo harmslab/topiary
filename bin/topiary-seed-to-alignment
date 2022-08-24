@@ -5,7 +5,7 @@ Command line interface to pipeline.seed_to_alignment
 
 import topiary
 from topiary.pipeline import seed_to_alignment
-from topiary._private import wrap_function
+from topiary._private.wrap import wrap_function
 
 import sys
 

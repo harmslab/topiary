@@ -679,7 +679,7 @@ class PrettyTree:
             fmt_string = ["{" + p + "}" for p in property_labels]
             fmt_string = ",".join(fmt_string)
 
-        # Look for {xxx} patterns in the fmt_string and try to match
+        # Look for { } patterns in the fmt_string and try to match
         # them to property_label values. var_list holds variables to load in at
         # which position. cast_from holds the type from which this is being cast.
         var_list = []

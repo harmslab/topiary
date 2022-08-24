@@ -44,7 +44,7 @@ from .pipeline import seed_to_alignment, alignment_to_ancestors
 from .util import create_nicknames
 
 from .muscle import align
-from .opentree import get_ott, get_species_tree
+from .opentree import get_df_ott, df_to_species_tree
 from .ncbi.blast import recip_blast
 from .raxml import find_best_model, generate_ml_tree, generate_ancestors, generate_bootstraps
 from .generax import reconcile

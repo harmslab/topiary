@@ -1,0 +1,20 @@
+This directory holds an internally consistent set of phylogenetic analyses on
+a tiny dataset to test the pipeline.
+
+The model.txt file holds the phylogenetic model used for all of these
+calculations.
+
+Directories are complete input/outputs from the pipeline. These can be
+regenerated using alignment-to-ancestors.ipynb.
+
+Other directories: 
+
++ 04_bootstraps_toy: a gene tree bootstrap directory with only four replicates
+  rather than the full complement.
++ 05_reconcile-bootstraps_toy: a reconciled tree bootstrap directory with only
+  four replicates rather than the full complement.
++ final-output: final output from all directories compiled into a single
+  location
++ initial-input: input files used to run pipeline
++ toy-reconcile-bootstraps-running: a simulated bootstrap reconciliation run
+  in progress. (See it's README for details.)

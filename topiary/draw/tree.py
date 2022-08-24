@@ -3,8 +3,8 @@ Draw a topiary tree with nodes colored by calculation outputs.
 """
 
 import topiary
-from topiary._private.interface import read_previous_run_dir
 from topiary._private import check
+from topiary._private import Supervisor
 from topiary.draw.core import load_trees, create_name_dict, construct_sizemap
 from topiary.draw.prettytree import PrettyTree
 
@@ -13,7 +13,7 @@ import numpy as np
 
 import os, copy
 
-def tree(run_dir,
+def tree(calculation,
          output_file=None,
          bs_color={50:"#ffffff",100:"#000000"},
          pp_color={0.7:"#ffffff",1.0:"#DC801A"},
@@ -22,7 +22,7 @@ def tree(run_dir,
          pp_label=False,
          event_label=False,
          anc_label=True,
-         tip_columns=["species","recip_paralog"],
+         tip_columns=None,
          tip_name_separator="|",
          disambiguate_tip_names=True,
          node_color=None,
@@ -43,9 +43,10 @@ def tree(run_dir,
 
     Parameters
     ----------
-    run_dir : str
-        directory containing a topiary calculation (i.e. 01_ml-tree,
-        04_bootstraps, etc.)
+    calculation : str or Supervisor
+        completed calculation. Should either be a directory containing the calc
+        (e.g. the directory with run_parameters.json, input, working, output) or
+        a Supervisor instance with a calculation loaded.
     output_file : str, optional
         output file to write tree.
     bs_color : dict, default={50:"#ffffff",100:"#000000"}
@@ -71,11 +72,13 @@ def tree(run_dir,
         whether or not to write events as text on the tree
     anc_label : bool, default=True
         whether or not to write ancestor names as text on the tree
-    tip_columns: list, default=["species","recip_paralog"]
+    tip_columns: list, optional
         label the tree tips as "|".join(tip_columns). For example, if
         tip_columns is ["species","recip_paralog"], tips will have names like
         'Homo sapiens|LY96'. If the name is not unique, the uid will be
-        appended to the name.
+        appended to the name (see disambiguate_tip_names below). If not
+        specified, try ["species","recip_paralog"], ["species","nickname"],
+        then, finally, ["species","name"].
     tip_name_separator : str, default="|"
         string to separate columns in tip names ("|" in tip_columns example
         above.)
@@ -119,7 +122,7 @@ def tree(run_dir,
     min_height : float, default=300
         minimum height for figure (pixels)
     df : pandas.DataFrame or None, default=None
-        topiary dataframe (overides whatever is in run_dir/output/dataframe.csv)
+        topiary dataframe (overides whatever is in run_directory/output/dataframe.csv)
     **kwargs : dict, optional
         pass any other keyword arguments directly to toytree.tree.draw
 
@@ -139,8 +142,8 @@ def tree(run_dir,
         None.
     """
 
-    # Load data from previous run
-    prev_run = read_previous_run_dir(run_dir)
+    if issubclass(type(calculation),str):
+        supervisor = Supervisor(calculation)
 
     # Make sure output file is a string
     if output_file is not None:
@@ -149,11 +152,20 @@ def tree(run_dir,
     # Load a tree with current calculation states (will have event, bs_support,
     # anc_label, anc_pp) on internal nodes. None if those parameters were not
     # calculated in at this point in the pipeline.
-    T = load_trees(directory=os.path.join(run_dir,"output"))
+    T = load_trees(directory=supervisor.output_dir,
+                   prefix=supervisor.tree_prefix)
 
     # If df not specified, get from the previous run
     if df is None:
-        df = prev_run["df"]
+        df = supervisor.df
+
+    if tip_columns is None:
+        if "recip_paralog" in df.columns:
+            recip_columns = ["species","recip_paralog"]
+        elif "nickname" in df.columns:
+            recip_columns = ["species","nickname"]
+        else:
+            recip_columns = ["species","name"]
 
     # Create dictionary mapping between uid and pretty name format
     name_dict = create_name_dict(df=df,

@@ -6,9 +6,10 @@ given an alignment and (possibly) a tree.
 import topiary
 
 from ._raxml import RAXML_BINARY, run_raxml
-from topiary._private.interface import prep_calc, gen_seed, write_run_information
+
 from topiary._private import check
 from topiary._private import threads
+from topiary._private import Supervisor
 
 import pandas as pd
 import numpy as np
@@ -18,7 +19,9 @@ from tqdm.auto import tqdm
 
 
 def _generate_parsimony_tree(alignment_file,
-                             dir_name="parsimony-tree",
+                             run_directory="parsimony-tree",
+                             seed=True,
+                             supervisor=None,
                              num_threads=1,
                              raxml_binary=RAXML_BINARY):
     """
@@ -27,7 +30,7 @@ def _generate_parsimony_tree(alignment_file,
     Parameters
     ----------
         alignment_file: alignment file in .phy format
-        dir_name: name to give directory
+        run_directory: name to give directory
         num_threads: number of threads to use
         raxml_binary: raxml binary to use
 
@@ -36,17 +39,17 @@ def _generate_parsimony_tree(alignment_file,
         None
     """
 
-    run_raxml(algorithm="--start",
+    run_raxml(run_directory=run_directory,
+              algorithm="--start",
               alignment_file=alignment_file,
-              dir_name=dir_name,
-              seed=True,
+              seed=seed,
               model="LG",
-              num_threads=num_threads,
-              raxml_binary=raxml_binary,
               log_to_stdout=False,
               suppress_output=True,
-              other_args=["--tree","pars{1}"])
-
+              other_args=["--tree","pars{1}"],
+              supervisor=supervisor,
+              num_threads=num_threads,
+              raxml_binary=raxml_binary)
 
 def _parse_raxml_info_for_aic(info_file):
     """
@@ -105,13 +108,27 @@ def _model_thread_function(kwargs):
         dictionary with "L", "N", and various AIC scores.
     """
 
-    # Run raxml
-    run_raxml(**kwargs)
+    # Run raxml. We catch with RuntimeError because sometimes a model/dataset
+    # combo is so bad it can't optimize. Drop those from further analysis.
+    current_dir = os.getcwd()
+    try:
+        run_raxml(**kwargs)
+        success = True
+    except RuntimeError:
+        success = False
+
+    # This makes sure we came back to starting directory, specifically in
+    # event of a raxml crash
+    os.chdir(current_dir)
 
     # Get results from the info file
-    tmp_dir = kwargs["dir_name"]
+    tmp_dir = kwargs["run_directory"]
     info_file = os.path.join(tmp_dir,"alignment.phy.raxml.log")
-    result = _parse_raxml_info_for_aic(info_file)
+
+    if success:
+        result = _parse_raxml_info_for_aic(info_file)
+    else:
+        result = None
 
     # Nuke temporary directory
     shutil.rmtree(tmp_dir)
@@ -120,16 +137,18 @@ def _model_thread_function(kwargs):
 
 
 def find_best_model(df,
-                    tree_file=None,
+                    gene_tree=None,
                     model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                     "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
                                     "mtART","mtMAM","mtREV","mtZOA","PMB",
-                                    "rtREV","stmtREV","VT","WAG","LG4M","LG4X"],
+                                    "rtREV","stmtREV","VT","WAG"],
                     model_rates=["","G8"],
                     model_freqs=["","FC","FO"],
                     model_invariant=["","IC","IO"],
-                    output=None,
+                    seed=None,
+                    calc_dir="find_best_model",
                     overwrite=False,
+                    supervisor=None,
                     num_threads=-1,
                     raxml_binary=RAXML_BINARY):
     """
@@ -140,22 +159,27 @@ def find_best_model(df,
     ----------
     df : pandas.DataFrame or str
         topiary data frame or csv written out from topiary df.
-    tree_file : str
-        tree_file in newick format. If not specified, parsimony tree is
+    gene_tree : str
+        gene_tree in newick format. If not specified, parsimony tree is
         generated and used
-    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG","LG4M","LG4X"]
+    model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG"]
         list of model matrices to check
     model_rates : list, default=["","G8"]
-        ways to treat model rates
+        ways to treat model rates. If None, do not include a model rate param.
     model_freqs : list, default=["","FC","FO"]
-        ways to treat model freqs.
+        ways to treat model freqs. If None, use the matrix frequencies.
     model_invariant : list, default=["","IC","IO"]
-        ways to treat invariant alignment columns
-    output : str, optional
-        output directory. If not specified, create an output directory with
-        form "find_best_model_randomletters"
+        ways to treat invariant alignment columns. If None, do not have an
+        invariant class.
+    seed : bool,int,str
+        If true, pass a randomly generated seed to raxml. If int or str, use
+        that as the seed. (passed via --seed)
+    calc_dir : str, default="find_best_model"
+        calculation directory.
     overwrite : bool, default=False
         whether or not to overwrite existing output
+    supervisor : Supervisor, optional
+        instance of Supervisor for managing calculation inputs and outputs
     num_threads : int, default=-1
         number of threads to use. if -1 use all available
     raxml_binary : str, optional
@@ -166,38 +190,30 @@ def find_best_model(df,
     None
     """
 
-    # Copy files in, write out alignment, move into working directory, etc.
-    result = prep_calc(df=df,
-                       tree_file=tree_file,
-                       output=output,
-                       overwrite=overwrite,
-                       output_base="find_best_model")
+    # Create supervisor if needed
+    if supervisor is None:
+        supervisor = Supervisor(seed=seed)
 
-    df = result["df"]
-    csv_file = result["csv_file"]
-    alignment_file = result["alignment_file"]
-    tree_file = result["tree_file"]
-    starting_dir = result["starting_dir"]
-    start_time = result["start_time"]
+    # Create directory with the supervisor
+    supervisor.create_calc_dir(calc_dir=calc_dir,
+                               calc_type="find_best_model",
+                               overwrite=overwrite,
+                               df=df,
+                               gene_tree=gene_tree)
 
-    # Generate a parsimony tree if not was specified
-    if tree_file is None:
+    supervisor.check_required(required_files=["alignment.phy","dataframe.csv"])
 
-        print("\nGenerating maximum parsimony tree.\n",flush=True)
+    os.chdir(supervisor.working_dir)
 
-        _generate_parsimony_tree(alignment_file,
-                                 dir_name="working",
-                                 num_threads=num_threads,
-                                 raxml_binary=raxml_binary)
-        tree_file = os.path.join("working",
-                                 "alignment.phy.raxml.startTree")
-
-    # Deal with model matrices
+    # Check sanity of model matrices, rates, freqs, invariant, num_threads
     model_matrices = check.check_iter(model_matrices,
                                       "model_matrices",
                                       required_value_type=str)
 
     # Deal with model rates
+    if model_rates is None:
+        model_rates = [""]
+
     model_rates = check.check_iter(model_rates,
                                    "model_rates",
                                    required_value_type=str)
@@ -206,6 +222,9 @@ def find_best_model(df,
         model_rates.insert(0,"")
 
     # Deal with model freqs
+    if model_freqs is None:
+        model_freqs = [""]
+
     model_freqs = check.check_iter(model_freqs,
                                    "model_freqs",
                                    required_value_type=str)
@@ -214,6 +233,9 @@ def find_best_model(df,
         model_freqs.insert(0,"")
 
     # Deal with model invariant
+    if model_invariant is None:
+        model_invariant = [""]
+
     model_invariant = check.check_iter(model_invariant,
                                        "model_invariant",
                                        required_value_type=str)
@@ -223,7 +245,23 @@ def find_best_model(df,
 
     num_threads = threads.get_num_threads(num_threads)
 
-    seed = gen_seed()
+    # If we already have a tree, use it
+    if supervisor.gene_tree is not None:
+        gene_tree = supervisor.gene_tree
+
+    # Generate a parsimony tree if not was specified
+    else:
+
+        print("\nGenerating maximum parsimony tree.\n",flush=True)
+
+        _generate_parsimony_tree(supervisor.alignment,
+                                 run_directory="max-parsimony",
+                                 seed=supervisor.seed,
+                                 supervisor=supervisor,
+                                 num_threads=num_threads,
+                                 raxml_binary=raxml_binary)
+        gene_tree = os.path.join("max-parsimony",
+                                 "alignment.phy.raxml.startTree")
 
     print("Constructing set of possible models.")
 
@@ -241,24 +279,19 @@ def find_best_model(df,
                     model = [m for m in model if m != ""]
                     model = "+".join(model)
 
-                    # Check for incompatible matrix/freq/rate combos
-                    if matrix in ["LG4M","LG4X"]:
-                        if rate != "" or freq != "" or invariant != "":
-                            print(f"skipping incompatible model combination {model}",flush=True)
-                            continue
-
                     # Make temporary directory
                     rand = "".join([random.choice(string.ascii_letters)
                                     for _ in range(10)])
-                    dir_name = f"tmp_{rand}"
+                    run_directory = f"tmp_{rand}"
 
-                    kwargs = {"algorithm":"--evaluate",
-                              "alignment_file":alignment_file,
-                              "tree_file":tree_file,
+                    # set up kwargs for raxml calcs. single thread per calc
+                    kwargs = {"run_directory":run_directory,
+                              "algorithm":"--evaluate",
+                              "alignment_file":supervisor.alignment,
+                              "tree_file":gene_tree,
                               "model":model,
-                              "seed":seed,
-                              "dir_name":dir_name,
-                              "num_threads":1, # single thread per calc
+                              "seed":supervisor.seed,
+                              "num_threads":1,
                               "raxml_binary":raxml_binary,
                               "log_to_stdout":False,
                               "suppress_output":True}
@@ -266,16 +299,19 @@ def find_best_model(df,
                     models.append(model)
 
 
-    print(f"Testing {len(kwargs_list)} models.\n",flush=True)
+    supervisor.event(f"Testing {len(kwargs_list)} models.\n")
 
     out_list = threads.thread_manager(kwargs_list,
                                       _model_thread_function,
                                       num_threads)
 
-
     # Go through output list and store results in out
     out = {"model":[]}
     for i, result in enumerate(out_list):
+
+        # Failed calculation
+        if result is None:
+            continue
 
         out["model"].append(models[i])
         for r in result:
@@ -291,14 +327,11 @@ def find_best_model(df,
     final_df["p"] = np.exp((min_aic - final_df.AICc)/2)
     final_df["p"] = final_df["p"]/np.sum(final_df["p"])
     indexer = np.argsort(final_df.p)[::-1]
-    final_df = final_df.iloc[indexer,:]
-
-    # All output goes into the output directory
-    outdir = "output"
-    os.mkdir(outdir)
+    final_df = final_df.loc[final_df.index[indexer],:]
 
     # Write dataframe comparing models
-    final_df.to_csv(os.path.join(outdir,"model-comparison.csv"))
+    final_df.to_csv(os.path.join(supervisor.output_dir,
+                                 "model-comparison.csv"))
 
     # Print best model to stdout
     print("\nTop 10 models:\n")
@@ -306,17 +339,13 @@ def find_best_model(df,
     for i in range(10):
         if i >= len(final_df):
             break
-        print(f"{final_df.model.iloc[i]:>20s}{final_df.p.iloc[i]:>20.3f}",flush=True)
+        print(f"{final_df.loc[final_df.index[i],'model']:>20s}{final_df.loc[final_df.index[i],'p']:>20.3f}",flush=True)
 
-    # Write run information
-    write_run_information(outdir=outdir,
-                          df=df,
-                          calc_type="find_best_model",
-                          model=final_df.model.iloc[0],
-                          cmd=None,
-                          start_time=start_time)
+    best_model = final_df.loc[final_df.index[0],"model"]
 
-    print(f"\nWrote results to {os.path.abspath(outdir)}\n")
+    # Record model in supervisor so it will appear in run_parameters.json
+    supervisor.update("model",best_model)
 
-    # Leave the output directory
-    os.chdir(starting_dir)
+    # Close out
+    os.chdir(supervisor.starting_dir)
+    return supervisor.finalize(successful=True,plot_if_success=False)

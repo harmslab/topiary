@@ -1,6 +1,9 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
+# NOTE: this does not run with --run-raxml or --run-generax flags, so these
+# tests will be skipped.
+
 name: topiary
 
 on:
@@ -15,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest,macos-latest]
         python-version: ['3.8', '3.9', '3.10' ]
 
     steps:
@@ -27,6 +30,7 @@ jobs:
       with:
         activate-environment: topiary
         environment-file: environment.yml
+        channel-priority: strict
         python-version: ${{ matrix.python-version }}
         auto-activate-base: false
 
@@ -34,7 +38,7 @@ jobs:
       shell: bash -l {0}
       run: |
         # platform specific packages
-        conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+        conda install -c conda-forge -c bioconda "mpi4py" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
         python -m pip install . -vv
 
     - name: run flake8

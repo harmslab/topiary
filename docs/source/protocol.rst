@@ -11,10 +11,10 @@ Protocol
 
 .. danger::
 
-  This protocol is under heavy development. Expect it to change. 
+  This protocol is under heavy development. Expect it to change.
 
-Generate Alignment
-==================
+Generate Multiple Sequence Alignment
+====================================
 
 -------------------------
 1. Prepare seed dataframe
@@ -23,11 +23,41 @@ Generate Alignment
 The most important task in an ASR study is defining the problem. What
 ancestors do you want to reconstruct? What modern proteins are best
 characterized and most relevant to interpreting the results with ancestors?
+This requires expert knowledge of the proteins under study--it's not something
+that can be automated.
 
-The first step in a topiary ASR calculation is constructing a
+Topiary allows users to specify this expert knowledge in a simple format: a
 :ref:`seed dataframe`. This table defines the protein family members
 (paralogs_) of interest and which species have these proteins (the
-taxonomic distribution of the family). topiary will use this to automatically
+taxonomic distribution of the family). Topiary uses this information to fill out
+a complete dataset and multiple sequence alignment for users.
+
+Determining what sequences to include
+-------------------------------------
+
++ What protein family members should you include?
++ What species should you include?
+
+If you are planning to do ASR, we assume you have some notion of the protein
+family members you want to investigate.
+
+#. :emph:`Determine the taxonomic distribution of the protein family.` If you are
+   unsure of the taxonomic distribution of your proteins of interest, ...
+
+   + BLAST known protein sequences against the `nr-clustered`_ BLAST database,
+     setting the :code:`Max target sequences` parameter to 1000 or more. On the
+     resulting output page, the "Taxonomy" tab will show which organisms have
+     hits.
+   + Take a few representative sequences from the most divergent species in the
+     outputs. BLAST those against the NCBI `nr`_ database...
+
+
+
+
+
+
+
+topiary will use this to automatically
 find and download sequences to put into the alignment. The table can be prepared
 in a spreadsheet program (Excel or LibreOffice), a text editor, or
 programmatically via `pandas <pandas-link_>`_.
@@ -52,6 +82,31 @@ spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 
 
+
+
+ASR studies often involve tracing the evolution of functions observed in modern
+proteins. The figure below shows this schematically for a hypothetical vertebrate
+protein family. Homolog A has some activity (denoted with a star); homolog B
+does not. If we were interested in the evolution of this activity, we’d likely
+be interested in reconstructing ancAB and ancA (arrows). This is
+because we would predict the activity evolved between ancA and ancAB based on
+which modern homologs have the function. The substitutions between ancAB and
+ancA are thus likely the key sequence changes that conferred the activity.
+
+Identifying ancA and ancAB as the ancestors of interest requires knowing the
+distribution of function across modern proteins. If we knew only the function
+of human homolog A, but no other proteins in the family, we would be
+hard-pressed to choose the appropriate scope for the ASR study. Likewise, if we
+knew only of homolog A but not homolog B, we would not predict the ancAB to ancA
+transition.
+
+
+
+The first step in an ASR study is thus to build up a picture of the functions of
+modern proteins in the family through pilot studies of modern proteins and
+literature searches.
+
+
 Protocol for preparing the table
 --------------------------------
 
@@ -62,17 +117,6 @@ Protocol for preparing the table
    sequences in your seed dataframe for a robust ASR investigation. As you add
    more paralogs, you need more sequences to resolve the evolutionary tree,
    making the calculation progressively slower.
-#. :emph:`Determine the taxonomic distribution of the protein family.` LY86 and LY96 are
-   found across bony vertebrates (humans and bony fish, but not sharks). If you are
-   unsure of the taxonomic distribution of your proteins of interest:
-
-   + BLAST known protein sequences against the `nr-clustered`_ BLAST database,
-     setting the :code:`Max target sequences` parameter to 1000 or more. On the
-     resulting output page, the "Taxonomy" tab will show which organisms have
-     hits.
-   + Take a few representative sequences from the most divergent species in the
-     outputs. BLAST those against the NCBI `nr`_ database...
-
 #. :emph:`Choose two or three species with well-annotated genomes` that span the
    whole taxonomic distribution of your proteins of interest. For LY86 and LY96,
    we selected humans, chickens, and zebrafish, covering the breadth of species
@@ -91,7 +135,7 @@ Protocol for preparing the table
    can have different names across different databases/species. By using a
    human-curated list of aliases, topiary is more effective at identifying
    sequences that really correspond to the paralogs of interest. When creating
-   this list, keep in mind:
+   this list:
 
    + separate different aliases with `;`
    + these aliases are case-insensitive (i.e. :code:`MD2`, :code:`md2`, and
@@ -110,12 +154,11 @@ Protocol for preparing the table
 #. You can put other information about the sequences (accession, citations, etc.)
    as their own columns in the table. topiary will ignore, but keep, those
    columns.
-#. XXX HOW ARE WE GOING TO WRITE ABOUT EXTRA SEQUENCES ... DEFINITELY GOES IN
-   THIS SECTION.
 
---------------------------------------------------
-Generate a draft alignment from the seed dataframe
---------------------------------------------------
+
+-----------------------------------------------------
+2. Generate a draft alignment from the seed dataframe
+-----------------------------------------------------
 
 Generate an alignment on the command line.
 
@@ -128,25 +171,9 @@ Code
 
 .. note::
 
-  The timing for the initial NCBI BLAST step depends on server capacity and
-  may take awhile. If the search hangs for a long time (say, 20 min), you can
-  stop the program (hit ⌘+C or CTRL+C) and try again. Unfortunately, the
-  time required for this search is outside topiary's control. For ~10 seeds
-  generating an alignment of 500 sequences, the topiary code itself takes ~5
-  minutes to run on a 2021 M1 Macbook Pro.
-
-
-.. note::
-
-  If this function returns many fewer sequences than your target alignment
-  size, the output will provide information that can help you understand why.
-  One common problem few reciprocal blast hits because you have not specified
-  all of the aliases for your protein in the NCBI database. To fix this
-  problem, open the file :code:`output/02_recip-blast-dataframe.csv` and look in
-  the *recip_found* and *recip_hit* columns. If you find many entries that
-  have :code:``recip_found == False`` but look like they should match in the
-  *recip_hit* column, you can add a new alias that would match these missed hits
-  to the *aliases* column in your seed dataframe.
+  Generally, this script should take less than an hour. The time required for
+  the initial NCBI BLAST step depends on server capacity and may take awhile.
+  Unfortunately, the time required for this search is outside topiary's control.
 
 Details
 -------
@@ -186,10 +213,8 @@ Running the following:
 
   topiary-seed-to-alignment --help
 
-
 Will return information about the flags that can be specified in the program.
 You can access the same information in the
-`topiary documentation <topiary.pipeline.html#module-topiary.pipeline.seed_to_alignment>`_
 
 Output
 ------
@@ -202,15 +227,15 @@ This will output a directory with the following files:
 + 03_sampled-dataframe.csv. Dataframe with sequence redundancy lowered.
 + 04_aligned-dataframe.csv. Dataframe with initial alignment.
 + 05_clean-aligned-dataframe.csv. Dataframe with initial alignment.
-+ 06_alignment.fasta.fasta. Dataframe alignment written out to a fasta file.
++ 06_alignment.fasta. Dataframe alignment written out to a fasta file.
 
 There are other files in this directory (.faa.gz and blast_db.* files). These
 were used for the reciprocal BLAST calculation and may be deleted if desired.
 
 
---------------------------------------------------
-Visually inspect and (possibly) edit the alignment
---------------------------------------------------
+-----------------------------------------------------
+3. Visually inspect and (possibly) edit the alignment
+-----------------------------------------------------
 
 Alignments aren't always perfect. So we can edit the alignment.
 
@@ -227,28 +252,15 @@ Command line instructions
   topiary-read-fasta-into 05_clean-aligned-dataframe.csv EDITED_FASTA NEW_CSV
 
 
-Jupyter instructions
---------------------
-
-In a jupyter notebook, run the following:
-
-.. code-block:: python
-
-  import topiary
-  df = topiary.load_dataframe(LAST_CSV_FILE)
-  df = topiary.read_fasta_into(df,EDITED_FASTA_FILE)
-  topiary.write_dataframe(df,NEW_CSV_FILE)
-
-
 Infer tree and ancestors
 ========================
 
----------------------------------------------
-Infer phylogenetic model, tree, and ancestors
----------------------------------------------
+------------------------------------------------
+4. Infer phylogenetic model, tree, and ancestors
+------------------------------------------------
 
 .. note::
-  We highly recommend running the following steps on a computing cluster. To
+  We highly recommend running the following steps on a computer cluster. To
   prepare the computing environment, please follow the installation steps above on
   the cluster.
 
@@ -258,9 +270,12 @@ Copy the final dataframe up to the cluster.
 
   scp final_dataframe.csv username@my.cluster.edu:
 
-
 Assuming you are running this on a computing cluster, you'll need to specify
-the resources available for the calculation.
+the resources available for the calculation. The following code block is an
+example SLURM script for our local cluster. (Check with your cluster
+administrator for the relevant format). The key aspects to note are the
+number of threads matches between the topiary call (:code:`--num_thread 28`) and
+the cluster resource allocation (:code:`#SBATCH --cpus-per-task=28`). 
 
 .. code-block:: shell-session
 

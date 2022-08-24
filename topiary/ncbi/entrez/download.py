@@ -79,6 +79,13 @@ def ncbi_ftp_download(full_url,
     ftp_download(md5_file,path,url,resume=False,silent=True)
     md5_dict = _read_md5_file(md5_file)
 
+    try:
+        md5_dict[file_name]
+    except KeyError:
+        err = f"The file '{file_name}' is not present on the NCBI.\n"
+        err += f"Full path: {full_url}/{path}/{file_name}"
+        raise FileNotFoundError(err)
+
     counter = 0
     success = False
     while counter < num_attempts:

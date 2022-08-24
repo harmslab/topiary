@@ -7,12 +7,8 @@ from topiary.ncbi.blast.make import make_blast_db
 import os
 import glob
 
+@pytest.mark.skipif(os.name == "nt",reason="makeblastdb cannot be installed via conda on windows")
 def test_make_blast_db(make_blast_db_files,tmpdir):
-
-    # Skip test on windows machine
-    if os.name == "nt":
-        print("Skipping creation of database test on windows.")
-        return
 
     cwd = os.getcwd()
     os.chdir(tmpdir)

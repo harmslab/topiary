@@ -190,6 +190,21 @@ def test__prepare_for_blast(test_dataframes):
             out = _prepare_for_blast(partition_temp=b,**kwargs)
 
     # ------------------------------------------------------------------------
+    # drop_combo_fx
+    kwargs = copy.deepcopy(default_kwargs)
+    kwargs.pop("drop_combo_fx")
+    good_args = [0.00000001,0.5,1]
+    for g in good_args:
+        out = _prepare_for_blast(drop_combo_fx=g,**kwargs)
+        assert out[5] == g
+
+    bad_args = [-1,10000000000.0,None,"a",[],type(float),{},np.nan]
+    for b in bad_args:
+        print(f"testing bad drop_combo_fx value: {b}")
+        with pytest.raises(ValueError):
+            out = _prepare_for_blast(drop_combo_fx=b,**kwargs)
+
+    # ------------------------------------------------------------------------
     # use_start_end
     kwargs = copy.deepcopy(default_kwargs)
     kwargs.pop("use_start_end")
@@ -274,19 +289,19 @@ def test__calc_hit_post_prob():
     hits = pd.DataFrame({"bits":[1,1],
                          "hit_def":["A","B"],
                          "e_value":[5,10]})
-    pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1)
+    paralogs, pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1)
     assert np.array_equal(pp,[0.5,0.5])
 
     # strongly favor A
     hits = pd.DataFrame({"bits":[100,1],
                          "hit_def":["A","B"],
                          "e_value":[5,10]})
-    pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1)
+    paralogs, pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1)
     assert np.isclose(pp[0],1)
     assert np.isclose(pp[1],0)
 
     # Strongly favor A, but partition temperature so high it doesn't matter
-    pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
+    paralogs, pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
     assert np.isclose(pp[0],0.5)
     assert np.isclose(pp[1],0.5)
 
@@ -294,7 +309,7 @@ def test__calc_hit_post_prob():
     hits = pd.DataFrame({"bits":[1,1],
                          "hit_def":["A","A"],
                          "e_value":[5,10]})
-    pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
+    paralogs, pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
     assert np.isclose(pp[0],1)
     assert np.isclose(pp[1],0)
 
@@ -302,7 +317,7 @@ def test__calc_hit_post_prob():
     hits = pd.DataFrame({"bits":[1,1],
                          "hit_def":["X","Y"],
                          "e_value":[5,10]})
-    pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
+    paralogs, pp, masks = _calc_hit_post_prob(hits,patterns,partition_temp=1e9)
     assert np.isclose(pp[0],0)
     assert np.isclose(pp[1],0)
 
@@ -324,7 +339,7 @@ def test__make_recip_blast_calls(test_dataframes,recip_blast_hit_dfs):
     prep_out = _prepare_for_blast(df,paralog_patterns,**prep_kwargs)
 
     # Okay, output from _prepare_for_blast
-    df, sequence_list, paralog_patterns, min_call_prob, partition_temp = prep_out
+    df, sequence_list, paralog_patterns, min_call_prob, partition_temp, drop_combo_fx = prep_out
 
     # Get default arguments for _make_recip_blast_calls
     default_kwargs = get_public_param_defaults(recip_blast,

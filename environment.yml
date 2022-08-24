@@ -1,8 +1,8 @@
 name: topiary
 channels:
-  - defaults
-  - bioconda
   - conda-forge
+  - bioconda
+  - defaults
 dependencies:
   - numpy<1.22
   - pandas
@@ -14,12 +14,13 @@ dependencies:
   - ete3
   - dendropy
   - toytree
-  # - openmpi<4.1.3
-  # - blast    # [not osx]
-  # - muscle   # [not osx]
-  # - generax  # [not osx]
-  # - raxml-ng # [not osx]
+  #- openmpi<4.1.3
+  #- blast    # [not win]
+  #- muscle   # [not win]
+  #- generax  # [not win]
+  #- raxml-ng # [not win]
+  #- mpi4py
   - pip
   - pip:
-    - pastml
+    - pastml==1.9.34
     - opentree

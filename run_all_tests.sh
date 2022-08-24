@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 echo "Running flake8"
 flake_test=`flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics`
@@ -22,7 +22,7 @@ grep MISSING reports/completeness-crawler.txt
 
 echo "Running coverage.py"
 coverage erase
-coverage run --branch -m pytest --junit-xml=reports/junit/junit.xml
+coverage run --branch -m pytest --run-raxml --run-generax --junit-xml=reports/junit/junit.xml
 
 echo "Generating reports"
 coverage html
@@ -32,8 +32,11 @@ coverage xml
 mv coverage.xml reports/coverage/coverage.xml
 
 genbadge tests
+sleep 1
 genbadge coverage
+sleep 1
+
 wget https://github.com/harmslab/topiary/actions/workflows/python-app.yml/badge.svg -O ghwf.svg
 wget https://readthedocs.org/projects/topiary-asr/badge/?version=latest -O rtd.svg
 
-mv *.svg reports/badges
+mv *.svg docs/badges

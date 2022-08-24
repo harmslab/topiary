@@ -1,0 +1,8 @@
+#S #SL #D #T #TL
+ott770315 S=2 SL=0 D=0 T=0 TL=0
+ott913930 S=2 SL=0 D=0 T=0 TL=0
+ott542509 S=2 SL=0 D=0 T=0 TL=0
+ott271571 S=2 SL=0 D=0 T=0 TL=0
+node_0 S=2 SL=0 D=0 T=0 TL=0
+node_1 S=2 SL=0 D=0 T=0 TL=0
+node_2 S=2 SL=0 D=1 T=0 TL=0

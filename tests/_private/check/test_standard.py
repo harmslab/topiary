@@ -9,7 +9,7 @@ import pandas as pd
 
 def test_check_bool():
 
-    true_values = [True,1.0,1,10,-1,np.ones(1,dtype=np.bool_)[0]]
+    true_values = [True,1.0,1,np.ones(1,dtype=np.bool_)[0]]
     for t in true_values:
         assert check_bool(t)
 
@@ -17,7 +17,7 @@ def test_check_bool():
     for f in false_values:
         assert not check_bool(f)
 
-    bad_value = [None,"stupid",[1.0,1.0],np.array([1.0,1.0]),{},float]
+    bad_value = [None,123,-1,bool,"stupid",[1.0,1.0],np.array([1.0,1.0]),{},float]
     for b in bad_value:
         with pytest.raises(ValueError):
             value = check_bool(b)
