@@ -1,5 +1,5 @@
 """
-Wrapper for generax to perform gene/species tree reconcilation.
+Wrapper for generax to perform gene/species tree reconciliation.
 """
 
 # raxml binary to use if not specified by user

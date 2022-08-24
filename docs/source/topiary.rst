@@ -13,6 +13,7 @@ Subpackages
    topiary.muscle
    topiary.ncbi
    topiary.opentree
+   topiary.pastml
    topiary.pipeline
    topiary.quality
    topiary.raxml

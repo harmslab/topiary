@@ -17,6 +17,14 @@ topiary.pipeline.alignment\_to\_ancestors
    :undoc-members:
    :show-inheritance:
 
+topiary.pipeline.bootstrap\_reconcile
+--------------------------------------------
+
+.. automodule:: topiary.pipeline.bootstrap_reconcile
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.pipeline.seed\_to\_alignment
 -------------------------------------------
 

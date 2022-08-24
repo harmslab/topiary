@@ -66,7 +66,7 @@ def reconcile(prev_calculation=None,
         names; all other data will be dropped. NOTE: this is required if
         bootstrap = True.
     allow_horizontal_transfer : bool, optional
-        whether to allow horizontal transfer during reconcilation. If True, use
+        whether to allow horizontal transfer during reconciliation. If True, use
         the "UndatedDTL" model. If False, use the "UndatedDL" model. If None, use
         whatever is in prev_calculation. If this is not specified, default to
         True.
