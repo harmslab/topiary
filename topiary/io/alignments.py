@@ -123,7 +123,7 @@ def _validate_seq_writer(df,
 
 def write_fasta(df,out_file,seq_column=None,label_columns=["species","name"],
                 write_only_keepers=True,empty_char="X-?",clean_sequence=False,
-                overwrite=False,sort_on_taxa=True):
+                overwrite=False,sort_on_taxa=False):
     """
     Write a fasta file from a dataframe.
 
@@ -147,7 +147,7 @@ def write_fasta(df,out_file,seq_column=None,label_columns=["species","name"],
         replace any non-aa characters with "-"
     overwrite : bool, default=False
         whether or not to overwrite an existing file
-    sort_on_taxa : bool, default=True
+    sort_on_taxa : bool, default=False
         sort output taxonomically if possible. This will sort (in order of
         preference) by recip_paralog, nickname, and then name. Once sorted by
         protein, the species will then be sorted based on their taxonomic
