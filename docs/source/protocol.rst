@@ -111,7 +111,9 @@ spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
    and chickens would be non-optimal, as this covers only amniotes). The
    NCBI BLAST "Taxonomy" report from the previous step can be helpful in this
    regard: select species from the highest level of the hierarchy and you'll
-   end up with good taxonomic coverage.
+   end up with good taxonomic coverage. Note that the species you use in your
+   seed dataset will later serve as your "key species" when performing 
+   reciprocal BLAST.
 
 1.2. Construct the seed spreadsheet
 -----------------------------------
@@ -142,11 +144,11 @@ The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
      alias (i.e. :code:`MD2` and :code:`myeloid differentiation protein 2`).
 
    To find aliases, you can check out the `Also known as`_ field for the gene of
-   interest on NCBI, the `Protein names`_ section of the protein's uniprot
+   interest on NCBI, the `Protein names`_ section of the protein's UniProt
    entry, a genecards_ entry (for proteins found in humans), and/or primary
    literature.
 #. You can put other information about the sequences (accession, citations, etc.)
-   as their own columns in the table. topiary will ignore, but keep, those
+   as their own columns in the table. Topiary will ignore, but keep, those
    columns.
 
 
@@ -154,7 +156,7 @@ The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
 2. Generate a draft alignment from the seed dataframe
 -----------------------------------------------------
 
-Generate an alignment on the command line
+Generate an alignment on the command line:
 
 .. code-block:: shell-session
 
@@ -163,7 +165,7 @@ Generate an alignment on the command line
 .. note::
 
   Generally, this script should take less than an hour. The time required for
-  the initial NCBI BLAST step depends on server capacity and may take awhile.
+  the initial NCBI BLAST step depends on server capacity and may take a while.
   Unfortunately, this is outside of topiary's control. If this step is too slow
   or crashes, you can load in sequences from saved BLAST XML files as described
   below.
@@ -182,8 +184,8 @@ This will create a directory named :code:`seed_to_ali` with the following files:
   sequences with :code:`keep = False` from the previous alignment are dropped.
 + 06_alignment.fasta. Dataframe alignment written out to a fasta file.
 
-There are other files in this directory (i.e. .faa.gz and blast_db.* files).
-These may be deleted if desired.
+There are other intermediate files in this directory (i.e. .faa.gz and blast_db.* files)
+that are not necessary for downstream analysis. These may be deleted if desired.
 
 Options
 -------
@@ -194,7 +196,7 @@ There are many options available for this function. These can be accessed by:
 
   topiary-seed-to-alignment --help
 
-Some of the more common options users might wish to change follow.
+Some of the more common options users might wish to change are listed below.
 
 Controlling alignment size
 --------------------------
@@ -237,36 +239,36 @@ Script details
 
 This script does the following:
 
-+ :emph:`Find paralogs from other species` using the seed sequences as BLAST queries
-  against the `NCBI non-redundant <blast-nr_>`_. The taxonomic scope is
-  defined by the species in the seed dataset.
++ :emph:`Finds paralogs from other species` using the seed sequences as BLAST queries
+  against the `NCBI non-redundant database <blast-nr_>`_. The taxonomic scope is
+  defined by the key species in the seed dataset.
 
   + Output: *01_initial-dataframe.csv*
   + `topiary.ncbi.ncbi_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.ncbi.ncbi_blast>`_
 
-+ :emph:`Make orthology calls` using `reciprocal BLAST <https://www.flyrnai.org/RNAi_orthology.html>`_
-  against the proteomes of the species from the seed dataset.
++ :emph:`Makes orthology calls` using `reciprocal BLAST <https://www.flyrnai.org/RNAi_orthology.html>`_
+  against the proteomes of the key species from the seed dataset.
 
   + Output: *02_recip-blast-dataframe.csv*
   + `topiary.ncbi.recip_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.recip.recip_blast>`_
 
-+ :emph:`Decrease the size of the dataset` taking into account taxonomic sampling,
++ :emph:`Decreases the size of the dataset` taking into account taxonomic sampling,
   quality, and alignment score of all sequences.
 
   + Output: *03_shrunk-dataframe.csv*
   + `topiary.shrink_dataset <topiary.quality.html#topiary.quality.shrink.shrink_dataset>`_
 
-+ :emph:`Generate a draft alignment` using `Muscle5 <muscle-link_>`_.
++ :emph:`Generates a draft alignment` using `Muscle5 <muscle-link_>`_.
 
   + Output: *04_aligned-dataframe.csv*
   + `topiary.align <topiary.muscle.html#topiary.muscle.muscle.align>`_
 
-+ :emph:`Polish alignment` by removing worst aligning sequences.
++ :emph:`Polishs alignment` by removing worst aligning sequences.
 
   + Output: *05_clean-aligned-dataframe.csv*
   + `topiary.quality.polish_alignment <topiary.quality.html#topiary.quality.polish.polish_alignment>`_
 
-+ :emph:`Write alignment in fasta format` for loading into an alignment viewer.
++ :emph:`Writes alignment in fasta format` for loading into an alignment viewer.
 
   + Output: *06_alignment.fasta*
   + `topiary.write_fasta <topiary.io.html#topiary.io.alignments.write_fasta>`_
@@ -278,7 +280,7 @@ This script does the following:
 
 Before reconstructing a phylogenetic tree and ancestors, we recommend
 inspecting and possibly editing the alignment. We recommend using
-`aliview <aliview-link_>`_ for this purpose. There are differing views on
+`Aliview <aliview-link_>`_ for this purpose. There are differing views on
 whether to manually edit an alignment. Manual edits are subjective, but there
 are also "obvious" instances where automatic alignment software does poorly.
 When we do phylogenetics projects, we usually make the following small changes
@@ -318,7 +320,7 @@ future realignment steps.
   :height: 300
 
 :raw-html:`<br />`
-:emph:`Delete lineage-specific duplicates`, selecting the sequence with the
+:emph:`Delete lineage-specific duplicates.` Select the sequence with the
 greatest sequence coverage. The pipeline generally does a good job of deleting
 sequences in this class; however, if such sequences slip through, delete them
 from the alignment.
@@ -330,7 +332,7 @@ from the alignment.
 
 :raw-html:`<br />`
 :emph:`Globally realign the sequences`. Because trying to align long and
-variable sequences of the sort we deleted above can affect the alignment of
+variable sequences like those we deleted above can affect the alignment of
 other sequences, we generally use Muscle5 to re-align the entire dataset
 after we remove problematic sequences and columns. Alignment can be done directly
 within AliView. We often iterate through the steps above and full realignment
@@ -421,7 +423,7 @@ The key aspects to note in this file are:
 + We've found that this step usually takes a few days for an alignment with ~500
   sequences and ~1000 columns long. We conservatively allocated a week
   (:code:`#SBATCH --time=07-00:00:00`).
-+ If you installed topiary using conda (as we recommend) you  need to make sure
++ If you installed topiary using conda (as we recommend), you  need to make sure
   that the conda environment is active (:code:`conda activate topiary`).
 
 You start the topiary run using something like the following command. This
@@ -463,10 +465,12 @@ Some of the more important options are:
 Script details
 --------------
 
-+ :emph:`Choose a phylogenetic model` that maximizes the likelihood of observing
-  the sequences in your alignment. Topiary uses raxml-ng to generate a maximum
+The script does the following to generate a tree and ancestors from an alignment:
+
++ :emph:`Chooses a phylogenetic model` that maximizes the likelihood of observing
+  the sequences in your alignment. Topiary uses RaxML-NG to generate a maximum
   parsimony tree and then optimizes the tree branch lengths using 360
-  different phylogenetic models implemented in raxml-ng. It selects between
+  different phylogenetic models implemented in RAxML-NG. It selects between
   those models using a corrected AIC test. The following table is an example of
   the resulting output.
 
@@ -501,7 +505,7 @@ Script details
 
   + `topiary.find_best_model <topiary.raxml.html#topiary.raxml.model.find_best_model>`_
 
-+ :emph:`Generate a maximum-likelihood phylogenetic tree`. Uses RAxML-NG to
++ :emph:`Generates a maximum-likelihood phylogenetic tree`. Uses RAxML-NG to
   find the maximum likelihood tree using the model determined in the previous
   step. Starts inference from ten different parsimony trees and ten random
   trees, then optimizes the tree using default RAxML-NG moves (NR-FAST and SPR).
@@ -517,16 +521,16 @@ Script details
     + *summary-tree.pdf*: Drawing of ML gene tree with branch lengths. In figure,
       tree is rooted by midpoint.
     + *gene-tree.newick*: ML gene tree with branch lengths in newick format.
-      Tips are topiary uids. Internal nodes are unlabeled.
+      Tips are topiary UIDs. Internal nodes are unlabeled.
     + *dataframe.csv*: Current topiary dataframe.
 
   + `topiary.generate_ml_tree <topiary.raxml.html#topiary.raxml.tree.generate_ml_tree>`_
 
-+ :emph:`Reconcile the gene and species trees`. Uses GeneRax to reconcile the
++ :emph:`Reconciles the gene and species trees`. Uses GeneRax to reconcile the
   gene and species trees. Uses default GeneRax SPR moves. User can define
-  whether or not to allow lateral gene transfer (the :code:`UndatedDL` or
-  :code:`UndatedDTL`). This tree an example of "summary-tree.pdf" generated by
-  this step.
+  whether or not to allow lateral gene transfer (the :code:`UndatedDTL` or
+  :code:`UndatedDL`, respectively). This tree an example of "summary-tree.pdf" generated 
+  by this step.
 
   .. image:: _static/img/ali-to-anc/reconciled-tree.svg
     :align: center
@@ -538,22 +542,22 @@ Script details
     + *summary-tree.pdf*: Drawing of reconciled tree with branch lengths and
       labeled non-speciation events.
     + *reconciled-tree_events.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are labeled
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are labeled
       with evolutionary events.
     + *reconciliations/*: Directory with reconciliation information written out
       by GeneRax. See the `GeneRax documentation <generax-link_>`_ for details.
     + *reconciled-tree.newick*: Rooted, reconciled tree with branch lengths in
-      newick format. Tips are topiary uids. Internal nodes are unlabeled.
+      newick format. Tips are topiary UIDs. Internal nodes are unlabeled.
     + *species-tree.newick*: Species tree downloaded from the Open Tree of Life.
 
   + `topiary.reconcile <topiary.generax.html#topiary.generax.reconcile.reconcile>`_
   + `topiary.df_to_species_tree <topiary.opentree.html#topiary.opentree.tree.df_to_species_tree>`_
 
-+ :emph:`Infer ancestral sequences` using RAxML-NG given the reconciled tree
++ :emph:`Infers ancestral sequences` using RAxML-NG given the reconciled tree
   and maximum likelihood phylogenetic model. Gaps are inferred using parsimony
-  using PastML. This tree an example of "summary-tree.pdf" generated by this
+  via PastML. This tree an example of "summary-tree.pdf" generated by this
   step. The graph shows an example ancestor sequence summary. The text shows
-  the corresponding reconstructed ancestor and it's altAll versions.
+  the corresponding reconstructed ancestor and its altAll versions.
 
   .. image:: _static/img/ali-to-anc/ancestors.svg
     :align: center
@@ -582,23 +586,23 @@ Script details
       labeled non-speciation events, and ancestors with posterior probabilities
       as a color map.
     + *reconciled-tree_anc-pp.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
       ancestral posterior probabilities.
     + *reconciled-tree_anc-label.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
       ancestor names.
     + *reconciled-tree_ancestors/*: The *ancX.pdf* files are pdf summaries of
       ancestral reconstructions for each ancestor as labeled in *summary-tree.pdf*.
-      An example is shown above. These graphs show the support for the most
-      likely reconstruction at each site (black circles); the next most likely
-      reconstruction (red circles); the locations of gaps (gray shading); and
+      An example is shown above. These graphs show the support for: the most
+      likely reconstruction at each site (black circles), the next most likely
+      reconstruction (red circles), the locations of gaps (gray shading), and
       the location of ambiguous gaps (purple dashes). Statistics at the top
       indicate ancestor quality.
 
   + `topiary.generate_ancestors <topiary.raxml.html#topiary.raxml.ancestors.generate_ancestors>`_
 
-+ :emph:`Generate bootstrap replicates from the ML gene tree`. This uses the
-  ML gene tree (step *01_ml-tree*) :emph:`NOT` the reconciled tree as input and
++ :emph:`Generates bootstrap replicates from the ML gene tree`. This uses the
+  ML gene tree (step *01_ml-tree*), :emph:`NOT` the reconciled tree as input and
   generates up to 1,000 bootstrap replicates. These will be fed into the next
   script, which calculates the final branch supports on the reconciled tree.
 
@@ -613,7 +617,7 @@ Script details
       tree) with branch lengths. Nodes are colored by bootstrap support. In
       figure, tree is rooted by midpoint.
     + *gene-tree_supports.newick*: ML gene tree with branch lengths in newick
-      format. Tips are topiary uids. Internal nodes are labeled by bootstrap
+      format. Tips are topiary UIDs. Internal nodes are labeled by bootstrap
       support.
     + *bootstrap_replicates/*: Directory has bootstrap replicate alignments and
       bootstrap trees that will be fed into the next step.
@@ -623,12 +627,12 @@ Script details
 -------------------------------------------------------
 
 In this step, we determine the branch supports on the reconciled tree. This step
-is separate from the last step, as is is relatively computationally intensive
+is separate from the last step, as it is relatively computationally intensive
 and benefits from a different parallelization strategy than the last step.
 
 .. note::
-  Before proceeding to this step, we recommend you check the results from the
-  last steps to ensure they are reasonable.
+  Before proceeding to this step, we recommend that you check the results from 
+  the last steps to ensure they are reasonable.
 
 As with the last step, create a run file that specifies the resources available
 for the calculation. The following is an example SLURM script for our local
@@ -660,11 +664,11 @@ The key aspects to note in this file are:
   (:code:`--num_thread 140`) and the cluster resource allocation
   (:code:`#SBATCH --nodes=5`, :code:`#SBATCH --cpus-per-task=28`).
   :math:`5 \times 28 = 140`. This will run in highly parallel fashion, with one
-  reonciliation bootstrap per thread.
+  reconciliation bootstrap per thread.
 + We've found that this step usually takes about a week for an alignment with ~500
   sequences and ~1000 columns long. We allocated a week
   (:code:`#SBATCH --time=07-00:00:00`).
-+ If you installed topiary using conda (as we recommend) you  need to make sure
++ If you installed topiary using conda (as we recommend), you need to make sure
   that the conda environment is active (:code:`conda activate topiary`).
 
 You start the topiary run using something like the following command. This
@@ -697,9 +701,9 @@ The most important option is:
 Script details
 --------------
 
-+ :emph:`Calculate branch supports for the reconciled tree`. Takes the bootstrap
++ :emph:`Calculates branch supports for the reconciled tree`. Takes the bootstrap
   replicate alignments and gene trees generated by RAxML-NG and feeds each one
-  into GeneRax for gene/species tree reconciliation. Uses the resulting set of
+  into GeneRax for gene-species tree reconciliation. Uses the resulting set of
   reconciled trees to calculate bootstrap branch supports on each of the nodes
   on the reconciled tree.
 
@@ -720,7 +724,7 @@ Script details
       tree permutations converged (:code:`perms_below_cutoff`). See
       `Pattengale et. al. <http://www.liebertpub.com/doi/10.1089/cmb.2009.0179>`_ for details.
     + *reconciled-tree_supports.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes branch
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are branch
       supports.
 
   + `topiary.reconcile <topiary.generax.html#topiary.generax.reconcile.reconcile>`_.

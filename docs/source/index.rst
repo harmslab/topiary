@@ -19,7 +19,7 @@ Features
 + :emph:`Automatic.` Performs sequence database construction, quality
   control, multiple sequence alignment, tree construction, gene/species tree
   reconciliation, and ancestral reconstruction with minimal user input.
-+ :emph:`Species aware.` Integrates with the `Open Tree of Life`_
++ :emph:`Species aware.` Integrates the `Open Tree of Life`_
   database, improving selection of sequences and tree/ancestor inference.
 + :emph:`Human-oriented.` Users prepare input as spreadsheets, not
   arcane text files. Outputs are spreadsheets, clean fasta files, pdf trees,
@@ -68,13 +68,13 @@ Quick start
 
 The topiary pipeline has two stages:
 
-1. Going from seed sequence to alignment (blasting, sequence quality control,
-   reducing redundancy, and alignment). This can be run on a user's windows,
-   macOS, or linux computer.
+1. Going from seed sequence to alignment (BLASTing, sequence quality control,
+   reducing redundancy, and alignment). This can be run on a user's Windows,
+   macOS, or Linux computer.
 2. Going from alignment to ancestors (building a gene tree, reconciling with the
    species tree, inferring ancestors, and calculating bootstraps). This requires
-   macOS or linux; windows is *not* supported. This step should usually be run
-   on a high performance computing cluster.
+   macOS or Linux; Windows is *not* supported. This step should usually be run
+   on a high-performance computing cluster.
 
 Installation
 ------------
@@ -126,7 +126,7 @@ For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
       topiary-alignment-to-ancestors final-dataframe.csv --out_dir ali_to_anc
 
-#. Generate bootstrap replicates to measure branch support. This is usually run
+#. Generate bootstrap replicates to measure branch supports. This is usually run
    on a cluster.
 
    .. code-block:: shell-session
@@ -192,3 +192,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

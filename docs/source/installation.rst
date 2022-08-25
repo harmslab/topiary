@@ -24,7 +24,7 @@ are in the next sections).
 If you do not have conda installed, download and install
 `miniconda <miniconda-link_>`_ before proceeding. To prevent interference with
 other packages, we recommend installing topiary in its own conda environment.
-In a standard terminal (linux or macOS) or the Anaconda Prompt (windows), run
+In a standard terminal (Linux or macOS) or the Anaconda Prompt (Windows), run
 the following commands.
 
 .. code-block:: shell-session
@@ -77,7 +77,7 @@ sections below.
 
 .. _macos-linux-section:
 
-macOS and linux instructions
+macOS and Linux instructions
 ============================
 
 You can install the software packages with:
@@ -119,13 +119,13 @@ Windows instructions
 
 .. important::
 
-  RAxML-NG and GeneRax do :emph:`not` run on windows. To generate trees and
-  ancestors, you must run topiary on a linux or macOS machine. Topiary can be
-  used on a local windows computer to generate an alignment, which can then be
-  passed to a linux or macOS cluster for the ancestral inference. Tree plotting
-  can also be run on a windows machine.
+  RAxML-NG and GeneRax do :emph:`not` run on Windows. To generate trees and
+  ancestors, you must run topiary on a Linux or macOS machine. Topiary can be
+  used on a local Windows computer to generate an alignment, which can then be
+  passed to a Linux or macOS cluster for the ancestral inference. Tree plotting
+  can also be run on a Windows machine.
 
-To use topiary on windows, you need to install two packages:
+To use topiary on Windows, you need to install two packages:
 
 + `muscle >= 5.0 <muscle-download_>`_. This binary comes as a single, read-to-run
   file. Download the file and place it in a convenient folder somewhere on
@@ -179,13 +179,13 @@ Alternatively, you can install via pip:
   pip install -r requirements.txt
 
 These steps will install topiary, but not the full software stack. If you are on
-macos or linux, you can install the core software by:
+macOS or Linux, you can install the core software by:
 
 .. code-block:: shell-session
 
   conda install -c conda-forge -c bioconda "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
 
-If you are on windows, please see the :ref:`windows section<windows-section>`.
+If you are on Windows, please see the :ref:`windows section<windows-section>`.
 
 ------------------
 Required libraries
