@@ -101,7 +101,7 @@ Short protocol
 For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
 #. Create a seed spreadsheet with a handful of sequences that define the scope
-   of the ASR study. For examples, see the table above or download
+   of the ASR study. For examples, see the table above or download the 
    `full example <_static/data/seed-dataframe_example.csv>`_.
 
 #. Construct a multiple sequence alignment from a the seed spreadsheet
@@ -131,7 +131,7 @@ For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
    .. code-block:: shell-session
 
-      topiary-bootstrap-reconcile ali_to_anc
+      topiary-bootstrap-reconcile ali_to_anc num_threads
 
 
 How to cite

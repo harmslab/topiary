@@ -8,16 +8,12 @@
 
 .. _protocol-doc:
 
-=================
+========
 Protocol
-=================
+========
 
-Generate a Multiple Sequence Alignment
-======================================
-
-----------------------------
-1. Prepare a seed dataframe
-----------------------------
+Define the problem
+==================
 
 The most important task in an ASR study is defining the problem. What
 ancestors do you want to reconstruct? What modern proteins are best
@@ -25,13 +21,55 @@ characterized and most relevant to interpreting the results with ancestors?
 This requires expert knowledge of the proteins under study--it's not something
 that can be automated.
 
-Topiary allows users to specify this expert knowledge in a simple format: a
-:ref:`seed dataframe`. This table defines the protein family members
-(paralogs_) of interest and which species have these proteins (the
-taxonomic distribution of the family). Topiary uses this information to fill out
-a complete dataset and multiple sequence alignment.
+The tree for a hypothetical protein family shows how one might approach the 
+problem. `Paralog <paralogs_>`_ A has some activity (denoted with a star);
+paralog B does not. If we are interested in the evolution of the star activity,
+we would likely reconstruct ancA and ancAB (arrows). We expect ancA was active
+because all of its descendants are active; we expect ancAB was inactive because
+only the A paralogs--not the B paralogs or fish proteins--are active. 
+Reconstructing ancA and ancAB would thus isolate the key sequence differences
+that conferred activity. 
 
-An example for the LY86/LY96 protein family is shown below. The full
+.. image:: _static/img/define-the-problem.svg
+  :align: center
+  :alt: Defining the problem on an evolutionary tree
+  :width: 80%
+
+Two pieces of information specify the scope of the ASR study and thus what 
+ancestors can be reconstructed:
+
+#. What homologs are of interest? 
+#. What homologs exist in what organisms? 
+
+We can think of the answers to these questions graphically. The image below 
+shows the information from above in a different format. The protein family is shown
+left to right (proteins A-D); the species tree is shown from top to bottom
+(humans through lampreys). The blue checks and orange exs indicate whether the 
+organism has the protein. To reconstruct ancA and ancAB, we need to know we want
+to study proteins *A* and *B* (paralogs of interest) and we need to know that
+bony vertebrates, but not other animals, have the A and B proteins
+(*taxonomic scope*). The gray box indicates the proteins we need to include in 
+our ASR study to reconstruct ancA and ancAB. 
+
+.. image:: _static/img/project-scope.svg
+  :align: center
+  :alt: Defining the scope for an ASR project
+  :width: 80%
+
+In a topiary calculation, we specify that these are the proteins of interest 
+using a seed dataset. In graphical terms, this means finding sequences 
+representing all paralogs (across horizontal) taken from the full taxonomic
+scope (the top and bottom of the gray box).
+
+-------------------------
+1. Prepare a seed dataset
+-------------------------
+
+A seed dataset defines the paralogs of interest and taxonomic scope for a 
+reconstruction. It has four columns: name (e.g. the paralog), species, aliases,
+and sequence. Topiary uses this dataset as a starting point for BLAST searches
+to construct a dataset and generate an alignment for the reconstruction study.
+An example for the two immune proteins, LY86 and LY96, is shown below. The full
 spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
 
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
@@ -46,72 +84,33 @@ spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
 | LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Danio rerio   | MKTYFNM... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 
-
 1.1. Determine what sequences to include
 ----------------------------------------
 
-#. :emph:`Choose the paralogs of interest for your ASR calculation.` The choice
-   of paralogs sets the scope of the evolutionary study. In our experience,
-   you'll want ~1-5 paralog sequences in your seed dataset for a robust ASR
-   investigation. As you add more paralogs, you need more sequences to resolve
-   the evolutionary tree, making the calculation progressively slower. In our
-   example, we used LY86_ and LY96_, a pair of closely related innate immune
-   proteins.
-#. :emph:`Determine the taxonomic distribution of the protein family.` If you are
-   unsure of the taxonomic distribution of your proteins of interest, take the
-   following steps:
-
-   + BLAST known protein sequences against the `non-redundant clustered <nr-clustered-database_>`_
-     BLAST database, setting the :code:`Max target sequences` parameter to 1000
-     or more.
-
-     .. image:: _static/img/find-taxonomic-scope/step-1.png
-       :align: center
-       :alt: BLAST sequence against non-redundant clustered
-       :height: 300
-
-     :raw-html:`<br />`
-   + Take a few representative sequences from the most divergent species in the
-     outputs. These can be selected using the "Taxonomy" tab.
-
-     .. image:: _static/img/find-taxonomic-scope/step-2.png
-       :align: center
-       :alt: BLAST sequence against non-redundant clustered
-       :height: 300
-
-     :raw-html:`<br />`
-   + BLAST the divergent sequences back against the NCBI `non-redundant <nr-database_>`_ database,
-     limiting the search to the
-     species from which you took your known sequences. (If, for example, you
-     used a human sequence as your starting point, you would limit this
-     "reciprocal" query to  *Homo sapiens*.)
-
-     .. image:: _static/img/find-taxonomic-scope/step-3.png
-       :align: center
-       :alt: BLAST sequence against non-redundant clustered
-       :height: 300
-
-     :raw-html:`<br />`
-   + If this BLAST search pulls up your starting protein as a top hit, it is
-     good evidence that the species from which the sequence came has the protein
-     and should be included in the analysis.
-
-     .. image:: _static/img/find-taxonomic-scope/step-4.png
-       :align: center
-       :alt: BLAST sequence against non-redundant clustered
-       :height: 300
-
-    :raw-html:`<br />`
-    
+#. :emph:`Choose the paralogs of interest for your ASR calculation.` As
+   described above, the choice of paralogs determines what evolutionary
+   transitions you will reconstruct. In our experience, you'll want to select
+   ~1-5 paralogs in your seed dataset. As you add more paralogs, you need more
+   sequences to resolve the evolutionary tree, making the calculation
+   progressively slower. In the example seed dataset, we selected two paralogs,
+   LY86_ and LY96_. 
+#. :emph:`Determine the taxonomic distribution of the protein family.` In the
+   graphic above, this means identifying the vertical boundaries of the gray 
+   box: which creatures have these proteins? This information is often available
+   through literature searches. We also recommend 
+   :ref:`exploratory BLAST<taxonomic-scope-doc>` searches to identify the
+   most evolutionarily distant groups of organisms with the proteins of
+   interest. 
 #. :emph:`Choose two or three species with well-annotated genomes` that span the
-   taxonomic distribution of your proteins of interest. For LY86 and LY96,
-   we selected humans and zebrafish, covering the breadth of species
-   over which these proteins are found. (Choosing humans and chimps
-   would be a poor choice, as this covers only primates; even choosing humans
-   and chickens would be non-optimal, as this covers only amniotes). The
-   NCBI BLAST "Taxonomy" report from the previous step can be helpful in this
-   regard: select species from the highest level of the hierarchy and you'll
-   end up with good taxonomic coverage.
+   taxonomic distribution of your proteins of interest. In the graphic above, 
+   this means selecting species from the top and bottom of the gray box. The 
+   human and zebrafish proteins would be a good choice, as they have
+   well-annotated genomes and span the diversity of organisms with the proteins 
+   of interest. (Contrast this to selecting humans and chickens, which would only
+   include amniote proteins). The NCBI BLAST "Taxonomy" report from the 
+   :ref:`exploratory BLAST<taxonomic-scope-doc>` page can be helpful
+   in this regard: select organisms that differ at the highest level of the
+   reported hierarchy. 
 
 1.2. Construct the seed spreadsheet
 -----------------------------------
@@ -131,34 +130,55 @@ The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
    sequences that really correspond to the paralogs of interest. When creating
    this list:
 
-   + separate different aliases with `;`
-   + these aliases are case-insensitive (i.e. :code:`MD2`, :code:`md2`, and
+   + separate different aliases with "`;`"
+   + aliases are case-insensitive (i.e. :code:`MD2`, :code:`md2`, and
      :code:`Md2` are equivalent)
    + topiary automatically tries different separators. For example, for :code:`MD2`
      topiary will look for :code:`MD2`, :code:`MD 2`, :code:`MD-2`, :code:`MD_2`,
      and :code:`MD.2`. It inserts separators between letters and numbers or any
-     time there is a space/separator in the pattern in the alias.
+     time there is a space/separator in the alias.
    + make sure to include both the abbreviated and full-length versions of each
      alias (i.e. :code:`MD2` and :code:`myeloid differentiation protein 2`).
 
-   To find aliases, you can check out the `Also known as`_ field for the gene of
-   interest on NCBI, the `Protein names`_ section of the protein's uniprot
-   entry, a genecards_ entry (for proteins found in humans), and/or primary
+   To find aliases, you can check out the "`Also known as`_" field for the gene of
+   interest on NCBI, the "`Protein names`_" section of the protein's UniProt
+   entry, a "genecards_" entry (for proteins found in humans), and/or primary
    literature.
 #. You can put other information about the sequences (accession, citations, etc.)
    as their own columns in the table. topiary will ignore, but keep, those
    columns.
+#. If you would like to include specific sequences in the analysis, you can 
+   also add them to the seed dataset. (For example, you might want to make sure
+   an experimentally characterized protein from a specific organism is in the
+   final tree). To do so, add the the sequence to the dataset like any other, 
+   then add a fifth column: :code:`key_species`. Each sequence in the 
+   spreadsheet should either have :code:`True` or :code:`False` in this column. 
+   Those with :code:`True` will be used as part of the seed dataset; those 
+   with :code:`False` will not be used as seeds, but will be kept in all 
+   downstream steps in the analysis. 
 
 
------------------------------------------------------
-2. Generate a draft alignment from the seed dataframe
------------------------------------------------------
+Generate a Multiple Sequence Alignment
+======================================
+
+---------------------------------------------------
+2. Generate a draft alignment from the seed dataset
+---------------------------------------------------
 
 Generate an alignment on the command line
 
 .. code-block:: shell-session
 
   topiary-seed-to-alignment seed-dataframe_example.csv --out_dir seed_to_ali
+
+
+Output
+------
+
+This will create a directory named :code:`seed_to_ali` that has a set of
+spreadsheets capturing each step in the topiary pipeline, as well as 
+intermediate files used in the calculation. The outputs are described in detail
+in the :ref:`Script details <align-script-details>` section. 
 
 .. note::
 
@@ -168,22 +188,6 @@ Generate an alignment on the command line
   or crashes, you can load in sequences from saved BLAST XML files as described
   below.
 
-Output
-------
-
-This will create a directory named :code:`seed_to_ali` with the following files:
-
-+ 00_SEED_FILE_NAME. A copy of the seed sequence file.
-+ 01_initial-dataframe.csv. All sequences downloaded from NCBI.
-+ 02_recip-blast-dataframe.csv. Results of reciprocal BLAST.
-+ 03_sampled-dataframe.csv. Dataframe with sequence redundancy lowered.
-+ 04_aligned-dataframe.csv. Dataframe with initial alignment.
-+ 05_clean-aligned-dataframe.csv. Final dataframe with polished alignment. All
-  sequences with :code:`keep = False` from the previous alignment are dropped.
-+ 06_alignment.fasta. Dataframe alignment written out to a fasta file.
-
-There are other files in this directory (i.e. .faa.gz and blast_db.* files).
-These may be deleted if desired.
 
 Options
 -------
@@ -196,8 +200,8 @@ There are many options available for this function. These can be accessed by:
 
 Some of the more common options users might wish to change follow.
 
-Controlling alignment size
---------------------------
+:emph:`Controlling alignment size`
+
 The :code:`--seqs_per_column` and :code:`--max_seq_number` arguments control
 how many sequences topiary will attempt to place in the final alignment.  By
 default, topiary will attempt to have one sequence per amino acid in the
@@ -207,18 +211,17 @@ alignment. This can be changed by changing the value of :code:`--seqs_per_column
 The maximum alignment size is set by :code:`--max_seq_number`. Note that these
 values are approximate; the final alignment may be slightly larger or smaller.
 
-Choosing different BLAST inputs
--------------------------------
+:emph:`Choosing different BLAST inputs`
+
 You can select different BLAST inputs via the :code:`--blast_xml`,
 :code:`--ncbi_blast_db`, and :code:`--local_blast_db` options. Any combination
 of these options may be specified at the same time, allowing a single command to
-BLAST against a collection of local XML files, an NCBI database, and a local
-BLAST database. The :code:`--blast_xml` option is particularly useful, as you
-can save NCBI BLAST results from the web interface (for example) and read those
-files in directly.
+BLAST against an NCBI database, BLAST against a local BLAST database, and 
+load results fromn a collection of previously saved BLAST XML files. The 
+:code:`--blast_xml` option is particularly useful, as you can save NCBI BLAST
+results from the web interface (for example) and read those files in directly.
 
-Restarting
-----------
+:emph:`Restarting`
 
 You can restart a command from an existing directory using a command like the
 following:
@@ -227,49 +230,61 @@ following:
 
   topiary-seed-to-alignment seed-dataframe_example.csv --out_dir seed_to_ali --restart
 
-This will find the last output file that was written in :code:`seed_to_ali` and
-start the pipeline from there. (If you like, you can manually edit the last csv
-file written out, setting a sequence to :code:`keep = True` for example, and
-then rerunning the subsequent steps in the pipeline).
+This will find the last *.csv* output file that was written in the 
+:code:`seed_to_ali` directory and start the pipeline from there. 
+
+
+.. _align-script-details: 
 
 Script details
 --------------
 
-This script does the following:
+The script does the following six steps. After each step, topiary writes out the
+indicated *.csv* file, allowing one to track what changes are made. Topiary will
+add sequences and/or columns at each step. It does not delete sequences, but 
+rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
+
+.. tip:: 
+
+  If you want to override topiary's decision to remove a sequence, you can 
+  manually set :code:`keep` to :code:`True` in one of the intermediate 
+  spreadsheets. Delete the subsequence spreadsheets and then re-run the pipeline
+  with the :code:`--restart` argument described above. 
+
 
 + :emph:`Find paralogs from other species` using the seed sequences as BLAST queries
-  against the `NCBI non-redundant <blast-nr_>`_. The taxonomic scope is
+  against the `NCBI non-redundant <blast-nr_>`_ database. The taxonomic scope is
   defined by the species in the seed dataset.
 
   + Output: *01_initial-dataframe.csv*
-  + `topiary.ncbi.ncbi_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.ncbi.ncbi_blast>`_
+  + Function: `topiary.ncbi.ncbi_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.ncbi.ncbi_blast>`_
 
 + :emph:`Make orthology calls` using `reciprocal BLAST <https://www.flyrnai.org/RNAi_orthology.html>`_
   against the proteomes of the species from the seed dataset.
 
   + Output: *02_recip-blast-dataframe.csv*
-  + `topiary.ncbi.recip_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.recip.recip_blast>`_
+  + Function: `topiary.ncbi.recip_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.recip.recip_blast>`_
 
-+ :emph:`Decrease the size of the dataset` taking into account taxonomic sampling,
-  quality, and alignment score of all sequences.
++ :emph:`Decrease the size of the dataset` selecting for good taxonomic sampling,
+  sequence quality, and alignment score. 
 
   + Output: *03_shrunk-dataframe.csv*
-  + `topiary.shrink_dataset <topiary.quality.html#topiary.quality.shrink.shrink_dataset>`_
+  + Function: `topiary.shrink_dataset <topiary.quality.html#topiary.quality.shrink.shrink_dataset>`_
 
 + :emph:`Generate a draft alignment` using `Muscle5 <muscle-link_>`_.
 
   + Output: *04_aligned-dataframe.csv*
-  + `topiary.align <topiary.muscle.html#topiary.muscle.muscle.align>`_
+  + Function: `topiary.align <topiary.muscle.html#topiary.muscle.muscle.align>`_
 
 + :emph:`Polish alignment` by removing worst aligning sequences.
 
   + Output: *05_clean-aligned-dataframe.csv*
-  + `topiary.quality.polish_alignment <topiary.quality.html#topiary.quality.polish.polish_alignment>`_
+  + Function: `topiary.quality.polish_alignment <topiary.quality.html#topiary.quality.polish.polish_alignment>`_
 
 + :emph:`Write alignment in fasta format` for loading into an alignment viewer.
 
   + Output: *06_alignment.fasta*
-  + `topiary.write_fasta <topiary.io.html#topiary.io.alignments.write_fasta>`_
+  + Function: `topiary.write_fasta <topiary.io.html#topiary.io.alignments.write_fasta>`_
 
 
 -----------------------------------------------------
@@ -279,13 +294,14 @@ This script does the following:
 Before reconstructing a phylogenetic tree and ancestors, we recommend
 inspecting and possibly editing the alignment. We recommend using
 `aliview <aliview-link_>`_ for this purpose. There are differing views on
-whether to manually edit an alignment. Manual edits are subjective, but there
-are also "obvious" instances where automatic alignment software does poorly.
-When we do phylogenetics projects, we usually make the following small changes
-to our alignment. :emph:`If you modify your alignment manually, it should be
+whether or not to manually edit an alignment. Manual edits are subjective, but
+there are also "obvious" instances where automatic alignment software does
+poorly. We usually edit our alignments using the following protocol. 
+:emph:`If you modify your alignment manually, it should be
 included in any publication so others can reproduce/evaluate your work.` We
-recommend including the final topiary csv file as a supplemental file, as this
-has all accessions and the modified alignment in a single table.
+recommend including the final topiary *.csv* file as a supplemental file with 
+your manuscript, as this has all sequence accessions and the final alignment in
+a single table.
 
 .. danger::
 
@@ -374,7 +390,8 @@ Infer tree and ancestors
 
 The next step generates a phylogenetic tree and infers ancestors on that tree.
 It also pre-calculates a set of bootstrap replicates important for the final
-branch support calculation.
+branch support calculation. The input for this calculation is the *.csv* file 
+from the last step. 
 
 .. note::
   We highly recommend running the following steps on a computing cluster. To
@@ -416,10 +433,10 @@ The key aspects to note in this file are:
   (:code:`--num_thread 28`) and the cluster resource allocation
   (:code:`#SBATCH --cpus-per-task=28`).
 + This script should be run on a single physical processor
-  (:code:`#SBATCH --nodes=1`). This is because the conda binary of RAxML-NG is
+  (:code:`#SBATCH --nodes=1`). This is because the conda version of RAxML-NG is
   not compiled to parallelize across multiple processors.
 + We've found that this step usually takes a few days for an alignment with ~500
-  sequences and ~1000 columns long. We conservatively allocated a week
+  sequences and ~1000 columns. We conservatively allocated a week
   (:code:`#SBATCH --time=07-00:00:00`).
 + If you installed topiary using conda (as we recommend) you  need to make sure
   that the conda environment is active (:code:`conda activate topiary`).
@@ -463,10 +480,23 @@ Some of the more important options are:
 Script details
 --------------
 
+This program does the following steps. For each step, we describe what the 
+software does, as well as showing an example output file. 
+
+.. note::
+
+  The *.newick* tree files are copied into the :code:`output` directory from 
+  all previous steps. (This means, for example, that the :code:`output` 
+  directory from the last step will have all *.newick* files generated 
+  previously.) In what follows, we only describe the *new* output that
+  will be present after each step.
+
+
+
 + :emph:`Choose a phylogenetic model` that maximizes the likelihood of observing
-  the sequences in your alignment. Topiary uses raxml-ng to generate a maximum
+  the sequences in your alignment. Topiary uses RAxML-NG to generate a maximum
   parsimony tree and then optimizes the tree branch lengths using 360
-  different phylogenetic models implemented in raxml-ng. It selects between
+  different phylogenetic models implemented in RAxML-NG. It selects between
   those models using a corrected AIC test. The following table is an example of
   the resulting output.
 
@@ -488,7 +518,7 @@ Script details
   |...|...        |...      |...      |...       |...      |...|...      |
   +---+-----------+---------+---------+----------+---------+---+---------+
 
-  + Output: *00_find-model/output/*
+  + Output: :code:`00_find-model/output/`
 
     + *model_comparison.csv*: This file has models ranked form best to worst.
       The best model has the highest value in the probability (:code:`p`) column.
@@ -499,10 +529,10 @@ Script details
       parameters (:code:`N`).
     + *dataframe.csv*: Current topiary dataframe.
 
-  + `topiary.find_best_model <topiary.raxml.html#topiary.raxml.model.find_best_model>`_
+  + Function: `topiary.find_best_model <topiary.raxml.html#topiary.raxml.model.find_best_model>`_
 
-+ :emph:`Generate a maximum-likelihood phylogenetic tree`. Uses RAxML-NG to
-  find the maximum likelihood tree using the model determined in the previous
++ :emph:`Generate a maximum-likelihood gene tree`. Uses RAxML-NG to find the
+  maximum likelihood gene tree using the model determined in the previous
   step. Starts inference from ten different parsimony trees and ten random
   trees, then optimizes the tree using default RAxML-NG moves (NR-FAST and SPR).
   This tree an example of "summary-tree.pdf" generated by this step.
@@ -512,15 +542,15 @@ Script details
     :alt: maximum likelihood gene tree
     :width: 75%
 
-  + Output: *01_ml-tree/output/*
+  + Output: :code:`01_ml-tree/output/`
 
-    + *summary-tree.pdf*: Drawing of ML gene tree with branch lengths. In figure,
-      tree is rooted by midpoint.
+    + *summary-tree.pdf*: Drawing of ML gene tree with branch lengths. Tree is 
+      drawn with midpoint rooting.
     + *gene-tree.newick*: ML gene tree with branch lengths in newick format.
-      Tips are topiary uids. Internal nodes are unlabeled.
+      Tips are topiary UIDs. Internal nodes are unlabeled.
     + *dataframe.csv*: Current topiary dataframe.
 
-  + `topiary.generate_ml_tree <topiary.raxml.html#topiary.raxml.tree.generate_ml_tree>`_
+  + Function: `topiary.generate_ml_tree <topiary.raxml.html#topiary.raxml.tree.generate_ml_tree>`_
 
 + :emph:`Reconcile the gene and species trees`. Uses GeneRax to reconcile the
   gene and species trees. Uses default GeneRax SPR moves. User can define
@@ -533,21 +563,24 @@ Script details
     :alt: maximum likelihood reconciled gene/species tree
     :width: 75%
 
-  + Output: *02_reconciliation/output/*
+  + Output: :code:`02_reconciliation/output/`
 
     + *summary-tree.pdf*: Drawing of reconciled tree with branch lengths and
       labeled non-speciation events.
     + *reconciled-tree_events.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are labeled
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are labeled
       with evolutionary events.
     + *reconciliations/*: Directory with reconciliation information written out
       by GeneRax. See the `GeneRax documentation <generax-link_>`_ for details.
     + *reconciled-tree.newick*: Rooted, reconciled tree with branch lengths in
-      newick format. Tips are topiary uids. Internal nodes are unlabeled.
+      newick format. Tips are topiary UIDs. Internal nodes are unlabeled.
     + *species-tree.newick*: Species tree downloaded from the Open Tree of Life.
 
-  + `topiary.reconcile <topiary.generax.html#topiary.generax.reconcile.reconcile>`_
-  + `topiary.df_to_species_tree <topiary.opentree.html#topiary.opentree.tree.df_to_species_tree>`_
+  + Function: 
+
+    - `topiary.reconcile <topiary.generax.html#topiary.generax.reconcile.reconcile>`_
+    - `topiary.df_to_species_tree <topiary.opentree.html#topiary.opentree.tree.df_to_species_tree>`_
+
 
 + :emph:`Infer ancestral sequences` using RAxML-NG given the reconciled tree
   and maximum likelihood phylogenetic model. Gaps are inferred using parsimony
@@ -576,16 +609,16 @@ Script details
     >anc47_altAll|avgPP:0.993|lnPP:-3.699|num_ambig:3|num_ambig_gaps:1
     M-----------Q-------------G-------F-----TA------A------L-L-V--WT-----L--L---SP-----S-G----S-----G-----GEAWPTH-TACRDG------GLE--VLYQSC-DP----L-------Q---DFGFS-IDQCSKQL---KPNLNIRFGIILREDIKELFLDIALFS-KG----S--SILN-----FS--YPICEED-LPKFSFCGRRKGEQIYYA-G--------P-V--NNPG---FEIP---EG----EYQ-V---L-LELYNEN--R----ST--VAC--ANATVI-------------------C-------S
 
-  + Output: *03_ancestors/output/*
+  + Output: :code:`03_ancestors/output/`
 
     + *summary-tree.pdf*: Drawing of reconciled tree with branch lengths,
       labeled non-speciation events, and ancestors with posterior probabilities
       as a color map.
     + *reconciled-tree_anc-pp.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
       ancestral posterior probabilities.
     + *reconciled-tree_anc-label.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes are
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
       ancestor names.
     + *reconciled-tree_ancestors/*: The *ancX.pdf* files are pdf summaries of
       ancestral reconstructions for each ancestor as labeled in *summary-tree.pdf*.
@@ -595,7 +628,7 @@ Script details
       the location of ambiguous gaps (purple dashes). Statistics at the top
       indicate ancestor quality.
 
-  + `topiary.generate_ancestors <topiary.raxml.html#topiary.raxml.ancestors.generate_ancestors>`_
+  + Function: `topiary.generate_ancestors <topiary.raxml.html#topiary.raxml.ancestors.generate_ancestors>`_
 
 + :emph:`Generate bootstrap replicates from the ML gene tree`. This uses the
   ML gene tree (step *01_ml-tree*) :emph:`NOT` the reconciled tree as input and
@@ -607,28 +640,32 @@ Script details
     :alt: bootstrap supports mapped to the ML gene tree
     :width: 75%
 
-  + Output: *04_bootstraps/output/*
+  + Output: :code:`04_bootstraps/output/`
 
     + *summary-tree.pdf*: Drawing of ML gene tree (:emph:`NOT` the reconciled
       tree) with branch lengths. Nodes are colored by bootstrap support. In
       figure, tree is rooted by midpoint.
     + *gene-tree_supports.newick*: ML gene tree with branch lengths in newick
-      format. Tips are topiary uids. Internal nodes are labeled by bootstrap
+      format. Tips are topiary UIDs. Internal nodes are labeled by bootstrap
       support.
     + *bootstrap_replicates/*: Directory has bootstrap replicate alignments and
       bootstrap trees that will be fed into the next step.
+
+  + Function: `topiary.generate_bootstraps <file:///Users/harmsm/work/programming/git-clones/topiary/docs/build/html/topiary.raxml.html#topiary.raxml.bootstrap.generate_bootstraps>`_
 
 -------------------------------------------------------
 5. Determine the branch supports on the reconciled tree
 -------------------------------------------------------
 
 In this step, we determine the branch supports on the reconciled tree. This step
-is separate from the last step, as is is relatively computationally intensive
+is separate from the previous step, as is is relatively computationally intensive
 and benefits from a different parallelization strategy than the last step.
 
-.. note::
+.. important::
+
   Before proceeding to this step, we recommend you check the results from the
-  last steps to ensure they are reasonable.
+  last steps to ensure they are reasonable. See the 
+  :ref:`Interpret the results <interpret-results>` section for details.
 
 As with the last step, create a run file that specifies the resources available
 for the calculation. The following is an example SLURM script for our local
@@ -650,15 +687,15 @@ cluster.
   # Activate the topiary conda environment
   conda activate topiary
 
-  topiary-bootstrap-reconcile ali_to_anc --num_threads 140
+  topiary-bootstrap-reconcile ali_to_anc 140
 
 The key aspects to note in this file are:
 
-+ Unlike the last script, this script can be run across many physical processors
-  (:code:`#SBATCH --nodes=5`).
++ Unlike the last script, this script can be run across more than one physical
+  processor (:code:`#SBATCH --nodes=5`).
 + The number of threads should match between the topiary call
-  (:code:`--num_thread 140`) and the cluster resource allocation
-  (:code:`#SBATCH --nodes=5`, :code:`#SBATCH --cpus-per-task=28`).
+  (:code:`140`) and the cluster resource allocation
+  (:code:`#SBATCH --nodes=5`, :code:`#SBATCH --cpus-per-task=28`). 
   :math:`5 \times 28 = 140`. This will run in highly parallel fashion, with one
   reonciliation bootstrap per thread.
 + We've found that this step usually takes about a week for an alignment with ~500
@@ -708,7 +745,7 @@ Script details
     :alt: final reconciled tree with events, ancestors, ancestor supports, and branch supports
     :width: 75%
 
-  + Output: *05_reconcile-bootstraps/output/*
+  + Output: :code:`05_reconcile-bootstraps/output/`
 
     + *summary-tree.pdf*: Drawing of rooted reconciled tree with with branch
       lengths. Nodes are labeled with non-speciation evolutionary events,
@@ -720,11 +757,14 @@ Script details
       tree permutations converged (:code:`perms_below_cutoff`). See
       `Pattengale et. al. <http://www.liebertpub.com/doi/10.1089/cmb.2009.0179>`_ for details.
     + *reconciled-tree_supports.newick*: Rooted, reconciled tree with branch
-      lengths in newick format. Tips are topiary uids. Internal nodes branch
+      lengths in newick format. Tips are topiary UIDs. Internal nodes branch
       supports.
 
   + `topiary.reconcile <topiary.generax.html#topiary.generax.reconcile.reconcile>`_.
     This is called with the :code:`bootstrap = True` flag.
+
+
+.. _interpret-results:
 
 Interpret the results
 =====================

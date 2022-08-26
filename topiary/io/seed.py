@@ -337,7 +337,7 @@ def read_seed(df):
 
     It may have one other optional column:
 
-    + :code:`recip_blast`: True/False. Indicates whether or not this species
+    + :code:`key_species`: True/False. Indicates whether or not this species
       should be used as a key species for reciprocal BLASTing.
 
     Other columns in the dataframe are kept but not used by topiary.

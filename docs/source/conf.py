@@ -77,4 +77,4 @@ exclude_patterns = ['_build', 'links.rst', 'topiary.rst','modules.rst']
 rst_epilog = ""
 # Read link all targets from file
 with open('links.rst') as f:
-     rst_epilog += f.read()
+    rst_epilog += f.read()
