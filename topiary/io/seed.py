@@ -337,7 +337,7 @@ def read_seed(df):
 
     It may have one other optional column:
 
-    + :code:`recip_blast`: True/False. Indicates whether or not this species
+    + :code:`key_species`: True/False. Indicates whether or not this species
       should be used as a key species for reciprocal BLASTing.
 
     Other columns in the dataframe are kept but not used by topiary.
@@ -669,7 +669,7 @@ def df_from_seed(seed_df,
     # Drop any "synthetic" sequences that came in. (These actually have an OTT
     # and are placed as an outgroup to all life!)
     synth_mask = df.species.str.match("synthetic")
-    df[synth_mask,"keep"] = False
+    df.loc[synth_mask,"keep"] = False
 
     # Combine seed and downloaded sequences.
     df = pd.concat((seed_df,df),ignore_index=True)
