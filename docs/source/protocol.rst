@@ -35,6 +35,7 @@ that conferred activity.
   :alt: Defining the problem on an evolutionary tree
   :width: 80%
 
+:raw-html:`<br />`
 Two pieces of information specify the scope of the ASR study and thus what 
 ancestors can be reconstructed:
 
@@ -56,6 +57,7 @@ our ASR study to reconstruct ancA and ancAB.
   :alt: Defining the scope for an ASR project
   :width: 80%
 
+:raw-html:`<br />`
 In a topiary calculation, we specify that these are the proteins of interest 
 using a seed dataset. In graphical terms, this means finding sequences 
 representing all paralogs (across horizontal) taken from the full taxonomic
