@@ -423,8 +423,8 @@ relevant format).
   #SBATCH --partition=long
   #SBATCH --time=07-00:00:00
   #SBATCH --nodes=1
-  #SBATCH --ntasks-per-node=1
-  #SBATCH --cpus-per-task=28
+  #SBATCH --ntasks-per-node=28
+  #SBATCH --cpus-per-task=1
 
   # Activate the topiary conda environment
   conda activate topiary
@@ -436,7 +436,7 @@ The key aspects to note in this file are:
 
 + The number of threads should match between the topiary call
   (:code:`--num_thread 28`) and the cluster resource allocation
-  (:code:`#SBATCH --cpus-per-task=28`).
+  (:code:`#SBATCH --ntasks-per-node=28`).
 + This script should be run on a single physical processor
   (:code:`#SBATCH --nodes=1`). This is because the conda version of RAxML-NG is
   not compiled to parallelize across multiple processors.
@@ -687,8 +687,8 @@ cluster.
   #SBATCH --partition=long
   #SBATCH --time=07-00:00:00
   #SBATCH --nodes=5
-  #SBATCH --ntasks-per-node=1
-  #SBATCH --cpus-per-task=28
+  #SBATCH --ntasks-per-node=28
+  #SBATCH --cpus-per-task=1
 
   # Activate the topiary conda environment
   conda activate topiary
@@ -701,7 +701,7 @@ The key aspects to note in this file are:
   processor (:code:`#SBATCH --nodes=5`).
 + The number of threads should match between the topiary call
   (:code:`140`) and the cluster resource allocation
-  (:code:`#SBATCH --nodes=5`, :code:`#SBATCH --cpus-per-task=28`).
+  (:code:`#SBATCH --nodes=5`, :code:`#SBATCH --ntasks-per-node=28`).
   :math:`5 \times 28 = 140`. This will run in highly parallel fashion, with one
   reconciliation bootstrap per thread.
 + We've found that this step usually takes about a week for an alignment with ~500
