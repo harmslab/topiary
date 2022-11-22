@@ -37,6 +37,7 @@ def tree(calculation,
          vertical_pixels_per_tip=25,
          min_height=300,
          df=None,
+         anc_link_path=None,
          **kwargs):
     """
     Draw a tree with annotated with calculation outputs.
@@ -51,18 +52,18 @@ def tree(calculation,
         output file to write tree.
     bs_color : dict, default={50:"#ffffff",100:"#000000"}
         set min/max values for branch support color map. First key is min,
-        second is max. Values are valid topyplot colors (see Notes).
+        second is max. Values are valid toyplot colors (see Notes).
         If given, color argument takes precedence over bs_color.
     pp_color : dict, default={0.7:"#ffffff",1.0:"#DC801A"}
         set min/max values for posterior probability color map. First key is
-        min, second is max. Values are valid topyplot colors (see Notes).
+        min, second is max. Values are valid toyplot colors (see Notes).
         If given, node_color argument takes precedence over pp_color.
     event_color : dict, default={"D":"#64007F","L":"#BAD316","T":"#407E98"}
         colors for evolutionary events determined by gene/species tree
         reconciliation. Allowed keys are "S" (speciation), "D" (duplication),
         "L" (loss), and "T" (transfer). If a key is not specified, that
         event will not be drawn on the tree. (The default is to *not* show
-        speciation). Valuse are any valid topyplot colors (see Notes).
+        speciation). Values are any valid toyplot colors (see Notes).
         If given, node_color argument takes precedence over event_color.
     bs_label : bool, default=False
         whether or not to write branch support values on the tree
@@ -122,7 +123,9 @@ def tree(calculation,
     min_height : float, default=300
         minimum height for figure (pixels)
     df : pandas.DataFrame or None, default=None
-        topiary dataframe (overides whatever is in run_directory/output/dataframe.csv)
+        topiary dataframe (overrides whatever is in run_directory/output/dataframe.csv)
+    anc_link_path : str, optional
+        if specified, format ancestors as links to ancestors in anc_link_path. 
     **kwargs : dict, optional
         pass any other keyword arguments directly to toytree.tree.draw
 
@@ -144,6 +147,8 @@ def tree(calculation,
 
     if issubclass(type(calculation),str):
         supervisor = Supervisor(calculation)
+    else:
+        supervisor = calculation
 
     # Make sure output file is a string
     if output_file is not None:
@@ -242,7 +247,7 @@ def tree(calculation,
                     except (ValueError,TypeError):
                         node_size = np.array(node_size)*0.6
 
-        # Plot ancestor posterior probailities
+        # Plot ancestor posterior probabilities
         if pp_color is not None:
             plot_pp, pp_span, pp_color = topiary.draw.core.parse_span_color(pp_color,node_color)
             pt.draw_nodes(property_label="anc_pp",
@@ -256,7 +261,10 @@ def tree(calculation,
     regex = []
     if anc_label:
         property_labels.append("anc_label")
-        fmt.append("{}")
+        if anc_link_path:
+            fmt.append(anc_link_path)
+        else:            
+            fmt.append("{}")
 
     if event_label:
         property_labels.append("event")

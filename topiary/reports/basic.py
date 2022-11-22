@@ -1,0 +1,329 @@
+
+import topiary
+from topiary.draw.core import construct_colormap
+
+import pandas as pd
+import toyplot
+
+import xml
+import os
+import shutil
+import copy
+
+def create_output_directory(output_directory,overwrite=False):
+    """
+    Create an output directory for a topiary report, copying in assets.
+    
+    Parameters
+    ----------
+    output_directory : str
+        directory to create
+    overwrite : bool, default=False
+        whether or not to overwrite an existing directory
+    """
+
+    # Create output directory
+    if os.path.isdir(output_directory):
+        if overwrite:
+            shutil.rmtree(output_directory)
+        else:
+            err = f"output_directory '{output_directory}' already exists. Either\n"
+            err =+ "choose a new output directory or set overwrite = True.\n\n"
+            raise FileExistsError(err)
+    os.mkdir(output_directory)
+
+    # Copy in asset directory
+    asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "assets")
+    shutil.copytree(asset_dir,os.path.join(output_directory,".assets"))
+
+
+def create_main_html(description="",
+                     title="",
+                     custom_css=".assets/topiary.css",
+                     bs_css="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+                     bs_css_key="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3",
+                     bs_js="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
+                     bs_js_key="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"):
+
+    out = ["<!doctype html>"]
+    out.append("<html lang=\"en\">")
+    out.append("<head>")
+    out.append( "  <meta charset=\"utf-8\">")
+    out.append( "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    out.append(f"  <meta name=\"description\" content=\"{description}\">")
+    out.append(f"  <meta name=\"generator\" content=\"topiary {topiary.__version__}\">")
+    out.append(f"  <title>{title}</title>")
+    out.append(f"  <link href=\"{bs_css}\" rel=\"stylesheet\" integrity=\"{bs_css_key}\" crossorigin=\"anonymous\">")
+    out.append(f"  <link rel=\"shortcut icon\" type=\"image/x-icon\" href=\".assets/favicon.ico\">")
+
+    if custom_css is not None:
+        out.append(f"  <link href=\"{custom_css}\" rel=\"stylesheet\" type=\"text/css\">")
+    
+    out.append("</head>")
+    out.append("")
+    out.append("<body>")
+    out.append("")
+
+    top = "\n".join(out)
+
+    out = [""]
+    out.append(f"<script src=\"{bs_js}\" integrity=\"{bs_js_key}\" crossorigin=\"anonymous\"></script>")
+    out.append("</body>")
+    out.append("</html>")
+    bottom = "\n".join(out)
+
+    return top, bottom
+
+
+
+def df_to_table(df,add_header=True,show_row_numbers=True):
+    """
+    Generate an html table given a pandas dataframe.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        pandas dataframe to convert to an html table
+    add_header : bool, default=True
+        whether or not to have the header row on the table.
+    show_row_numbers : bool, default=True
+        whether or not to show row numbers on the table. 
+
+    Returns
+    -------
+    out : str
+        html holding table
+    """
+
+    if not issubclass(type(df),pd.DataFrame):
+        err = "df should be a pandas DataFrame\n"
+        raise ValueError(err)
+
+    columns = list(df.columns)
+
+    header = ["<tr>"]
+
+    if show_row_numbers:
+        header.append('<th scope="col">#</th>')
+
+    for col in columns:
+        header.append('<th scope="col">')
+        header.append(col)
+        header.append("</th>")
+    header.append("</tr>")
+
+    header = "".join(header)
+
+    contents = []
+    for i in range(len(df.index)):
+        contents.append("<tr>")
+
+        if show_row_numbers:
+            contents.append(f"<th scope='row'>{i+1}</th>")
+
+        for col in columns:
+            contents.append(f"<td>{df.loc[df.index[i],col]}</td>")
+        contents.append("</tr>")
+    
+    contents = "".join(contents)
+
+    final_out = []
+    final_out.append('<div class="table-responsive">')
+    final_out.append('<table class="table table-striped table-sm table-hover w-auto">')
+
+    if add_header:
+        final_out.append(f"<thead>{header}</thead>")
+
+    final_out.append(f"<tbody>{contents}</tbody>")
+    final_out.append("</table>")
+    final_out.append("</div>")
+
+    return "".join(final_out)
+
+def canvas_to_html(toyplot_canvas):
+    """
+    Render a toyplot canvas as html.
+    
+    Parameters
+    ----------
+    toyplot_canvas : toyplot.canvas
+        object to render as html
+    
+    Returns
+    -------
+    out : str
+        html holding tree
+    """
+
+    as_xml = toyplot.html.render(toyplot_canvas).findall('svg')
+    
+    out = []
+    for s in as_xml:
+        out.append(xml.etree.ElementTree.tostring(s, encoding='unicode'))
+    
+    html = "\n".join(out)
+
+    return html
+
+def sequence_box(text,
+                 box_id="seq_box",
+                 color="#000000",
+                 prop_value=None,
+                 prop_span=None,
+                 palette=None):
+    """
+    Construct a sequence box (inside a bootstrap card div) where each letter in 
+    the text is potentially colored by prop_value.
+
+    Parameters
+    ----------
+
+    text : list-like
+        sequence to write out
+    box_id : str, default="seq_box"
+        id to give the sequence box in html
+    color : str or tuple or dict
+        set text color. If a single value, color all letters that color. If
+        list-like and length 2, treat as colors for minimum and maximum of a
+        color gradient.  If dict, map property keys to color values. Colors
+        can be RGBA tuples, named colors, or hexadecimal strings. See the
+        toyplot documentation for allowed values.
+    prop_value : list-like
+        values of properties over which to make the color map. 
+    prop_span : tuple, optional
+        set min/max values for property color/size calculation. First element
+        is min, second is max. Only applicable if color is quantitative gradient.
+    palette : toyplot.color.Palette, optional
+        custom toyplot palette. if specified, use this palette rather than
+        color to define color scheme for a color gradient. requires the
+        property value be a float.
+
+    Returns
+    -------
+    out : str
+        html with bootstrap card div holding sequence
+    """
+
+    out = []
+
+    start, _ = create_element("div",{"class":["card","seq-box"]})
+    out.append(start)
+
+    start, _ = create_element("div",{"class":["card-body",
+                                              "seq-box",
+                                              "font-monospace"]})
+    out.append(start)
+
+    #out = [f"<div class=\"card text-bg-dark \" id=\"{box_id}\" style=\"background-color:#eeeeee;\">"]
+    #out.append("<div class=\"card-body seq-box text-break font-monospace\" style=\"background-color:#eeeeee;\">")
+    
+    # If both of these conditions are met, we need to contruct a text string 
+    # with a set of spans
+    if prop_value is not None and not issubclass(type(color),str):
+
+        if len(text) != len(prop_value):
+            err= "text and prop_value must be the same length.\n"
+            raise ValueError(err)
+
+        cm, _ = construct_colormap(color=color,
+                                   prop=prop_value,
+                                   prop_span=prop_span,
+                                   palette=palette)
+
+        new_text = []
+        for i, t in enumerate(list(text)):  
+            this_color = cm(prop_value[i])
+            new_text.append(f"<span style=\"color:{this_color}\">{t}</span>")
+        
+        text = "".join(new_text)
+
+    else:
+        text = "".join(text)
+        text = f"<span style=\"color:{color}\">{text}</span>"
+
+    out.append(text)
+        
+    out.append("</div></div>")
+
+    return "".join(out)
+
+
+def create_card(card_title=None,card_contents=None,title_tag="h6"):
+    """
+    Create a bootstrap card with a title and contents.
+    """
+
+    out = []
+
+    out.append("<div class=\"card\">")
+    out.append("<div class=\"card-body\">")
+    if card_title is not None:
+        out.append(f"<{title_tag} class=\"card-title\">{card_title}</{title_tag}>")
+    if card_contents is not None:
+        out.append(card_contents)
+    out.append("</div></div>")
+
+    return "".join(out)
+
+def create_element(element,attributes=None):
+
+    out = [f"<{element}"]
+
+    if attributes is not None:
+        attributes = copy.deepcopy(attributes)
+
+        for a in attributes:
+            if hasattr(attributes[a],"__iter__"):
+                if issubclass(type(attributes[a]),str):
+                    attributes[a] = [attributes[a]]
+            
+            if len(attributes[a]) < 1:
+                continue
+
+            out.append(f" {a}=\"")
+            out.append(" ".join([f"{v}" for v in attributes[a]]))
+            out.append("\"")
+    
+    out.append(">")
+
+    return "".join(out), f"</{element}>"
+
+def create_icon_row(files_to_link,descriptions):
+
+    ext_files = {"csv":".assets/csv_icon.svg",
+                 "pdf":".assets/pdf_icon.svg",
+                 "txt":".assets/txt_icon.svg"}
+
+    out = []
+    g_s, g_e = create_element("div",{"class":"btn-group",
+                                     "role":"group",
+                                     "aria-label":"link block"})
+
+    #out.append(g_s)
+
+    for i, f in enumerate(files_to_link):
+
+        try:
+            icon = ext_files[f[-3:]]
+        except KeyError:
+            icon = ext_files["txt"]
+
+        s, e = create_element("a",{"class":["btn","btn-outline-dark"],
+                                    "data-toggle":"tooltip",
+                                    "data-html":"true",
+                                    "title":descriptions[i],
+                                    "href":f})
+
+        out.append(s)
+        out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" />")
+        out.append(e)
+    
+    #out.append(g_e)
+
+    return "".join(out)
+
+        
+        
+        
+        
