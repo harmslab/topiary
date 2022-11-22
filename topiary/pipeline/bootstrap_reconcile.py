@@ -96,7 +96,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     # If we got here, reconciliation software is ready to go. Now check to
     # whether mpi can really grab the number of slots requested.
-    check_mpi_configuration(num_threads,generax_binary)
+    check_mpi_configuration(num_threads)
 
     # --------------------------------------------------------------------------
     # Validate the previous calculation
@@ -175,7 +175,7 @@ def bootstrap_reconcile(previous_run_dir,
         if overwrite:
             shutil.rmtree(calc_dir)
 
-        if not restart:
+        if (not restart) and (not overwrite):
             err = f"'{previous_run_dir}/{calc_dir}' already exists. Either remove\n"
             err += "it, specify --overwrite, or specify --restart.\n\n"
             os.chdir("..")

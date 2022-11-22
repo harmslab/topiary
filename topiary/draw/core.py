@@ -673,6 +673,9 @@ def construct_colormap(color,prop,prop_span=None,palette=None):
     -------
     colormap : toyplot.LinearMap
         toyplot linear colormap
+    span : list
+        list of values corresponding to span. For continuous map, will be 
+        [min,max]; for discrete map will be values for each color
     """
 
     # This is a hack that makes sure the code below goes to the color

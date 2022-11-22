@@ -380,7 +380,7 @@ final topiary dataframe.
 
 .. code-block:: shell-session
 
-  topiary-read-fasta-into 05_clean-aligned-dataframe.csv edited_alignment.fasta final_dataframe.csv
+  topiary-fasta-into-dataframe 05_clean-aligned-dataframe.csv edited_alignment.fasta final_dataframe.csv
 
 In this command, :code:`edited_alignment.fasta` should be the name of the fasta
 file you saved out above. :code:`final_dataframe.csv` is the name of the final

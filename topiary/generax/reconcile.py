@@ -117,10 +117,10 @@ def reconcile(prev_calculation=None,
 
     # Get number of slots
     if num_threads == -1:
-        num_threads = get_num_slots(generax_binary)
+        num_threads = get_num_slots()
 
     # Check sanity of mpi configuration/number of slots
-    check_mpi_configuration(num_threads,generax_binary)
+    check_mpi_configuration(num_threads)
 
     # --------------------------------------------------------------------------
     # Load/parse calculation inputs
