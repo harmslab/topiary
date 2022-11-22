@@ -1,5 +1,6 @@
 
 import pytest
+from unittest import mock
 
 from topiary._private.mpi import get_hosts
 from topiary._private.mpi import get_num_slots
@@ -25,25 +26,26 @@ def test_get_hosts():
 @pytest.mark.run_generax
 def test_get_num_slots():
 
-    # Should fail and catch because binary not good
-    with pytest.raises(RuntimeError):
-        get_num_slots("not_a_binary")
-
-    # This will work if test environment has more than one slot
-    num_slots = get_num_slots(GENERAX_BINARY)
+    # This should work for any system with more tha one core. 
+    num_slots = get_num_slots()
     assert num_slots > 1
+
+    # Enforce a single slot with an environment variable
+    with mock.patch.dict(os.environ, {'TOPIARY_MAX_SLOTS': '1'}):
+        num_slots = get_num_slots()
+        assert num_slots == 1
 
 
 @pytest.mark.run_generax
 def test_check_mpi_configuration():
 
     # This should run fine
-    check_mpi_configuration(1,GENERAX_BINARY)
+    check_mpi_configuration(1)
 
     # This should run fine (assuming test environment has more than one slot)
-    check_mpi_configuration(2,GENERAX_BINARY)
+    check_mpi_configuration(2)
 
     # An unlikely number of slots. If this test ever passes, we've reached the
     # singularity and this code does not matter anyway
-    with pytest.raises(ValueError):
-        check_mpi_configuration(1000000,GENERAX_BINARY)
+    with pytest.raises(RuntimeError):
+        check_mpi_configuration(1000000)

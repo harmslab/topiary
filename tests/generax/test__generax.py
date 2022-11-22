@@ -398,7 +398,7 @@ def test_run_generax(generax_data,tmpdir):
 
         assert cmd == f"mpirun -np 2 {generax_binary} --families control.txt --species-tree species_tree.newick --prefix result --rec-model UndatedDTL"
 
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             cmd = run_generax(run_directory=out_dir,
                               allow_horizontal_transfer=True,
                               num_threads=1000000,
