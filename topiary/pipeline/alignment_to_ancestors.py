@@ -40,7 +40,7 @@ def alignment_to_ancestors(df,
                            starting_tree=None,
                            no_bootstrap=False,
                            no_reconcile=False,
-                           no_horizontal_transfer=False,
+                           horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
                                            "FLU","HIVb","HIVw","JTT","JTT-DCMut","LG",
@@ -74,10 +74,9 @@ def alignment_to_ancestors(df,
         do not do bootstrap replicates
     no_reconcile : bool, default=False
         do not reconcile gene and species trees
-    no_horizontal_transfer : bool, default=False
+    horizontal_transfer : bool, default=False
         whether to allow horizontal transfer during reconciliation. Default is
-        to allow transfer (UndatedDTL; recommended). If flat set, use UndatedDL
-        model.
+        to not allow transfer (UndatedDL). If set, use undated DTL. 
     alt_cutoff : float, default=0.25
         cutoff to use for altAll alternate ancestral protein sequence
         generation. Should be between 0 and 1.
@@ -146,9 +145,8 @@ def alignment_to_ancestors(df,
     # Validate calculation arguments
 
     # Convert to allow_horizontal_transfer
-    no_horizontal_transfer = check.check_bool(no_horizontal_transfer,
-                                              "no_horizontal_transfer")
-    allow_horizontal_transfer = not no_horizontal_transfer
+    horizontal_transfer = check.check_bool(horizontal_transfer,
+                                           "horizontal_transfer")
 
     # alt-all cutoff
     alt_cutoff = check.check_float(alt_cutoff,
@@ -292,9 +290,9 @@ def alignment_to_ancestors(df,
         if run_calc:
             topiary.reconcile(prev_calculation=prev_calculation,
                               calc_dir=output,
-                              allow_horizontal_transfer=allow_horizontal_transfer,
+                              allow_horizontal_transfer=horizontal_transfer,
                               generax_binary=generax_binary,
-                              num_threads=1, #num_threads, XXX HACK HACK HACK
+                              num_threads=num_threads,
                               bootstrap=False)
         counter += 1
 

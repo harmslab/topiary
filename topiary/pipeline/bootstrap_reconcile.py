@@ -1,5 +1,5 @@
 """
-Final step on the pipeline. Run replicates in embarassingly parallel fashion
+Final step on the pipeline. Run replicates in embarrassingly parallel fashion
 across compute nodes using MPI.
 """
 

@@ -45,6 +45,36 @@ def create_main_html(description="",
                      bs_css_key="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3",
                      bs_js="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
                      bs_js_key="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"):
+    """
+    Create the core elements of an html file. Top starts with <!doctype html>
+    and ends with <body>. Bottom starts with <script></body> and ends with </html>.
+    top + bottom will create a valid (empty) html file.
+
+    Parameters
+    ----------
+    description : str
+        text for meta description element
+    title : str
+        text for meta title element
+    custom_css : str, optional
+        path to a custom css file
+    bs_css : str
+        cdn url to bootstrap css file 
+    bs_css_key : str
+        key used to access cdn
+    bs_js : str
+        cdn url to bootstrap min js file
+    bs_js_key : str
+        key used to access cdn
+
+    Returns
+    -------
+    top : str
+        top half of a valid html file (ends with <body>)
+    bottom : str
+        bottom half of a valid html file (starts with <script></body>)
+    """
+
 
     out = ["<!doctype html>"]
     out.append("<html lang=\"en\">")
@@ -167,7 +197,6 @@ def canvas_to_html(toyplot_canvas):
     return html
 
 def sequence_box(text,
-                 box_id="seq_box",
                  color="#000000",
                  prop_value=None,
                  prop_span=None,
@@ -181,8 +210,6 @@ def sequence_box(text,
 
     text : list-like
         sequence to write out
-    box_id : str, default="seq_box"
-        id to give the sequence box in html
     color : str or tuple or dict
         set text color. If a single value, color all letters that color. If
         list-like and length 2, treat as colors for minimum and maximum of a
@@ -214,9 +241,6 @@ def sequence_box(text,
                                               "seq-box",
                                               "font-monospace"]})
     out.append(start)
-
-    #out = [f"<div class=\"card text-bg-dark \" id=\"{box_id}\" style=\"background-color:#eeeeee;\">"]
-    #out.append("<div class=\"card-body seq-box text-break font-monospace\" style=\"background-color:#eeeeee;\">")
     
     # If both of these conditions are met, we need to contruct a text string 
     # with a set of spans
@@ -251,7 +275,21 @@ def sequence_box(text,
 
 def create_card(card_title=None,card_contents=None,title_tag="h6"):
     """
-    Create a bootstrap card with a title and contents.
+    Create a bootstrap card with title and contents. 
+
+    Parameters
+    ----------
+    card_title : str, optional
+        text for card title. if None, do not create a title element
+    card_contents : str, optional
+        text for card contents. if None, do not add card contents
+    title_tag : str, default="h6"
+        text for title (h1, p, etc.)
+
+    Returns
+    -------
+    out : str
+        html card element
     """
 
     out = []
@@ -267,6 +305,23 @@ def create_card(card_title=None,card_contents=None,title_tag="h6"):
     return "".join(out)
 
 def create_element(element,attributes=None):
+    """
+    Create a generic html element. 
+    
+    Parameters
+    ----------
+    element : str
+        element type (e.g., h1, button, etc.)
+    attributes : dict
+        element attributes as key/value pairs (e.g. {"id":"element_id", etc.)
+
+    Returns
+    -------
+    start : str
+        opening tag (e.g., <element attr1="1" attr2="2">)
+    end : str
+        closing tag (e.g., </element>)
+    """
 
     out = [f"<{element}"]
 
@@ -290,18 +345,27 @@ def create_element(element,attributes=None):
     return "".join(out), f"</{element}>"
 
 def create_icon_row(files_to_link,descriptions):
+    """
+    Create a row of icons.
+    
+    Parameters
+    ----------
+    files_to_link : list
+        list of files to create link icons for
+    descriptions : list
+        list of descriptions to apply as tooltips to icons
+
+    Returns
+    -------
+    out : str
+        html element encoding icon row
+    """
 
     ext_files = {"csv":".assets/csv_icon.svg",
                  "pdf":".assets/pdf_icon.svg",
                  "txt":".assets/txt_icon.svg"}
 
     out = []
-    g_s, g_e = create_element("div",{"class":"btn-group",
-                                     "role":"group",
-                                     "aria-label":"link block"})
-
-    #out.append(g_s)
-
     for i, f in enumerate(files_to_link):
 
         try:
@@ -319,8 +383,6 @@ def create_icon_row(files_to_link,descriptions):
         out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" />")
         out.append(e)
     
-    #out.append(g_e)
-
     return "".join(out)
 
         

@@ -474,11 +474,10 @@ To see the options available for this function, type:
 
 Some of the more important options are:
 
-+ :code:`--no_horizontal_transfer`. This selects whether reconciliation will
-  allow horizontal transfer of genes. By default, this is allowed; however, this
-  is not realistic for all organisms. If you are in a non-microbial system
-  --where horizontal gene transfer should be rare--and you observe transfer
-  events on your tree, try re-running the pipeline with this option.
++ :code:`--horizontal_transfer`. This selects whether reconciliation will
+  allow horizontal transfer of genes. By default, this is not allowed; however,
+  for microbial trees where you are doing gene-tree/species-tree reconciliation,
+  this flag should be set. 
 + :code:`--restart`. This allows you to restart a partially completed job.
 
 .. _ali-to-anc-pipeline:

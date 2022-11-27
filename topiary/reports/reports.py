@@ -5,13 +5,15 @@ from topiary._private import Supervisor
 
 from topiary.draw import plot_ancestor_data
 
-from topiary.reports.basic import create_output_directory
-from topiary.reports.basic import canvas_to_html
-from topiary.reports.basic import create_main_html
-from topiary.reports.basic import df_to_table
-from topiary.reports.basic import create_card
-from topiary.reports.basic import create_element
-from topiary.reports.basic import create_icon_row
+from topiary.reports.elements import create_output_directory
+from topiary.reports.elements import canvas_to_html
+from topiary.reports.elements import create_main_html
+from topiary.reports.elements import df_to_table
+from topiary.reports.elements import create_card
+from topiary.reports.elements import create_element
+from topiary.reports.elements import create_icon_row
+
+from topiary.reports.quality import check_duplication
 
 import pandas as pd
 import numpy as np
@@ -20,48 +22,25 @@ import os
 import glob
 import shutil
 
-def check_duplication(supervisor,T):
-    """
-    """
+def _find_directory(calculation_directory):
 
-    this_df = supervisor.df.loc[supervisor.df.keep,:]
-    combined_paralogs = list(np.unique(this_df.recip_paralog))
-    combined_paralogs = [p.split("|") for p in combined_paralogs]
-    paralogs = []
-    for c in combined_paralogs:
-        paralogs.extend(c)
-    paralogs = np.array(np.unique(paralogs))
-    paralogs.sort()
+    if os.path.isfile(os.path.join(calculation_directory,"run_parameters.json")):
+        return calculation_directory
 
-    expected_paralogs = paralogs
-    expected_duplications = len(expected_paralogs) - 1
-
-    T_dup = T.copy()
-    for leaf in T_dup.get_leaves():
-        leaf.add_feature("num_duplications",0)
-
-    excess_duplications = {"ancestor":[],
-                           "num_descendants":[]}
-        
-    # Starts at ancestor and moves up
-    duplication_count = 0
-    for current_node in T_dup.traverse(strategy="levelorder"):
-        
-        if not current_node.is_leaf():
-            
-            if current_node.__dict__["event"] == "D":
-                duplication_count += 1
-                for leaf in current_node.get_leaves():
-                    leaf.num_duplications += 1
-                
-                if leaf.num_duplications > expected_duplications:
-                    excess_duplications["ancestor"].append(current_node.anc_label)
-                    excess_duplications["num_descendants"].append(len(current_node.get_leaves()))
+    calc_dirs = []
+    for c in os.listdir(calculation_directory):
+        this_dir = os.path.join(calculation_directory,c)
+        if os.path.isdir(this_dir):
+            if os.path.exists(os.path.join(this_dir,"run_parameters.json")):
+                sv = Supervisor(this_dir)
+                calc_dirs.append((sv.creation_time,this_dir))
     
-    df = pd.DataFrame(excess_duplications)
-    df = df.sort_values(by="num_descendants",ascending=False)
+    calc_dirs.sort()
+    if len(calc_dirs) > 0:
+        return calc_dirs[-1][1]
 
-    return expected_duplications, duplication_count, df
+    return None
+
 
 
 def make_ancestor_report(calculation_directory,
