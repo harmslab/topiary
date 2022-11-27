@@ -1,4 +1,6 @@
-
+"""
+Functions for generating html elements used in the report.
+"""
 import topiary
 from topiary.draw.core import construct_colormap
 

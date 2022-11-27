@@ -38,6 +38,7 @@ def tree(calculation,
          min_height=300,
          df=None,
          anc_link_path=None,
+         return_canvas=False,
          **kwargs):
     """
     Draw a tree with annotated with calculation outputs.
@@ -126,6 +127,10 @@ def tree(calculation,
         topiary dataframe (overrides whatever is in run_directory/output/dataframe.csv)
     anc_link_path : str, optional
         if specified, format ancestors as links to ancestors in anc_link_path. 
+    return_canvas : bool, default=False
+        if True, return the canvas whether this is being called in a notebook
+        or not. (canvas will be returned in a jupyter notebook regardless of this
+        setting)
     **kwargs : dict, optional
         pass any other keyword arguments directly to toytree.tree.draw
 
@@ -299,7 +304,7 @@ def tree(calculation,
 
     # If this is in a notebook, render it and return so it appears
     ret = None
-    if topiary._in_notebook:
+    if topiary._in_notebook or return_canvas:
         ret = pt.canvas
 
     return ret

@@ -1,2 +1,5 @@
+"""
+Generate an html report for a topiary tree/ancestor inference.
+"""
 
-from .reports import make_ancestor_report
+from .reports import create_report

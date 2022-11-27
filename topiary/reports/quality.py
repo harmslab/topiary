@@ -5,7 +5,7 @@ Functions for checking the quality of an ancestral inference.
 import numpy as np
 import pandas as pd
 
-def check_duplication(supervisor,T):
+def check_duplication(supervisor,T,p_column):
     """
     Check the duplications observed in a reconciled tree, flagging problems.
 
@@ -15,6 +15,8 @@ def check_duplication(supervisor,T):
         Supervisor with a calculation loaded
     T : ete3.Tree
         tree with elements loaded
+    p_column : str
+        column in supervisor dataframe holding paralog calls
     
     Returns
     -------
@@ -27,7 +29,7 @@ def check_duplication(supervisor,T):
     """
 
     this_df = supervisor.df.loc[supervisor.df.keep,:]
-    combined_paralogs = list(np.unique(this_df.recip_paralog))
+    combined_paralogs = list(np.unique(this_df.loc[:,p_column]))
     combined_paralogs = [p.split("|") for p in combined_paralogs]
     paralogs = []
     for c in combined_paralogs:
