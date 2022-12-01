@@ -25,8 +25,8 @@ import os
 import glob
 import shutil
 
-EVENT_COLOR = {"D":"#64007F","L":"#BAD316","T":"#407E98","S":"#023E55"}
-EVENT_NAME = {"S":"speciation","D":"duplication","L":"loss","T":"transfer"}
+EVENT_COLOR = {"D":"#64007F","L":"#BAD316","T":"#407E98","S":"#023E55",None:"#000000"}
+EVENT_NAME = {"S":"speciation","D":"duplication","L":"loss","T":"transfer",None:'N/A'}
 
 def _find_directory(calculation_directory):
     """
@@ -294,7 +294,8 @@ def create_report(calculation_directory,
                   ancestor_directory=None,
                   html_description="Topiary report",
                   html_title="Topiary report",
-                  overwrite=True):
+                  overwrite=False,
+                  create_zip_file=True):
     """
     Create a sharable html file and directory holding the results of a topiary
     calculation.
@@ -314,6 +315,10 @@ def create_report(calculation_directory,
         found automatically in calculation_directory. 
     overwrite : bool, default = False
         whether or not to overwrite an existing report. 
+    create_zip_file : bool, default = True
+        whether or not to create a zip file of the report directory. This zip
+        file will be self-contained and is a way to share the output of the 
+        calculation with someone else. 
     """
 
 
@@ -376,7 +381,9 @@ def create_report(calculation_directory,
                 anc_dict[anc_name]["paralogs"] = ",".join(p_str)
 
                 anc_dict[anc_name]["paralog_call"] = "|".join([p[1] for p in paralogs if p[0] > 0.1])
-                
+
+
+    print(f"Generating report in {output_directory}",flush=True)
     
     # Build output directory
     create_output_directory(output_directory=output_directory,
@@ -454,15 +461,20 @@ def create_report(calculation_directory,
     # -------------------------------------------------------------------------
     # Run parameters
 
+    # Figure out if reconciled
     model = supervisor.model
     if supervisor.tree_prefix == "reconciled":
         reconciled = True
     else:
         reconciled = False
 
-    ## FIGURE OUT IF WE GOT SUPPORTS SOMEWHERE XX
-    supports = "XX"
-
+    # Figure out if supports have been calculated
+    supports = False
+    for k in anc_dict:
+        if anc_dict[k]["bs_support"] is not None:
+            supports = True
+        break
+        
     param_df = pd.DataFrame({"name":["Evolutionary model",
                                      "Reconciled gene and species tree",
                                      "Supports calculated"],
@@ -524,7 +536,6 @@ def create_report(calculation_directory,
     f = open(os.path.join(output_directory,"index.html"),"w")
     f.write("\n".join(out))
     f.close()
-
     
 
 

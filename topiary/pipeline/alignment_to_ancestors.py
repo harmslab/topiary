@@ -11,13 +11,12 @@ from topiary._private import installed
 from topiary._private import software_requirements
 from topiary._private import check
 from topiary._private.mpi import check_mpi_configuration
-from topiary._private import Supervisor
+from topiary.reports import create_report
 
 import os
 import random
 import string
 import shutil
-import time
 
 def _check_restart(output,restart):
 
@@ -39,7 +38,8 @@ def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
                            no_bootstrap=False,
-                           no_reconcile=False,
+                           force_reconcile=False,
+                           force_no_reconcile=False,
                            horizontal_transfer=False,
                            alt_cutoff=0.25,
                            model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",
@@ -57,7 +57,9 @@ def alignment_to_ancestors(df,
     """
     Given an alignment, find the best phylogenetic model, build a maximum-
     likelihood tree, reconcile this tree with the species tree, and then infer
-    ancestral protein sequences.
+    ancestral protein sequences. Reconciliation is not done for df that only have
+    bacterial sequences. User can force reconciliation to happen or not, 
+    regardless of species in df, using force_reconcile and force_no_reconcile.
 
     Parameters
     ----------
@@ -72,7 +74,9 @@ def alignment_to_ancestors(df,
         If not specified, the maximum parsimony tree is generated and used.
     no_bootstrap : bool, default=False
         do not do bootstrap replicates
-    no_reconcile : bool, default=False
+    force_reconcile : bool, default=False
+        reconcile gene and species trees
+    force_no_reconcile : bool, default=False
         do not reconcile gene and species trees
     horizontal_transfer : bool, default=False
         whether to allow horizontal transfer during reconciliation. Default is
@@ -115,7 +119,7 @@ def alignment_to_ancestors(df,
 
     # Validate dataframe
     df = check.check_topiary_dataframe(df)
-
+    
     # Validate starting_tree
     if starting_tree is not None:
         starting_tree = str(starting_tree)
@@ -134,12 +138,32 @@ def alignment_to_ancestors(df,
     else:
         do_bootstrap = True
 
-    no_reconcile = check.check_bool(no_reconcile,"no_reconcile")
-    if no_reconcile:
+    # --------------------------------------------------------------------------
+    # Decide how to do reconciliation based on user flags and taxonomic 
+    # distribution. 
+
+    force_no_reconcile = check.check_bool(force_no_reconcile,"force_no_reconcile")
+    force_reconcile = check.check_bool(force_reconcile,"force_reconcile")
+    if force_no_reconcile and force_reconcile:
+        err = "force_no_reconcile and force_reconcile cannot both be set to True\n"
+        raise ValueError(err)
+
+    if force_reconcile:
+        do_reconcile = True
+    elif force_no_reconcile:
         do_reconcile = False
     else:
-        do_reconcile = True
 
+        # Figure out if the default is to reconcile or not based on taxonomic 
+        # distribution of alignment. 
+        mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
+                                            move_up_by=100,
+                                            avoid_all_life=True)
+
+        if mrca["ott_name"] in ["Archaea","Bacteria"]:
+            do_reconcile = False
+        else:
+            do_reconcile = True
 
     # --------------------------------------------------------------------------
     # Validate calculation arguments
@@ -307,8 +331,7 @@ def alignment_to_ancestors(df,
                                    alt_cutoff=alt_cutoff)
     counter += 1
 
-    # If we're doing bootstrap, reconcile all bootstrap replicates and
-    # generate ancestor with branch supports
+    # If we're doing bootstrap...
     if do_bootstrap:
 
         # Generate bootstrap replicates for the tree
@@ -323,3 +346,8 @@ def alignment_to_ancestors(df,
         counter += 1
 
     os.chdir(current_dir)
+
+    # Create an html report for the calculation
+    create_report(calculation_directory=out_dir,
+                  output_directory=os.path.join(out_dir,"results"),
+                  overwrite=True)

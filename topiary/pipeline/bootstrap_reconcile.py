@@ -12,6 +12,7 @@ from topiary._private import software_requirements
 from topiary._private.mpi import check_mpi_configuration
 from topiary._private import check
 from topiary._private import Supervisor
+from topiary.reports import create_report
 
 import os
 import datetime
@@ -30,8 +31,8 @@ def bootstrap_reconcile(previous_run_dir,
     reconciliation portion of the analysis.
 
     previous_run_dir : str
-        previous pipeline run directory. should end with last directory added
-        as 04_bootstraps.
+        previous pipeline run directory. Should have a directory named 
+        04_bootstraps.
     num_threads : int
         number of threads to use. GeneRax uses MPI for parallelization;
         num_threads correspond to the number of "slots" in MPI lingo. This job
@@ -219,3 +220,8 @@ def bootstrap_reconcile(previous_run_dir,
                           generax_binary=generax_binary)
 
     os.chdir('..')
+
+    # Create an html report for the calculation
+    create_report(calculation_directory=previous_run_dir,
+                  output_directory=os.path.join(previous_run_dir,"results"),
+                  overwrite=True)
