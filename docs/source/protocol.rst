@@ -68,7 +68,7 @@ scope (the top and bottom of the gray box).
 -------------------------
 
 A seed dataset defines the paralogs of interest and taxonomic scope for a
-reconstruction. It has four columns: name (e.g. the paralog), species, aliases,
+reconstruction. It has four columns: name (e.g. the paralog), aliases, species,
 and sequence. Topiary uses this dataset as a starting point for BLAST searches
 to construct a dataset and generate an alignment for the reconstruction study.
 An example for the two immune proteins, LY86 and LY96, is shown below. The full
@@ -146,8 +146,8 @@ The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
    To find aliases, you can check out the "`Also known as`_" field for the gene of
    interest on NCBI, the "`Protein names`_" section of the protein's UniProt
    entry, a "genecards_" entry (for proteins found in humans), and/or primary
-
    literature.
+
 #. You can put other information about the sequences (accession, citations, etc.)
    as their own columns in the table. Topiary will ignore, but keep, those
    columns.
@@ -296,8 +296,9 @@ rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
 -----------------------------------------------------
 
 Before reconstructing a phylogenetic tree and ancestors, we recommend
-inspecting and possibly editing the alignment. We recommend using `Aliview <aliview-link_>`_
-for this purpose.
+inspecting and possibly editing the alignment. We recommend using
+
+`Aliview <aliview-link_>`_ for this purpose.
 There are differing views on whether or not to manually edit an alignment.
 Manual edits are subjective, but there are also "obvious" instances where
 automatic alignment software does poorly. We usually edit our alignments using
