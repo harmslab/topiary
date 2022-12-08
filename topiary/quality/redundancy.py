@@ -303,8 +303,8 @@ def _redundancy_thread_function(i_block,
             if not i_keep and not j_keep:
                 lock.acquire()
                 try:
-                    keep_array[i] = False
-                    keep_array[j] = False
+                    keep_array[i] = 0
+                    keep_array[j] = 0
                 finally:
                     lock.release()
 
@@ -312,7 +312,7 @@ def _redundancy_thread_function(i_block,
             elif not i_keep:
                 lock.acquire()
                 try:
-                    keep_array[i] = False
+                    keep_array[i] = 0
                 finally:
                     lock.release()
 
@@ -320,7 +320,7 @@ def _redundancy_thread_function(i_block,
             elif not j_keep:
                 lock.acquire()
                 try:
-                    keep_array[j] = False
+                    keep_array[j] = 0
                 finally:
                     lock.release()
 
@@ -330,6 +330,9 @@ def _redundancy_thread_function(i_block,
             # Not keeping i, we don't need to keep going
             if not keep_array[i]:
                 break
+
+    # Return the updated keep array
+    return keep_array
 
 
 def remove_redundancy(df,
@@ -464,7 +467,8 @@ def remove_redundancy(df,
     # are already keeping
     sequence_array = np.array(df.loc[df.keep,"sequence"])
     quality_array = all_quality_array[df.keep]
-    keep_array = np.ones(len(sequence_array),dtype=bool)
+
+    keep_array = np.ones(len(sequence_array),dtype=int)
 
     kwargs_list, num_threads = _construct_args(sequence_array=sequence_array,
                                                quality_array=quality_array,
@@ -473,13 +477,205 @@ def remove_redundancy(df,
                                                discard_key=discard_key,
                                                num_threads=num_threads)
 
-    threads.thread_manager(kwargs_list,
-                           _redundancy_thread_function,
-                           num_threads,
-                           progress_bar=progress_bar,
-                           pass_lock=True)
+    # Run multithreaded. This will return a list of keep_arrays for each 
+    # time run. The last keep array will have the last thread to be launched,
+    # final values
+    keep_arrays = threads.thread_manager(kwargs_list,
+                                         _redundancy_thread_function,
+                                         num_threads,
+                                         progress_bar=progress_bar,
+                                         pass_lock=True,
+                                         shared_kwarg="keep_array")
+
+    # Get keep_array from outputs
+    keep_array = np.array(keep_arrays[-1],dtype=bool)
 
     # Update keep array
     df.loc[df.keep,"keep"] = keep_array
 
     return df
+
+def find_redundancy_cutoff(df,
+                           target_seq_number,
+                           sample_fx=0.10,
+                           max_cutoff=0.99,
+                           min_cutoff=0.35,
+                           max_iterations=20,
+                           target_length_cutoff=0.25,
+                           discard_key=False,
+                           num_threads=-1):
+    """
+    Find a redundancy cutoff that, when applied to df, will yield approximately
+    target_seq_number 
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        topiary dataframe with sequences whose redundancy is to be reduced
+    target_seq_number : int
+        number of sequences desired after redundancy is reduced
+    sample_fx : float, default=0.1
+        fraction of sequences to use when doing redundancy reduction.
+    max_cutoff : float, default=0.99
+        maximum redundancy cutoff value. The redundancy cutoff will be no more
+        than this after optimization. 
+    min_cutoff : float, default=0.35
+        minimum redundancy cutoff value. The redundancy cutoff will be no less
+        than this after optimization.
+    max_iterations : int, default=20
+        when refining, do no more than max_iterations of optimization. 
+    target_length_cutoff : float, default=0.25
+        Give a higher quality to any sequence whose length is within
+        target_length_cutoff pct of the median key_species sequence length. To
+        disable, set to None.
+    discard_key : bool, default=False
+        whether or not to discard key sequences when doing the optimization
+    num_threads : int, default=-1
+        number of threads to use. If -1, use all available
+
+    Returns
+    -------
+    cutoff : float
+        optimized redundnacy cutoff
+    """
+
+    # Check/process arguments
+    df = check.check_topiary_dataframe(df)
+
+    target_seq_number = check.check_int(target_seq_number,
+                                        "target_seq_number",
+                                        minimum_allowed=1)
+
+    sample_fx = check.check_float(sample_fx,
+                                "sample_fx",
+                                minimum_allowed=0,
+                                maximum_allowed=1)
+
+    min_cutoff = check.check_float(min_cutoff,
+                                "min_cutoff",
+                                minimum_allowed=0.0,
+                                maximum_allowed=1.0)
+
+    max_cutoff = check.check_float(max_cutoff,
+                                "max_cutoff",
+                                minimum_allowed=0.0,
+                                maximum_allowed=1.0)
+
+    if min_cutoff > max_cutoff:
+        err = "min_cutoff must be less than max_cutoff\n"
+        raise ValueError(err)
+
+    if min_cutoff == max_cutoff:
+        return max_cutoff
+
+    discard_key = check.check_bool(discard_key,"discard_key")
+    target_length_cutoff = check.check_float(target_length_cutoff,
+                                            "target_length_cutoff",
+                                            minimum_allowed=0.0,
+                                            maximum_allowed=1.0)
+
+    # Grab random subset of the dataframe on which we are going to do 
+    # redundancy analysis. 
+    num_to_grab = int(np.round(sample_fx*len(df),0))
+    if num_to_grab >= len(df):
+        indexes = np.array(df.index)
+    else:
+        indexes = np.random.choice(np.array(df.index),num_to_grab,replace=False)
+    df = df.loc[indexes,:]
+
+    # Figure out our target number of sequences for the reduced dataset 
+    scaled_target_seq_number = int(np.round(sample_fx*target_seq_number,0))
+    
+    
+    pbar = tqdm(total=(2 + max_iterations))
+    
+    with pbar:
+    
+        max_df = remove_redundancy(df=df.copy(),
+                                   cutoff=max_cutoff,
+                                   target_length_cutoff=target_length_cutoff,
+                                   discard_key=discard_key,
+                                   silent=True,
+                                   num_threads=num_threads)
+        num_max = np.sum(max_df.keep)
+        pbar.n = pbar.n + 1
+        pbar.refresh()
+
+        if num_max <= scaled_target_seq_number:
+            pbar.n = max_iterations + 2
+            pbar.refresh()
+            return max_cutoff
+
+        min_df = remove_redundancy(df=df.copy(),
+                                   cutoff=min_cutoff,
+                                   target_length_cutoff=target_length_cutoff,
+                                   discard_key=discard_key,
+                                   silent=True,
+                                   num_threads=num_threads)
+        num_min = np.sum(min_df.keep)
+
+        pbar.n = pbar.n + 1
+        pbar.refresh()
+
+        if num_min >= scaled_target_seq_number:
+            pbar.n = max_iterations + 2
+            pbar.refresh()
+            return min_cutoff
+
+        pairs = [(num_max - scaled_target_seq_number,max_cutoff),
+                 (num_min - scaled_target_seq_number,min_cutoff)]
+        pairs.sort()
+
+
+        iterations = 0
+        while True:
+
+            if pairs[0][0] == 0:
+                pbar.n = max_iterations + 2
+                pbar.refresh()
+                return pairs[0][1]
+
+            for i in range(1,len(pairs)):
+
+                if pairs[i][0] == 0:
+                    pbar.n = max_iterations + 2
+                    pbar.refresh()
+                    return pairs[i][1]
+
+                if pairs[i-1][0] <= 0 and pairs[i][0] >= 0:
+
+                    new_cutoff = (pairs[i-1][1] + pairs[i][1])/2
+
+                    this_df = remove_redundancy(df=df.copy(),
+                                                cutoff=new_cutoff,
+                                                target_length_cutoff=target_length_cutoff,
+                                                discard_key=discard_key,
+                                                silent=True,
+                                                num_threads=num_threads)
+                    num_this = np.sum(this_df.keep)
+                    this_diff = num_this - scaled_target_seq_number
+
+                    pairs.append((this_diff,new_cutoff))
+                    pairs.sort()
+
+                    pbar.n = pbar.n + 1
+                    pbar.refresh()
+                    
+                    iterations += 1
+
+                    break
+
+            if iterations > max_iterations:
+                break
+
+
+        # Get cutoff closest to the target
+        to_sort = [(np.abs(p[0]),p[1]) for p in pairs]
+        to_sort.sort()
+        
+        pbar.n = max_iterations + 2
+        pbar.refresh()
+    
+    return to_sort[0][1]
+                
+                

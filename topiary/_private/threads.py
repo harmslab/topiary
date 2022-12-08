@@ -4,6 +4,8 @@ Multithreading functions.
 
 from topiary._private import check
 
+import numpy as np
+
 import os
 import multiprocessing as mp
 from tqdm.auto import tqdm
@@ -70,7 +72,12 @@ def get_num_threads(num_threads,manual_num_cores=None):
     return num_threads
 
 
-def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False):
+def thread_manager(kwargs_list,
+                   fcn,
+                   num_threads,
+                   progress_bar=True,
+                   pass_lock=False,
+                   shared_kwarg=None):
     """
     Run a function multiple times in a mulithreaded fashion.
 
@@ -87,6 +94,11 @@ def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False
     pass_lock : bool, default=False
         pass a multiprocessing.Manager().Lock() instance to the function as a
         kwarg. (Function must know what to do with lock...)
+    shared_kwarg : str, optional
+        pass the kwarg indicated as a shared value to the function as a 
+        multiprocessing.Value() or .Array() object. kwarg must point to a 
+        float, int, float array, or int array. The function must deal with 
+        locking. 
 
     Returns
     -------
@@ -118,11 +130,46 @@ def thread_manager(kwargs_list,fcn,num_threads,progress_bar=True,pass_lock=False
     manager = mp.Manager()
     queue = manager.Queue()
     lock =  manager.Lock()
+
+    # If passing a shared kwarg
+    if shared_kwarg is not None:
+
+        try:
+            to_share = kwargs_list[0][shared_kwarg]
+        except KeyError:
+            err = f"{shared_kwarg} not found in kwargs_list\n"
+            raise ValueError(err)
+        
+        # Iterable, check for int or float and convert to Array
+        if hasattr(to_share,"__iter__"):
+            if np.issubdtype(int,to_share[0]):
+                to_share = manager.Array("i",np.array(to_share,dtype=int))
+            elif np.issubdtype(float,to_share[0]):
+                to_share = manager.Array("d",np.array(to_share,dtype=float))
+            else:
+                err = "iterable must be float or int"
+                raise ValueError(err)
+
+        # Not iterable. Check for int or float and convert to Value
+        else:
+            if np.issubdtype(int,to_share):
+                to_share = manager.Value("i",int(to_share))
+            elif np.issubdtype(float,to_share):
+                to_share = manager.Value("d",float(to_share))
+            else:
+                err = "shared value must be float or int\n"
+                raise ValueError(err)
+
     all_args = []
     for i in range(len(kwargs_list)):
 
+        # Append lock to kwargs if requested
         if pass_lock:
             kwargs_list[i]["lock"] = lock
+
+        # Updated shared_kwarg to point to shared object if requested
+        if shared_kwarg is not None:
+            kwargs_list[i][shared_kwarg] = to_share
 
         all_args.append((i,fcn,kwargs_list[i],queue))
 

@@ -297,7 +297,7 @@ def run_generax(run_directory,
     if num_threads != 1:
 
         # Make sure we have this number of threads
-        check_mpi_configuration(num_threads,abs_path_generax_binary)
+        check_mpi_configuration(num_threads)
 
         cmd = ["mpirun","-np",f"{num_threads:d}",abs_path_generax_binary]
 

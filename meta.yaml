@@ -1,0 +1,70 @@
+{% set name = "topiary-asr" %}
+{% set version = "0.5.1" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/harmslab/topiary/releases/download/{{ version }}/topiary-{{ version }}.tar.gz
+  sha256: d0663f25442a9f282965e67ea7d2a609b869e9371f43c1462890edb2a3c914c2
+  # sha256 is the preferred checksum -- you can get it for a file with:
+  #  `openssl sha256 <file name>`.
+  # You may need the openssl package, available on conda-forge:
+  #  `conda install openssl -c conda-forge``
+
+build:
+  script: {{ PYTHON }} -m pip install . -vv
+  number: 0
+
+requirements:
+  build:
+  host:
+    - python
+    - pip
+  skip: True #[py<38]
+  run:
+    - python
+    - numpy
+    - pandas
+    - xlrd
+    - openpyxl
+    - matplotlib
+    - biopython
+    - tqdm
+    - ete3
+    - dendropy
+    - toytree
+    - blast>=2.2    #[not osx and not arm64]
+    - muscle>=5.0   #[not osx and not arm64]
+    - openmpi       #[not osx and not arm64]
+    - generax>=2.0  #[not osx and not arm64]
+    - raxml-ng>=1.1 #[not osx and not arm64]
+    - pastml
+    - opentree
+
+test:
+  imports:
+    - topiary
+  requires:
+    - pytest
+  commands:
+    - pytest 
+    
+about:
+  home: https://github.com/simplejson/simplejson
+  summary: 'Python framework for doing ancestral sequence reconstruction.'
+  description: |
+    Python framework for doing ancestral sequence reconstruction. Performs
+    sequence database construction, quality control, multiple sequence
+    alignment, tree construction, gene/species tree reconciliation, and
+    ancestral reconstruction with minimal user input.
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  doc_url: https://topiary-asr.readthedocs.io/
+  dev_url: https://github.com/harmslab/topiary/
+
+extra:
+  recipe-maintainers:
+    - harmsm

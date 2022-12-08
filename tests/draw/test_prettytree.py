@@ -128,6 +128,10 @@ def test_PrettyTree_render():
 
     pass
 
+def test_PrettyTree_as_html():
+    
+    pass
+
 def test_PrettyTree_tT():
 
     pass

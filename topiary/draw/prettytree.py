@@ -3,17 +3,24 @@ Class for drawing formatted phylogenetic trees using toytree.
 """
 
 import topiary
-from topiary.draw.core import construct_colormap, construct_sizemap, get_round_to
-from topiary.draw.core import ete3_to_toytree, parse_position_string, color_to_css
+from topiary.draw.core import construct_colormap
+from topiary.draw.core import construct_sizemap
+from topiary.draw.core import get_round_to
+from topiary.draw.core import ete3_to_toytree
+from topiary.draw.core import parse_position_string
+from topiary.draw.core import color_to_css
 import topiary._private.check as check
 
 import toytree
 import toyplot
-from toyplot import svg, pdf
+from toyplot import svg
+from toyplot import pdf
 
 import numpy as np
 
-import re, copy
+import re
+import copy
+import xml
 
 
 class PrettyTree:
@@ -584,7 +591,7 @@ class PrettyTree:
             + exactly the same number of *unnamed* fields as (i.e. "{}") as the
               number of properties. For example, :code:`"{}|{}"` for
               :code:`property_labels = ["label_a","label_b"]`).
-            + an arbitrary number of *named* fields (e.g. "{label_a"). For
+            + an arbitrary number of *named* fields (e.g. "{label_a}"). For
               example :code:`"{label_b}|{label_a}|{label_a}"` for
               :code:`property_labels = ["label_a","label_b"]`.
 
@@ -595,7 +602,7 @@ class PrettyTree:
             "top", "top-right", "right", "bottom-right", "bottom", "bottom-left",
             and "left".
         position_offset : float, optional
-            how far to diplace the labels off the nodes, in px. If not specified,
+            how far to displace the labels off the nodes, in px. If not specified,
             will be 0.75*node_size
         plot_ancestors : bool, default=True
             draw ancestral nodes
@@ -1055,11 +1062,24 @@ class PrettyTree:
         # install chain (particularly on github workflows). Hack makes this a
         # fall back rather than something in the base import functionality.
         if key == "png":
-            from topyplot import png
+            from toyplot import png
             render_fcn = toyplot.png.render
 
         render_fcn(self.canvas,output_file)
 
+    def as_html(self):
+        """
+        Render the tree as an html string.
+
+        Returns
+        -------
+        html : str
+            tree as an html string
+        """
+
+        as_xml = toyplot.html.render(self.canvas)
+
+        return xml.etree.ElementTree.tostring(as_xml, encoding='unicode')
 
     @property
     def canvas(self):

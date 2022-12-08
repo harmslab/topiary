@@ -196,7 +196,6 @@ def _generax_thread_function(replicate_dir,
 
     # Construct a base mpirun command that the generax commands will be
     # appended to
-    host = ",".join(hosts)
     base_cmd = ["mpirun","--host",",".join(hosts)]
 
     # Path to result tree within each directory

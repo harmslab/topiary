@@ -3,6 +3,7 @@ Shrink the sequence database in a rational way.
 """
 import topiary
 from topiary._private import check
+from topiary._private import interface
 from topiary.quality.taxonomic import get_merge_blocks
 from topiary.quality.redundancy import remove_redundancy
 from topiary.quality.alignment import score_alignment
@@ -74,6 +75,7 @@ def shrink_in_species(df,redundancy_cutoff=0.98):
 
 def shrink_redundant(df,
                      paralog_column="recip_paralog",
+                     species_tree_aware=True,
                      weighted_paralog_split=False,
                      merge_block_size=50,
                      redundancy_cutoff=0.98):
@@ -87,6 +89,9 @@ def shrink_redundant(df,
         topiary dataframe
     paralog_column : str, default="recip_paralog"
         column holding preliminary paralog calls.
+    species_tree_aware : bool, default=True
+        if True, merge paying attention to species tree and paralog. If False, 
+        merge all sequences based on sequence identity (similar to CD-hit)
     weighted_paralog_split : bool, default=False
         when deciding how much of the total budget to assign to each paralog,
         weight the budget by the number of times each paralog is seen. If False,
@@ -114,6 +119,9 @@ def shrink_redundant(df,
         err = f"\nparalog_column '{paralog_column}' not in dataframe.\n"
         raise ValueError(err)
 
+    species_tree_aware = check.check_bool(species_tree_aware,
+                                          "species_tree_aware")
+
     weighted_paralog_split = check.check_bool(weighted_paralog_split,
                                               "weighted_paralog_split")
 
@@ -129,17 +137,31 @@ def shrink_redundant(df,
     # --------------------------------------------------------------------------
     # Do merge calculation
 
+    # Decide whether to generate species-aware merge blocks
+    if species_tree_aware:
+        dummy_merge_blocks = False
+    else:
+        dummy_merge_blocks = True
+
     # Get blocks of sequence to merge. This is a dictionary of uid to attempt to
     # merge keyed to paralog
     merge_blocks = get_merge_blocks(df,
                                     target_seq_number=len(df),
                                     paralog_column=paralog_column,
                                     weighted_paralog_split=False,
-                                    target_merge_block_size=merge_block_size)
+                                    target_merge_block_size=merge_block_size,
+                                    dummy_merge_blocks=dummy_merge_blocks)
 
     num_to_merge = sum([len(merge_blocks[p]) for p in merge_blocks])
+    
+    if not dummy_merge_blocks:
+        pbar = tqdm(total=num_to_merge)
+        silent_redundancy = True
+    else:
+        pbar = interface.MockTqdm(total=num_to_merge)
+        silent_redundancy = False
 
-    with tqdm(total=num_to_merge) as pbar:
+    with pbar:
 
         uid_to_keep = []
         for p in merge_blocks:
@@ -155,7 +177,7 @@ def shrink_redundant(df,
 
                 this_df = remove_redundancy(this_df,
                                             cutoff=redundancy_cutoff,
-                                            silent=True)
+                                            silent=silent_redundancy)
 
                 uid_to_keep.extend(this_df.loc[this_df.keep,"uid"])
                 pbar.update(n=1)
@@ -173,6 +195,7 @@ def shrink_redundant(df,
 def shrink_aligners(df,
                     target_seq_number,
                     paralog_column="recip_paralog",
+                    species_tree_aware=True,
                     weighted_paralog_split=False,
                     sparse_column_cutoff=0.80,
                     align_trim=(0.05,0.95)):
@@ -187,6 +210,9 @@ def shrink_aligners(df,
         number of sequences that should be returned in final dataset
     paralog_column : str, default="recip_paralog"
         column holding preliminary paralog calls.
+    species_tree_aware : bool, default=True
+        if True, merge paying attention to species tree and paralog. If False, 
+        merge all sequences based on sequence identity (similar to CD-hit)
     weighted_paralog_split : bool, default=False
         when deciding how much of the total budget to assign to each paralog,
         weight the budget by the number of times each paralog is seen. If False,
@@ -207,6 +233,15 @@ def shrink_aligners(df,
         dataframe with keep set to False for redundant sequences
     """
 
+    species_tree_aware = check.check_bool(species_tree_aware,
+                                          "species_tree_aware")
+
+    # Decide whether to generate species-aware merge blocks
+    if species_tree_aware:
+        dummy_merge_blocks = False
+    else:
+        dummy_merge_blocks = True
+
     # --------------------------------------------------------------------------
     # Get taxonomically informed blocks of sequences to merge
 
@@ -214,6 +249,7 @@ def shrink_aligners(df,
     merge_blocks = get_merge_blocks(df,
                                     target_seq_number=target_seq_number,
                                     paralog_column=paralog_column,
+                                    dummy_merge_blocks=dummy_merge_blocks,
                                     weighted_paralog_split=weighted_paralog_split)
 
     # --------------------------------------------------------------------------
@@ -229,8 +265,8 @@ def shrink_aligners(df,
                 N = int(np.round(N*np.log(N),0)) + 1
             merge_timings.append(N)
 
-
-    with tqdm(total=sum(merge_timings)) as pbar:
+    pbar = tqdm(total=sum(merge_timings))
+    with pbar:
 
         uid_to_keep = []
         counter = 0
@@ -238,7 +274,11 @@ def shrink_aligners(df,
         # Go through each paralog
         for p in merge_blocks:
 
-            paralog_df = df.loc[df[paralog_column] == p,:]
+            # If there was a dummy merge, look at the whole df
+            if p is None:
+                paralog_df = df.copy()
+            else:
+                paralog_df = df.loc[df[paralog_column] == p,:]
 
             # Merge each merge block based on 1) whether sequences are from key
             # species and then 2) which align best.
@@ -302,7 +342,8 @@ def shrink_dataset(df,
                    paralog_column="recip_paralog",
                    seqs_per_column=1,
                    max_seq_number=500,
-                   redundancy_cutoff=0.90,
+                   species_tree_aware=True,
+                   redundancy_cutoff=0.96,
                    merge_block_size=50,
                    weighted_paralog_split=False,
                    sparse_column_cutoff=0.80,
@@ -324,6 +365,9 @@ def shrink_dataset(df,
     max_seq_number : int, default=500
         maximum number of sequences to get, regardless of seqs_per_column and
         key sequence length.
+    species_tree_aware : bool, default=True
+        if True, merge paying attention to species tree and paralog. If False, 
+        merge all sequences based on sequence identity (similar to CD-hit)
     redundancy_cutoff : float, default=0.98
         merge sequences from closely related species with sequence identity
         above cutoff.
@@ -364,6 +408,9 @@ def shrink_dataset(df,
     max_seq_number = check.check_int(max_seq_number,
                                      "max_seq_number",
                                      minimum_allowed=1)
+
+    species_tree_aware = check.check_bool(species_tree_aware,
+                                          "species_tree_aware")
 
     redundancy_cutoff = check.check_float(redundancy_cutoff,
                                           "redundancy_cutoff",
@@ -420,15 +467,16 @@ def shrink_dataset(df,
     print(f"Number of sequences: {current_keep}",flush=True)
 
     # --------------------------------------------------------------------------
-    # Remove nearly identical sequences from related species for each paralog
+    # Remove redundant species sampling from taxonomy
 
     print("Lowering redundancy based on sequence similarity.",flush=True)
 
     df = shrink_redundant(df,
-                          paralog_column=paralog_column,
-                          weighted_paralog_split=False,
-                          merge_block_size=merge_block_size,
-                          redundancy_cutoff=redundancy_cutoff)
+                            paralog_column=paralog_column,
+                            species_tree_aware=species_tree_aware,
+                            weighted_paralog_split=False,
+                            merge_block_size=merge_block_size,
+                            redundancy_cutoff=redundancy_cutoff)
 
     # Sanity check -- make sure something is left.
     if np.sum(df.keep) == 0:
@@ -438,18 +486,21 @@ def shrink_dataset(df,
     current_keep = np.sum(df.keep)
     print(f"Number of sequences: {current_keep}",flush=True)
 
+  
+
+
     # --------------------------------------------------------------------------
     # Select best aligners within merge blocks
 
-    print("Selecting best aligning sequences from across species tree.",
-          flush=True)
+    print("Selecting best aligning sequences.",flush=True)
 
     df = shrink_aligners(df,
-                         target_seq_number=target_seq_number,
-                         paralog_column=paralog_column,
-                         weighted_paralog_split=weighted_paralog_split,
-                         sparse_column_cutoff=sparse_column_cutoff,
-                         align_trim=align_trim)
+                        target_seq_number=target_seq_number,
+                        paralog_column=paralog_column,
+                        species_tree_aware=species_tree_aware,
+                        weighted_paralog_split=weighted_paralog_split,
+                        sparse_column_cutoff=sparse_column_cutoff,
+                        align_trim=align_trim)
 
     current_keep = np.sum(df.keep)
     print(f"Number of sequences: {current_keep}",flush=True)

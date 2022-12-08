@@ -36,6 +36,8 @@ def seed_to_alignment(seed_df,
                       worst_align_drop_fx=0.1,
                       sparse_column_cutoff=0.80,
                       align_trim=(0.05,0.95),
+                      force_species_aware=False,
+                      force_not_species_aware=False,
                       ncbi_blast_db=None,
                       local_blast_db=None,
                       blast_xml=None,
@@ -88,6 +90,17 @@ def seed_to_alignment(seed_df,
         of the alignment. Interpreted like a slice, but with percentages.
         (0.0,1.0) would not trim; (0.05,0,98) would trim the first 0.05 off the
         front and the last 0.02 off the back.
+
+    force_species_aware : bool, default=False
+        Lower redundancy in a species-aware fashion, regardless of dataset type.
+        By default, topiary will lower sequence redundancy in a species-aware
+        fashion for non-microbial datasets, and in a non-species aware fashion
+        for microbial datasets. If True, do species aware. 
+    force_not_species_aware : bool, default=False
+        Lower redundancy in a non-species-aware fashion, regardless of dataset
+        type. By default, topiary will lower sequence redundancy in a
+        species-aware fashion for non-microbial datasets, and in a non-species
+        aware fashion for microbial datasets. If True, do not do species aware. 
 
     ncbi_blast_db : str, optional
         NCBI blast database to use. (If ncbi_blast_db, local_blast_db and
@@ -155,6 +168,12 @@ def seed_to_alignment(seed_df,
         Topiary dataframe with aligned, quality-controlled sequences.
     """
 
+    force_species_aware = check.check_bool(force_species_aware,"force_species_aware")
+    force_not_species_aware = check.check_bool(force_not_species_aware,"force_not_species_aware")
+    if force_species_aware and force_not_species_aware:
+        err = "force_species_aware and force_not_species_aware cannot both be set to True\n"
+        raise ValueError(err)
+
     # Make sure the software stack is valid before doing anything
     installed.validate_stack([{"program":"blastp",
                                "min_version":topiary._private.software_requirements["blastp"],
@@ -187,6 +206,7 @@ def seed_to_alignment(seed_df,
     step_counter = 0
     expected_output = os.path.join(out_dir,f"{step_counter:02d}_{os.path.split(seed_df)[-1]}")
     run_calc = _check_restart(expected_output,restart)
+
 
     if run_calc:
 
@@ -309,6 +329,8 @@ def seed_to_alignment(seed_df,
         df = topiary.recip_blast(df,
                                  paralog_patterns=paralog_patterns,
                                  local_blast_db=local_recip_blast_db,
+                                 min_call_prob=min_call_prob,
+                                 partition_temp=partition_temp,
                                  num_threads=num_local_blast_threads,
                                  keep_blast_xml=keep_recip_blast_xml)
 
@@ -317,6 +339,27 @@ def seed_to_alignment(seed_df,
     else:
         print(f"Loading existing file {expected_output}.")
         df = topiary.read_dataframe(expected_output)
+
+
+    # --------------------------------------------------------------------------
+    # Decide how to do redundancy reduction
+    
+    if force_species_aware:
+        species_tree_aware = True
+    elif force_not_species_aware:
+        species_tree_aware = False
+    else:
+
+        # Figure out if the default is to reconcile or not based on taxonomic 
+        # distribution of alignment. 
+        mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
+                                            move_up_by=100,
+                                            avoid_all_life=True)
+
+        if mrca["ott_name"] in ["Archaea","Bacteria"]:
+            species_tree_aware = False
+        else:
+            species_tree_aware = True
 
     step_counter += 1
     expected_output = f"{step_counter:02d}_shrunk-dataframe.csv"
@@ -331,6 +374,7 @@ def seed_to_alignment(seed_df,
 
         kwargs = {"df":df,
                   "paralog_column":"recip_paralog",
+                  "species_tree_aware":species_tree_aware,
                   "seqs_per_column":seqs_per_column*(1 + worst_align_drop_fx),
                   "max_seq_number":max_seq_number*(1 + worst_align_drop_fx),
                   "redundancy_cutoff":redundancy_cutoff,
@@ -373,7 +417,7 @@ def seed_to_alignment(seed_df,
         print("",flush=True)
 
         kwargs = {"df":df,
-                  "fx_sparse_percential":(1 - worst_align_drop_fx),
+                  "fx_sparse_percentile":(1 - worst_align_drop_fx),
                   "sparse_run_percentile":(1 - worst_align_drop_fx),
                   "fx_missing_percentile":(1 - worst_align_drop_fx),
                   "realign":True,
@@ -381,6 +425,7 @@ def seed_to_alignment(seed_df,
 
         df = topiary.quality.polish_alignment(**kwargs)
         topiary.write_dataframe(df,expected_output)
+        pretty_name = os.path.join(out_dir,expected_output)
         step_counter += 1
 
         topiary.write_fasta(df,
@@ -388,16 +433,14 @@ def seed_to_alignment(seed_df,
                             seq_column="alignment",
                             label_columns=["species","recip_paralog"])
 
+        print("\n-------------------------------------------------------------------")
+        print(f"Dataset in {pretty_name}.")
+        print("-------------------------------------------------------------------")
+        print("",flush=True)
+
     else:
         print(f"Loading existing file {expected_output}.")
 
     os.chdir(cwd)
-
-    pretty_name = os.path.join(out_dir,"05_clean-aligned-dataframe.csv")
-
-    print("\n-------------------------------------------------------------------")
-    print(f"Dataset in {pretty_name}.")
-    print("-------------------------------------------------------------------")
-    print("",flush=True)
 
     return df

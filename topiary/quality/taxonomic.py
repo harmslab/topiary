@@ -537,7 +537,8 @@ def get_merge_blocks(df,
                      target_seq_number,
                      paralog_column="recip_paralog",
                      weighted_paralog_split=False,
-                     target_merge_block_size=None):
+                     target_merge_block_size=None,
+                     dummy_merge_blocks=False):
     """
     Determine blocks of sequences to merge in a taxonomically informed fashion.
 
@@ -561,6 +562,9 @@ def get_merge_blocks(df,
         all be <= the target size *except* for tips that have more copies of a
         given paralog than the target size. In such a case, the paralogs from
         that species will form their own merge block.
+    dummy_merge_blocks : bool, default=False
+        if True, do not actually generate merge blocks. Return a dictionary 
+        with key None that requests a merge of all uid in the dataframe.
 
     Returns
     -------
@@ -589,6 +593,18 @@ def get_merge_blocks(df,
         target_merge_block_size = check.check_int(target_merge_block_size,
                                                   "target_merge_block_size",
                                                   minimum_allowed=1)
+
+    dummy_merge_blocks = check.check_bool(dummy_merge_blocks,
+                                          "dummy_merge_blocks")
+
+    # --------------------------------------------------------------------------
+    # If dummy_merge_blocks is True, return a single merge block for whole 
+    # dataframe.
+
+    if dummy_merge_blocks:
+        uid = list(df.loc[df.keep,"uid"])
+        merge_blocks = {None:[(target_seq_number,uid,None)]}
+        return merge_blocks
 
     # --------------------------------------------------------------------------
     # Do merging

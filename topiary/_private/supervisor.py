@@ -30,7 +30,7 @@ class Supervisor:
     A Supervisor's primary job is to wrap, update, and allow programmatic access
     to the calculation attributes stored in run_parameters.json. This dictionary
     has the following entries. Only the "calc_status", "version", and "seed"
-    keys are gauranteed to exist.
+    keys are guaranteed to exist.
 
     + "calc_status" ("empty","running","crashed","complete")
     + "version" (topiary version)
@@ -88,7 +88,7 @@ class Supervisor:
         calc_dir : str, optional
             load the supervisor from an existing directory
         seed : int, optional
-            seed for calcultions. if not specified, generate a random seed
+            seed for calculations. if not specified, generate a random seed
         """
 
         # seed argument is overloaded. Interpret based on type

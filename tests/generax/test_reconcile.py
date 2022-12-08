@@ -70,7 +70,7 @@ def test_reconcile(tiny_phylo,tmpdir):
     os.chdir("test1")
     kwargs = copy.deepcopy(kwargs_template)
     kwargs["num_threads"] = 99999999999999
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         reconcile(**kwargs)
     os.chdir("..")
 
