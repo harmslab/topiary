@@ -58,7 +58,7 @@ def polish_alignment(df,
                      realign=True,
                      sparse_column_cutoff=0.80,
                      align_trim=(0,1),
-                     fx_sparse_percential=0.90,
+                     fx_sparse_percentile=0.90,
                      sparse_run_percentile=0.90,
                      fx_missing_percentile=0.90):
     """
@@ -80,14 +80,14 @@ def polish_alignment(df,
         (0.0,1.0) would not trim; (0.05,0,98) would trim the first 0.05 off the
         front and the last 0.02 off the back. The default to this function does
         not trim at all.
-    fx_sparse_percential : float, default=0.90
-        flag any sequence that is has a fraction sparse above this percential
+    fx_sparse_percentile : float, default=0.90
+        flag any sequence that is has a fraction sparse above this percentile
         cutoff.
     sparse_run_percentile : float, default=0.90
         flag any sequence that is has total sparse run length above this
-        percential cutoff.
+        percentile cutoff.
     fx_missing_percentile : float, default=0.90
-        flag any sequence that is has a fraction missing above this percential
+        flag any sequence that is has a fraction missing above this percentile
         cutoff.
 
     Notes
@@ -107,8 +107,8 @@ def polish_alignment(df,
     df = check.check_topiary_dataframe(df)
     realign = check.check_int(realign,"realign")
     # sparse_column_cutoff and align_trim checked immediately by score_alignment
-    fx_sparse_percential = check.check_float(fx_sparse_percential,
-                                             "fx_sparse_percential",
+    fx_sparse_percentile = check.check_float(fx_sparse_percentile,
+                                             "fx_sparse_percentile",
                                              minimum_allowed=0,
                                              maximum_allowed=1)
     sparse_run_percentile = check.check_float(sparse_run_percentile,
@@ -132,16 +132,31 @@ def polish_alignment(df,
     # Look only at kept sequences
     df = full_df.loc[full_df.keep,:]
 
+    print(np.sum(full_df.keep))
+
     # Get worst fx_sparse and sparse_run sequences
-    top_fx_sparse = _get_cutoff(df.fx_in_sparse,pct=fx_sparse_percential)
+    top_fx_sparse = _get_cutoff(df.fx_in_sparse,pct=fx_sparse_percentile)
     top_sparse_run = _get_cutoff(df.sparse_run_length,pct=sparse_run_percentile)
+
+    # If there are no runs, we'll get a top_sparse_run of 0. Set to -1 -- we 
+    # should not select on this
+    if top_sparse_run == 0:
+        top_sparse_run = np.inf
+
     to_drop_1 = np.logical_and(df.fx_in_sparse >= top_fx_sparse,
                                df.sparse_run_length >= top_sparse_run)
 
+    print(fx_sparse_percentile,top_sparse_run)
+    print(np.sum(df.fx_in_sparse >= top_fx_sparse))
+    print(np.sum(df.sparse_run_length >= top_sparse_run))
+    print(np.sum(to_drop_1))
 
     # Get worst fx_missing and labeled partial
     top_fx_missing = _get_cutoff(df.fx_missing_dense,pct=fx_missing_percentile)
     df.loc[pd.isnull(df.partial),"partial"] = False
+
+    df.to_csv("stupid.csv")
+
     to_drop_2 = np.logical_and(df.fx_missing_dense >= top_fx_missing,
                                df.partial == True)
 

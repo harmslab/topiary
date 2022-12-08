@@ -33,7 +33,7 @@ class MockTqdm():
     def __exit__(self, type, value, traceback):
         pass
 
-    def update(self,value):
+    def update(self,*args,**kwargs):
         pass
 
 

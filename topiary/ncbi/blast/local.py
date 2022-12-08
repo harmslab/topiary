@@ -161,6 +161,7 @@ def _construct_args(sequence_list,
 
     windows = [block_size for _ in range(num_windows)]
     remainder = num_sequences % block_size
+
     if remainder/block_size >= 0.5:
         windows.append(remainder)
     else:
@@ -169,6 +170,8 @@ def _construct_args(sequence_list,
             windows[counter] += 1
             remainder -= 1
             counter += 1
+            if counter >= len(windows):
+                counter = 0
 
     windows.insert(0,0)
     windows = np.cumsum(windows)

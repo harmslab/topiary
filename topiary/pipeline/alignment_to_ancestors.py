@@ -24,7 +24,7 @@ def _check_restart(output,restart):
     if restart:
 
         # See if json file is there. If so, the run is done.
-        json_file = os.path.join(output,"output","run_parameters.json")
+        json_file = os.path.join(output,"run_parameters.json")
         if os.path.isfile(json_file):
             run_calc = False
         else:
@@ -231,7 +231,7 @@ def alignment_to_ancestors(df,
     # If we're doing a reconciliation, make sure we can actually get placement
     # of all species on the tree.
     if do_reconcile:
-        species_tree, dropped = topiary.df_to_species_tree(df,strict=True)
+        _ = topiary.df_to_species_tree(df,strict=True)
 
     # --------------------------------------------------------------------------
     # Deal with output directory
