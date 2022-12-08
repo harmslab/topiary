@@ -16,6 +16,7 @@ import random
 import string
 import os
 import shutil
+import urllib.request
 
 def _check_restart(expected_output,restart):
 
@@ -228,11 +229,26 @@ def seed_to_alignment(seed_df,
 
         # If the seed_df is a file, copy that into the output directory
         if type(seed_df) is str:
+
+            # Figure out filename we are going to copy to
+            root = f"{step_counter:02d}_{os.path.split(seed_df)[-1]}"
+            copy_to = os.path.join(out_dir,root)
+    
+            # If this is a url, download directly to copy_to
+            if seed_df.startswith("https"):
+                try:
+                    urllib.request.urlretrieve(seed_df,copy_to)
+                    seed_df = copy_to
+                except Exception as e:
+                    err = f"seed_df '{seed_df}' looks like a url, but the file could not be downloaded.\n"
+                    raise ValueError(err) from e
+
+            # If the seed_df exists
             if os.path.exists(seed_df):
-                root = f"{step_counter:02d}_{os.path.split(seed_df)[-1]}"
-                copy_to = os.path.join(out_dir,root)
-                shutil.copy(seed_df,copy_to)
+                if seed_df != copy_to:
+                    shutil.copy(seed_df,copy_to)
                 seed_df = root
+
             else:
                 err = f"\nseed_df '{seed_df}' not found.\n\n"
                 raise FileNotFoundError(err)
