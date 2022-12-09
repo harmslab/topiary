@@ -370,7 +370,11 @@ def ott_to_resolvable(ott_list=None,species_list=None):
     return resolvable
 
 
-def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
+def ott_to_mrca(ott_list=None,
+                species_list=None,
+                move_up_by=0,
+                avoid_all_life=True,
+                microbial_to_domain=True):
     """
     Get the most recent common ancestor given a list of ott. Unrecognized ott
     are dropped with a warning.
@@ -388,6 +392,9 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     avoid_all_life : bool, default=True
         if possible, avoid the jump to all cellular organisms. This takes
         precedence over move_up_by.
+    microbial_to_domain : bool, default=True
+        if all ott are from Bacteria or all ott are from Archaea, return the 
+        domain as the mrca. 
 
     Returns
     -------
@@ -451,6 +458,12 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     if move_up_by > len(lineage) - 1:
         move_up_by = len(lineage) - 1
 
+    # If all Bacterial or Archaea and microbial_to_domain was passed, set the
+    # mrca to the domain. 
+    if microbial_to_domain:
+        if lineage[-1]["name"] in ["Bacteria","Archaea"]:
+            move_up_by = -1
+
     anc = lineage[move_up_by]
 
     # Get information about this ancestor
@@ -473,7 +486,8 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
 
     out["taxid"] = taxid
 
-    # Detect whether this is microbial only
+    # Detect whether this is microbial only (regardless of microbial_to_domain)
+    # setting
     if lineage[-1]["name"] in ["Bacteria","Archaea"]:
         out["is_microbial"] = True
     else:

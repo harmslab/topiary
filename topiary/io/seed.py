@@ -511,7 +511,10 @@ def df_from_seed(seed_df,
         most recent common ancestor of the seed species, then find the taxonomic
         rank "move_mrca_up_by" levels above that ancestor. For example, if the
         key species all come from marsupials (Theria) and move_mrca_up_by == 2,
-        the context will be Amniota (Theria -> Mammalia -> Amniota).
+        the context will be Amniota (Theria -> Mammalia -> Amniota). Note: If 
+        the seed dataframe consists entirely of Bacterial or Archaeal sequences,
+        the mrca will be set to the appropriate domain, not a local species
+        ancestors.
     hitlist_size : int, default=5000
         download only the top hitlist_size hits
     e_value_cutoff : float, default=0.001
@@ -583,7 +586,7 @@ def df_from_seed(seed_df,
 
         # Infer phylogenetic context from key species
         phylo_context = topiary.opentree.ott_to_mrca(species_list=key_species,
-                                                  move_up_by=move_mrca_up_by)
+                                                     move_up_by=move_mrca_up_by)
         try:
             taxid = phylo_context["taxid"]
         except KeyError:
