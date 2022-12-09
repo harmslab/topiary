@@ -392,7 +392,8 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     Returns
     -------
     out : dict
-        dictionary with keys ott_name, ott_id, ott_rank, lineage, and taxid.
+        dictionary with keys ott_name, ott_id, ott_rank, lineage, taxid, and
+        is_microbial
     """
 
     ott_list = _validate_ott_or_species(ott_list,species_list)
@@ -427,9 +428,8 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     except KeyError:
         taxon = synth_mrca.response_dict["nearest_taxon"]
 
-    # Get ott, name, and lineage for the mrca
+    # Get ott and lineage for the mrca
     mrca_ott = taxon["ott_id"]
-    mcra_name = taxon["name"]
     mrca_info = OT.taxon_info(ott_id=mrca_ott,include_lineage=True)
     lineage = mrca_info.response_dict["lineage"]
 
@@ -472,6 +472,12 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
             pass
 
     out["taxid"] = taxid
+
+    # Detect whether this is microbial only
+    if lineage[-1]["name"] in ["Bacteria","Archaea"]:
+        out["is_microbial"] = True
+    else:
+        out["is_microbial"] = False
 
     return out
 
