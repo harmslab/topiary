@@ -1,0 +1,6 @@
+The master process runs on node  and on pid 5178
+Remaining commands: 0
+end of run
+Finished running commands. Total elasped time: 0s
+Load balance ratio: nan
+End of Multiraxml run
