@@ -1,5 +1,0 @@
-mouseBxxxx
-humanBxxxx
-ratBxxxxxx
-lemurBxxxx
--
