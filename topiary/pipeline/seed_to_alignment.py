@@ -169,11 +169,7 @@ def seed_to_alignment(seed_df,
         Topiary dataframe with aligned, quality-controlled sequences.
     """
 
-    force_species_aware = check.check_bool(force_species_aware,"force_species_aware")
-    force_not_species_aware = check.check_bool(force_not_species_aware,"force_not_species_aware")
-    if force_species_aware and force_not_species_aware:
-        err = "force_species_aware and force_not_species_aware cannot both be set to True\n"
-        raise ValueError(err)
+
 
     # Make sure the software stack is valid before doing anything
     installed.validate_stack([{"program":"blastp",
@@ -204,10 +200,33 @@ def seed_to_alignment(seed_df,
         rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
         out_dir = f"seed_to_alignment_{rand}"
 
-    step_counter = 0
-    expected_output = os.path.join(out_dir,f"{step_counter:02d}_{os.path.split(seed_df)[-1]}")
-    run_calc = _check_restart(expected_output,restart)
+    # --------------------------------------------------------------------------
+    # Figure out how to treat species awareness
 
+    force_species_aware = check.check_bool(force_species_aware,"force_species_aware")
+    force_not_species_aware = check.check_bool(force_not_species_aware,"force_not_species_aware")
+    if force_species_aware and force_not_species_aware:
+        err = "force_species_aware and force_not_species_aware cannot both be set to True\n"
+        raise ValueError(err)
+
+    # Decide how to treat species awareness
+    if force_species_aware:
+        species_aware = True
+    elif force_not_species_aware:
+        species_aware = False
+    else:
+        species_aware = None
+
+    # --------------------------------------------------------------------------
+    # Decide whether to create initial directory
+
+    step_counter = 0
+    if issubclass(type(seed_df),str):
+        base_name = os.path.split(seed_df)[-1]
+    else:
+        base_name = "initial-seed-dataframe"
+    expected_output = os.path.join(out_dir,f"{step_counter:02d}_{base_name}")
+    run_calc = _check_restart(expected_output,restart)
 
     if run_calc:
 
@@ -228,7 +247,7 @@ def seed_to_alignment(seed_df,
             os.mkdir(out_dir)
 
         # If the seed_df is a file, copy that into the output directory
-        if type(seed_df) is str:
+        if issubclass(type(seed_df),str):
 
             # Figure out filename we are going to copy to
             root = f"{step_counter:02d}_{os.path.split(seed_df)[-1]}"
@@ -255,9 +274,8 @@ def seed_to_alignment(seed_df,
 
     else:
         print(f"Loading existing file {expected_output}.")
-        df, key_species, paralog_patterns = topiary.io.read_seed(expected_output)
+        df, key_species, paralog_patterns, species_aware = topiary.io.read_seed(expected_output,keep_unresolvable=species_aware)
         seed_df = os.path.split(expected_output)[-1]
-
 
     # append paths to local blast resources
     if not blast_xml is None:
@@ -290,6 +308,7 @@ def seed_to_alignment(seed_df,
                   "local_blast_db":local_blast_db,
                   "blast_xml":blast_xml,
                   "move_mrca_up_by":move_mrca_up_by,
+                  "species_aware":species_aware,
                   "hitlist_size":hitlist_size,
                   "e_value_cutoff":e_value_cutoff,
                   "gapcosts":gapcosts,
@@ -302,13 +321,13 @@ def seed_to_alignment(seed_df,
         df = out[0]
         key_species = out[1]
         paralog_patterns = out[2]
+        species_aware = out[3]
 
         topiary.write_dataframe(df,expected_output)
 
     else:
         print(f"Loading existing file {expected_output}.")
         df = topiary.read_dataframe(expected_output)
-
 
     step_counter += 1
     expected_output = f"{step_counter:02d}_recip-blast-dataframe.csv"
@@ -358,25 +377,8 @@ def seed_to_alignment(seed_df,
 
 
     # --------------------------------------------------------------------------
-    # Decide how to do redundancy reduction
+    # Redundancy reduction
     
-    if force_species_aware:
-        species_tree_aware = True
-    elif force_not_species_aware:
-        species_tree_aware = False
-    else:
-
-        # Figure out if the default is to reconcile or not based on taxonomic 
-        # distribution of alignment. 
-        mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
-                                            move_up_by=100,
-                                            avoid_all_life=True)
-
-        if mrca["ott_name"] in ["Archaea","Bacteria"]:
-            species_tree_aware = False
-        else:
-            species_tree_aware = True
-
     step_counter += 1
     expected_output = f"{step_counter:02d}_shrunk-dataframe.csv"
     run_calc = _check_restart(expected_output,restart)
@@ -390,7 +392,7 @@ def seed_to_alignment(seed_df,
 
         kwargs = {"df":df,
                   "paralog_column":"recip_paralog",
-                  "species_tree_aware":species_tree_aware,
+                  "species_tree_aware":species_aware,
                   "seqs_per_column":seqs_per_column*(1 + worst_align_drop_fx),
                   "max_seq_number":max_seq_number*(1 + worst_align_drop_fx),
                   "redundancy_cutoff":redundancy_cutoff,

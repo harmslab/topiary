@@ -93,6 +93,7 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
         df = out[0]
         key_species = out[1]
         paralog_patterns = out[2]
+        species_aware = out[3]
 
         # check output dataframe
         assert len(df) == 8
@@ -127,6 +128,8 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
         for k in paralog_patterns:
             print(paralog_patterns[k].pattern)
             assert paralog_patterns[k].pattern == expected_patterns[k]
+
+        assert species_aware is True
 
     # csv
     df_file = seed_dataframes["good-seed-df.csv"]
@@ -173,7 +176,8 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
     bad_df = good_df.copy()
     bad_df.loc[:,"species"] = "not a species"
     with pytest.raises(ValueError):
-        read_seed(bad_df)
+        with pytest.warns():
+            read_seed(bad_df)
 
     # species that is findable but not resolvable
     bad_df = good_df.copy()
@@ -186,12 +190,23 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
     with pytest.raises(ValueError):
         read_seed(bad_df)
 
-    # Read in a collection of user-generated dataframes
+    # Read in a collection of user-generated dataframes, checking for expected
+    # outputs
+    
+    is_species_aware = {'snase.xlsx':False,
+                        'rnaseh.xlsx':False,
+                        'chs.xlsx':True,
+                        'iapp-cgrp.xlsx':True,
+                        'gproteins.xlsx':False,
+                        'ly86ly96.xlsx':True,
+                        'zo1.xlsx': True,
+                        's100a5-a6.xlsx':True}
+
     for s in user_seed_dataframes:
 
         print(f"Testing read of {s}")
 
-        df, key_species, paralog_patterns = topiary.io.read_seed(user_seed_dataframes[s])
+        df, key_species, paralog_patterns, species_aware = topiary.io.read_seed(user_seed_dataframes[s])
         check_read = pd.read_excel(user_seed_dataframes[s])
         check_read.columns = [c.lower().strip() for c in check_read.columns]
 
@@ -208,6 +223,12 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
         assert np.array_equal(df.key_species,np.ones(len(df),dtype=bool))
         assert np.array_equal(df.always_keep,np.ones(len(df),dtype=bool))
         assert len(df.uid) == len(np.unique(df.uid))
+
+        # Make sure the code is correctly identifying whether to treat this 
+        # dataset as species aware
+        assert species_aware is is_species_aware[s]
+
+
 
 def test_df_from_seed():
 

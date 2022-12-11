@@ -12,10 +12,9 @@ from topiary.ncbi.blast import read_blast_xml
 import numpy as np
 import pandas as pd
 
-import re, itertools
+import re
 from string import ascii_lowercase, digits
-
-import os
+import warnings
 
 compile_err = \
 """
@@ -304,7 +303,8 @@ def _build_alias_regex(alias_dict,spacers=[" ","-","_","."]):
     return full_regex
 
 
-def read_seed(df):
+def read_seed(df,
+              species_aware=None):
     """
     Read a seed data frame and extract alias patterns and key species.
 
@@ -313,6 +313,11 @@ def read_seed(df):
     df: pandas.DataFrame or str
         seed dataframe containing seed sequences to launch the analysis. df can
         be a pandas dataframe or a string pointing to a spreadsheet file.
+    species_aware : bool or None, default=None
+        Whether or not read seed in a species-aware fashion. If True, require
+        all species be resolvable in the seed dataset. If False, do not require
+        resolvable. If None, choose automatically. (If microbial, set to False;
+        if not microbial, set to True). 
 
     Returns
     -------
@@ -321,7 +326,9 @@ def read_seed(df):
     key_species : numpy.array
         list if key species to keep during the analysis
     paralog_patterns : list
-        list of compiled regular expressions to use to try to match paralogs.
+        list of compiled regular expressions to use to try to match paralogs
+    species_aware : bool
+        whether or not this should be treated as a species aware calculation
 
     Notes
     -----
@@ -348,7 +355,7 @@ def read_seed(df):
 
     if type(df) is not type(pd.DataFrame()):
 
-        if type(df) is str:
+        if issubclass(type(df),str):
             extension = df.split(".")[-1].strip().lower()
             if extension in ["xls","xlsx"]:
                 df = pd.read_excel(df)
@@ -378,45 +385,76 @@ def read_seed(df):
         # Strip extra leading/trailing white space
         df.loc[:,c] = df.loc[:,c].str.strip()
 
+    # -----------------------------------------------------------------------
+    # Get species ott
 
-    # Make sure all input species are found in the OTT database
     bad_species = []
     ott_list, species_list, _ = species_to_ott(np.unique(df.loc[:,"species"]))
     for i in range(len(species_list)):
         if ott_list[i] is None:
             bad_species.append(species_list[i])
 
-    if len(bad_species) > 0:
-        err = "\nNot all input species were found in the Open Tree of Life\n"
-        err += "database. To troubleshoot the problem, you can visit\n"
-        err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
-        err += "the following species manually:\n\n"
-        for b in bad_species:
-            err += f"    '{b}'\n"
-        raise ValueError(err)
+    # -------------------------------------------------------------------------
+    # Figure out whether to keep_unresolvable if not specified in function call
 
-    # Make sure all input species can be resolved on the OTT synthetic tree
-    resolved = ott_to_resolvable(ott_list)
-    unresolvable_species = []
-    for i in range(len(resolved)):
-        if not resolved[i]:
-            unresolvable_species.append((species_list[i],ott_list[i]))
+    if species_aware is None:
 
-    if len(unresolvable_species) > 0:
-        err = "\nNot all input species can be resolved on the latest Open Tree of\n"
-        err += "Life synthetic tree. To troubleshoot the problem, you can visit\n"
-        err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
-        err += "the OTT accession numbers of these species:\n"
+        if len(bad_species) > 0:
+            w = "Warning. Topiary could not find all species in the input dataframe\n"
+            w += "on the Open Tree of Life database. Topiary will determine whether\n"
+            w += "this is a purely microbial protein or not based on the species\n"
+            w += "that could be identified.\n"
+            w += "This unrecognized species are:\n\n"
+            for b in bad_species:
+                w += f"    '{b}'\n"
+            warnings.warn(w)
 
-        for b in unresolvable_species:
-            err += f"    '{b[0]}' (OTT '{b[1]}')\n"
-        raise ValueError(err)
+        # Figure out if the default is to reconcile or not based on taxonomic 
+        # distribution of alignment. 
+        mrca = topiary.opentree.ott_to_mrca(ott_list=ott_list,
+                                            avoid_all_life=True)
+
+        if mrca["is_microbial"]:
+            species_aware = False
+        else:
+            species_aware = True
+
+    # -------------------------------------------------------------------------
+    # If we must resolve all species, do some sanity checks
+
+    if species_aware:
+
+        if len(bad_species) > 0:
+            err = "\nNot all input species were found in the Open Tree of Life\n"
+            err += "database. To troubleshoot the problem, you can visit\n"
+            err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
+            err += "the following species manually:\n\n"
+            for b in bad_species:
+                err += f"    '{b}'\n"
+            raise ValueError(err)
+
+        # Make sure all input species can be resolved on the OTT synthetic tree
+        resolved = ott_to_resolvable(ott_list)
+        unresolvable_species = []
+        for i in range(len(resolved)):
+            if not resolved[i]:
+                unresolvable_species.append((species_list[i],ott_list[i]))
+
+        if len(unresolvable_species) > 0:
+            err = "\nNot all input species can be resolved on the latest Open Tree of\n"
+            err += "Life synthetic tree. To troubleshoot the problem, you can visit\n"
+            err += "https://tree.opentreeoflife.org/taxonomy/browse and search for\n"
+            err += "the OTT accession numbers of these species:\n"
+
+            for b in unresolvable_species:
+                err += f"    '{b[0]}' (OTT '{b[1]}')\n"
+            raise ValueError(err)
 
     # -----------------------------------------------------------------------
     # Get key_species
 
-    # Look for key_species. If present, make sure it is bool. If not, add it
-    # as all True
+    # Look for key_species column. If present, make sure it is bool. If not, add
+    # it and set all to True
     if "key_species" in df.columns:
         df.loc[:,"key_species"] = check.column_to_bool(df.loc[:,"key_species"],
                                                        "key_species")
@@ -470,7 +508,7 @@ def read_seed(df):
 
     df = check.check_topiary_dataframe(df)
 
-    return df, key_species, paralog_patterns
+    return df, key_species, paralog_patterns, species_aware
 
 
 def df_from_seed(seed_df,
@@ -478,6 +516,7 @@ def df_from_seed(seed_df,
                  local_blast_db=None,
                  blast_xml=None,
                  move_mrca_up_by=2,
+                 species_aware=None,
                  hitlist_size=5000,
                  e_value_cutoff=0.001,
                  gapcosts=(11,1),
@@ -515,6 +554,11 @@ def df_from_seed(seed_df,
         the seed dataframe consists entirely of Bacterial or Archaeal sequences,
         the mrca will be set to the appropriate domain, not a local species
         ancestors.
+    species_aware : bool or None, optional
+        If True, do analysis in species-aware fashion; if False, ignore species; 
+        if None, infer this from the dataset. (Microbial datasets will be False;
+        non-microbial datasets will be True.)
+
     hitlist_size : int, default=5000
         download only the top hitlist_size hits
     e_value_cutoff : float, default=0.001
@@ -538,6 +582,12 @@ def df_from_seed(seed_df,
     -------
     topiary_dataframe : pandas.DataFrame
         topiary dataframe with sequences found from seed sequence.
+    key_species : numpy.array
+        list if key species to keep during the analysis
+    paralog_patterns : list
+        list of compiled regular expressions to use to try to match paralogs
+    species_aware : bool
+        whether or not this should be treated as a species aware calculation
 
     Notes
     -----
@@ -547,7 +597,8 @@ def df_from_seed(seed_df,
     """
 
     # Load the seed dataframe
-    seed_df, key_species, paralog_patterns = topiary.io.read_seed(seed_df)
+    seed_df, key_species, paralog_patterns, species_aware = topiary.io.read_seed(seed_df,
+                                                                                 species_aware=species_aware)
 
     # Validate proteome
     no_proteome_key = []
@@ -557,6 +608,7 @@ def df_from_seed(seed_df,
             no_proteome_key.append((k,err))
 
     if len(no_proteome_key) > 0:
+
         err = "\nCould not download proteomes from the NCBI assemblies database\n"
         err += "for all key species in the seed dataframe. Proteomes are required\n"
         err += "for reciprocal BLAST. Please check the spelling of your species\n"
@@ -684,10 +736,14 @@ def df_from_seed(seed_df,
     print("Getting OTT species ids for all species.",flush=True)
 
     # Get ott id for all sequences, setting False for those that can't be
-    # found/resolved
-    df = topiary.get_df_ott(df,verbose=False)
+    # found/resolved (unless we're not species aware)
+    if species_aware: 
+        keep_anyway = False
+    else:
+        keep_anyway = True
+    df = topiary.get_df_ott(df,verbose=False,keep_anyway=keep_anyway)
 
     # Create nicknames for sequences in dataframe
     df = topiary.create_nicknames(df,paralog_patterns)
 
-    return df, key_species, paralog_patterns
+    return df, key_species, paralog_patterns, species_aware

@@ -12,7 +12,7 @@ import numpy as np
 
 import re, copy
 
-def get_df_ott(df,verbose=True):
+def get_df_ott(df,verbose=True,keep_anyway=False):
     """
     Return a copy of df with an ott column holding open tree of life
     names for each species. It also adds a "resolvable" column indicating
@@ -25,6 +25,9 @@ def get_df_ott(df,verbose=True):
         dataframe that has an ott column with Open Tree of Life taxon ids
     verbose : bool, default=True
         whether or not to print out unresolvable taxa, etc.
+    keep_anyway : bool, default=False
+        Do not set keep = False for species that cannot be found or resolved on
+        the OTT.
 
     Returns
     -------
@@ -36,7 +39,9 @@ def get_df_ott(df,verbose=True):
         whether the species can be resolved on the synthetic tree. Rows with
         species that have no ott and/or are not resolvable have keep set to
         False. This will *not* respect the always_keep column, and will warn
-        the user it is doing so.
+        the user it is doing so. If keep_anyway is set to True, this function
+        will populate the columns as described above, but will not set keep 
+        to False for bad values. 
     """
 
     # Make sure this is a topiary dataframe
@@ -90,24 +95,29 @@ def get_df_ott(df,verbose=True):
 
         bad_drop = np.logical_and(always_keep,bad)
         bad_rows = local_df.loc[bad_drop,:]
-        if len(bad_rows) > 0:
-            w = "Not all entries with always_keep == True are resolvable on\n"
-            w += "the opentreeoflife synthetic tree. The following rows will\n"
-            w += "have always_keep and keep both set to False.\n"
-            for idx in bad_rows.index:
-                uid = bad_rows.loc[idx,"uid"]
-                species = bad_rows.loc[idx,"species"]
-                ott = bad_rows.loc[idx,"ott"]
-                w += f"    {uid}: {species} ({ott})\n"
-            print(w)
 
-        local_df.loc[bad_drop,"always_keep"] = False
+        # Don't do this check if we are keeping regardless of whether resolvable
+        if not keep_anyway:
+
+            if len(bad_rows) > 0:
+                w = "Not all entries with always_keep == True are resolvable on\n"
+                w += "the opentreeoflife synthetic tree. The following rows will\n"
+                w += "have always_keep and keep both set to False.\n"
+                for idx in bad_rows.index:
+                    uid = bad_rows.loc[idx,"uid"]
+                    species = bad_rows.loc[idx,"species"]
+                    ott = bad_rows.loc[idx,"ott"]
+                    w += f"    {uid}: {species} ({ott})\n"
+                print(w)
+
+            local_df.loc[bad_drop,"always_keep"] = False
 
     except KeyError:
         pass
 
     # Set taxa that could not be resolved to False
-    local_df.loc[bad,"keep"] = False
+    if not keep_anyway:
+        local_df.loc[bad,"keep"] = False
 
     # Print warning data for user -- species we could not find OTT for
     if len(unrecognized_name) != 0:
