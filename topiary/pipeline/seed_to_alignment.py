@@ -274,7 +274,7 @@ def seed_to_alignment(seed_df,
 
     else:
         print(f"Loading existing file {expected_output}.")
-        df, key_species, paralog_patterns, species_aware = topiary.io.read_seed(expected_output,keep_unresolvable=species_aware)
+        df, key_species, paralog_patterns, species_aware = topiary.io.read_seed(expected_output,species_aware=species_aware)
         seed_df = os.path.split(expected_output)[-1]
 
     # append paths to local blast resources
@@ -345,7 +345,13 @@ def seed_to_alignment(seed_df,
 
             proteome_list = []
             for k in key_species:
-                proteome_list.append(topiary.ncbi.get_proteome(species=k))
+                print(f"Downloading {k} proteome")
+                
+                # Download proteomes by taxid, not species name because taxid
+                # resolver is unambiguous. Species search can lead to no 
+                # reference proteome for some species (e.g. E. coli)
+                this_taxid = topiary.ncbi.get_taxid(k)
+                proteome_list.append(topiary.ncbi.get_proteome(taxid=this_taxid))
                 if proteome_list[-1] is None:
                     err = f"\nCould not download proteome for {k} despite multiple\n"
                     err += "attempts. This could be because of high server load\n"
