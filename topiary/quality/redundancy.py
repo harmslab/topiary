@@ -497,10 +497,11 @@ def remove_redundancy(df,
 
 def find_redundancy_cutoff(df,
                            target_seq_number,
-                           sample_fx=0.10,
+                           sample_fx=0.50,
                            max_cutoff=0.99,
-                           min_cutoff=0.35,
+                           min_cutoff=0.25,
                            max_iterations=20,
+                           step_bias=0.75,
                            target_length_cutoff=0.25,
                            discard_key=False,
                            num_threads=-1):
@@ -524,6 +525,10 @@ def find_redundancy_cutoff(df,
         than this after optimization.
     max_iterations : int, default=20
         when refining, do no more than max_iterations of optimization. 
+    step_bias : float, default=0.75
+        when iterating through cutoffs, bias towards higher value (> 0.5), 
+        lower value (< 0.5), or take exact average of two cutoffs (0.5). Must
+        be between 0 and 1. 
     target_length_cutoff : float, default=0.25
         Give a higher quality to any sequence whose length is within
         target_length_cutoff pct of the median key_species sequence length. To
@@ -547,19 +552,19 @@ def find_redundancy_cutoff(df,
                                         minimum_allowed=1)
 
     sample_fx = check.check_float(sample_fx,
-                                "sample_fx",
-                                minimum_allowed=0,
-                                maximum_allowed=1)
+                                  "sample_fx",
+                                  minimum_allowed=0,
+                                  maximum_allowed=1)
 
     min_cutoff = check.check_float(min_cutoff,
-                                "min_cutoff",
-                                minimum_allowed=0.0,
-                                maximum_allowed=1.0)
+                                   "min_cutoff",
+                                   minimum_allowed=0.0,
+                                   maximum_allowed=1.0)
 
     max_cutoff = check.check_float(max_cutoff,
-                                "max_cutoff",
-                                minimum_allowed=0.0,
-                                maximum_allowed=1.0)
+                                   "max_cutoff",
+                                   minimum_allowed=0.0,
+                                   maximum_allowed=1.0)
 
     if min_cutoff > max_cutoff:
         err = "min_cutoff must be less than max_cutoff\n"
@@ -568,11 +573,18 @@ def find_redundancy_cutoff(df,
     if min_cutoff == max_cutoff:
         return max_cutoff
 
+    step_bias = check.check_float(step_bias,
+                                  "step_bias",
+                                  minimum_allowed=0.0,
+                                  maximum_allowed=1.0,
+                                  minimum_inclusive=False,
+                                  maximum_inclusive=False)
+
     discard_key = check.check_bool(discard_key,"discard_key")
     target_length_cutoff = check.check_float(target_length_cutoff,
-                                            "target_length_cutoff",
-                                            minimum_allowed=0.0,
-                                            maximum_allowed=1.0)
+                                             "target_length_cutoff",
+                                             minimum_allowed=0.0,
+                                             maximum_allowed=1.0)
 
     # Grab random subset of the dataframe on which we are going to do 
     # redundancy analysis. 
@@ -585,7 +597,6 @@ def find_redundancy_cutoff(df,
 
     # Figure out our target number of sequences for the reduced dataset 
     scaled_target_seq_number = int(np.round(sample_fx*target_seq_number,0))
-    
     
     pbar = tqdm(total=(2 + max_iterations))
     
@@ -644,7 +655,7 @@ def find_redundancy_cutoff(df,
 
                 if pairs[i-1][0] <= 0 and pairs[i][0] >= 0:
 
-                    new_cutoff = (pairs[i-1][1] + pairs[i][1])/2
+                    new_cutoff = (pairs[i-1][1] - pairs[i][1])*step_bias + pairs[i][1]
 
                     this_df = remove_redundancy(df=df.copy(),
                                                 cutoff=new_cutoff,

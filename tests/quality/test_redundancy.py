@@ -279,3 +279,6 @@ def test_remove_redundancy(test_dataframes):
     # Cut basically all -- only one should survive
     out_df = remove_redundancy(df=df,cutoff=0.2)
     assert np.sum(out_df.keep) == 1
+
+def test_find_redundancy_cutoff():
+    pass

@@ -286,24 +286,28 @@ def test_ott_to_mrca():
     assert out["ott_name"] == 'Euteleostomi'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 117571
+    assert out["is_microbial"] == False
 
     # Move up four ranks from Euteleostomi
     out = ott_to_mrca(vert,move_up_by=4)
     assert out["ott_name"] == 'Craniata'
     assert out["ott_rank"] == 'subphylum'
     assert out["taxid"] == 89593
+    assert out["is_microbial"] == False
 
     # Move waaaaay up but do not allow all life (end up on Eukaryota)
     out = ott_to_mrca(vert,move_up_by=10000)
     assert out["ott_name"] == 'Eukaryota'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2759
+    assert out["is_microbial"] == False
 
     # Move waaaaay up, allowing all life
     out = ott_to_mrca(vert,avoid_all_life=False,move_up_by=10000)
     assert out["ott_name"] == 'life'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 1
+    assert out["is_microbial"] == False
 
     # Try to avoid all life, but we can't because inputs are from all three
     # domains.
@@ -311,62 +315,74 @@ def test_ott_to_mrca():
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
+    assert out["is_microbial"] == False
 
     # Spot check various taxonomic groups
     out = ott_to_mrca(amniotes)
     assert out["ott_name"] == 'Amniota'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 32524
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(tetrapods)
     assert out["ott_name"] == 'Tetrapoda'
     assert out["ott_rank"] == 'superclass'
     assert out["taxid"] == 32523
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(placental_mammals)
     assert out["ott_name"] == 'Euarchontoglires'
     assert out["ott_rank"] == 'superorder'
     assert out["taxid"] == 314146
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(therian_mammals)
     assert out["ott_name"] == 'Theria'
     assert out["ott_rank"] == 'subclass'
     assert out["taxid"] == 32525
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(human_yeast)
     assert out["ott_name"] == 'Opisthokonta'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 33154
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(plants)
     assert out["ott_name"] == 'Spermatophyta'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 58024
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(eukaryotes)
     assert out["ott_name"] == 'Eukaryota'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2759
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(archaea)
     assert out["ott_name"] == 'Archaea'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2157
+    assert out["is_microbial"] == True
 
     out = ott_to_mrca(bacteria)
     assert out["ott_name"] == 'Bacteria'
     assert out["ott_rank"] == 'domain'
     assert out["taxid"] == 2
+    assert out["is_microbial"] == True
 
     out = ott_to_mrca(not_bacteria)
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
+    assert out["is_microbial"] == False
 
     out = ott_to_mrca(all_life)
     assert out["ott_name"] == 'cellular organisms'
     assert out["ott_rank"] == 'no rank'
     assert out["taxid"] == 131567
+    assert out["is_microbial"] == False
 
     # Make sure it checks for inputs correctly
     bad_inputs = [None,1,list,int,str,"SPECIES"]
@@ -402,6 +418,7 @@ def test_ott_to_mrca():
     assert out["ott_name"] == 'Euarchontoglires'
     assert out["ott_rank"] == 'superorder'
     assert out["taxid"] == 314146
+    assert out["is_microbial"] == False
 
 def test_tree_to_taxa_order():
 

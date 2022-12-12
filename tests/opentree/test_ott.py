@@ -10,6 +10,7 @@ import re
 
 def test_get_df_ott(test_dataframes):
 
+
     df = test_dataframes["good-df"]
     out_df = get_df_ott(df)
     assert out_df is not df
@@ -44,3 +45,15 @@ def test_get_df_ott(test_dataframes):
     tmp_df = df.drop(columns=["species","ott"])
     with pytest.raises(ValueError):
         out_df = get_df_ott(tmp_df)
+
+    # make sure that it handles all bad species names gracefully, but keeps the
+    # bad ott if we request it. 
+    tmp_df = df.drop(columns="ott")
+    tmp_df.loc[:,"species"] = "Not a species"
+    out_df = get_df_ott(tmp_df,keep_anyway=True)
+    assert np.sum(pd.isnull(out_df.loc[:,"ott"])) == len(tmp_df)
+    assert np.sum(out_df.loc[:,"species"] == "Not a species") == len(tmp_df)
+    expected_keep = np.ones(len(out_df),dtype=bool)
+    assert np.array_equal(expected_keep,out_df.keep)
+
+

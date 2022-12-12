@@ -6,6 +6,7 @@ from topiary._private import check
 from topiary._private import interface
 from topiary.quality.taxonomic import get_merge_blocks
 from topiary.quality.redundancy import remove_redundancy
+from topiary.quality.redundancy import find_redundancy_cutoff
 from topiary.quality.alignment import score_alignment
 
 import numpy as np
@@ -471,12 +472,19 @@ def shrink_dataset(df,
 
     print("Lowering redundancy based on sequence similarity.",flush=True)
 
+    if not species_tree_aware:
+        print(f"Finding redundancy cutoff to yield ~{target_seq_number} sequences")
+        this_redundancy_cutoff = find_redundancy_cutoff(df,int(np.round(1.15*target_seq_number,0)))
+        print(f"Found cutoff of {this_redundancy_cutoff:.3f}")
+    else:
+        this_redundancy_cutoff = redundancy_cutoff
+
     df = shrink_redundant(df,
                             paralog_column=paralog_column,
                             species_tree_aware=species_tree_aware,
                             weighted_paralog_split=False,
                             merge_block_size=merge_block_size,
-                            redundancy_cutoff=redundancy_cutoff)
+                            redundancy_cutoff=this_redundancy_cutoff)
 
     # Sanity check -- make sure something is left.
     if np.sum(df.keep) == 0:
@@ -485,9 +493,6 @@ def shrink_dataset(df,
 
     current_keep = np.sum(df.keep)
     print(f"Number of sequences: {current_keep}",flush=True)
-
-  
-
 
     # --------------------------------------------------------------------------
     # Select best aligners within merge blocks

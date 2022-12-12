@@ -155,12 +155,12 @@ def alignment_to_ancestors(df,
     else:
 
         # Figure out if the default is to reconcile or not based on taxonomic 
-        # distribution of alignment. 
+        # distribution of alignment. If only Bacteria or only Archaea, do not
+        # try to reconcile. 
         mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
-                                            move_up_by=100,
                                             avoid_all_life=True)
 
-        if mrca["ott_name"] in ["Archaea","Bacteria"]:
+        if mrca["is_microbial"]:
             do_reconcile = False
         else:
             do_reconcile = True

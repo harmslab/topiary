@@ -370,7 +370,11 @@ def ott_to_resolvable(ott_list=None,species_list=None):
     return resolvable
 
 
-def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True):
+def ott_to_mrca(ott_list=None,
+                species_list=None,
+                move_up_by=0,
+                avoid_all_life=True,
+                microbial_to_domain=True):
     """
     Get the most recent common ancestor given a list of ott. Unrecognized ott
     are dropped with a warning.
@@ -388,11 +392,15 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     avoid_all_life : bool, default=True
         if possible, avoid the jump to all cellular organisms. This takes
         precedence over move_up_by.
+    microbial_to_domain : bool, default=True
+        if all ott are from Bacteria or all ott are from Archaea, return the 
+        domain as the mrca. 
 
     Returns
     -------
     out : dict
-        dictionary with keys ott_name, ott_id, ott_rank, lineage, and taxid.
+        dictionary with keys ott_name, ott_id, ott_rank, lineage, taxid, and
+        is_microbial
     """
 
     ott_list = _validate_ott_or_species(ott_list,species_list)
@@ -427,9 +435,8 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     except KeyError:
         taxon = synth_mrca.response_dict["nearest_taxon"]
 
-    # Get ott, name, and lineage for the mrca
+    # Get ott and lineage for the mrca
     mrca_ott = taxon["ott_id"]
-    mcra_name = taxon["name"]
     mrca_info = OT.taxon_info(ott_id=mrca_ott,include_lineage=True)
     lineage = mrca_info.response_dict["lineage"]
 
@@ -450,6 +457,12 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
     # Figure out how much to move up by given what's in lineage
     if move_up_by > len(lineage) - 1:
         move_up_by = len(lineage) - 1
+
+    # If all Bacterial or Archaea and microbial_to_domain was passed, set the
+    # mrca to the domain. 
+    if microbial_to_domain:
+        if lineage[-1]["name"] in ["Bacteria","Archaea"]:
+            move_up_by = -1
 
     anc = lineage[move_up_by]
 
@@ -472,6 +485,13 @@ def ott_to_mrca(ott_list=None,species_list=None,move_up_by=0,avoid_all_life=True
             pass
 
     out["taxid"] = taxid
+
+    # Detect whether this is microbial only (regardless of microbial_to_domain)
+    # setting
+    if lineage[-1]["name"] in ["Bacteria","Archaea"]:
+        out["is_microbial"] = True
+    else:
+        out["is_microbial"] = False
 
     return out
 
