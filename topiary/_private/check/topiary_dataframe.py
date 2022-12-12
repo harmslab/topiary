@@ -247,7 +247,7 @@ def check_topiary_dataframe(df):
                 continue
 
             # If there is an ott that is not a null, make sure it is sane and
-            # reasable.
+            # readable.
             failed = False
             if issubclass(type(o),str) and o[:3] == "ott":
                 try:

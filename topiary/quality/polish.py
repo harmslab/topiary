@@ -132,8 +132,6 @@ def polish_alignment(df,
     # Look only at kept sequences
     df = full_df.loc[full_df.keep,:]
 
-    print(np.sum(full_df.keep))
-
     # Get worst fx_sparse and sparse_run sequences
     top_fx_sparse = _get_cutoff(df.fx_in_sparse,pct=fx_sparse_percentile)
     top_sparse_run = _get_cutoff(df.sparse_run_length,pct=sparse_run_percentile)
@@ -145,11 +143,6 @@ def polish_alignment(df,
 
     to_drop_1 = np.logical_and(df.fx_in_sparse >= top_fx_sparse,
                                df.sparse_run_length >= top_sparse_run)
-
-    print(fx_sparse_percentile,top_sparse_run)
-    print(np.sum(df.fx_in_sparse >= top_fx_sparse))
-    print(np.sum(df.sparse_run_length >= top_sparse_run))
-    print(np.sum(to_drop_1))
 
     # Get worst fx_missing and labeled partial
     top_fx_missing = _get_cutoff(df.fx_missing_dense,pct=fx_missing_percentile)
