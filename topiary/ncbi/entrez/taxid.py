@@ -26,8 +26,8 @@ def get_taxid(species_list):
     # Make sure species list is sane, each species is unique, and the list
     # is sorted
     species_list = check.check_iter(species_list,
-                                                "species_list",
-                                                required_value_type=str)
+                                    "species_list",
+                                    required_value_type=str)
     return_singleton = False
     if type(species_list) is str:
         species_list = [species_list]

@@ -13,26 +13,34 @@ from topiary._private import check
 from topiary._private.mpi import check_mpi_configuration
 from topiary.reports import create_report
 
+import pandas as pd
+import numpy as np
+
 import os
-import random
-import string
 import shutil
 
 def _check_restart(output,restart):
 
-    run_calc = True
     if restart:
 
-        # See if json file is there. If so, the run is done.
-        json_file = os.path.join(output,"run_parameters.json")
-        if os.path.isfile(json_file):
-            run_calc = False
+        # Try to read previous run
+        try:
+            sv = topiary._private.Supervisor(output)
+
+        # If that crashes (because dir not found), we need to run
+        except FileNotFoundError:
+            return True
+
+        # If the run completed, we don't need to run
+        if sv.run_parameters["calc_status"] == "complete":
+            return False
         else:
             # Nuke partial directory
             if os.path.isdir(output):
                 shutil.rmtree(output)
 
-    return run_calc
+
+    return True
 
 def alignment_to_ancestors(df,
                            out_dir=None,
@@ -154,16 +162,23 @@ def alignment_to_ancestors(df,
         do_reconcile = False
     else:
 
-        # Figure out if the default is to reconcile or not based on taxonomic 
-        # distribution of alignment. If only Bacteria or only Archaea, do not
-        # try to reconcile. 
-        mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
-                                            avoid_all_life=True)
-
-        if mrca["is_microbial"]:
+        if np.sum(pd.isnull(df.ott)) > 1:
+            print("\nNot all sequences have ott. No gene/species tree reconciliation will be performed.\n",flush=True)
             do_reconcile = False
         else:
-            do_reconcile = True
+
+            # Figure out if the default is to reconcile or not based on taxonomic 
+            # distribution of alignment. If only Bacteria or only Archaea, do not
+            # try to reconcile. 
+            mrca = topiary.opentree.ott_to_mrca(ott_list=list(df.ott),
+                                                avoid_all_life=True)
+
+            if mrca["is_microbial"]:
+                print("\nMicrobial dataset detected. No gene/species tree reconciliation will be performed",flush=True)
+                do_reconcile = False
+            else:
+                print("\nNon-microbial dataset detected. Gene/species tree reconciliation will be performed",flush=True)
+                do_reconcile = True
 
     # --------------------------------------------------------------------------
     # Validate calculation arguments
@@ -241,8 +256,14 @@ def alignment_to_ancestors(df,
         if restart:
             err = "To use restart, you must specify an out_dir.\n"
             raise ValueError(err)
-        rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
-        out_dir = f"alignment_to_ancestors_{rand}"
+
+        # Make a directory called alignment-to-ancestors_XXX where XXX is the
+        # first number that does not cause us to overwrite an existing directory
+        dir_counter = 1
+        out_dir = "alignment-to-ancestors"
+        while os.path.exists(out_dir):
+            out_dir = f"alignment-to-ancestors_{dir_counter:03d}"
+            dir_counter += 1
 
     # Make output directory
     if not os.path.exists(out_dir):
@@ -272,6 +293,9 @@ def alignment_to_ancestors(df,
     current_dir = os.getcwd()
     os.chdir(out_dir)
 
+    # --------------------------------------------------------------------------
+    # Find model
+
     # This will count step we're on
     counter = 0
 
@@ -291,9 +315,12 @@ def alignment_to_ancestors(df,
                                 raxml_binary=raxml_binary)
     counter += 1
 
+    # --------------------------------------------------------------------------
+    # Generate ML gene tree
+
     # Generate the maximum likelihood tree without bootstraps
     prev_calculation = output
-    output = f"{counter:02d}_ml-tree"
+    output = f"{counter:02d}_gene-tree"
 
     run_calc = _check_restart(output,restart)
     if run_calc:
@@ -304,12 +331,29 @@ def alignment_to_ancestors(df,
                                  bootstrap=False)
     counter += 1
 
+    # --------------------------------------------------------------------------
+    # Generate gene tree ancestors
+
+    prev_calculation = output
+    output = f"{counter:02d}_gene-tree-ancestors"
+
+    run_calc = _check_restart(output,restart)
+    if run_calc:
+        topiary.generate_ancestors(prev_calculation=prev_calculation,
+                                   calc_dir=output,
+                                   num_threads=num_threads,
+                                   alt_cutoff=alt_cutoff)
+    counter += 1
+
+    # --------------------------------------------------------------------------
+    # Reconcile, if requested, and generate ancestors on the reconciled tree
+
     # If reconciling...
     if do_reconcile:
 
         # Reconcile without bootstrap.
         prev_calculation = output
-        output = f"{counter:02d}_reconciliation"
+        output = f"{counter:02d}_reconciled-tree"
         run_calc = _check_restart(output,restart)
         if run_calc:
             topiary.reconcile(prev_calculation=prev_calculation,
@@ -320,23 +364,25 @@ def alignment_to_ancestors(df,
                               bootstrap=False)
         counter += 1
 
-    # Generate ancestors
-    prev_calculation = output
-    output = f"{counter:02d}_ancestors"
-    run_calc = _check_restart(output,restart)
-    if run_calc:
-        topiary.generate_ancestors(prev_calculation=prev_calculation,
-                                   calc_dir=output,
-                                   num_threads=num_threads,
-                                   alt_cutoff=alt_cutoff)
-    counter += 1
+        # Generate ancestors
+        prev_calculation = output
+        output = f"{counter:02d}_reconciled-tree-ancestors"
+        run_calc = _check_restart(output,restart)
+        if run_calc:
+            topiary.generate_ancestors(prev_calculation=prev_calculation,
+                                       calc_dir=output,
+                                       num_threads=num_threads,
+                                       alt_cutoff=alt_cutoff)
+        counter += 1
 
-    # If we're doing bootstrap...
+    # --------------------------------------------------------------------------
+    # Generate bootstrap replicates 
+
     if do_bootstrap:
 
         # Generate bootstrap replicates for the tree
         prev_calculation = output
-        output = f"{counter:02d}_bootstraps"
+        output = f"{counter:02d}_gene-tree-bootstraps"
         run_calc = _check_restart(output,restart)
         if run_calc:
             topiary.generate_bootstraps(prev_calculation=prev_calculation,

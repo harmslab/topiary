@@ -7,6 +7,7 @@ import topiary
 from topiary._private import Supervisor
 
 from topiary.draw import plot_ancestor_data
+from topiary.io.tree import load_trees
 
 from topiary.reports.elements import create_output_directory
 from topiary.reports.elements import canvas_to_html
@@ -174,7 +175,10 @@ def _create_ancestor_card(anc_dict,
                                                     "aria-expanded":"true",
                                                     "aria-controls":f"collapse{anc_id}"})
         anc_out.append(start)
-        anc_out.append(f"<h5 id=\"{anc_id}\">{a}: {taxonomic} {paralog_call}</h5>")
+        if taxonomic is not None:
+            anc_out.append(f"<h5 id=\"{anc_id}\">{a}: {taxonomic} {paralog_call}</h5>")
+        else:
+            anc_out.append(f"<h5 id=\"{anc_id}\">{a}: {paralog_call}</h5>")
         anc_out.append(end)
         anc_out.append("</div>")
 
@@ -332,8 +336,7 @@ def create_report(calculation_directory,
     
     # Get information about ancestors (pp support, evolutionary event, 
     # bs_support, etc.) Stick into anc_dict
-    T = topiary.draw.core.load_trees(supervisor.output_dir,
-                                     prefix=supervisor.tree_prefix)
+    T = load_trees(supervisor.output_dir,prefix=supervisor.tree_prefix)
 
     if "recip_paralog" in supervisor.df.columns:
         p_column = "recip_paralog"
@@ -365,8 +368,11 @@ def create_report(calculation_directory,
                 descendant_df = supervisor.df.loc[mask,:]
 
                 # Get name of taxonomic grouping for the ancestors
-                mrca = topiary.opentree.ott_to_mrca(ott_list=descendant_df.ott)
-                anc_dict[anc_name]["taxonomic_dist"] = mrca["ott_name"]
+                if supervisor.tree_prefix == "reconciled":
+                    mrca = topiary.opentree.ott_to_mrca(ott_list=descendant_df.ott)
+                    anc_dict[anc_name]["taxonomic_dist"] = mrca["ott_name"]
+                else:
+                    anc_dict[anc_name]["taxonomic_dist"] = None
 
                 # Get paralog descendant percentages
                 paralogs = np.unique(descendant_df.loc[:,p_column])
@@ -437,8 +443,13 @@ def create_report(calculation_directory,
     paralogs = np.array(np.unique(paralogs))
     paralogs.sort()
     num_paralogs = len(paralogs)
-    mrca = topiary.opentree.ott_to_mrca(ott_list=np.unique(this_df.ott))
-    taxonomic_distribution = mrca["ott_name"]
+    
+    if np.sum(pd.isnull(this_df.ott)) == 0:
+        ott_list = np.unique(this_df.ott)
+        mrca = topiary.opentree.ott_to_mrca(ott_list=ott_list)
+        taxonomic_distribution = mrca["ott_name"]
+    else:
+        taxonomic_distribution = None
 
     input_df = pd.DataFrame({"name":["Number of sequences",
                                      "Number of paralogs",
@@ -537,5 +548,5 @@ def create_report(calculation_directory,
     f.write("\n".join(out))
     f.close()
     
-
-
+    if create_zip_file:
+        shutil.make_archive(f"{output_directory}","zip",output_directory)

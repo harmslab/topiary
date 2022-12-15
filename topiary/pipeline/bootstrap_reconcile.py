@@ -32,7 +32,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     previous_run_dir : str
         previous pipeline run directory. Should have a directory named 
-        04_bootstraps.
+        xx_bootstraps, where xx is an integer. 
     num_threads : int
         number of threads to use. GeneRax uses MPI for parallelization;
         num_threads correspond to the number of "slots" in MPI lingo. This job
@@ -104,17 +104,28 @@ def bootstrap_reconcile(previous_run_dir,
 
     os.chdir(previous_run_dir)
 
-    if not os.path.isdir("04_bootstraps"):
-        err = f"previous_run_dir '{previous_run_dir}' does not have an 04_bootstraps\n"
+    try:
+
+        bootstrap_dirs = glob.glob("*bootstraps")
+        if len(bootstrap_dirs) == 0:
+            raise ValueError
+        
+        bootstrap_dirs = [(int(b.split("_")[0]),b) for b in bootstrap_dirs]
+        bootstrap_dirs.sort()
+        bootstrap_directory = bootstrap_dirs[-1][1]
+        dir_counter = bootstrap_dirs[-1][0]
+
+    except (ValueError,IndexError):
+        err = f"previous_run_dir '{previous_run_dir}' does not have an xx_bootstraps\n"
         err += "directory. This directory is necessary as the input to the a\n"
         err += "reconciliation bootstrap calculation.\n\n"
         os.chdir("..")
         raise FileNotFoundError(err)
 
     # Load calculation and make sure it completed
-    supervisor = Supervisor("04_bootstraps")
+    supervisor = Supervisor(bootstrap_directory)
     if supervisor.status != "complete":
-        err = f"{previous_run_dir}/04_bootstraps exists but has status '{supervisor.calc_status}'\n"
+        err = f"{previous_run_dir}/{bootstrap_directory} exists but has status '{supervisor.calc_status}'\n"
         if supervisor.status == "empty":
             err += "It does not appear this calculation has been run.\n\n"
         elif supervisor.status == "running":
@@ -126,7 +137,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     # Get number of replicates. Make sure user did not request more slots than
     # replicates.
-    num_replicates = len(glob.glob(os.path.join("04_bootstraps",
+    num_replicates = len(glob.glob(os.path.join(bootstrap_directory,
                                                 "output",
                                                 "bootstrap_replicates",
                                                 "*.phy")))
@@ -171,7 +182,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     # Make sure the output either exists with --overwrite or --restart or
     # does not exist
-    calc_dir = "05_reconcile-bootstraps"
+    calc_dir = f"{dir_counter+1:02d}_reconciled-tree-bootstraps"
     if os.path.isdir(calc_dir):
         if overwrite:
             shutil.rmtree(calc_dir)
@@ -211,7 +222,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     else:
 
-        topiary.reconcile(prev_calculation="04_bootstraps",
+        topiary.reconcile(prev_calculation=bootstrap_directory,
                           calc_dir=calc_dir,
                           bootstrap=True,
                           overwrite=False,

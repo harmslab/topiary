@@ -3,9 +3,11 @@ Draw a topiary tree with nodes colored by calculation outputs.
 """
 
 import topiary
-from topiary._private import check
+
 from topiary._private import Supervisor
-from topiary.draw.core import load_trees, create_name_dict, construct_sizemap
+from topiary.draw.core import create_name_dict
+from topiary.draw.core import construct_sizemap
+from topiary.io.tree import load_trees
 from topiary.draw.prettytree import PrettyTree
 
 import toyplot

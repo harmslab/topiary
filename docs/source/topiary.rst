@@ -17,6 +17,7 @@ Subpackages
    topiary.pipeline
    topiary.quality
    topiary.raxml
+   topiary.reports
    topiary.util
 
 Module contents

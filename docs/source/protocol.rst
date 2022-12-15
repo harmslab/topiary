@@ -175,6 +175,16 @@ Generate an alignment on the command line:
 
   topiary-seed-to-alignment seed-dataframe_example.csv --out_dir seed_to_ali
 
+.. note::
+
+  This can also be run in a Jupyter notebook. For an example, see 
+  `here <https://github.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb>`_. 
+  To run this notebook interactively in Google Colab, click the button below. 
+
+  .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :align: center
+    :alt: open seed to alignment in colab
+    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb
 
 Output
 ------
@@ -280,7 +290,7 @@ rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
   + Output: *04_aligned-dataframe.csv*
   + Function: `topiary.align <topiary.muscle.html#topiary.muscle.muscle.align>`_
 
-+ :emph:`Polishs alignment` by removing worst aligning sequences.
++ :emph:`Polishes alignment` by removing worst aligning sequences.
 
   + Output: *05_clean-aligned-dataframe.csv*
   + Function: `topiary.quality.polish_alignment <topiary.quality.html#topiary.quality.polish.polish_alignment>`_
@@ -297,8 +307,19 @@ rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
 
 Before reconstructing a phylogenetic tree and ancestors, we recommend
 inspecting and possibly editing the alignment. We recommend using
-
 `Aliview <aliview-link_>`_ for this purpose.
+
+.. danger::
+  Topiary does will give you the best-aligning set of sequences, but it does not
+  do an absolute check of alignment quality. Quality is determined by ambiguity
+  in which sites to place in a column between homologs, not simple diversity of
+  amino acids at a site. (A site could completely random looking amino acids, but
+  is in the middle of a well-aligned domain, the alignment quality is fine). Things
+  to look for are protein regions with variable lengths and sequences (such as
+  loops and extensions) as well as highly divergent proteins. For such regions, 
+  it is not clear which sites should be placed in which columns. Ancestral 
+  sequences for such regions will be impossible to reconstruct with confidence. 
+
 There are differing views on whether or not to manually edit an alignment.
 Manual edits are subjective, but there are also "obvious" instances where
 automatic alignment software does poorly. We usually edit our alignments using
@@ -400,8 +421,21 @@ branch support calculation. The input for this calculation is the *.csv* file
 from the last step.
 
 .. note::
-  We highly recommend running the following steps on a computing cluster. To
+  We highly recommend running the this analysis on a computing cluster. To
   prepare the computing environment, please install topiary on the cluster.
+
+.. note::
+
+  You can run this as a Jupyter notebook instead of using the command line. 
+  For an example, see `here <https://github.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_. 
+  To run this notebook interactively (for a toy dataset) on Google Colab,
+  click the button below. 
+
+  .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :align: center
+    :alt: open seed to alignment in colab
+    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb
+
 
 Copy the final dataframe up to the cluster.
 
