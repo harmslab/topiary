@@ -107,9 +107,8 @@ def _construct_args(sequence_array,
     cutoff : float
         cutoff between 0 and 1 indicating the fractional similarity between two
         sequences above which they are considered redundant.
-    discard_key : bool
-        if discard_key is False, a redundant sequence will be tossed even if it
-        is from a key species
+    discard_key : bool, default=False
+        whether or not to discard sequences from key species
     num_threads : int, default=-1
         number of threads to use. if -1 use all available
     progress_bar : bool, default=True
@@ -187,8 +186,8 @@ def _compare_seqs(A_seq,B_seq,A_qual,B_qual,cutoff,discard_key=False):
         quality scores for B
     cutoff : float
         cutoff for sequence comparison (~seq identity. between 0 and 1)
-    discard_key : bool
-        whether or not to discard key species, regardless of their qualities.
+    discard_key : bool, default=False
+        whether or not to discard sequences from key species
 
     Returns
     -------
@@ -266,9 +265,8 @@ def _redundancy_thread_function(i_block,
     cutoff : float
         cutoff between 0 and 1 indicating the fractional similarity between two
         sequences above which they are considered redundant.
-    discard_key : bool
-        if discard_key is False, a redundant sequence will be tossed even if it
-        is from a key species
+    discard_key : bool, default=False
+        whether or not to discard sequences from key species
     lock : multiprocessing.Lock
         lock controls access to keep_array
     """
