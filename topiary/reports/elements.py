@@ -6,6 +6,7 @@ from topiary.draw.core import construct_colormap
 
 import pandas as pd
 import toyplot
+import numpy as np
 
 import xml
 import os
@@ -30,7 +31,7 @@ def create_output_directory(output_directory,overwrite=False):
             shutil.rmtree(output_directory)
         else:
             err = f"output_directory '{output_directory}' already exists. Either\n"
-            err =+ "choose a new output directory or set overwrite = True.\n\n"
+            err += "choose a new output directory or set overwrite = True.\n\n"
             raise FileExistsError(err)
     os.mkdir(output_directory)
 
@@ -108,8 +109,7 @@ def create_main_html(description="",
     return top, bottom
 
 
-
-def df_to_table(df,add_header=True,show_row_numbers=True):
+def df_to_table(df,add_header=True,show_row_numbers=True,float_fmt="{}",int_fmt="{}"):
     """
     Generate an html table given a pandas dataframe.
     
@@ -121,6 +121,10 @@ def df_to_table(df,add_header=True,show_row_numbers=True):
         whether or not to have the header row on the table.
     show_row_numbers : bool, default=True
         whether or not to show row numbers on the table. 
+    float_fmt : str, default="{}"
+        format all float numbers using this format string
+    int_fmt : str, default="{}"
+            format all int numbers using this format string
 
     Returns
     -------
@@ -155,14 +159,23 @@ def df_to_table(df,add_header=True,show_row_numbers=True):
             contents.append(f"<th scope='row'>{i+1}</th>")
 
         for col in columns:
-            contents.append(f"<td>{df.loc[df.index[i],col]}</td>")
+            
+            value = df.loc[df.index[i],col]
+            if np.issubdtype(type(value),int):
+                value = int_fmt.format(value)
+            elif np.issubdtype(type(value),float):
+                value = float_fmt.format(value)
+            else:
+                value = "{}".format(value)
+
+            contents.append(f"<td>{value}</td>")
         contents.append("</tr>")
     
     contents = "".join(contents)
 
     final_out = []
     final_out.append('<div class="table-responsive">')
-    final_out.append('<table class="table table-striped table-sm table-hover w-auto">')
+    final_out.append('<table class="table table-striped table-sm table-hover">')
 
     if add_header:
         final_out.append(f"<thead>{header}</thead>")
@@ -171,7 +184,8 @@ def df_to_table(df,add_header=True,show_row_numbers=True):
     final_out.append("</table>")
     final_out.append("</div>")
 
-    return "".join(final_out)
+    final_out = "".join(final_out)
+    return f"<div class=\"text-center align-middle\">{final_out}</div>"
 
 def canvas_to_html(toyplot_canvas):
     """
@@ -194,9 +208,9 @@ def canvas_to_html(toyplot_canvas):
     for s in as_xml:
         out.append(xml.etree.ElementTree.tostring(s, encoding='unicode'))
     
-    html = "\n".join(out)
+    html = "".join(out)
 
-    return html
+    return f"<div class=\"text-center\">{html}</div>"
 
 def sequence_box(text,
                  color="#000000",
@@ -275,7 +289,7 @@ def sequence_box(text,
     return "".join(out)
 
 
-def create_card(card_title=None,card_contents=None,title_tag="h6"):
+def create_card(card_title=None,card_contents=None,title_tag="h6",match_height=True):
     """
     Create a bootstrap card with title and contents. 
 
@@ -287,6 +301,8 @@ def create_card(card_title=None,card_contents=None,title_tag="h6"):
         text for card contents. if None, do not add card contents
     title_tag : str, default="h6"
         text for title (h1, p, etc.)
+    match_height : bool, default = True
+        whether or not to match the height of this card to adjacent cards
 
     Returns
     -------
@@ -296,12 +312,16 @@ def create_card(card_title=None,card_contents=None,title_tag="h6"):
 
     out = []
 
-    out.append("<div class=\"card\">")
+    if match_height:
+        out.append("<div class=\"card h-100\">")
+    else:
+        out.append("<div class=\"card\">")
+
     out.append("<div class=\"card-body\">")
     if card_title is not None:
         out.append(f"<{title_tag} class=\"card-title\">{card_title}</{title_tag}>")
     if card_contents is not None:
-        out.append(card_contents)
+        out.append(f"<div class=\"align-middle\">{card_contents}</div>")
     out.append("</div></div>")
 
     return "".join(out)
@@ -387,7 +407,44 @@ def create_icon_row(files_to_link,descriptions):
     
     return "".join(out)
 
-        
+def create_row(elements):
+    """
+    Create a row of columns with this format
+
+    <div class="text-center">
+        <div class="row">
+            <div class="col">
+                e0
+            </div>
+            <div class="col">
+                e1
+            </div>
+            ...
+        </div>
+    </div>
+
+    Parameters
+    ----------
+    elements : list
+        list of strings to put in as columns
+
+    Returns
+    -------
+    html : str
+        html result
+    """
+
+    con_s, con_e = create_element("div",{"class":["text-center","align-middle"]})
+    rs, re = create_element("div",{"class":["row"]})
+    cs, ce = create_element("div",{"class":["col"]})
+
+    this_out = [f"{con_s}{rs}"]
+    for e in elements:
+        this_out.append(f"{cs}{e}{ce}")
+    this_out.append(f"{re}{con_e}")
+    
+    return "".join(this_out)
+    
         
         
         

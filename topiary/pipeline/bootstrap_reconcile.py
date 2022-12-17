@@ -12,7 +12,7 @@ from topiary._private import software_requirements
 from topiary._private.mpi import check_mpi_configuration
 from topiary._private import check
 from topiary._private import Supervisor
-from topiary.reports import create_report
+from topiary.reports import pipeline_report
 
 import os
 import datetime
@@ -32,7 +32,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     previous_run_dir : str
         previous pipeline run directory. Should have a directory named 
-        xx_bootstraps, where xx is an integer. 
+        xx_*bootstraps*, where xx is an integer and * are any value. 
     num_threads : int
         number of threads to use. GeneRax uses MPI for parallelization;
         num_threads correspond to the number of "slots" in MPI lingo. This job
@@ -106,7 +106,7 @@ def bootstrap_reconcile(previous_run_dir,
 
     try:
 
-        bootstrap_dirs = glob.glob("*bootstraps")
+        bootstrap_dirs = glob.glob("*bootstraps*")
         if len(bootstrap_dirs) == 0:
             raise ValueError
         
@@ -116,7 +116,7 @@ def bootstrap_reconcile(previous_run_dir,
         dir_counter = bootstrap_dirs[-1][0]
 
     except (ValueError,IndexError):
-        err = f"previous_run_dir '{previous_run_dir}' does not have an xx_bootstraps\n"
+        err = f"previous_run_dir '{previous_run_dir}' does not have an bootstraps\n"
         err += "directory. This directory is necessary as the input to the a\n"
         err += "reconciliation bootstrap calculation.\n\n"
         os.chdir("..")
@@ -233,6 +233,6 @@ def bootstrap_reconcile(previous_run_dir,
     os.chdir('..')
 
     # Create an html report for the calculation
-    create_report(calculation_directory=previous_run_dir,
-                  output_directory=os.path.join(previous_run_dir,"results"),
-                  overwrite=True)
+    pipeline_report(calculation_directory=previous_run_dir,
+                    output_directory=os.path.join(previous_run_dir,"results"),
+                    overwrite=True)

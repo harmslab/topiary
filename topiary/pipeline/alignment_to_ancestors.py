@@ -11,7 +11,7 @@ from topiary._private import installed
 from topiary._private import software_requirements
 from topiary._private import check
 from topiary._private.mpi import check_mpi_configuration
-from topiary.reports import create_report
+from topiary.reports import pipeline_report
 
 import pandas as pd
 import numpy as np
@@ -394,6 +394,6 @@ def alignment_to_ancestors(df,
     os.chdir(current_dir)
 
     # Create an html report for the calculation
-    create_report(calculation_directory=out_dir,
-                  output_directory=os.path.join(out_dir,"results"),
-                  overwrite=True)
+    pipeline_report(calculation_directory=out_dir,
+                    output_directory=os.path.join(out_dir,"results"),
+                    overwrite=True)
