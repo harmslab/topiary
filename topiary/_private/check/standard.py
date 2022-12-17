@@ -337,7 +337,7 @@ def check_iter(value,
             err = err_base + f"is type {type(value)} must be type {required_iter_type}\n"
             raise ValueError(err)
 
-    # If reuqested, make sure the values are of the right type
+    # If requested, make sure the values are of the right type
     if required_value_type is not None:
 
         # Skip check for iterable with no values

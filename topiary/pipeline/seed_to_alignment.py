@@ -9,9 +9,6 @@ import topiary
 from topiary._private import installed
 from topiary._private import check
 
-import numpy as np
-import pandas as pd
-
 import random
 import string
 import os
@@ -197,8 +194,14 @@ def seed_to_alignment(seed_df,
         if restart:
             err = "To use restart, you must specify an out_dir.\n"
             raise ValueError(err)
-        rand = "".join([random.choice(string.ascii_letters) for _ in range(10)])
-        out_dir = f"seed_to_alignment_{rand}"
+
+        # Make a directory called seed-to-alignment_XXX where XXX is the
+        # first number that does not cause us to overwrite an existing directory
+        dir_counter = 1
+        out_dir = "seed-to-alignment"
+        while os.path.exists(out_dir):
+            out_dir = f"seed-to-alignment_{dir_counter:03d}"
+            dir_counter += 1
 
     # --------------------------------------------------------------------------
     # Figure out how to treat species awareness

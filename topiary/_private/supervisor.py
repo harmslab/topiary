@@ -113,7 +113,7 @@ class Supervisor:
                 err += "should be a previously-run calculation. To create a\n"
                 err += "calculation directory, please use sv = Supervisor()\n"
                 err += f"then sv.create_calc_dir('{calc_dir}')\n\n"
-                raise ValueError(err)
+                raise FileNotFoundError(err)
 
             self._load_existing()
 

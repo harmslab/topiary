@@ -54,7 +54,7 @@ def test_main(tiny_phylo,tmpdir):
     assert ret.returncode == 0
     assert os.getcwd() == os.path.join(tmpdir,"test0")
 
-    out_base = os.path.join("existing-run","05_reconcile-bootstraps")
+    out_base = os.path.join("existing-run","05_reconciled-tree-bootstraps")
     expected_files = ["dataframe.csv",
                       "reconciled-tree.newick",
                       "reconciled-tree_events.newick",
