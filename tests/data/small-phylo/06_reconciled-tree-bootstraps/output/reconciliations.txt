@@ -1,0 +1,4 @@
+For more information on the reconciliation events (orthgroups,
+event counts, full nhx files, etc.) please check the maximum
+likelihood reconciliation output directory that was used as
+input for this bootstrap calculation.

@@ -4,17 +4,14 @@ Reconcile a gene tree with a species tree using generax without bootstraps.
 
 import topiary
 
-from topiary._private import check
+from topiary._private import run_cleanly
 from ._generax import setup_generax
 from ._generax import run_generax
-from ._generax import GENERAX_BINARY
 
-import ete3
-import numpy as np
-
-import os, glob, shutil
+import os
 
 
+@run_cleanly
 def reconcile_no_bootstrap(df,
                            model,
                            gene_tree,

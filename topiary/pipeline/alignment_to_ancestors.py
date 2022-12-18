@@ -10,6 +10,7 @@ from topiary.generax import GENERAX_BINARY
 from topiary._private import installed
 from topiary._private import software_requirements
 from topiary._private import check
+from topiary._private import run_cleanly
 from topiary._private.mpi import check_mpi_configuration
 from topiary.reports import pipeline_report
 
@@ -42,6 +43,7 @@ def _check_restart(output,restart):
 
     return True
 
+@run_cleanly
 def alignment_to_ancestors(df,
                            out_dir=None,
                            starting_tree=None,
@@ -394,6 +396,6 @@ def alignment_to_ancestors(df,
     os.chdir(current_dir)
 
     # Create an html report for the calculation
-    pipeline_report(calculation_directory=out_dir,
+    pipeline_report(pipeline_directory=out_dir,
                     output_directory=os.path.join(out_dir,"results"),
                     overwrite=True)

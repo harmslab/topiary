@@ -10,6 +10,7 @@ from ._raxml import RAXML_BINARY, run_raxml
 from topiary._private import check
 from topiary._private import threads
 from topiary._private import Supervisor
+from topiary._private import run_cleanly
 
 import pandas as pd
 import numpy as np
@@ -135,7 +136,7 @@ def _model_thread_function(kwargs):
 
     return result
 
-
+@run_cleanly
 def find_best_model(df,
                     gene_tree=None,
                     model_matrices=["cpREV","Dayhoff","DCMut","DEN","Blosum62",

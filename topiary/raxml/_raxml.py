@@ -191,7 +191,7 @@ def run_raxml(run_directory,
                          log_file=log_file,
                          suppress_output=suppress_output,
                          write_to_script=write_to_script)
-    except RuntimeError as e:
+    except interface.WrappedFunctionException as e:
         if supervisor is not None:
             supervisor.finalize(successful=False)
         raise RuntimeError from e

@@ -1,0 +1,60 @@
+:root {
+    --red-0: #3e070b;
+    --red-1: #7c0e17;
+    --red-2: #BA1522;
+    --red-3: #E72A3A;
+    --red-4: #ED616C;
+    --red-5: #EF737D;
+    --red-6: #f7b9be;
+    --red-7: #FCE3E5;
+
+    --yellow-0: #402b00;
+    --yellow-1: #805500;
+    --yellow-2: #BF8000;
+    --yellow-3: #FFAA00;
+    --yellow-4: #FFBF40;
+    --yellow-5: #FFC95E;
+    --yellow-6: #FFE4AF;
+    --yellow-7: #FFF4DF;
+
+    --blue-0: #001C2F;
+    --blue-1: #00395E;
+    --blue-2: #00558E;
+    --blue-3: #0071BC;
+    --blue-4: #0E9FFF;
+    --blue-5: #52BAFF;
+    --blue-6: #A8DCFF;
+    --blue-7: #DCF1FF;
+
+    --brown-0: #1A1411;
+    --brown-1: #342822;
+    --brown-2: #4F3C33;
+    --brown-3: #685044;
+    --brown-4: #9B7866;
+    --brown-5: #B99F92;
+    --brown-6: #DCCFC9;
+    --brown-7: #F1ECE9;
+
+    --green-0: #002200;
+    --green-1: #004500;
+    --green-2: #005700;
+    --green-3: #008800;
+    --green-4: #00E700;
+    --green-5: #45FF45;
+    --green-6: #A2FFA2;
+    --green-7: #DAFFDA;
+
+    --gray-0: #000000;
+    --gray-1: #232323;
+    --gray-2: #454545;
+    --gray-3: #575757;
+    --gray-4: #5E535E;
+    --gray-5: #808080;
+    --gray-6: #8A8A8A;
+    --gray-7: #EFEFEF;
+
+}
+
+.seq-box {
+    background-color: var(--gray-7);
+}

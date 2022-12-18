@@ -1,17 +1,18 @@
 """
-Generate bootstrap replicates for an existing tree and then calculate boostrap
+Generate bootstrap replicates for an existing tree and then calculate bootstrap
 supports.
 """
 
 import topiary
 
 from ._raxml import run_raxml, RAXML_BINARY
-from topiary._private.supervisor import Supervisor
+from topiary._private import Supervisor
+from topiary._private import run_cleanly
 
 import os
-import shutil
 import glob
 
+@run_cleanly
 def generate_bootstraps(prev_calculation=None,
                         df=None,
                         model=None,
@@ -22,7 +23,7 @@ def generate_bootstraps(prev_calculation=None,
                         num_threads=-1,
                         raxml_binary=RAXML_BINARY):
     """
-    Generate bootstrap replicates for an existing tree and then calculate boostrap
+    Generate bootstrap replicates for an existing tree and then calculate bootstrap
     supports.
 
     Parameters
@@ -53,7 +54,7 @@ def generate_bootstraps(prev_calculation=None,
         how many bootstrap replicates to generate. If None, use autoMRE to
         automatically infer the number of replicates given the data.
     num_threads : int, default=-1
-        number of threads to use. if -1, use all avaialable
+        number of threads to use. if -1, use all available
     raxml_binary : str, optional
         what raxml binary to use
 

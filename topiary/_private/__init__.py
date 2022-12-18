@@ -21,3 +21,4 @@ software_requirements = {"blastp":(2,0),
 
 from .uid import generate_uid
 from .supervisor import Supervisor
+from .interface import run_cleanly

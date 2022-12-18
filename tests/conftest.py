@@ -443,8 +443,11 @@ def generax_data():
 
 @pytest.fixture(scope="module")
 def tiny_phylo():
-
     return get_files(os.path.join("data","tiny-phylo"))
+
+@pytest.fixture(scope="module")
+def small_phylo():
+    return get_files(os.path.join("data","small-phylo"))
 
 @pytest.fixture(scope="module")
 def raxml_output():

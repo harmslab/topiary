@@ -2,22 +2,44 @@
 Generic interface for wrapping external programs.
 """
 
-import topiary
-from topiary._private import check
-
-import pandas as pd
-
 import subprocess
 import os
-import sys
 import time
 import random
 import string
 import shutil
-import copy
-import json
-import glob
 import multiprocessing as mp
+import functools
+
+class WrappedFunctionException(Exception):
+    pass
+
+def run_cleanly(func):
+    """
+    Decorator function that wraps another function that changes the current
+    working directory. If that function throws an exception, return to the
+    starting directory.
+    """
+    
+    # This bit of wraps magic makes sure the docstrings etc. come from the wrapped
+    # function rather than this wrapper. 
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        
+        current_dir = os.getcwd()
+        
+        try:
+            value = func(*args, **kwargs)
+        except Exception as e:
+            os.chdir(current_dir)
+            err = f"\n\nCaught exception in function '{func.__name__}'. Returning to starting\n"
+            err += "directory and cleaning up. Check error stack for cause of\n"
+            err += "this error.\n\n"
+            raise WrappedFunctionException(err) from e
+    
+        return value
+    
+    return wrapper
 
 class MockTqdm():
     """
@@ -199,6 +221,7 @@ def _follow_log_generator(f,queue):
             if counter > 200:
                 break
 
+@run_cleanly
 def launch(cmd,
            run_directory,
            log_file=None,
@@ -314,3 +337,5 @@ def launch(cmd,
 
     # Leave working directory
     os.chdir(cwd)
+
+

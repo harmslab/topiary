@@ -13,7 +13,7 @@ import ete3
 import pandas as pd
 import numpy as np
 
-import re, copy, time
+import time
 
 def _validate_ott_or_species(ott_list=None,species_list=None):
     """
@@ -253,9 +253,29 @@ def ott_to_species_tree(ott_list=None,species_list=None):
 
     # Pull down the synthetic tree from the ott server
     try:
-        ret = taxonomy_helpers.labelled_induced_synth(ott_ids=ott_list,
-                                                      label_format="name_and_id",
-                                                      inc_unlabelled_mrca=False)
+
+        # The labelled_induced_synth call throws the dendropy error occasionally.
+        # Usually repeating the call works, even with the same ott_list. I have
+        # not been able to identify the root cause of the problem, hence this
+        # hacked attempt wrapper.
+        attempt_number = 0
+        while True:
+            try:
+                ret = taxonomy_helpers.labelled_induced_synth(ott_ids=ott_list,
+                                                              label_format="name_and_id",
+                                                              inc_unlabelled_mrca=False)
+                break
+            except dp.ImmutableTaxonNamespaceError:
+                if attempt_number > 10:
+                    err = "Could not download a synthetic tree for the ott_list.\n"
+                    err += "Origin of the error is unclear and may be due to a bug\n"
+                    err += "in the opentreeoflife library.\n"
+                    raise RuntimeError(err)
+                else:
+                    time.sleep(0.1)
+                    attempt_number += 1
+                    continue
+
 
     # Value error if *all* otts are bad.
     except ValueError:
