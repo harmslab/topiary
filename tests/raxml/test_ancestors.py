@@ -6,6 +6,7 @@ from topiary.raxml.ancestors import _parse_raxml_anc_output
 from topiary.raxml.ancestors import _get_bad_columns
 from topiary.raxml.ancestors import generate_ancestors
 from topiary.raxml import RAXML_BINARY
+from topiary._private.interface import WrappedFunctionException
 
 import ete3
 
@@ -136,5 +137,5 @@ def test_generate_ancestors(tiny_phylo,tmpdir):
     kwargs["gene_tree"] = None
     kwargs["reconciled_tree"] = None
 
-    with pytest.raises(ValueError):
+    with pytest.raises(WrappedFunctionException):
         generate_ancestors(**kwargs)

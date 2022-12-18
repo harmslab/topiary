@@ -8,6 +8,7 @@ import topiary
 
 from topiary._private import installed
 from topiary._private import check
+from topiary._private import run_cleanly
 
 import random
 import string
@@ -26,6 +27,7 @@ def _check_restart(expected_output,restart):
 
     return run_calc
 
+@run_cleanly
 def seed_to_alignment(seed_df,
                       out_dir=None,
                       seqs_per_column=1,

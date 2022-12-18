@@ -3,14 +3,14 @@ Generate maximum likelihood tree from an alignment given an evolutionary
 model.
 """
 
-import topiary
-
 from ._raxml import run_raxml
 from ._raxml import RAXML_BINARY
-from topiary._private.supervisor import Supervisor
+from topiary._private import Supervisor
+from topiary._private import run_cleanly
 
-import os, shutil, glob
+import os, glob
 
+@run_cleanly
 def generate_ml_tree(prev_calculation=None,
                      df=None,
                      model=None,
@@ -52,7 +52,7 @@ def generate_ml_tree(prev_calculation=None,
     supervisor : Supervisor, optional
         instance of Supervisor for managing calculation inputs and outputs
     num_threads : int, default=-1
-        number of threads to use. if -1, use all avaialable
+        number of threads to use. if -1, use all available
     raxml_binary : str, optional
         what raxml binary to use
 

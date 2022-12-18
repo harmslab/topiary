@@ -12,21 +12,21 @@ import json
 import shutil
 
 @pytest.mark.run_generax
-def test_reconcile(tiny_phylo,tmpdir):
+def test_reconcile(small_phylo,tmpdir):
 
-    df_csv = tiny_phylo["initial-input/dataframe.csv"]
+    df_csv = small_phylo["initial-input/dataframe.csv"]
     df = topiary.read_dataframe(df_csv)
-    gene_tree = tiny_phylo["final-output/gene-tree.newick"]
-    gene_tree_wrong = tiny_phylo["final-output/gene-tree_wrong.newick"]
-    species_tree = tiny_phylo["initial-input/species-tree.newick"]
-    reconciled_tree = tiny_phylo["final-output/reconciled-tree.newick"]
-    bootstrap_directory = tiny_phylo["04_bootstraps_toy/output/bootstrap_replicates"]
-    f = open(tiny_phylo["model.txt"],"r")
+    gene_tree = small_phylo["final-output/gene-tree.newick"]
+    #gene_tree_wrong = small_phylo["final-output/gene-tree_wrong.newick"]
+    species_tree = small_phylo["initial-input/species-tree.newick"]
+    #reconciled_tree = small_phylo["final-output/reconciled-tree.newick"]
+    #bootstrap_directory = small_phylo["04_bootstraps_toy/output/bootstrap_replicates"]
+    f = open(small_phylo["model.txt"],"r")
     model = f.read().strip()
     f.close()
 
-    prev_ml = tiny_phylo["01_gene-tree"]
-    prev_bs = tiny_phylo["04_bootstraps_toy"]
+    prev_ml = small_phylo["01_gene-tree"]
+    prev_bs = small_phylo["05_gene-tree-bootstraps_toy"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)

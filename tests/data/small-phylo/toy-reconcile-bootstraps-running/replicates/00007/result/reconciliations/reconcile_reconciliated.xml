@@ -1,0 +1,185 @@
+<recPhylo 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.recg.org ./recGeneTreeXML.xsd"
+	xmlns="http://www.recg.org">
+<spTree>
+<phylogeny>
+<clade>
+		<name>node_4</name>
+	<clade>
+			<name>node_0</name>
+		<clade>
+				<name>node_1</name>
+			<clade>
+					<name>node_2</name>
+				<clade>
+						<name>ott542509</name>
+				</clade>
+				<clade>
+						<name>ott271571</name>
+				</clade>
+			</clade>
+			<clade>
+					<name>node_3</name>
+				<clade>
+						<name>ott770315</name>
+				</clade>
+				<clade>
+						<name>ott913930</name>
+				</clade>
+			</clade>
+		</clade>
+		<clade>
+				<name>ott541936</name>
+		</clade>
+	</clade>
+	<clade>
+			<name>ott919171</name>
+	</clade>
+</clade>
+</phylogeny>
+</spTree>
+<recGeneTree>
+<phylogeny rooted="true">
+<clade>
+	<name>NULL</name>
+	<eventsRec>
+		<speciation speciesLocation="node_4"/>
+	</eventsRec>
+	<clade>
+		<name>NULL</name>
+		<eventsRec>
+			<speciation speciesLocation="node_0"/>
+		</eventsRec>
+		<clade>
+			<name>elephantBx</name>
+			<eventsRec>
+				<leaf speciesLocation="ott541936"/>
+			</eventsRec>
+		</clade>
+		<clade>
+			<name>NULL</name>
+			<eventsRec>
+				<speciation speciesLocation="node_1"/>
+			</eventsRec>
+			<clade>
+				<name>NULL</name>
+				<eventsRec>
+					<speciation speciesLocation="node_2"/>
+				</eventsRec>
+				<clade>
+					<name>ratBxxxxxx</name>
+					<eventsRec>
+						<leaf speciesLocation="ott271571"/>
+					</eventsRec>
+				</clade>
+				<clade>
+					<name>NULL</name>
+					<eventsRec>
+						<branchingOut speciesLocation="ott542509"/>
+					</eventsRec>
+					<clade>
+						<name>mouseBxxxx</name>
+						<eventsRec>
+							<leaf speciesLocation="ott542509"/>
+						</eventsRec>
+					</clade>
+					<clade>
+						<name>NULL</name>
+						<eventsRec>
+							<transferBack destinationSpecies="node_4"/>
+							<speciation speciesLocation="node_4"/>
+						</eventsRec>
+						<clade>
+							<name>opossumAxx</name>
+							<eventsRec>
+								<leaf speciesLocation="ott919171"/>
+							</eventsRec>
+						</clade>
+						<clade>
+							<name>NULL</name>
+							<eventsRec>
+								<speciation speciesLocation="node_0"/>
+							</eventsRec>
+							<clade>
+								<name>NULL</name>
+								<eventsRec>
+									<speciation speciesLocation="node_1"/>
+								</eventsRec>
+								<clade>
+									<name>NULL</name>
+									<eventsRec>
+										<speciation speciesLocation="node_2"/>
+									</eventsRec>
+									<clade>
+										<name>mouseAxxxx</name>
+										<eventsRec>
+											<leaf speciesLocation="ott542509"/>
+										</eventsRec>
+									</clade>
+									<clade>
+										<name>ratAxxxxxx</name>
+										<eventsRec>
+											<leaf speciesLocation="ott271571"/>
+										</eventsRec>
+									</clade>
+								</clade>
+								<clade>
+									<name>NULL</name>
+									<eventsRec>
+										<speciation speciesLocation="node_3"/>
+									</eventsRec>
+									<clade>
+										<name>humanAxxxx</name>
+										<eventsRec>
+											<leaf speciesLocation="ott770315"/>
+										</eventsRec>
+									</clade>
+									<clade>
+										<name>lemurAxxxx</name>
+										<eventsRec>
+											<leaf speciesLocation="ott913930"/>
+										</eventsRec>
+									</clade>
+								</clade>
+							</clade>
+							<clade>
+								<name>elephantAx</name>
+								<eventsRec>
+									<leaf speciesLocation="ott541936"/>
+								</eventsRec>
+							</clade>
+						</clade>
+					</clade>
+				</clade>
+			</clade>
+			<clade>
+				<name>NULL</name>
+				<eventsRec>
+					<speciation speciesLocation="node_3"/>
+				</eventsRec>
+				<clade>
+					<name>lemurBxxxx</name>
+					<eventsRec>
+						<leaf speciesLocation="ott913930"/>
+					</eventsRec>
+				</clade>
+				<clade>
+					<name>humanBxxxx</name>
+					<eventsRec>
+						<leaf speciesLocation="ott770315"/>
+					</eventsRec>
+				</clade>
+			</clade>
+		</clade>
+	</clade>
+	<clade>
+		<name>opossumBxx</name>
+		<eventsRec>
+			<leaf speciesLocation="ott919171"/>
+		</eventsRec>
+	</clade>
+</clade>
+</phylogeny>
+</recGeneTree>
+</recPhylo>

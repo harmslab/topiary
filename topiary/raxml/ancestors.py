@@ -10,6 +10,7 @@ from topiary._private import check
 from topiary._private.interface import copy_input_file
 from topiary._private.interface import create_new_dir
 from topiary._private import Supervisor
+from topiary._private import run_cleanly
 
 from topiary.pastml import get_ancestral_gaps
 
@@ -429,7 +430,7 @@ def _parse_raxml_anc_output(df,
 
     os.chdir(cwd)
 
-
+@run_cleanly
 def generate_ancestors(prev_calculation=None,
                        df=None,
                        model=None,
@@ -484,7 +485,7 @@ def generate_ancestors(prev_calculation=None,
     overwrite : bool, default=False
         whether or not to overwrite existing calc_dir
     num_threads : int, default=-1
-        number of threads to use. if -1, use all avaialable
+        number of threads to use. if -1, use all available
     raxml_binary : str, optional
         what raxml binary to use
 

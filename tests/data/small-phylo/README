@@ -1,0 +1,18 @@
+This directory holds an internally consistent set of phylogenetic analyses on
+a small dataset to test the pipeline.
+
+The model.txt file holds the phylogenetic model used for all of these
+calculations.
+
+Directories are complete input/outputs from the pipeline. These can be
+regenerated using alignment-to-ancestors.ipynb.
+
+00_find-model
+01_gene-tree
+02_gene-tree-ancestors
+03_reconciled-tree
+04_reconciled-tree-ancestors
+05_gene-tree-bootstraps
+05_gene-tree-bootstraps_toy - (toy version with only four pseudoreplicates)
+06_reconciled-tree-bootstraps
+06_reconciled-tree-bootstraps_toy - (toy version with only four pseudoreplicates)

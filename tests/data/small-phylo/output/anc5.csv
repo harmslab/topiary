@@ -1,0 +1,25 @@
+,Unnamed: 0,anc,site,gap,ml_state,ml_pp,alt_state,alt_pp,site_type,entropy
+96,96,anc5,0,False,C,0.99999,H,1e-05,good,0.0001251292046494
+97,97,anc5,1,False,P,1.0,A,0.0,good,0.0
+98,98,anc5,2,False,Q,1.0,A,0.0,good,0.0
+99,99,anc5,3,False,R,1.0,A,0.0,good,0.0
+100,100,anc5,4,False,W,1.0,A,0.0,good,0.0
+101,101,anc5,5,False,P,1.0,A,0.0,good,0.0
+102,102,anc5,6,False,I,1.0,A,0.0,good,0.0
+103,103,anc5,7,False,H,1.0,A,0.0,good,0.0
+104,104,anc5,8,False,S,1.0,A,0.0,good,0.0
+105,105,anc5,9,False,L,1.0,A,0.0,good,0.0
+106,106,anc5,10,False,C,1.0,A,0.0,good,0.0
+107,107,anc5,11,False,N,1.0,A,0.0,good,0.0
+108,108,anc5,12,False,T,1.0,A,0.0,good,0.0
+109,109,anc5,13,False,G,1.0,A,0.0,good,0.0
+110,110,anc5,14,False,G,1.0,A,0.0,good,0.0
+111,111,anc5,15,False,L,1.0,A,0.0,good,0.0
+112,112,anc5,16,False,Q,1.0,A,0.0,good,0.0
+113,113,anc5,17,False,E,1.0,A,0.0,good,0.0
+114,114,anc5,18,False,D,0.99999,E,1e-05,good,0.0001251292046494
+115,115,anc5,19,False,L,1.0,A,0.0,good,0.0
+116,116,anc5,20,False,L,1.0,A,0.0,good,0.0
+117,117,anc5,21,False,K,1.0,A,0.0,good,0.0
+118,118,anc5,22,False,I,1.0,A,0.0,good,0.0
+119,119,anc5,23,False,T,1.0,A,0.0,good,0.0

@@ -1,0 +1,6 @@
+[FAMILIES]
+- reconcile
+starting_gene_tree = gene_tree.newick
+alignment = alignment.phy
+mapping = mapping.link
+subst_model = LG

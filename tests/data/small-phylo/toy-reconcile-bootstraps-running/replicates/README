@@ -1,0 +1,4 @@
+This is a fake directory simulating a bootstrap reconciliation calculation
+that is partway done. The bs-trees.newick file has 10 identical trees and
+will converge for --bs-cutoff 0.5. Directories 00001-00010 have "completed"
+file.  Directories 00011 and 00012 have "running" file. 

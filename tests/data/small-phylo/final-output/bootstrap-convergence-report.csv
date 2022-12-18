@@ -1,0 +1,6 @@
+,trees,avg_wrf,avg_wrf_pct,perms_below_cutoff,converged
+0,50,11.124,2.472,732,True
+1,100,16.908,1.879,875,True
+2,150,20.85,1.544,953,True
+3,200,24.97,1.387,975,True
+4,250,27.492,1.222,991,True

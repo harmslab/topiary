@@ -12,6 +12,7 @@ from topiary._private import software_requirements
 from topiary._private.mpi import check_mpi_configuration
 from topiary._private import check
 from topiary._private import Supervisor
+from topiary._private import run_cleanly
 from topiary.reports import pipeline_report
 
 import os
@@ -19,7 +20,7 @@ import datetime
 import glob
 import shutil
 
-
+@run_cleanly
 def bootstrap_reconcile(previous_run_dir,
                         num_threads,
                         restart=False,
@@ -233,6 +234,6 @@ def bootstrap_reconcile(previous_run_dir,
     os.chdir('..')
 
     # Create an html report for the calculation
-    pipeline_report(calculation_directory=previous_run_dir,
+    pipeline_report(pipeline_directory=previous_run_dir,
                     output_directory=os.path.join(previous_run_dir,"results"),
                     overwrite=True)

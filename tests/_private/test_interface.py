@@ -5,10 +5,50 @@ from topiary._private.interface import gen_seed
 from topiary._private.interface import launch
 from topiary._private.interface import create_new_dir
 from topiary._private.interface import copy_input_file
-import numpy as np
-import pandas as pd
+from topiary._private.interface import run_cleanly
 
-import warnings, os, shutil, glob, json, sys
+import os
+import sys
+import time
+
+def test_run_cleanly(tmpdir):
+
+    cwd = os.getcwd()
+    os.chdir(tmpdir)
+
+    # Make sure we can send in args, kwargs, and get return values
+    @run_cleanly
+    def test_function_arg_passing(x):
+        return x*2
+
+    assert test_function_arg_passing(2) == 4
+    assert test_function_arg_passing(x=5) == 10
+
+    # This should create a directory called crash, move into crash, raise a
+    # value error, then return back to the starting directory
+    @run_cleanly
+    def test_function_crash():
+        os.mkdir("crash")
+        os.chdir("crash")
+        raise ValueError
+        
+    with pytest.raises(Exception):
+        test_function_crash()
+    assert os.getcwd() == os.path.abspath(tmpdir)
+    assert os.path.isdir("crash")
+
+    # Make sure we do not return to starting directory if there is no crash
+    @run_cleanly
+    def test_function_chdir():
+        os.mkdir("stupid")
+        os.chdir("stupid")
+
+    test_function_chdir()
+    assert os.path.abspath(os.getcwd()) == os.path.abspath(os.path.join(tmpdir,"stupid"))
+
+    os.chdir(cwd)
+
+    
 
 def test_MockTqdm():
 

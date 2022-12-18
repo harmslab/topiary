@@ -12,10 +12,10 @@ import tarfile
 
 @pytest.mark.run_generax
 @pytest.mark.run_raxml
-def test_main(tiny_phylo,tmpdir):
+def test_main(small_phylo,tmpdir):
 
-    prev_bs = tiny_phylo["04_bootstraps_toy"]
-    current_bs = tiny_phylo["05_reconcile-bootstraps_toy"]
+    prev_bs = small_phylo["05_gene-tree-bootstraps_toy"]
+    current_bs = small_phylo["06_reconciled-tree-bootstraps_toy"]
 
     current_dir = os.getcwd()
     os.chdir(tmpdir)
@@ -34,7 +34,7 @@ def test_main(tiny_phylo,tmpdir):
     os.mkdir("test0")
     os.chdir("test0")
     os.mkdir("existing-run")
-    shutil.copytree(prev_bs,os.path.join("existing-run","04_bootstraps"))
+    shutil.copytree(prev_bs,os.path.join("existing-run","05_gene-tree-bootstraps"))
     cmd = base_cmd[:]
     cmd.append("existing-run")
 
@@ -51,10 +51,12 @@ def test_main(tiny_phylo,tmpdir):
     cmd[-1] = "2"
 
     ret = subprocess.run(cmd)
+    print(cmd)
+
     assert ret.returncode == 0
     assert os.getcwd() == os.path.join(tmpdir,"test0")
 
-    out_base = os.path.join("existing-run","05_reconciled-tree-bootstraps")
+    out_base = os.path.join("existing-run","06_reconciled-tree-bootstraps")
     expected_files = ["dataframe.csv",
                       "reconciled-tree.newick",
                       "reconciled-tree_events.newick",

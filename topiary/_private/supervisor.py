@@ -590,7 +590,7 @@ class Supervisor:
 
         Returns
         -------
-        None OR typlot.canvas if plot requested
+        None OR toyplot.canvas if plot requested
         """
 
         # Do not update if already finalized or empty

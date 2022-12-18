@@ -8,6 +8,7 @@ import topiary
 from topiary._private import Supervisor
 from topiary._private import threads
 from topiary._private import mpi
+from topiary._private import run_cleanly
 
 from topiary.raxml._raxml import run_raxml
 from topiary.raxml import check_convergence
@@ -261,7 +262,7 @@ def _generax_thread_function(replicate_dir,
         # If failure, raise a RuntimeError
         if ret.returncode != 0:
             err = f"\ngenerax crashed in directory {d}. Writing stderr and\n"
-            err += "stout there.\n\n"
+            err += "stdout there.\n\n"
             raise RuntimeError(err)
 
         # Grab result tree
@@ -578,7 +579,7 @@ def _run_bootstrap_calculations(replicate_dir,
 
     return converged, df
 
-
+@run_cleanly
 def reconcile_bootstrap(df,
                         model,
                         gene_tree,
