@@ -13,19 +13,15 @@ Installation
 Cross-platform installation instructions
 ========================================
 
-.. note::
-  A conda package is in the works that will make installation a single-line
-  command.
-
 We recommend using conda to install topiary on all operating systems. (Some
 system-specific instructions for installation of wrapped software packages
 are in the next sections).
 
-If you do not have conda installed, download and install
-`miniconda <miniconda-link_>`_ before proceeding. To prevent interference with
-other packages, we recommend installing topiary in its own conda environment.
-In a standard terminal (Linux or macOS) or the Anaconda Prompt (Windows), run
-the following commands.
+To prevent interference with other packages, we recommend installing topiary in
+its own conda environment.If you do not have conda installed, download and
+install `miniconda <miniconda-link_>`_ before proceeding. Once conda is installed,
+run the following commands in a standard terminal (Linux or macOS) or the
+Anaconda Prompt (Windows):
 
 .. code-block:: shell-session
 
@@ -140,7 +136,7 @@ After you have installed blast+ and muscle,
 .. code-block:: shell-session
 
   conda activate topiary
-  python c:\Users\harmsm\topiary\bin\topiary-check-installed
+  python c:\Users\USERNAME\topiary\bin\topiary-check-installed
 
 If the *muscle*, *blastp* and/or *makeblastdb* binaries are not found,
 you likely need to add the directories containing the blast and muscle binaries

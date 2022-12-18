@@ -6,6 +6,14 @@
 
 ### Python framework for doing ancestral sequence reconstruction.
 
+Publication forthcoming in *Protein Science*. Stay tuned. 
+
+#### Pipeline automated by topiary
+
+![ASR pipeline](docs/source/_static/img/asr-pipeline-01.png)
+
+#### Features
+
 + *Automatic.* Performs sequence database construction, quality
   control, multiple sequence alignment, tree construction, gene/species tree
   reconciliation, and ancestral reconstruction with minimal user input.
@@ -25,3 +33,9 @@
   + [GeneRax](https://github.com/BenoitMorel/GeneRax)
   + [PastML](https://pastml.pasteur.fr)
   + [toytree](https://toyplot.readthedocs.io/)
+
+#### Try it out Google Colab
+
++ [Go from a few initial sequences to a full alignment](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb)
++ [Build a phylogenetic tree and reconstruct ancestors](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb)
+
