@@ -3,8 +3,7 @@ import pytest
 
 import topiary
 from topiary._private import check
-from topiary.io.seed import _get_alias_regex
-from topiary.io.seed import _build_alias_regex
+
 from topiary.io.seed import read_seed
 from topiary.io.seed import df_from_seed
 
@@ -12,78 +11,6 @@ import numpy as np
 import pandas as pd
 
 import re
-
-def test__get_alias_regex():
-
-    test_strings = {"ABC": "abc",
-                    "ABC1" :"abc[\ \-_\.]*1",
-                    "1ABc" :"1[\ \-_\.]*abc",
-                    " ABC ":"abc",
-                    "AB C" :"ab[\ \-_\.]*c",
-                    "(ABC)":"\(abc\)",
-                    "[AB C]" :"\[ab[\ \-_\.]*c\]"}
-    spacers = [" ","-","_","."]
-    for t in test_strings:
-        assert _get_alias_regex(t,spacers) == test_strings[t]
-
-
-    test_strings = {"AbC": "abc",
-                    "ABC1" :"abc[,]*1",
-                    "1ABC" :"1[,]*abc",
-                    " aBC ":"abc",
-                    "AB C" :"ab\\ c"}
-    spacers = [","]
-    for t in test_strings:
-        assert _get_alias_regex(t,spacers) == test_strings[t]
-
-    test_strings = {"A" :"a",
-                    "1" :"1",
-                    "1A":"1[\ \-_\.]*a",
-                    "A1":"a[\ \-_\.]*1",
-                    " A1 " :"a[\ \-_\.]*1"}
-    spacers = [" ","-","_","."]
-    for t in test_strings:
-        assert _get_alias_regex(t,spacers) == test_strings[t]
-
-
-def test__build_alias_regex():
-
-    alias_dict = {"test":["A"],
-                  "this":["B"]}
-
-    paralog_patterns = _build_alias_regex(alias_dict)
-    assert isinstance(paralog_patterns,dict)
-    assert len(paralog_patterns) == 2
-    assert paralog_patterns["test"].pattern == "a|test"
-    assert paralog_patterns["this"].pattern == "b|this"
-
-    # Same alias in both
-    alias_dict = {"test":["A"],
-                  "this":["A"]}
-    with pytest.raises(ValueError):
-        paralog_patterns = _build_alias_regex(alias_dict)
-
-
-    # Test alias that requires a negative regex to resolve.
-    alias_dict = {"test":["A"],
-                  "this":["AX"]}
-    paralog_patterns = _build_alias_regex(alias_dict)
-    assert paralog_patterns["test"].pattern == '^(?!.*(ax)).*(a|test)'
-    assert paralog_patterns["this"].pattern == 'ax|this'
-
-    # Make sure order doesn't matter for negative
-    alias_dict = {"test":["AX"],
-                  "this":["A"]}
-    paralog_patterns = _build_alias_regex(alias_dict)
-    assert paralog_patterns["test"].pattern == "ax|test"
-    assert paralog_patterns["this"].pattern == '^(?!.*(ax)).*(a|this)'
-
-    # Multiple inputs
-    alias_dict = {"test":["A","B","C"],
-                  "this":["D"]}
-    paralog_patterns = _build_alias_regex(alias_dict)
-    assert paralog_patterns["test"].pattern == "a|b|c|test"
-    assert paralog_patterns["this"].pattern == "d|this"
 
 
 def test_read_seed(seed_dataframes,user_seed_dataframes):

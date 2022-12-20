@@ -63,6 +63,11 @@ using a seed dataset. In graphical terms, this means finding sequences
 representing all paralogs (across horizontal) taken from the full taxonomic
 scope (the top and bottom of the gray box).
 
+.. note::
+  Because the bacterial species tree is poorly defined, topiary will automatically
+  use a taxonomic scope including all bacteria for datasets containing only
+  bacterial proteins. 
+
 -------------------------
 1. Prepare a seed dataset
 -------------------------
@@ -119,7 +124,8 @@ spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
 
 The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
 (Excel or LibreOffice), a text editor, or programmatically via
-`pandas <pandas-link_>`_.
+`pandas <pandas-link_>`_. For technical details on the format of this dataframe,
+see the `documentation <data_structures.html#topiary-dataframe>`_. 
 
 #. :emph:`Download sequences for each paralog` from each species and put it into
    the table. Our usual source for these seed sequences is uniprot_. Generally,
@@ -151,16 +157,33 @@ The seed dataset is a spreadsheet that can be prepared in a spreadsheet program
 #. You can put other information about the sequences (accession, citations, etc.)
    as their own columns in the table. Topiary will ignore, but keep, those
    columns.
-#. If you would like to include specific sequences in the analysis, you can
-   also add them to the seed dataset. (For example, you might want to make sure
-   an experimentally characterized protein from a specific organism is in the
-   final tree). To do so, add the the sequence to the dataset like any other,
-   then add a fifth column: :code:`key_species`. Each sequence in the
+#. If you would like to make sure to include specific sequences in the analysis,
+   you can also add them to the seed dataset. (For example, you might want to
+   make sure an experimentally characterized protein from a specific organism is
+   in the final tree). To do so, add the the sequence to the dataset like any
+   other, then add a fifth column: :code:`key_species`. Each sequence in the
    spreadsheet should either have :code:`True` or :code:`False` in this column.
    Those with :code:`True` will be used as part of the seed dataset; those
    with :code:`False` will not be used as seeds, but will be kept in all
-   downstream steps in the analysis.
+   downstream steps in the analysis. In the following table, we added the mouse
+   sequences to the dataframe as sequences that will be in the final tree but 
+   will not be used as seeds for BLAST etc.
 
+   +------+-----------------------+---------------+------------+-------------+
+   | name | aliases               | species       | sequence   | key_species |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY96 | ESOP1;Myeloid Diff... | Homo sapiens  | MLPFLFF... | True        |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY96 | ESOP1;Myeloid Diff... | Danio rerio   | MALWCPS... | True        |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY86 | Lymphocyte Antigen... | Homo sapiens  | MKGFTAT... | True        |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY86 | Lymphocyte Antigen... | Danio rerio   | MKTYFNM... | True        |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY86 | Lymphocyte Antigen... | Mus musculus  | MKTFFNM... | False       |
+   +------+-----------------------+---------------+------------+-------------+
+   | LY96 | ESOP1;Myeloid Diff... | Mus musculus  | MLSFVYF... | False       |
+   +------+-----------------------+---------------+------------+-------------+
 
 Generate a Multiple Sequence Alignment
 ======================================
@@ -244,8 +267,8 @@ following:
 
   topiary-seed-to-alignment seed-dataframe_example.csv --out_dir seed_to_ali --restart
 
-This will find the last *.csv* output file that was written in the
-:code:`seed_to_ali` directory and start the pipeline from there.
+This will find the last completed step in the pipeline and will restart the
+pipeline from there.
 
 
 .. _align-script-details:
@@ -261,14 +284,15 @@ rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
 .. tip::
 
   If you want to override topiary's decision to remove a sequence, you can
-  manually set :code:`keep` to :code:`True` in one of the intermediate
-  spreadsheets. Delete the subsequent spreadsheets and then re-run the pipeline
+  manually set the :code:`keep` column to :code:`True` in one of the intermediate
+  spreadsheets. Delete the subsequent directories and then re-run the pipeline
   with the :code:`--restart` argument described above.
-
 
 + :emph:`Finds paralogs from other species` using the seed sequences as BLAST queries
   against the `NCBI non-redundant database <blast-nr_>`_. The taxonomic scope is
-  defined by the key species in the seed dataset.
+  defined by the key species in the seed dataset. For bacterial datasets, the 
+  taxonomic scope will be all bacteria; for archaeal datasets, the taxonomic scope
+  will be all archaea. 
 
   + Output: *01_initial-dataframe.csv*
   + Function: `topiary.ncbi.ncbi_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.ncbi.ncbi_blast>`_
@@ -280,7 +304,10 @@ rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
   + Function: `topiary.ncbi.recip_blast <topiary.ncbi.blast.html#topiary.ncbi.blast.recip.recip_blast>`_
 
 + :emph:`Decreases the size of the dataset` taking into account taxonomic sampling,
-  quality, and alignment score of all sequences.
+  quality, and alignment score of all sequences. For non-microbial datasets, 
+  topiary uses the species tree to select phylogenetically informative sequences;
+  for microbial datasets, topiary lowers redundany based on sequence similarity
+  alone. 
 
   + Output: *03_shrunk-dataframe.csv*
   + Function: `topiary.shrink_dataset <topiary.quality.html#topiary.quality.shrink.shrink_dataset>`_
@@ -310,14 +337,16 @@ inspecting and possibly editing the alignment. We recommend using
 `Aliview <aliview-link_>`_ for this purpose.
 
 .. danger::
-  Topiary does will give you the best-aligning set of sequences, but it does not
-  do an absolute check of alignment quality. Quality is determined by ambiguity
+  Topiary will give you the best-aligning set of sequences given the BLAST 
+  results, but it does not assess absolute alignment quality. If the sequences
+  are so divergent that they cannot be aligned reliably, the downstream 
+  ASR steps will not be successful. Quality is determined by ambiguity
   in which sites to place in a column between homologs, not simple diversity of
-  amino acids at a site. (A site could completely random looking amino acids, but
-  is in the middle of a well-aligned domain, the alignment quality is fine). Things
-  to look for are protein regions with variable lengths and sequences (such as
-  loops and extensions) as well as highly divergent proteins. For such regions, 
-  it is not clear which sites should be placed in which columns. Ancestral 
+  amino acids at a site. A site could completely random looking amino acids, but
+  if it is in the middle of a well-aligned domain, the alignment quality is fine.
+  Things to look for are protein regions with variable lengths and sequences
+  (such as loops and extensions) as well as highly divergent proteins. For such
+  regions, it is not clear which sites should be placed in which columns. Ancestral 
   sequences for such regions will be impossible to reconstruct with confidence. 
 
 There are differing views on whether or not to manually edit an alignment.
@@ -405,7 +434,8 @@ final topiary dataframe.
 
 In this command, :code:`edited_alignment.fasta` should be the name of the fasta
 file you saved out above. :code:`final_dataframe.csv` is the name of the final
-csv file.
+csv file. The file :code:`final_dataframe.csv` can then be used for all 
+subsequent reconstruction steps. 
 
 
 Infer tree and ancestors
@@ -581,7 +611,7 @@ software does, as well as showing an example output file.
     :alt: maximum likelihood gene tree
     :width: 75%
 
-  + Output: :code:`01_ml-tree/output/`
+  + Output: :code:`01_gene-tree/output/`
 
     + *summary-tree.pdf*: Drawing of ML gene tree with branch lengths. Tree is
       drawn with midpoint rooting.
@@ -590,6 +620,53 @@ software does, as well as showing an example output file.
     + *dataframe.csv*: Current topiary dataframe.
 
   + Function: `topiary.generate_ml_tree <topiary.raxml.html#topiary.raxml.tree.generate_ml_tree>`_
+
++ :emph:`Infers ancestral sequences` using RAxML-NG given on the maximum likelihood
+  gene tree using the maximum likelihood phylogenetic model. Gaps are inferred
+  using parsimony via PastML. This tree an example of "summary-tree.pdf" generated
+  by this step. The graph shows an example ancestor sequence summary. The text shows
+  the corresponding reconstructed ancestor and its altAll versions.
+
+  .. image:: _static/img/ali-to-anc/ancestors.svgXXX
+    :align: center
+    :alt: ancestors drawn on gene tree
+    :width: 75%
+
+  :raw-html:`<br />`
+
+  .. image:: _static/img/ali-to-anc/anc-plot.svgXXX
+    :align: center
+    :alt: Graph showing ancestral quality
+    :width: 85%
+
+  :raw-html:`<br />`
+
+  .. code-block::
+
+    >anc47|avgPP:0.995|lnPP:-1.911|num_ambig:3|num_ambig_gaps:1
+    M-----------K-------------G-------F-----TA------A------L-L-V--WT-----L--I---SP-----S-G----S-----G-----GEAWPTH-TACRDG------GLE--VLYQSC-DP----L-------Q---DFGFS-IDQCSKQL---KPNLNIRFGIILREDIKELFLDIALFS-KG----S--SILN-----FS--YPVCEED-LPKFSFCGRRKGEQIYYA-G--------P-V--NNPG---FEIP---EG----EYQ-V---L-LELYNEN--R----ST--VAC--ANATVI-------------------C-------S
+    >anc47_altAll|avgPP:0.993|lnPP:-3.699|num_ambig:3|num_ambig_gaps:1
+    M-----------Q-------------G-------F-----TA------A------L-L-V--WT-----L--L---SP-----S-G----S-----G-----GEAWPTH-TACRDG------GLE--VLYQSC-DP----L-------Q---DFGFS-IDQCSKQL---KPNLNIRFGIILREDIKELFLDIALFS-KG----S--SILN-----FS--YPICEED-LPKFSFCGRRKGEQIYYA-G--------P-V--NNPG---FEIP---EG----EYQ-V---L-LELYNEN--R----ST--VAC--ANATVI-------------------C-------S
+
+  + Output: :code:`02_gene-tree-ancestors`
+
+    + *summary-tree.pdf*: Drawing of gene tree with branch lengths and ancestors
+      with posterior probabilities as a color map.
+    + *gene-tree_anc-pp.newick*: Rooted, reconciled tree with branch
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
+      ancestral posterior probabilities.
+    + *gene-tree_anc-label.newick*: Rooted, reconciled tree with branch
+      lengths in newick format. Tips are topiary UIDs. Internal nodes are
+      ancestor names.
+    + *gene-tree_ancestors/*: The *ancX.pdf* files are pdf summaries of
+      ancestral reconstructions for each ancestor as labeled in *summary-tree.pdf*.
+      An example is shown above. These graphs show the support for: the most
+      likely reconstruction at each site (black circles), the next most likely
+      reconstruction (red circles), the locations of gaps (gray shading), and
+      the location of ambiguous gaps (purple dashes). Statistics at the top
+      indicate ancestor quality.
+
+  + Function: `topiary.generate_ancestors <topiary.raxml.html#topiary.raxml.ancestors.generate_ancestors>`_
 
 + :emph:`Reconciles the gene and species trees`. Uses GeneRax to reconcile the
   gene and species trees. Uses default GeneRax SPR moves. User can define
@@ -602,7 +679,7 @@ software does, as well as showing an example output file.
     :alt: maximum likelihood reconciled gene/species tree
     :width: 75%
 
-  + Output: :code:`02_reconciliation/output/`
+  + Output: :code:`03_reconciled-tree/output/`
 
     + *summary-tree.pdf*: Drawing of reconciled tree with branch lengths and
       labeled non-speciation events.
@@ -648,7 +725,7 @@ software does, as well as showing an example output file.
     >anc47_altAll|avgPP:0.993|lnPP:-3.699|num_ambig:3|num_ambig_gaps:1
     M-----------Q-------------G-------F-----TA------A------L-L-V--WT-----L--L---SP-----S-G----S-----G-----GEAWPTH-TACRDG------GLE--VLYQSC-DP----L-------Q---DFGFS-IDQCSKQL---KPNLNIRFGIILREDIKELFLDIALFS-KG----S--SILN-----FS--YPICEED-LPKFSFCGRRKGEQIYYA-G--------P-V--NNPG---FEIP---EG----EYQ-V---L-LELYNEN--R----ST--VAC--ANATVI-------------------C-------S
 
-  + Output: :code:`03_ancestors/output/`
+  + Output: :code:`04_reconciled-tree-ancestors/output/`
 
     + *summary-tree.pdf*: Drawing of reconciled tree with branch lengths,
       labeled non-speciation events, and ancestors with posterior probabilities
@@ -670,7 +747,7 @@ software does, as well as showing an example output file.
   + Function: `topiary.generate_ancestors <topiary.raxml.html#topiary.raxml.ancestors.generate_ancestors>`_
 
 + :emph:`Generates bootstrap replicates from the ML gene tree`. This uses the
-  ML gene tree (step *01_ml-tree*), :emph:`NOT` the reconciled tree as input and
+  ML gene tree (step *01_gene-tree*), :emph:`NOT` the reconciled tree as input and
   generates up to 1,000 bootstrap replicates. These will be fed into the next
   script, which calculates the final branch supports on the reconciled tree.
 
@@ -679,7 +756,7 @@ software does, as well as showing an example output file.
     :alt: bootstrap supports mapped to the ML gene tree
     :width: 75%
 
-  + Output: :code:`04_bootstraps/output/`
+  + Output: :code:`05_gene-tree-bootstraps/output/`
 
     + *summary-tree.pdf*: Drawing of ML gene tree (:emph:`NOT` the reconciled
       tree) with branch lengths. Nodes are colored by bootstrap support. In
@@ -785,7 +862,7 @@ Script details
     :alt: final reconciled tree with events, ancestors, ancestor supports, and branch supports
     :width: 75%
 
-  + Output: :code:`05_reconcile-bootstraps/output/`
+  + Output: :code:`06_reconciled-tree-bootstraps/output/`
 
     + *summary-tree.pdf*: Drawing of rooted reconciled tree with with branch
       lengths. Nodes are labeled with non-speciation evolutionary events,

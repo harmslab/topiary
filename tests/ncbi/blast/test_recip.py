@@ -8,6 +8,8 @@ from topiary.ncbi.blast.recip import _run_blast
 from topiary.ncbi.blast.recip import recip_blast
 from topiary.ncbi.blast.recip import _make_recip_blast_calls
 
+from topiary.io.paralog_patterns import load_paralog_patterns
+
 import numpy as np
 import pandas as pd
 import copy, re
@@ -21,6 +23,10 @@ def test__prepare_for_blast(test_dataframes):
     df = test_dataframes["good-df"]
     paralog_patterns = {"LY96":["lymphocyte antigen 96","esop1"],
                         "LY86":re.compile("lymphocyte antigen 86")}
+
+    # Precompile the paralog patterns -- we are testing pass-through to 
+    # load_paralog_patterns, *not* how that function itself behaves. 
+    expected_paralog_patterns = load_paralog_patterns(paralog_patterns)
 
     kwargs = copy.deepcopy(default_kwargs)
 
@@ -74,11 +80,12 @@ def test__prepare_for_blast(test_dataframes):
 
     # Make sure it's compiling regular expressions as expected
     patterns = out[2]
-    expected_re = [("|".join([re.escape(x) for x in paralog_patterns["LY96"]]),"LY96"),
-                   (paralog_patterns["LY86"].pattern,"LY86")]
     for i, p in enumerate(patterns):
-        assert patterns[p].pattern == expected_re[i][0]
-        assert p == expected_re[i][1]
+
+        out_p =    set(list(         patterns[p].pattern.split("|")))
+        expect_p = set(list(expected_paralog_patterns[p].pattern.split("|")))
+
+        assert out_p == expect_p 
 
     # Dump paralog_patterns so we can jam in different ones
     kwargs.pop("paralog_patterns")
@@ -89,7 +96,7 @@ def test__prepare_for_blast(test_dataframes):
     patterns1 = out[2]
     out = _prepare_for_blast(paralog_patterns={"stupid":["1"]},**kwargs)
     patterns2 = out[2]
-    out = _prepare_for_blast(paralog_patterns={"stupid":re.compile("1")},**kwargs)
+    out = _prepare_for_blast(paralog_patterns={"stupid":re.compile("1|stupid")},**kwargs)
     patterns3 = out[2]
     out = _prepare_for_blast(paralog_patterns={"stupid":[re.compile("1")]},**kwargs)
     patterns4 = out[2]
@@ -135,28 +142,6 @@ def test__prepare_for_blast(test_dataframes):
 
     # ------------------------------------------------------------------------
     # local_blast_db and ncbi_blast_db already tested above
-
-    # ------------------------------------------------------------------------
-    # ignorecase
-    kwargs = copy.deepcopy(default_kwargs)
-    kwargs.pop("ignorecase")
-
-    # Make sure True passes work
-    good_trues = [True,1,np.ones(1,dtype=bool)[0]]
-    for g in good_trues:
-        print("passing good",g,type(g))
-        out = _prepare_for_blast(ignorecase=g,**kwargs)
-
-    # Make sure False passes work
-    good_falses = [False,0,np.zeros(1,dtype=bool)[0]]
-    for g in good_falses:
-        out = _prepare_for_blast(ignorecase=g,**kwargs)
-
-    bad_ignorecase = ["True","False",np.nan,{},[],None,type(True)]
-    for b in bad_ignorecase:
-        print(f"testing bad ignorecase value: {b}")
-        with pytest.raises(ValueError):
-            out = _prepare_for_blast(ignorecase=b,**kwargs)
 
 
     # ------------------------------------------------------------------------
@@ -338,7 +323,8 @@ def test__make_recip_blast_calls(test_dataframes,recip_blast_hit_dfs):
     prep_kwargs["local_blast_db"] = "local"
     prep_out = _prepare_for_blast(df,paralog_patterns,**prep_kwargs)
 
-    # Okay, output from _prepare_for_blast
+    # Okay, output from _prepare_for_blast (paralog_patterns will be turned into
+    # proper regex)
     df, sequence_list, paralog_patterns, min_call_prob, partition_temp, drop_combo_fx = prep_out
 
     # Get default arguments for _make_recip_blast_calls

@@ -5,9 +5,9 @@
 
 .. _data-structures-doc:
 
-============================
-Patterns and data structures
-============================
+==================================
+Data structures and API philosophy
+==================================
 
 Data structures
 ===============
@@ -128,18 +128,80 @@ Example seed dataframe
 | LY86 | lymphocyte antigen 86;MD1;Myeloid Differentiation Protein-1       | Danio rerio  | MKTYFNM... |
 +------+-------------------------------------------------------------------+--------------+------------+
 
-See protocol for description of how to make these dataframes.
+See the `protocol <protocol.html#protocol>`_ for description of how to make these dataframes.
+
+----------------
+paralog patterns
+----------------
+
+This data structure is how topiary does things like search through descriptions 
+of reciprocal BLAST hits to call sequence orthology. This is a dictionary keying
+the name of each paralog to either a list of aliases or a compiled regular
+expression for the aliases that maps to the name. (If you send in a paralog
+pattern as a list of aliases, topiary will automatically compile the regular
+expressions). When running the seed-to-alignment pipeline, this structure is
+automatically generated from the seed dataframe. 
+
+A quick example. This dictionary indicates that the strings :code:`"MD2"`,
+:code:`"ESOP1"`, etc. should all be interpreted as really being :code:`"LY96"`. 
+
+.. code-block:: python
+  pp = {"LY96":["MD2",
+                "myeloid differentiation protein 2",
+                "ESOP1",
+                "lymphocyte antigen 96"],
+        "LY86":["Lymphocyte Antigen 86",
+                "Myeloid Differentiation Protein-1",
+                "MD1",
+                "RP105-associated 3",
+                "MMD-1"]
+        }
+
+It can be compiled into a set of regular expressions by:
+
+.. code-block:: python
+  topiary.io.load_paralog_patterns(pp)
+  
+  # gives 
+  {'LY96': re.compile(r'esop[\ \-_\.]*1|ly[\ \-_\.]*96|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*96|md[\ \-_\.]*2|myeloid[\ \-_\.]*differentiation[\ \-_\.]*protein[\ \-_\.]*2',re.IGNORECASE|re.UNICODE),
+   'LY86': re.compile(r'ly[\ \-_\.]*86|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*86|md[\ \-_\.]*1|mmd[\ \-_\.]*1|myeloid[\ \-_\.]*differentiation[\ \-_\.]*protein[\ \-_\.]*1|rp[\ \-_\.]*105[\ \-_\.]*associated[\ \-_\.]*3',re.IGNORECASE|re.UNICODE)}
 
 
-Patterns
-========
+A couple of notes on how this is compiled. 
 
-The core pattern in the topiary pipeline is as follows:
+1. topiary automatically adds different separators to the regular expression.
+   For example, for :code:`"MD2"` topiary will look for :code:`"MD2"`,
+   :code:`"MD 2"`, :code:`"MD-2"`, :code:`"MD_2"`, and :code:`"MD.2"`. It inserts
+   separators between letters and numbers or any time there is a space/separator in the alias. 
+2. topiary does it's best to make sure the regular expressions are unique and 
+   will throw an error if the regex for one paralog pulls up a different paralog.
+3. topiary puts the name itself (e.g., :code:`"LY96"` above) and adds it into 
+   the compiled regular expression. 
+
+If you want to send in your own regular expressions, you can either create 
+a paralog pattern dictionary manually (using :code:`re.compile`) or by creating
+a compiled paralog pattern dictionary by calling 
+`topiary.io.load_paralog_patterns <topiary.io.html#topiary.io.load_paralog_patterns>`_
+using it's more flexible options. 
+
+
+
+API philosophy
+==============
+
+---------
+Pipelines
+---------
+
+The basic idea for the topiary API is to have each function take a topiary
+dataframe as an argument and to then return a modified *copy* of that dataframe
+as an output. This allows one to write pipelines, as well as easily save out
+intermediate steps. The basic flow goes something like:
 
 .. code-block:: python
 
   df = topiary.do_something(df,args)
-  topiary.write_csv(df,"current-state.csv")
+  topiary.write_dataframe(df,"current-state.csv")
 
 The main topiary functions take a topiary dataframe as their first argument,
 other arguments needed by the function, and then return an appropriately
@@ -166,15 +228,24 @@ pipeline as one might run it via the API:
   df = topiary.quality.shrink_aligners(df)
   topiary.write_csv(df,"after-third-shrink.csv")
 
-See the API examples page for details.
 
+---------------
 Run directories
-===============
+---------------
 
-A topiary output directory has a standard organization:
+For the wrapped software that generates output in directories (basically, 
+everything after the seed to alignment step), topiary uses a stereotyped 
+format for all directories. 
 
-run_directory
+**run_directory**
 + *input*: input files for the calculation
 + *working*: temporary files used when doing the calculation
 + *output*: final output files for the calculation
 + *run_parameters.json*: file holding the run parameters
+
+This is managed by a private API class (:code:`topiary._private.supervisor.Supervisor`)
+that can read, write, and manipulate these directories. This class is
+documented in the source code and unit tests; advanced users can check those out
+if they want to run their own Supervisor-enabled function calls. It remains a private
+API class because we do not guarantee it's current functionality in future
+release. Any user-written code employing a Supervisor may break without warning. 

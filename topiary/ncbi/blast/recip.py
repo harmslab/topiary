@@ -3,9 +3,10 @@ Reciprocal blast sequences.
 """
 
 import topiary
-from topiary._private import check
 from .ncbi import ncbi_blast
 from .local import local_blast
+from topiary._private import check
+from topiary.io.paralog_patterns import load_paralog_patterns
 
 from topiary.ncbi import parse_ncbi_line
 
@@ -40,13 +41,16 @@ def _prepare_for_blast(df,
         off, set use_start_end = False.
     paralog_patterns : dict
         dictionary with paralogs as keys and patterns to look for (as
-        lists of strings or compiled regular expressions) as values
+        lists of strings or compiled regular expressions) as values. If you 
+        want to generate a customized set of paralog_patterns regular expressions,
+        either: create a dictionary with precompiled regex (e.g.,
+        :code:`pp = {"blah":re.Pattern,...})` OR use the function
+        :code:`pp = topiary.io.load_paralog_patterns()` on an input dictionary.
+        That function has options for compiling the regular expressions. 
     local_blast_db : str or None
         local database against which to blast
     ncbi_blast_db : str or None
         database on ncbi against which to blast
-    ignorecase : bool
-        whether to ignore letter case when searching blast
     min_call_prob : float, default=0.95
         hits from all paralogs that yield a regular expression match
         are weighted by their relative bit scores. Each paralog is
@@ -85,8 +89,8 @@ def _prepare_for_blast(df,
 
     ignorecase = check.check_bool(ignorecase,"ignorecase")
 
-    paralog_patterns = check.check_paralog_patterns(paralog_patterns,
-                                                    ignorecase=ignorecase)
+    paralog_patterns = load_paralog_patterns(paralog_patterns)
+
     if len(paralog_patterns) == 0:
         err = "\nparalog_patterns must have at least one entry\n"
         raise ValueError(err)
@@ -516,7 +520,7 @@ def recip_blast(df,
       (if no match found)
     + `recip_paralog`: string or None. name of paralog from paralog_patterns
     + `recip_prob_match`: float. probability that this is the correct paralog
-      call based on relative evalues of all paralog hits (see Note 2)
+      call based on relative bit scores of all paralog hits (see Note 2)
     + `recip_bit_score`: float. bit_score for the paralog hit (if found)
 
     Parameters

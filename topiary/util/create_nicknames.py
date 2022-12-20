@@ -4,11 +4,9 @@ Create a nickname column that has a friendly nickname for each sequence.
 
 import topiary
 from topiary._private import check, reserved_columns
+from topiary.io.paralog_patterns import load_paralog_patterns
 
 import pandas as pd
-import numpy as np
-
-import re, sys, os, string, random, pickle, io, urllib, http, copy
 
 def create_nicknames(df,
                      paralog_patterns,
@@ -98,8 +96,8 @@ def create_nicknames(df,
         err = "\nseparator should be a string.\n\n"
         raise ValueError(err)
 
-    patterns = check.check_paralog_patterns(paralog_patterns,
-                                            ignorecase=ignorecase)
+    patterns = load_paralog_patterns(paralog_patterns,
+                                     ignorecase=ignorecase)
 
     # Get entries from source column
     source = [entry for entry in df.loc[:,source_column]]

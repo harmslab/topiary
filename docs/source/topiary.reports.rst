@@ -9,6 +9,14 @@ topiary.reports
    :show-inheritance:
 
 
+topiary.reports.cards
+----------------------------
+
+.. automodule:: topiary.reports.cards
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.reports.elements
 -------------------------------
 

@@ -8,7 +8,7 @@ from topiary._private import installed
 import pandas as pd
 import subprocess, sys, os, random, string, re, warnings
 
-def align(input,
+def align(input_seqs,
           output_fasta=None,
           super5=False,
           silent=False,
@@ -19,11 +19,11 @@ def align(input,
 
     Parameters
     ----------
-    input : str or pandas.DataFrame
+    input_seqs : str or pandas.DataFrame
         input to align (fasta file or topiary df)
     output_fasta : str or None, default=None
         output fasta file to store alignment. Optional if the input
-        is a dataframe; reqiured if the input is a fasta file.
+        is a dataframe; required if the input is a fasta file.
     super5 : bool
         Use the 'super5' mode of muscle 5
     silent : bool, default=False
@@ -42,9 +42,10 @@ def align(input,
     Returns
     -------
     alignment : None or pandas.DataFrame
-        If input is a topiary dataframe, return a copy of the dataframe with the
-        aligned sequences loaded into the `alignment` column. Otherwise, write
-        to `output_fasta file` and return None from the function.
+        If input_seqs is a topiary dataframe, return a copy of the dataframe
+        with the aligned sequences loaded into the `alignment` column.
+        Otherwise, write to `output_fasta file` and return None from the
+        function.
     """
 
     # If output_fasta is defined, make sure it's a string
@@ -54,11 +55,11 @@ def align(input,
         raise ValueError(err)
 
     # If the input is a string.
-    if type(input) is str:
+    if type(input_seqs) is str:
 
         # Make sure the input file exists.
-        if not os.path.exists(input):
-            err = f"\n'{input}' file does not exist.\n\n"
+        if not os.path.exists(input_seqs):
+            err = f"\n'{input_seqs}' file does not exist.\n\n"
             raise FileNotFoundError(err)
 
         # Make sure the output file is not None.
@@ -68,17 +69,17 @@ def align(input,
             raise ValueError(err)
 
         # Do the alignment.
-        _run_muscle(input,output_fasta,super5,silent,muscle_cmd_args,muscle_binary)
+        _run_muscle(input_seqs,output_fasta,super5,silent,muscle_cmd_args,muscle_binary)
 
         print(f"\nSuccess. Alignment written to '{output_fasta}'.",flush=True)
 
         return None
 
     # If the input is a dataframe
-    elif type(input) is pd.DataFrame:
+    elif type(input_seqs) is pd.DataFrame:
 
         # Check the dataframe
-        df = check.check_topiary_dataframe(input)
+        df = check.check_topiary_dataframe(input_seqs)
 
         # Create temporary input file
         tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
@@ -118,7 +119,7 @@ def align(input,
         return df
 
     else:
-        err = "\ninput should either be a fasta file or a topiary dataframe\n\n"
+        err = "\ninput_seqs should either be a fasta file or a topiary dataframe\n\n"
         raise ValueError(err)
 
 
