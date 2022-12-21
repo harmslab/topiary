@@ -98,7 +98,7 @@ reconstruction. It has four columns: name (e.g. the paralog), aliases, species,
 and sequence. Topiary uses this dataset as a starting point for BLAST searches
 to construct a dataset and generate an alignment for the reconstruction study.
 An example for the two immune proteins, LY86 and LY96, is shown below. The full
-spreadsheet can be downloaded `here <_static/data/seed-dataframe_example.csv>`_.
+spreadsheet can be `downloaded here <_static/data/seed-dataframe_example.csv>`_.
 
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 | name | aliases                                                                                    | species       | sequence   |
@@ -239,20 +239,35 @@ with the name of your seed file.
 Output
 ------
 
-This will create a directory named :code:`seed_to_ali` that has a set of
-spreadsheets capturing each step in the topiary pipeline, as well as
-intermediate files used in the calculation. The outputs used for the 
-next step are *05_clean-aligned-dataframe.csv* and *06_alignment.fasta*. The 
-*csv* file is a complete topiary dataframe that has all downloaded sequences and
-information about them. The *fasta* file holds the current alignment. 
+This will create a directory named *seed_to_ali* that has a set of
+csv files that sequentially capture each step in the topiary pipeline, as
+well as intermediate files used in the calculation. When topiary removes a 
+sequence from consideration, it sets the spreadsheet column :code:`keep` to 
+:code:`False`,  so you can track how the dataset changes over steps by looking
+at these spreadsheets. 
+
+.. tip::
+
+  If you want to override topiary's decision to remove a sequence, you can
+  manually set the :code:`keep` and :code:`always_keep` columns to :code:`True`
+  in one of the intermediate spreadsheets. Delete the subsequent spreadsheets
+  and then re-run the pipeline with the :code:`--restart` argument described
+  above. That sequence will now be kept regardless of quality score or 
+  redundancy.
+
+The outputs used for the next step are *seed_to_ali/05_clean-aligned-dataframe.csv* 
+and *seed_to_ali/06_alignment.fasta*. The final csv file is a topiary dataframe
+that has only the final sequences and information about them. The fasta file
+holds the final alignment. 
 
 .. note::
 
   Generally, this script should take less than an hour. The time required for
   the initial NCBI BLAST step depends on server capacity and may take a while.
   Unfortunately, this is outside of topiary's control. If this step is too slow
-  or crashes, you can load in sequences from saved BLAST XML files as described
-  below.
+  or crashes, you can load in sequences from saved BLAST XML files using the 
+  `--blast_xml` argument to `topiary-seed-to-alignment`.
+
 
 -------
 Options
@@ -412,7 +427,7 @@ subsequent reconstruction steps.
 4. Infer evolutionary trees and ancestors
 =========================================
 
-This pipeline does five steps:
+This step will do five tasks: 
 
 + Infer the maximum likelihood model of sequence evolution
 + Infer a maximum likelihood gene tree
@@ -420,7 +435,9 @@ This pipeline does five steps:
 + Generate bootstrap replicates for the maximum likelihood gene tree
 + Reconcile the gene and species trees (for non-microbial proteins)
 
-The input for this calculation is the *.csv* file from the last step. 
+The input for this calculation is the *.csv* file from the last step. A small
+example input file can be found `here <_static/data/ali-to-anc-example-dataset.csv>`_. 
+This dataset will take about an hour to run on a laptop. 
 
 We highly recommend running the this analysis on a computing cluster. To
 prepare the computing environment, please :ref:`install topiary<installation-doc>`
@@ -430,7 +447,7 @@ conda environment named `topiary`.
 .. note::
 
   You can run this as a Jupyter notebook instead of using the command line. 
-  For an example, see `here <https://github.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_. 
+  For an example, see `this notebook <https://github.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_. 
   To run this notebook interactively (for a toy dataset) on Google Colab,
   click the button below. 
 
@@ -496,7 +513,7 @@ command on your system.
 Output
 ------
 
-The output for this call is a directory (:code:`ali_to_anc` from command above).
+The output for this call is a directory (*ali_to_anc* from command above).
 The primary output is *ali_to_anc/results/index.html*. This file summarizes the 
 results of the calculation. The *results* directory is a self-contained unit
 that can be shared and opened by anyone, even if they do not have topiary
@@ -593,7 +610,7 @@ command on your system.
 Output
 ------
 
-When completed, this pipeline will update the `ali_to_anc/results` directory, 
+When completed, this pipeline will update the *ali_to_anc/results* directory, 
 adding branch support information to the reconciled tree and reconciled
 ancestors. For details about the outputs and functions called in the pipeline,
 see the :any:`pipelines page<bootstrap-reconcile-pipeline>`. 
@@ -617,6 +634,54 @@ The most important option is:
 
 6. Interpret outputs and select ancestors
 =========================================
+
+.. danger::
+
+  Generating ancestors is relatively easy, but experimentally characterizing
+  them can take years; it is worth making sure the ancestors are well 
+  reconstructed before ordering genes!
+
+With that in mind, there are a few things worth covering for interpreting 
+ancestors. 
+
+-------------
+Tree topology
+-------------
+
+Before selecting ancestors to characterize, it is important to make sure the
+phylogenetic tree is reasonable. 
+
+Model violation
+---------------
+
+The probabilistic models used in ASR are powerful, but do not capture all
+possible evolutionary events. If an evolving protein underwent events not
+captured by these models, the resulting ancestors could be nonsensical. 
+Two common problems are:
+
+1. :emph:`Incomplete lineage sorting` (ILS). This is where a gene duplicates and
+exists as several variants in a population when speciation occurs. Different
+duplicates are preserved along the descendant lineages, meaning this cannot be
+classified as a simple duplication or speciation event. 
+2. :emph:`Gene fusion`. This is where different parts of a single gene have
+different evolutionary histories, then merged at some point in the past.
+
+Looking at the reconciled tree can help you decide if this might apply to your
+family. A standard signal for both ILS and gene fusion is high discordance
+between the inferred gene and species trees. This will manifest as an
+unexpectedly high number of duplication and/or transfer events in the reconciled
+tree. If, for example, you are studying a protein family where you expect
+two paralogs, but you observe 20 duplication events scattered throughout the
+tree, there is a good chance that the evolutionary models used for ASR are not
+appropriate for your protein family. 
+
+Topiary warns users in its summary output if there are an anomalous number of
+duplication events, suggesting model-violation. 
+
+Solutions
+If your protein has more than one domain, one option would be to try to reconstruct each domain independently. If the discordance disappears, it’s good evidence for a gene fusion event. If the discordance remains, proceed with extreme caution. 
+One way forward in the face of discordance is to compare the sequences—and functional characteristics—for any ancestors of interest reconstructed using either the gene tree alone or the reconciled gene tree. (Topiary returns ancestors inferred on both trees.) If the results for ancestors reconstructed on the two trees differ dramatically, one cannot infer the ancestral sequence with confidence given standard ASR methods. ILS and gene fusion are longstanding problems in phylogenetics; treating them requires expert input. 
+
 
 ---------------
 Quality metrics
