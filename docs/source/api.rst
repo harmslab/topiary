@@ -16,4 +16,5 @@ API reference
    topiary.pipeline
    topiary.quality
    topiary.raxml
+   topiary.reports
    topiary.util

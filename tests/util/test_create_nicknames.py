@@ -94,7 +94,7 @@ def test_create_nicknames(test_dataframes):
     test_df = df.copy()
     test_df.loc[:,"name"] = ["|rocking","rock","\in","the","usa"]
     paralog_patterns = {"fixed":("|rock","out"),
-                        "junk":("the",re.compile("us."))}
+                        "junk":(re.compile("the|us."))}
     out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns)
 
     assert np.array_equal(np.array(out_df.loc[:,"test1"]),

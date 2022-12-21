@@ -411,17 +411,19 @@ def create_row(elements):
     """
     Create a row of columns with this format
 
-    <div class="text-center">
-        <div class="row">
-            <div class="col">
-                e0
+    .. code-block:: python
+
+        <div class="text-center">
+            <div class="row">
+                <div class="col">
+                    e0
+                </div>
+                <div class="col">
+                    e1
+                </div>
+                ...
             </div>
-            <div class="col">
-                e1
-            </div>
-            ...
         </div>
-    </div>
 
     Parameters
     ----------

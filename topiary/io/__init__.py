@@ -11,3 +11,4 @@ from .tree import read_tree
 from .tree import load_trees
 from .seed import read_seed
 from .seed import df_from_seed
+from .paralog_patterns import load_paralog_patterns

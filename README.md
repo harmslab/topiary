@@ -1,10 +1,17 @@
-# topiary
+# topiary: python framework for doing ancestral sequence reconstruction
 
 ![Testing status](https://github.com/harmslab/topiary/actions/workflows/python-app.yml/badge.svg) ![Coverage](docs/badges/coverage-badge.svg) ![Number of tests](docs/badges/tests-badge.svg) ![Documentation Status](https://readthedocs.org/projects/topiary-asr/badge/?version=latest)
 
-[Documentation](https://topiary-asr.readthedocs.io/en/latest/)
+### [Documentation](https://topiary-asr.readthedocs.io/en/latest/)
 
-### Python framework for doing ancestral sequence reconstruction.
+### Try it out on Google Colab
+
++ [Go from a few initial sequences to a full alignment](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb)
++ [Build a phylogenetic tree and reconstruct ancestors](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb)
+
+![ASR pipeline](docs/source/_static/img/asr-pipeline-01.png)
+
+#### Features
 
 + *Automatic.* Performs sequence database construction, quality
   control, multiple sequence alignment, tree construction, gene/species tree
@@ -25,3 +32,5 @@
   + [GeneRax](https://github.com/BenoitMorel/GeneRax)
   + [PastML](https://pastml.pasteur.fr)
   + [toytree](https://toyplot.readthedocs.io/)
+
+Publication forthcoming in *Protein Science*. Stay tuned. 

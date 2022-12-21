@@ -5,7 +5,8 @@ import io
 import os
 import glob
 
-from setuptools import find_packages, setup
+from setuptools import find_packages
+from setuptools import setup
 
 # Package meta-data.
 DESCRIPTION = \
@@ -31,6 +32,10 @@ if VERSION is None:
 else:
     about['__version__'] = VERSION
 
+# Packages
+packages = find_packages(exclude=('tests',))
+packages.extend(glob.glob("topiary/reports/assets/"))
+
 # Where the magic happens:
 setup(
     name="topiary-asr", # Note this is different than "topiary" for PIP package name
@@ -42,7 +47,7 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('tests',)),
+    packages=packages,
     scripts=glob.glob("bin/topiary-*"),
     include_package_data=True,
     license='MIT',

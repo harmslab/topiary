@@ -74,10 +74,12 @@ def alignment_to_ancestors(df,
     Parameters
     ----------
     df : pandas.DataFrame or str
-        topiary data frame or csv written out from topiary df.
+        topiary data frame or csv written out from topiary df. This topiary 
+        dataframe should have an :code:`alignment` column. 
     out_dir : str, optional
         output directory. If not specified, create an output directory with the
-        format "alignment_to_ancestors_{randomletters}"
+        format "alignment-to-ancestors_{counter}" (where counter increments so 
+        previous directories are not overwritten).
     starting_tree : str, optional
         tree in newick format. This will be used for the best model
         inference and starting tree for the maximum likelihood tree estimation.
@@ -96,7 +98,7 @@ def alignment_to_ancestors(df,
         generation. Should be between 0 and 1.
     model_matrices : list, default=["cpREV","Dayhoff","DCMut","DEN","Blosum62","FLU","HIVb","HIVw","JTT","JTT-DCMut","LG","mtART","mtMAM","mtREV","mtZOA","PMB","rtREV","stmtREV","VT","WAG"]
         list of model matrices to check. If calling from command line, these
-        can be specified directly (:code:`--model_matrices LG ...`) or by specifying
+        can be specified directly (:code:`--model_matrices LG JTT ...`) or by specifying
         a file with models on each line (:code:`--model_matrices SOME_FILE`)
     model_rates : list, default=["","G8"]
         ways to treat model rates. If calling from command line, these
@@ -188,6 +190,17 @@ def alignment_to_ancestors(df,
     # Convert to allow_horizontal_transfer
     horizontal_transfer = check.check_bool(horizontal_transfer,
                                            "horizontal_transfer")
+
+    if horizontal_transfer and not do_reconcile:
+        err = "\nThe horizontal_transfer argument is only meaningful for a\n"
+        err += "calculation in which the gene tree is reconciled to the species\n"
+        err += "tree. By default reconciliation is not done for microbial\n"
+        err += "datasets, so horizontal_transfer should not be specified.\n"
+        err += "If you want to force a reconcilation and allow horizontal\n"
+        err += "gene transfer, use the force_reconcile and horizontal_transfer\n"
+        err += "flags together.\n\n"
+
+        raise ValueError(err)
 
     # alt-all cutoff
     alt_cutoff = check.check_float(alt_cutoff,
