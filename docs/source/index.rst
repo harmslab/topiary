@@ -11,7 +11,13 @@
 topiary
 =======
 
-Python framework for doing ancestral sequence reconstruction.
+:emph:`Python framework for doing ancestral sequence reconstruction`
+
+Ancestral sequence reconstruction (ASR) is a powerful method to study protein
+evolution. It requires constructing a multiple sequence alignment, running a 
+software pipeline with several software packages, and converting
+between arcane file types. Topiary streamlines this process, simplifying the
+workflow and helping non-experts do best-practice ASR. 
 
 Features
 ========
@@ -19,23 +25,56 @@ Features
 + :emph:`Automatic.` Performs sequence database construction, quality
   control, multiple sequence alignment, tree construction, gene/species tree
   reconciliation, and ancestral reconstruction with minimal user input.
-+ :emph:`Species aware.` Integrates the `Open Tree of Life`_
++ :emph:`Human-oriented.` Users prepare their input as spreadsheets, not
+  complicated text files. Outputs are spreadsheets and graphical summaries of
+  ancestor quality.
++ :emph:`Species aware.` Integrates with the `Open Tree of Life`_
   database, improving selection of sequences and tree/ancestor inference.
-+ :emph:`Human-oriented.` Users prepare input as spreadsheets, not
-  arcane text files. Outputs are spreadsheets, clean fasta files, pdf trees,
-  and graphical summaries of ancestor quality.
 + :emph:`Flexible.` Use as a command line program or do custom analyses
-  and plotting using the topiary API.
+  and plotting using the topiary API in a Jupyter notebook or Python script.
 + :emph:`Modern.` Topiary is built around a collection of modern,
   actively-supported, phylogenetic software tools:
   `OpenTree <opentree-link_>`_,
   `muscle 5 <muscle-link_>`_, `RAxML-NG <raxml-ng-link_>`_,
   `GeneRax <generax-link_>`_, `PastML <pastml-link_>`_, and `toytree <toytree-link_>`_.
 
+:emph:`Steps done by topiary`
+
+.. image:: _static/img/asr-pipeline.svg
+  :align: center
+  :alt: Steps automated by topiary
+
+|
+
+Try it out on Google Colab
+==========================
+
++ `Go from a few initial sequences to a full alignment <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb>`_
++ `Build a phylogenetic tree and reconstruct ancestors <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_
+
+
+Workflow
+========
+
+Topiary automates the computational steps of an ASR calculation, allowing the 
+user to focus on the three steps that require human insight: defining the 
+problem, validating the alignment, and characterizing the resulting ancestors.
+The graphic below shows the steps done by the user (brain icons) versus software
+(tree icons) in a topiary calculation. 
+
+.. image:: _static/img/workflow.svg
+  :align: center
+  :alt: Topiary workflow
+  :width: 80%
+
+|
+
 Example input/output
 ====================
 
 :emph:`User input to a topiary calculation`
+
+A user prepares a "seed dataframe" setting the scope for the calculation. 
 
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 | name | aliases                                                                                    | species       | sequence   |
@@ -49,35 +88,19 @@ Example input/output
 | LY86 | Lymphocyte Antigen 86;LY86;Myeloid Differentiation Protein-1;MD-1;RP105-associated 3;MMD-1 | Danio rerio   | MKTYFNM... |
 +------+--------------------------------------------------------------------------------------------+---------------+------------+
 
-:emph:`Final output tree from a small example topiary calculation`
+:emph:`Final output from a small example topiary calculation`
 
-.. image:: _static/img/final-tree.svg
+After running the pipeline, topiary returns a shareable directory with an html
+summary of all results. 
+
+.. image:: _static/img/topiary-report.gif
   :align: center
-  :alt: Topiary tree drawing
+  :alt: Animation showing topiary final report
 
-:emph:`Example ancestor quality summary graph`
-
-.. image:: _static/img/ali-to-anc/anc-plot.svg
-  :align: center
-  :alt: Graph showing ancestral quality
-  :width: 100%
-
-
-Quick start
-===========
-
-The topiary pipeline has two stages:
-
-1. Going from seed sequence to alignment (BLASTing, sequence quality control,
-   reducing redundancy, and alignment). This can be run on a user's Windows,
-   macOS, or Linux computer.
-2. Going from alignment to ancestors (building a gene tree, reconciling with the
-   species tree, inferring ancestors, and calculating bootstraps). This requires
-   macOS or Linux; Windows is *not* supported. This step should usually be run
-   on a high-performance computing cluster.
+|
 
 Installation
-------------
+============
 
 See the :ref:`installation<installation-doc>` page.
 
@@ -96,7 +119,7 @@ See the :ref:`installation<installation-doc>` page.
   For full installation instructions, see the :ref:`installation<installation-doc>` page.
 
 Short protocol
---------------
+==============
 
 For a more detailed protocol, see the :ref:`protocol<protocol-doc>` page.
 
@@ -139,7 +162,10 @@ How to cite
 
 If you use topiary in your research, please cite:
 
-+ *Citation coming soon.*
+Orlandi KN\ :sup:`*`, Phillips SR\ :sup:`*`, Sailer ZR, Harman JL, Harms MJ. "Topiary: pruning the
+manual labor from ancestral sequence reconstruction" (in press) *Protein Science* 
+
+:sup:`*` *Authors contributed equally*
 
 Please make sure to cite the tools we use in the package as well:
 
@@ -157,23 +183,17 @@ Please make sure to cite the tools we use in the package as well:
 API and data structures
 =======================
 
-For a detailed description of the data structures and API, see the
+Topiary can also be used as an API to organize general phylogenetic workflows.
+It uses `pandas <pandas-link_>`_ dataframes to manage phylogenetic data,
+allowing it to readily connect to other data science pipelines. Further, topiary
+provides programmatic access to RAxML-NG, GeneRax, Muscle5, and BLAST (local and
+remote). It also wraps portions of the OpenTree and PastML Python APIs for 
+convenient interaction with topiary pandas dataframes. 
+
+You can see examples of the topiary API in action inside Jupyter notebooks 
+in the `topiary-examples <https://github.com/harmslab/topiary-examples>`_
+github repo. For a detailed description of the data structures and API, see the
 :ref:`Data Structures<data-structures-doc>` and :ref:`API<api-doc>` pages.
-
-Topiary uses `pandas <pandas-link_>`_ dataframes to manage phylogenetic data.
-These dataframes can be readily written out and read from spreadsheet files
-(.csv, .tsv, .xlsx).
-
-Topiary is built around two types of dataframes:
-
-+ :emph:`seed dataframe`: A manually constructed dataframe containing seed sequences
-  that topiary uses as input to construct a full topiary dataframe for the
-  project.
-+ :emph:`topiary dataframe`: The main structure for holding sequences and
-  information about those sequences for the project. Each step in the pipeline
-  saves out, then edits, the main dataframe. This allows one to follow
-  the steps and/or manually introduce changes.
-
 
 .. toctree::
    :maxdepth: 2
@@ -181,6 +201,8 @@ Topiary is built around two types of dataframes:
 
    installation
    protocol
+   pipelines
+   taxonomic_scope
    drawing
    data_structures
    api

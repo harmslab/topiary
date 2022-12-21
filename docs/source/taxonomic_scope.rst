@@ -13,7 +13,9 @@ Determining taxonomic scope
 ===========================
 
 The following steps can be used to determine the taxonomic scope for a protein 
-of interest.
+of interest. We recommend doing this for non-microbial proteins. For microbial
+proteins, the species tree is poorly defined; therefore, topiary automatically
+sets the scope to microbial proteins. 
 
 #. BLAST known protein sequences against the 
    `non-redundant clustered <nr-clustered-database_>`_ BLAST database, setting

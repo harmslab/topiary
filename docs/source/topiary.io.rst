@@ -25,6 +25,14 @@ topiary.io.dataframe
    :undoc-members:
    :show-inheritance:
 
+topiary.io.paralog\_patterns
+-----------------------------------
+
+.. automodule:: topiary.io.paralog_patterns
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 topiary.io.seed
 ----------------------
 

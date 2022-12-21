@@ -146,6 +146,7 @@ A quick example. This dictionary indicates that the strings :code:`"MD2"`,
 :code:`"ESOP1"`, etc. should all be interpreted as really being :code:`"LY96"`. 
 
 .. code-block:: python
+  
   pp = {"LY96":["MD2",
                 "myeloid differentiation protein 2",
                 "ESOP1",
@@ -160,6 +161,7 @@ A quick example. This dictionary indicates that the strings :code:`"MD2"`,
 It can be compiled into a set of regular expressions by:
 
 .. code-block:: python
+
   topiary.io.load_paralog_patterns(pp)
   
   # gives 
@@ -181,7 +183,7 @@ A couple of notes on how this is compiled.
 If you want to send in your own regular expressions, you can either create 
 a paralog pattern dictionary manually (using :code:`re.compile`) or by creating
 a compiled paralog pattern dictionary by calling 
-`topiary.io.load_paralog_patterns <topiary.io.html#topiary.io.load_paralog_patterns>`_
+`topiary.io.load_paralog_patterns <topiary.io.html#topiary.io.paralog_patterns.load_paralog_patterns>`_
 using it's more flexible options. 
 
 
@@ -238,10 +240,11 @@ everything after the seed to alignment step), topiary uses a stereotyped
 format for all directories. 
 
 **run_directory**
-+ *input*: input files for the calculation
-+ *working*: temporary files used when doing the calculation
-+ *output*: final output files for the calculation
-+ *run_parameters.json*: file holding the run parameters
+
+  + *input*: input files for the calculation
+  + *working*: temporary files used when doing the calculation
+  + *output*: final output files for the calculation
+  + *run_parameters.json*: file holding the run parameters
 
 This is managed by a private API class (:code:`topiary._private.supervisor.Supervisor`)
 that can read, write, and manipulate these directories. This class is
