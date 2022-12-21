@@ -235,6 +235,10 @@ with the name of your seed file.
     :alt: open seed to alignment in colab
     :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb
 
+------
+Output
+------
+
 This will create a directory named :code:`seed_to_ali` that has a set of
 spreadsheets capturing each step in the topiary pipeline, as well as
 intermediate files used in the calculation. The outputs used for the 
@@ -584,6 +588,10 @@ command on your system.
 
   sbatch launcher.srun
 
+
+------
+Output
+------
 
 When completed, this pipeline will update the `ali_to_anc/results` directory, 
 adding branch support information to the reconciled tree and reconciled
