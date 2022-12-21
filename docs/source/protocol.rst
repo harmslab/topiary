@@ -283,7 +283,7 @@ You can select different BLAST inputs via the :code:`--blast_xml`,
 :code:`--ncbi_blast_db`, and :code:`--local_blast_db` options. Any combination
 of these options may be specified at the same time, allowing a single command to
 BLAST against an NCBI database, BLAST against a local BLAST database, and
-load results fromn a collection of previously saved BLAST XML files. The
+load results from a collection of previously saved BLAST XML files. The
 :code:`--blast_xml` option is particularly useful, as you can save NCBI BLAST
 results from the web interface (for example) and read those files in directly.
 
@@ -449,7 +449,7 @@ Copy the final dataframe up to the cluster.
 Running topiary on a cluster will require a run file that specifies the
 resources available for the calculation. The following is an example SLURM
 script for our local cluster. (Check with your cluster administrator for the
-relevant format).
+relevant format.)
 
 .. code-block:: shell-session
 
