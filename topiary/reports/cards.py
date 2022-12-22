@@ -47,7 +47,7 @@ def create_ancestor_card(anc_dict,
 
     anc_out = []
     start, _ = create_element("div",{"class":"accordion",
-                                    "id":"ancAccordion"})
+                                     "id":"ancAccordion"})
     anc_out.append(start)
     
     # Get sorted list of ancestors
@@ -115,9 +115,9 @@ def create_ancestor_card(anc_dict,
         # </header>
 
         start, _   = create_element("div",attributes={"id":f"collapse{anc_id}",
-                                                    "class":["accordion-collapse","collapse"],
-                                                    "aria-labelledby":f"heading{anc_id}",
-                                                    "data-bs-parent":"#ancAccordion"})
+                                                      "class":["accordion-collapse","collapse"],
+                                                      "aria-labelledby":f"heading{anc_id}",
+                                                      "data-bs-parent":"#ancAccordion"})
 
         anc_out.append(start)
         anc_out.append("<div class=\"accordion-body\">")

@@ -252,11 +252,20 @@ def tree_report(tree_directory,
         if anc_dict[k]["bs_support"] is not None:
             supports = True
         break
-        
-    param_df = pd.DataFrame({"name":["Evolutionary model",
-                                     "Reconciled gene and species tree",
-                                     "Supports calculated"],
-                             "value":[model,reconciled,supports]})
+
+    names = ["Evolutionary model",
+             "Reconciled gene and species tree",
+             "Supports calculated"]
+
+    values = [model,reconciled,supports]
+
+    if ancestor_directory is not None:
+        alt_cutoff = Supervisor(ancestor_directory).run_parameters["alt_cutoff"]
+        names.append("Ancestor alt-all cutoff")
+        values.append(f"{alt_cutoff:.2f}")
+
+    param_df = pd.DataFrame({"name":names,
+                             "value":values})
     param_table = df_to_table(param_df,add_header=False,show_row_numbers=False)
     param_html = create_card("Run parameters",card_contents=param_table)
 
