@@ -66,7 +66,8 @@ def plot_ancestor_data(df_anc,
                        alt_anc_pp=0.25,
                        width_ratio=5,
                        anc_name=None,
-                       anc_data_string=None):
+                       anc_data_string=None,
+                       close_plot=False):
     """
     Create a summary plot for an ancestor.
 
@@ -82,6 +83,8 @@ def plot_ancestor_data(df_anc,
         name of ancestor (title on graph and output file {anc_name}.pdf)
     anc_data_string : str, optional
         data to dump in subtitle
+    close_plot : bool, False
+        whether or not to close plot when complete
 
     Returns
     -------
@@ -198,5 +201,8 @@ def plot_ancestor_data(df_anc,
     # Save out figure
     if anc_name is not None:
         fig.savefig(f"{anc_name}.pdf",bbox_inches="tight")
+
+    if close_plot:
+        plt.close(fig)
 
     return fig, ax

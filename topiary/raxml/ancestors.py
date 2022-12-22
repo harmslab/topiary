@@ -407,11 +407,12 @@ def _parse_raxml_anc_output(df,
                            f"# ambig gaps: {num_ambig_gaps}"]
 
         # Plot a summary of the ancestor
-        topiary.draw.plot_ancestor_data(df_list[-1],
-                                        alt_anc_pp=alt_cutoff,
-                                        width_ratio=plot_width_ratio,
-                                        anc_name=anc_name,
-                                        anc_data_string=", ".join(anc_data_string))
+        _ = topiary.draw.plot_ancestor_data(df_list[-1],
+                                            alt_anc_pp=alt_cutoff,
+                                            width_ratio=plot_width_ratio,
+                                            anc_name=anc_name,
+                                            anc_data_string=", ".join(anc_data_string),
+                                            close_plot=True)
 
 
     # Write final fasta file

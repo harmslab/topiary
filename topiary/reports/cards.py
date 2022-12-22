@@ -15,6 +15,7 @@ from topiary.reports.elements import sequence_box
 
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 
 import shutil
 import os
@@ -79,9 +80,12 @@ def create_ancestor_card(anc_dict,
 
         fig, ax = plot_ancestor_data(df,
                                     width_ratio=6,
-                                    alt_anc_pp=alt_cutoff)
+                                    alt_anc_pp=alt_cutoff,
+                                    close_plot=False)
         fig.savefig(os.path.join(output_directory,f"{a}.svg"),bbox_inches = "tight")
         fig.savefig(os.path.join(output_directory,f"{a}_pp.pdf"),bbox_inches = "tight")
+
+        plt.close(fig)
 
         taxonomic = anc_dict[a]["taxonomic_dist"]
         paralog_call = anc_dict[a]["paralog_call"]
