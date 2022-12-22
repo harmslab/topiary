@@ -39,7 +39,7 @@ from . import quality
 # Core functions for pipeline
 from .quality import shrink_dataset
 
-from .pipeline import seed_to_alignment, alignment_to_ancestors
+from .pipeline import seed_to_alignment, alignment_to_ancestors, bootstrap_reconcile
 
 from .util import create_nicknames
 

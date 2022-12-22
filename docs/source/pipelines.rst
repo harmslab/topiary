@@ -20,11 +20,38 @@ pipelines described in the topiary :ref:`protocol<protocol-doc>`.
 Seed to alignment
 =================
 
-The pipeline does the following six steps. After each step, topiary writes out the
-indicated *.csv* file, allowing one to track what changes are made. Topiary will
-add sequences and/or columns at each step. Until the final step, it does not
-delete sequences, but rather sets the :code:`keep` column to :code:`False` when
-a sequence is removed.
+Seed to alignment starts with a set of seed sequences and returns a high quality
+initial alignment. The steps it does are:
+
+#. Use the seed sequences as BLAST queries against relevant databases. (Default
+   is the NCBI *nr* database).
+#. Discard sequences that do not return a seed sequence when used as reciprocal
+   BLAST queries against proteomes from key species.
+#. For non-microbial datasets, remove sequences from species that cannot be
+   resolved on the most recent Open Tree of Life synthetic tree.
+#. Remove similar sequences within each species using a strict sequence identity
+   cutoff (default = 0.95). This removes isoforms and recent lineage-specific
+   duplications.
+#. Calculate a target alignment size based on the length of the longest seed 
+   sequence. By default, aim to build a dataset with one sequence per amino acid
+   in that sequence. Then multiply this by 1.1 so we can remove sequences after
+   budgeting and still have an alignment of the desired size.
+#. For a microbial dataset, identify a sequence identity cutoff that yields an
+   alignment of the right size. For a non-microbial dataset, identify blocks of
+   sequences to merge that sample the species tree. (See the `topiary paper <topiary-link_>`_
+   for details). 
+#. Align all sequences in the current dataset, which will have ~1.1 times the
+   target alignment size. Remove the worst aligning sequences. This is done
+   + Remove the sequences with the most characters in non-dense columns (drop worst 2.5%).
+   + Remove the sequences with the most missing dense columns (drop worst 2.5%).
+#. Re-align the dataset. It should now have ~1.05 times the target alignment
+   size and be ready for manual alignment editing. 
+
+
+The pipeline does writes out five *.csv* files over the course of this analysis,
+allowing one to track what changes are made. Topiary will add sequences and/or
+columns at each step. Until the final step, it does not delete sequences, but
+rather sets the :code:`keep` column to :code:`False` when a sequence is removed.
 
 + :emph:`Finds paralogs from other species` using the seed sequences as BLAST queries
   against the `NCBI non-redundant database <blast-nr_>`_. The taxonomic scope is

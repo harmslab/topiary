@@ -227,13 +227,13 @@ with the name of your seed file.
 .. note::
 
   This can also be run in a Jupyter notebook. For an example, see 
-  `here <https://github.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb>`_. 
+  `here <https://github.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynb>`_. 
   To run this notebook interactively in Google Colab, click the button below. 
 
   .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :align: center
     :alt: open seed to alignment in colab
-    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb
+    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynb
 
 ------
 Output
