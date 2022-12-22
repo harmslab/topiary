@@ -327,7 +327,7 @@ def pipeline_report(pipeline_directory,
                     html_description="Topiary ancestral sequence reconstruction results",
                     html_title="Topiary ASR",
                     overwrite=False,
-                    create_zip_file=False):
+                    create_zip_file=True):
     """
     Create a sharable html file and directory holding the results of a topiary
     alignment to ancestor (and possible bootstrap reconcile) pipeline.

@@ -79,9 +79,9 @@ def create_ancestor_card(anc_dict,
         f.close()
 
         fig, ax = plot_ancestor_data(df,
-                                    width_ratio=6,
-                                    alt_anc_pp=alt_cutoff,
-                                    close_plot=False)
+                                     width_ratio=6,
+                                     alt_anc_pp=alt_cutoff,
+                                     close_plot=False)
         fig.savefig(os.path.join(output_directory,f"{a}.svg"),bbox_inches = "tight")
         fig.savefig(os.path.join(output_directory,f"{a}_pp.pdf"),bbox_inches = "tight")
 
@@ -138,19 +138,26 @@ def create_ancestor_card(anc_dict,
             bs_support = "N/A"
         else:
             bs_support = f"{int(round(float(bs_support),0))}"
+
+        num_ambig_seq = np.sum(np.array(df.alt_pp > alt_cutoff))
+        num_ambig_gap = np.sum(np.array(df.site_type == "possible gap"))
         
         stats_df = pd.DataFrame({"descriptions":["Ancestor type",
-                                                "Number of extant descendants",
-                                                "Taxonomic distribution of descendants",
-                                                "Descendant paralog calls",
-                                                "Mean posterior probability",
-                                                "Branch support"],
-                                "values":      [event_html,
-                                                anc_dict[a]["num_descendants"],
-                                                taxonomic,
-                                                paralogs,
-                                                f"{mean_pp:.2f}",
-                                                bs_support]})
+                                                 "Number of extant descendants",
+                                                 "Taxonomic distribution of descendants",
+                                                 "Descendant paralog calls",
+                                                 "Mean posterior probability",
+                                                 "Number of ambiguous sites",
+                                                 "Number of ambiguous gaps",
+                                                 "Branch support"],
+                                "values":       [event_html,
+                                                 anc_dict[a]["num_descendants"],
+                                                 taxonomic,
+                                                 paralogs,
+                                                 f"{mean_pp:.2f}",
+                                                 f"{num_ambig_seq}",
+                                                 f"{num_ambig_gap}",
+                                                 bs_support]})
         stats_html = df_to_table(stats_df,add_header=False,show_row_numbers=False)
 
         icon_html = create_icon_row([f"{a}.csv",f"{a}.fasta",f"{a}_pp.pdf"],
@@ -159,7 +166,7 @@ def create_ancestor_card(anc_dict,
         card_contents = "".join([stats_html,icon_html])
         
         stats_card = create_card(card_title=f"{a} overview",
-                                card_contents=card_contents)
+                                 card_contents=card_contents)
         
         anc_out.append(stats_card)
         anc_out.append("<br/>")

@@ -135,7 +135,7 @@ def plot_ancestor_data(df_anc,
                                  facecolor='lightgray')
         ax[0].add_patch(rect)
 
-    # Create list of ambiguous gaps and draw veritical purple lines at these
+    # Create list of ambiguous gaps and draw vertical purple lines at these
     # positions.
     ambig_df = df_anc.loc[df_anc.site_type == "possible gap",:]
     for i in range(len(ambig_df)):
