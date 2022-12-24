@@ -14,7 +14,10 @@ from topiary.reports.elements import create_row
 from topiary.reports.elements import create_modal
 from topiary.reports.elements import create_info_modal
 
+from topiary.draw import PrettyTree
+
 import pandas as pd
+import numpy as np
 
 import os
 import inspect
@@ -23,6 +26,16 @@ import re
 import copy
 import shutil
 
+def _load_check_html(some_html):
+    """
+    Check validity of a block of html and return an HTMLValidator object.
+    """
+
+    parser = HTMLValidator()
+    parser.feed(some_html)
+    assert parser.is_valid
+
+    return parser
 
 
 def test_create_output_directory(tmpdir):
@@ -97,9 +110,7 @@ def test_create_main_html(tmpdir):
     assert len(e.split("TEST_GGG")) == 2
 
     # This check makes sure the elements are nested correctly
-    parser = HTMLValidator()
-    parser.feed(f"{s}{e}")
-    assert parser.is_valid
+    _load_check_html(f"{s}{e}")
 
     os.chdir(cwd)
 
@@ -118,9 +129,7 @@ def test_df_to_table():
                           float_fmt="{}",
                           int_fmt="{}")
 
-        parser = HTMLValidator()
-        parser.feed(out)
-        assert parser.is_valid
+        parser = _load_check_html(out)
 
         # Look for <thead> -- only there if header is present
         if header:
@@ -147,9 +156,7 @@ def test_df_to_table():
                           show_row_numbers=False,
                           float_fmt="{}",
                           int_fmt="{}")
-        parser = HTMLValidator()
-        parser.feed(out)
-        assert parser.is_valid
+        parser = _load_check_html(out)
 
         # Look for <thead> -- only there if header is present
         if header:
@@ -184,9 +191,7 @@ def test_df_to_table():
                       show_row_numbers=True,
                       float_fmt="{:.2f}",
                       int_fmt="{:02d}")
-    parser = HTMLValidator()
-    parser.feed(out)
-    assert parser.is_valid
+    parser = _load_check_html(out)
     
     assert parser.tag_dict["td"][-1][-1] == "6.30"
     assert parser.tag_dict["td"][-2][-1] == "03"
@@ -196,35 +201,200 @@ def test_df_to_table():
                       show_row_numbers=True,
                       float_fmt="{:.3f}",
                       int_fmt="{:03d}")
-    parser = HTMLValidator()
-    parser.feed(out)
-    assert parser.is_valid
+    parser = _load_check_html(out)
     
     assert parser.tag_dict["td"][-1][-1] == "6.300"
     assert parser.tag_dict["td"][-2][-1] == "003"
 
 
-
 def test_canvas_to_html():
-    pass
+    
+    # Read as string
+    tree = "(((A:1.0,B:4.0)AB:1.0,((C:1.0,D:1.0)CD:1.0,E:1.0)CDE:1.0)ABCDE:1.0,(F:1.0,G:1.0)FG)ABCDEFG;"
+    pt = PrettyTree(T=tree)
+    out = canvas_to_html(pt.canvas)
+
+    _load_check_html(out)
 
 def test_sequence_box():
-    pass
+    
+    out = sequence_box(text="THIS IS TEST TEXT Z",
+                       color="#000000",
+                       prop_value=None,
+                       prop_span=None,
+                       palette=None)
+
+    parser = _load_check_html(out)
+
+    # Check some of the text inputs -- should all be in one span because single
+    # color
+    assert parser.tag_dict["span"][0][2] == 'THIS IS TEST TEXT Z'
+
+    # Make sure color mapping works
+    out = sequence_box(text="ABC",
+                       color=["#ffffff","black"],
+                       prop_value=[0,0.5,1],
+                       prop_span=[0,1],
+                       palette=None)
+
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["span"][0][2] == 'A'
+    assert parser.tag_dict["span"][0][1]["style"][0] == 'color:rgba(100.0%,100.0%,100.0%,1.000)'
+    assert parser.tag_dict["span"][1][2] == 'B'
+    assert parser.tag_dict["span"][1][1]["style"][0] == 'color:rgba(50.0%,50.0%,50.0%,1.000)'
+    assert parser.tag_dict["span"][2][2] == 'C'
+    assert parser.tag_dict["span"][2][1]["style"][0] == 'color:rgba(0.0%,0.0%,0.0%,1.000)'
+
 
 def test_create_card():
-    pass
+    
+    # Defaults
+    out = create_card(card_title=None,
+                      card_contents=None,
+                      title_tag="h6",
+                      match_height=True)
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["div"][0][1]["class"][0] == "card"
+    assert parser.tag_dict["div"][0][1]["class"][1] == "h-100"
+    assert "h6" not in parser.tag_dict
+
+    # match height to False
+    out = create_card(card_title=None,
+                      card_contents=None,
+                      title_tag="h6",
+                      match_height=False)
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["div"][0][1]["class"][0] == "card"
+    assert len(parser.tag_dict["div"][0][1]["class"][0])
+    assert "h6" not in parser.tag_dict
+
+    # Add card title
+    out = create_card(card_title="test",
+                      card_contents=None,
+                      title_tag="h6",
+                      match_height=False)
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["div"][0][1]["class"][0] == "card"
+    assert len(parser.tag_dict["div"][0][1]["class"][0])
+    assert "h6" in parser.tag_dict
+    assert parser.tag_dict["h6"][0][2] == "test"
+
+    # Card title, altered title_tag
+    out = create_card(card_title="test",
+                      card_contents=None,
+                      title_tag="h4",
+                      match_height=False)
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["div"][0][1]["class"][0] == "card"
+    assert len(parser.tag_dict["div"][0][1]["class"][0])
+    assert "h4" in parser.tag_dict
+    assert parser.tag_dict["h4"][0][2] == "test"
+
+    # Card title, altered title_tag
+    out = create_card(card_title="test",
+                      card_contents="my contents",
+                      title_tag="h4",
+                      match_height=False)
+    parser = _load_check_html(out)
+
+    # Make sure card contents goes in
+    assert parser.tag_dict["div"][0][1]["class"][0] == "card"
+    assert len(parser.tag_dict["div"][0][1]["class"][0])
+    assert "h4" in parser.tag_dict
+    assert parser.tag_dict["h4"][0][2] == "test"
+
+    found = False
+    for div in parser.tag_dict["div"]:
+        if div[2] == "my contents":
+            found = True
+            break
+    assert found
 
 def test_create_element():
-    pass
+    
+    s, e = create_element("rocket")
+    parser = _load_check_html(f"{s}{e}")
+    
+    assert len(parser.tag_dict["rocket"][0][1]) == 0
+    
+    s, e = create_element("rocket",{"motor":"test"})
+    parser = _load_check_html(f"{s}{e}")
+    
+    assert np.array_equal(parser.tag_dict["rocket"][0][1]["motor"],["test"])
+
+    s, e = create_element("rocket",{"motor":["test","this"]})
+    parser = _load_check_html(f"{s}{e}")
+    
+    assert np.array_equal(parser.tag_dict["rocket"][0][1]["motor"],["test","this"])
 
 def test_create_icon_row():
-    pass
+    
+    out = create_icon_row(["stupid.txt"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.txt"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/txt_icon.svg"
+
+    out = create_icon_row(["stupid.csv"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.csv"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/csv_icon.svg"
+
+    out = create_icon_row(["stupid.pdf"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.pdf"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/pdf_icon.svg"
+
+    out = create_icon_row(["stupid.doc"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.doc"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/txt_icon.svg"
+
+    out = create_icon_row(["stupid.txt","junk.csv"],["some words","more words"])
+    parser = _load_check_html(out)
+
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.txt"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/txt_icon.svg"
+
+    assert parser.tag_dict["a"][1][1]["href"][0] == "junk.csv"
+    assert np.array_equal(parser.tag_dict["a"][1][1]["title"],["more","words"])
+    assert parser.tag_dict["img"][1][1]["src"][0] == ".assets/csv_icon.svg"
+
 
 def test_create_row():
-    pass
+    
+    out = create_row(["A","B"])
+    parser = _load_check_html(out)
+    assert parser.tag_dict["div"][1][1]["class"][0] == "row"
+    assert parser.tag_dict["div"][2][1]["class"][0] == "col"
+    assert parser.tag_dict["div"][2][2] == "A"
+    assert parser.tag_dict["div"][3][1]["class"][0] == "col"
+    assert parser.tag_dict["div"][3][2] == "B"
+
 
 def test_create_modal():
-    pass
+    
+    out = create_modal(modal_text="modal_text",
+                       modal_title="modal_title",
+                       modal_label="modal_label")
+    parser = _load_check_html(out)
 
 def test_create_info_modal():
-    pass
+    
+    out = create_info_modal(modal_text="modal_text",
+                            modal_title="modal_title",
+                            button_label="button_label")
+    parser = _load_check_html(out)

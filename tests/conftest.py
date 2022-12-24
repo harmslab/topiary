@@ -185,7 +185,9 @@ class HTMLValidator(HTMLParser):
         Start tag.
         """
     
-        if tag not in self.DOES_NOT_STACK:
+        # If something like "img" or "meta" that does not have a closing tag,
+        # don't stick in the stack. 
+        if not tag in self.DOES_NOT_STACK:
 
             # Record tag in stack
             self._stack.append(tag)

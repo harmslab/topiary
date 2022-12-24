@@ -26,7 +26,6 @@ import pandas as pd
 import numpy as np
 
 import os
-import glob
 import shutil
 
 EVENT_COLOR = {"D":"#64007F","L":"#BAD316","T":"#407E98","S":"#023E55",None:"#000000"}
@@ -197,7 +196,7 @@ def tree_report(tree_directory,
     create_output_directory(output_directory=output_directory,
                             overwrite=overwrite)
 
-    supervisor.df.to_csv(os.path.join(output_directory,"dataframe.csv"))
+    supervisor.df.to_csv(os.path.join(output_directory,"dataframe.csv"),index=False)
 
     # Card stack will hold all of the generated html output
     card_stack = []
@@ -377,7 +376,7 @@ def pipeline_report(pipeline_directory,
     for some_dir in [model_dir,gene_dirs["tree"],recon_dirs["tree"]]:
         if some_dir is not None:
             sv = Supervisor(some_dir)
-            sv.df.to_csv(os.path.join(output_directory,"dataframe.csv"))
+            sv.df.to_csv(os.path.join(output_directory,"dataframe.csv"),index=False)
             input_html = create_input_card(sv)
             tree_stack.append(input_html)
             break

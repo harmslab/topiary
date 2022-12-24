@@ -3,15 +3,15 @@ Functions for generating bootstrap cards with various types of information
 on them.
 """
 
-import topiary
-
 from topiary._private.supervisor import Supervisor
 from topiary.draw.ancestor_data import plot_ancestor_data
+
 from topiary.reports.elements import create_element
 from topiary.reports.elements import create_card
 from topiary.reports.elements import create_icon_row
 from topiary.reports.elements import df_to_table
 from topiary.reports.elements import sequence_box
+from topiary.reports.elements import create_info_modal
 
 import pandas as pd
 import numpy as np
@@ -20,6 +20,49 @@ from matplotlib import pyplot as plt
 import shutil
 import os
 import glob
+
+overview_help_text = \
+"""
+The table holds general information about the ancestor. 
+
+<em>Ancestor type</em> indicates the evolutionary event corresponding to the 
+ancestral node:  "speciation", "duplication", or "transfer". It is only meaningful for 
+reconciled trees. <em>Number of extant descendants</em> indicates the total number 
+of modern sequences that arose from this ancestor. <em>Taxonomic distribution of
+descendants</em> is the minimum taxonomic classification that encompasses the 
+species of all descendants of this ancestor. An ancestor with only 
+human and chimpanzee descendants would be "Hominini". An ancestor with human,
+chimpanzee, and tarsier descendants would be "Simiiformes". It is only 
+meaningful for reconciled trees. <em>Descendant paralog calls</em> is the 
+the fraction of the descendants that were called as a particular paralog type
+by reciprocal BLAST. <em>Mean posterior probability</em> is the mean of the 
+posterior probability for the best reconstruction over all non-gap sites. It 
+ranges from 1.0 (strong support at all sites) to 0.05 (completely ambiguous at
+all sites). <em>Number of ambiguous sites</em> is the number of sites where the
+posterior probability of the next-best reconstructed site is greater than alt_cutoff. 
+<em>Number of ambiguous gaps</em> is the number of sites where it is unclear (by
+maximum parsimony) if the position should be be reconstructed as an amino acid
+or as a gap. <em>Branch support</em> is the branch support for the reconstructed
+node. It ranges from 0 (no support) to 100 (high support).
+
+The linked csv file has site-by-site statistics on the reconstruction. The 
+site_type column will be one of: "good": the alt amino acid has posterior
+probability (pp) below alt_cutoff; "ambiguous_similar": alt amino acid has pp
+above alt_cutoff, but ML and alt amino acids are similar (e.g., T vs. S); 
+"ambiguous_dissimilar": alt amino acid has pp above alt_cutoff, with ML and alt
+dissimilar (e.g., E vs. F); "possible_gap": ambiguous whether this should be gap
+or not; or "gap": is a gap. The entropy column is the Shannon entropy of the
+posterior probabilities for all amino acids at that site. It ranges from 0 (one
+amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
+have pp = 0.05). 
+
+The linked txt file is a fasta file holding the ML and altAll sequenes with gaps
+removed.
+
+The linked pdf file has the posterior probability plot. (Note: this pdf file is
+likely easier to edit in Illustrator or Inkscape than the svg plot shown in the
+report). 
+"""
 
 def create_ancestor_card(anc_dict,
                          output_directory,
@@ -60,7 +103,7 @@ def create_ancestor_card(anc_dict,
         anc_id = f"a{a[3:]}"
     
         df = anc_df.loc[anc_df.anc == a,:]
-        df.to_csv(os.path.join(output_directory,f"{a}.csv"))
+        df.to_csv(os.path.join(output_directory,f"{a}.csv"),index=False)
 
         # Write out ML and altAll fasta file
         ml_seq = [s for s in df.ml_state if s != "-"]
@@ -99,11 +142,11 @@ def create_ancestor_card(anc_dict,
         # <header>
         anc_out.append("<div class=\"accordion-header\">")
         start, end = create_element("card",attributes={"class":"accordion-button",
-                                                    "type":"button",
-                                                    "data-bs-toggle":"collapse",
-                                                    "data-bs-target":f"#collapse{anc_id}",
-                                                    "aria-expanded":"true",
-                                                    "aria-controls":f"collapse{anc_id}"})
+                                                       "type":"button",
+                                                       "data-bs-toggle":"collapse",
+                                                       "data-bs-target":f"#collapse{anc_id}",
+                                                       "aria-expanded":"true",
+                                                       "aria-controls":f"collapse{anc_id}"})
         anc_out.append(start)
         if taxonomic is not None:
             anc_out.append(f"<h5 id=\"{anc_id}\">{a}: {taxonomic} {paralog_call}</h5>")
@@ -113,7 +156,6 @@ def create_ancestor_card(anc_dict,
         anc_out.append("</div>")
 
         # </header>
-
         start, _   = create_element("div",attributes={"id":f"collapse{anc_id}",
                                                       "class":["accordion-collapse","collapse"],
                                                       "aria-labelledby":f"heading{anc_id}",
@@ -163,7 +205,10 @@ def create_ancestor_card(anc_dict,
         icon_html = create_icon_row([f"{a}.csv",f"{a}.fasta",f"{a}_pp.pdf"],
                                     [f"{a} csv",f"{a} fasta",f"{a} posterior probability plot"])
 
-        card_contents = "".join([stats_html,icon_html])
+        help_html = create_info_modal(modal_text=overview_help_text,
+                                      modal_title="Ancestor overview")
+
+        card_contents = "".join([stats_html,icon_html,help_html])
         
         stats_card = create_card(card_title=f"{a} overview",
                                  card_contents=card_contents)
@@ -229,114 +274,3 @@ def create_ancestor_card(anc_dict,
     
     return create_card(card_contents=anc_html)
 
-
-def create_input_card(supervisor,p_column=None):
-    """
-    Create a card describing the input to the analysis. 
-    """
-    
-    # -------------------------------------------------------------------------
-    # Input card
-
-    this_df = supervisor.df.loc[supervisor.df.keep,:]
-
-    if p_column is None:
-        if "recip_paralog" in this_df.columns:
-            p_column = "recip_paralog"
-        else:
-            p_column = "name"
-
-    num_input = len(this_df)
-    combined_paralogs = list(np.unique(this_df.loc[:,p_column]))
-    combined_paralogs = [p.split("|") for p in combined_paralogs]
-    paralogs = []
-    for c in combined_paralogs:
-        paralogs.extend(c)
-    paralogs = np.array(np.unique(paralogs))
-    paralogs.sort()
-    num_paralogs = len(paralogs)
-    
-    if np.sum(pd.isnull(this_df.ott)) == 0:
-        ott_list = np.unique(this_df.ott)
-        mrca = topiary.opentree.ott_to_mrca(ott_list=ott_list)
-        taxonomic_distribution = mrca["ott_name"]
-    else:
-        taxonomic_distribution = None
-
-    input_df = pd.DataFrame({"name":["Number of sequences",
-                                     "Number of paralogs",
-                                     "Paralogs",
-                                     "Taxonomic distribution"],
-                           "values":[num_input,
-                                     num_paralogs,
-                                     ",".join(paralogs),
-                                     taxonomic_distribution]})
-
-    input_table = df_to_table(input_df,add_header=False,show_row_numbers=False)                                 
-    input_icons = create_icon_row(files_to_link=["dataframe.csv"],
-                                  descriptions=["input dataframe"])
-    input_card_input = f"<div>{input_table}{input_icons}</div>"
-
-    input_html = create_card("Input",card_contents=input_card_input)
-
-    return input_html
-
-
-def create_model_card(supervisor,
-                      output_directory):
-
-    best_model = supervisor.model
-
-    model_directory = supervisor.calc_dir
-    model_comp = pd.read_csv(os.path.join(model_directory,"output","model-comparison.csv"))
-    model_comp = model_comp.loc[:, ~model_comp.columns.str.contains('^Unnamed')]
-    num_combos = len(model_comp)
-
-    # Copy model comparison into the output directory
-    shutil.copy(os.path.join(model_directory,"output","model-comparison.csv"),
-                os.path.join(output_directory,"model-comparison.csv"))
-
-    # make html for the top ten models
-    top_ten_models = df_to_table(model_comp.iloc[:10,:],show_row_numbers=False,float_fmt="{:.3f}")
-
-    s3, e3 = create_element("h5")
-    s4, e4 = create_element("h5")
-
-    out = []
-    out.append(f"{s3}Best model: {best_model}{e3}")
-    out.append(f"{s4}Number of models: {num_combos}{e4}")
-
-
-    con_s, con_e = create_element("div",{"class":["text-center"]})
-    rs, re = create_element("div",{"class":["row"]})
-    cs, ce = create_element("div",{"class":["col"]})
-
-    out.append(f"{con_s}{rs}{cs}{top_ten_models}{ce}")
-
-    key_dict = {"value":["model name",
-                        "log likelihood",
-                        "Akaike Information Criterion",
-                        "Akaike Information Criterion (corrected for sampling)",
-                        "Bayesian Information Criterion",
-                        "Number of parameters",
-                        "model posterior probability"],
-                "key":["model","L","AIC","AICc","BIC","N","p"]}
-                        
-    key_html = df_to_table(pd.DataFrame(key_dict),add_header=False,show_row_numbers=False)
-    icon_html = create_icon_row(["model-comparison.csv"],["Table comparing models"])
-    #out.append(f"{s4}Table key{e4}")
-
-    out.append(f"{cs}{key_html}<br/>{icon_html}{ce}")
-    out.append(f"{re}{con_e}")
-
-    
-
-    #out.append(icon_html)
-
-    html = "".join(out)
-
-    html = create_card(card_title="Evolutionary model selection",
-                       card_contents=html,
-                       title_tag="h4")
-    
-    return html

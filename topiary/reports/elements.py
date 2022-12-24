@@ -14,6 +14,26 @@ import shutil
 import copy
 import random
 import string
+import re
+
+def _process_text_for_html(text):
+    """
+    Add paragraph breaks to text, using the rule that a double carriage return
+    should be a paragraph break. Convert all other paragraph breaks into spaces.
+    """
+
+    text = text.strip()
+    paragraphs = text.split("\n\n")
+    
+    out = []
+    for p in paragraphs:
+        p = re.sub("\n"," ",p)
+        p = re.sub("  "," ",p)
+
+        out.append(f"<p>{p}</p>")
+    
+    return "".join(out)
+
 
 def create_output_directory(output_directory,overwrite=False):
     """
@@ -260,7 +280,7 @@ def sequence_box(text,
                                               "font-monospace"]})
     out.append(start)
     
-    # If both of these conditions are met, we need to contruct a text string 
+    # If both of these conditions are met, we need to construct a text string 
     # with a set of spans
     if prop_value is not None and not issubclass(type(color),str):
 
@@ -404,7 +424,7 @@ def create_icon_row(files_to_link,descriptions):
                                     "href":f})
 
         out.append(s)
-        out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" />")
+        out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" >")
         out.append(e)
     
     return "".join(out)
@@ -515,12 +535,12 @@ def create_modal(modal_text,modal_title,modal_label):
     # Create title element with "X" to close
     s3, e3 = create_element("div",{"class":["modal-header"]})
     s4, e4 = create_element("h5",{"class":["modal-title"],
-                                  "id":[f"{modal_label}Title"]})
+                                  "id":[f"{modal_label}Label"]})
     title_elem = f"{s4}{modal_title}{e4}"
 
     s5, e5 = create_element("button",{"type":["button"],
                                       "class":["close"],
-                                      "data-dismiss":["modal"],
+                                      "data-bs-dismiss":["modal"],
                                       "aria-label":["Close"]})
     x_elem = f"{s5}<span aria-hidden=\"true\">&times;</span>{e5}"
 
@@ -533,13 +553,13 @@ def create_modal(modal_text,modal_title,modal_label):
     # Create close button element
     s7, e7 = create_element("div",{"class":["modal-footer"]})
     s8, e8 = create_element("button",{"class":["btn","btn-secondary"],
-                                      "data-dismiss":["modal"]})
+                                      "data-bs-dismiss":["modal"]})
     close = f"{s7}{s8}Close{e8}{e7}"
 
     return f"{s_all}{header}{text}{close}{e_all}"
 
 
-def create_info_modal(modal_text,modal_title,button_label="Help"):
+def create_info_modal(modal_text,modal_title,process_text=True,button_label="Help"):
     """
     Create a button labeled '{button_label}' that brings up an informational
     modal when clicked.
@@ -550,6 +570,9 @@ def create_info_modal(modal_text,modal_title,button_label="Help"):
         text for modal
     modal_title : str
         title for the modal
+    process_text : bool, default=True
+        whether or not to process text (very minimal html pre-processing); see
+        _process_text_for_html function
     button_label : str, default="Help"
         label for button that brings up modal
     
@@ -563,9 +586,13 @@ def create_info_modal(modal_text,modal_title,button_label="Help"):
     modal_id = f"modal{modal_id}"
 
     s, e = create_element("button",{"class":["btn","btn-outline-dark"],
-                                     "data-toggle":["modal"],
-                                     "data-target":[f"#{modal_id}"]})
+                                     "data-bs-toggle":["modal"],
+                                     "data-bs-target":[f"#{modal_id}"]})
     button = f"{s}{button_label}{e}"
+
+    if process_text:
+        modal_text = _process_text_for_html(modal_text)
+
     modal = create_modal(modal_text,modal_title,modal_id)
 
     return f"{button}{modal}"
