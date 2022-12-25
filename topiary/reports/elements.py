@@ -343,7 +343,7 @@ def create_card(card_title=None,card_contents=None,title_tag="h6",match_height=T
     if card_title is not None:
         out.append(f"<{title_tag} class=\"card-title\">{card_title}</{title_tag}>")
     if card_contents is not None:
-        out.append(f"<div class=\"align-middle\">{card_contents}</div>")
+        out.append(f"<div>{card_contents}</div>")
     out.append("</div></div>")
 
     return "".join(out)
@@ -407,13 +407,15 @@ def create_icon_row(files_to_link,descriptions):
 
     ext_files = {"csv":".assets/csv_icon.svg",
                  "pdf":".assets/pdf_icon.svg",
-                 "txt":".assets/txt_icon.svg"}
+                 "txt":".assets/txt_icon.svg",
+                 "fasta":".assets/fasta_icon.svg",
+                 "newick":".assets/newick_icon.svg"}
 
     out = []
     for i, f in enumerate(files_to_link):
 
         try:
-            icon = ext_files[f[-3:]]
+            icon = ext_files[f.split(".")[-1]]
         except KeyError:
             icon = ext_files["txt"]
 
@@ -525,7 +527,7 @@ def create_modal(modal_text,modal_title,modal_label):
                                    "role":["dialog"],
                                    "aria-labelledby":[f"{modal_label}Label"],
                                    "aria-hidden":["true"]})
-    s1, e1 = create_element("div",{"class":["modal-dialog"],
+    s1, e1 = create_element("div",{"class":["modal-dialog","modal-dialog-scrollable"],
                                    "role":["document"]})
     s2, e2 = create_element("div",{"class":["modal-content"]})
 
@@ -547,7 +549,7 @@ def create_modal(modal_text,modal_title,modal_label):
     header = f"{s3}{title_elem}{x_elem}{e3}"
 
     # Create main text element
-    s6, e6 = create_element("div",{"class":["modal-body"]})
+    s6, e6 = create_element("div",{"class":["modal-body","text-start"]})
     text = f"{s6}{modal_text}{e6}"
 
     # Create close button element
@@ -559,7 +561,11 @@ def create_modal(modal_text,modal_title,modal_label):
     return f"{s_all}{header}{text}{close}{e_all}"
 
 
-def create_info_modal(modal_text,modal_title,process_text=True,button_label="Help"):
+def create_info_modal(modal_text,
+                      modal_title,
+                      process_text=True,
+                      button_label="Help",
+                      extra_button_class=None):
     """
     Create a button labeled '{button_label}' that brings up an informational
     modal when clicked.
@@ -575,6 +581,8 @@ def create_info_modal(modal_text,modal_title,process_text=True,button_label="Hel
         _process_text_for_html function
     button_label : str, default="Help"
         label for button that brings up modal
+    extra_button_class : str, optional
+        wrap button in a div with this class string
     
     Returns
     -------
@@ -589,6 +597,8 @@ def create_info_modal(modal_text,modal_title,process_text=True,button_label="Hel
                                      "data-bs-toggle":["modal"],
                                      "data-bs-target":[f"#{modal_id}"]})
     button = f"{s}{button_label}{e}"
+    if extra_button_class is not None:
+        button = f"<div class=\"{extra_button_class}\">{button}</div>"
 
     if process_text:
         modal_text = _process_text_for_html(modal_text)

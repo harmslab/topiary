@@ -3,12 +3,25 @@ import topiary
 from topiary.reports.elements import df_to_table
 from topiary.reports.elements import create_card
 from topiary.reports.elements import create_icon_row
+from topiary.reports.elements import create_info_modal
 
 import numpy as np
 import pandas as pd
 
 help_text = \
 """
+Panel shows information about the input to the analysis. <b>Number of sequences</b>
+is the number of sequences in the alignment; <b>Number of paralogs</b> is the 
+number of unique paralogs in the alignment; <b>Paralogs</b> is a list of the
+unique paralogs; and <b>Taxonomic distribution</b> is the taxonomic
+classification that encompasses all species in the alignment. An alignment with
+only human and chimpanzee descendants would be "Hominini". An ancestor with human,
+chimpanzee, and tarsier descendants would be "Simiiformes". This is only 
+meaningful for reconciled trees.
+
+The linked csv file is the topiary dataframe holding all sequences with their
+metadata. We recommend including this file as supplemental information in any
+publication that uses topiary.
 """
 
 def create_input_card(supervisor,
@@ -49,15 +62,21 @@ def create_input_card(supervisor,
                                      "Number of paralogs",
                                      "Paralogs",
                                      "Taxonomic distribution"],
-                           "values":[num_input,
-                                     num_paralogs,
-                                     ",".join(paralogs),
-                                     taxonomic_distribution]})
+                             "values":[num_input,
+                                       num_paralogs,
+                                       ",".join(paralogs),
+                                       taxonomic_distribution]})
 
     input_table = df_to_table(input_df,add_header=False,show_row_numbers=False)                                 
     input_icons = create_icon_row(files_to_link=["dataframe.csv"],
                                   descriptions=["input dataframe"])
-    input_card_input = f"<div>{input_table}{input_icons}</div>"
+    
+    help_html = create_info_modal(modal_text=help_text,
+                                  modal_title="Input",
+                                  extra_button_class="text-end")
+    help_html = f"<br/>{help_html}"
+
+    input_card_input = f"<div>{input_table}{input_icons}{help_html}</div>"
 
     input_html = create_card("Input",card_contents=input_card_input)
 

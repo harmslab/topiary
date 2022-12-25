@@ -355,6 +355,20 @@ def test_create_icon_row():
     assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
     assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/pdf_icon.svg"
 
+    out = create_icon_row(["stupid.newick"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.newick"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/newick_icon.svg"
+
+    out = create_icon_row(["stupid.fasta"],["some words"])
+    parser = _load_check_html(out)
+    
+    assert parser.tag_dict["a"][0][1]["href"][0] == "stupid.fasta"
+    assert np.array_equal(parser.tag_dict["a"][0][1]["title"],["some","words"])
+    assert parser.tag_dict["img"][0][1]["src"][0] == ".assets/fasta_icon.svg"
+
     out = create_icon_row(["stupid.doc"],["some words"])
     parser = _load_check_html(out)
     

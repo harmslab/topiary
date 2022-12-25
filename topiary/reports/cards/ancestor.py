@@ -25,33 +25,33 @@ overview_help_text = \
 """
 The table holds general information about the ancestor. 
 
-<em>Ancestor type</em> indicates the evolutionary event corresponding to the 
+<b>Ancestor type</b> indicates the evolutionary event corresponding to the 
 ancestral node:  "speciation", "duplication", or "transfer". It is only meaningful for 
-reconciled trees. <em>Number of extant descendants</em> indicates the total number 
-of modern sequences that arose from this ancestor. <em>Taxonomic distribution of
-descendants</em> is the minimum taxonomic classification that encompasses the 
+reconciled trees. <b>Number of extant descendants</b> indicates the total number 
+of modern sequences that arose from this ancestor. <b>Taxonomic distribution of
+descendants</b> is the minimum taxonomic classification that encompasses the 
 species of all descendants of this ancestor. An ancestor with only 
 human and chimpanzee descendants would be "Hominini". An ancestor with human,
 chimpanzee, and tarsier descendants would be "Simiiformes". It is only 
-meaningful for reconciled trees. <em>Descendant paralog calls</em> is the 
+meaningful for reconciled trees. <b>Descendant paralog calls</b> is the 
 the fraction of the descendants that were called as a particular paralog type
-by reciprocal BLAST. <em>Mean posterior probability</em> is the mean of the 
+by reciprocal BLAST. <b>Mean posterior probability</b> is the mean of the 
 posterior probability for the best reconstruction over all non-gap sites. It 
 ranges from 1.0 (strong support at all sites) to 0.05 (completely ambiguous at
-all sites). <em>Number of ambiguous sites</em> is the number of sites where the
+all sites). <b>Number of ambiguous sites</b> is the number of sites where the
 posterior probability of the next-best reconstructed site is greater than alt_cutoff. 
-<em>Number of ambiguous gaps</em> is the number of sites where it is unclear (by
+<b>Number of ambiguous gaps</b> is the number of sites where it is unclear (by
 maximum parsimony) if the position should be be reconstructed as an amino acid
-or as a gap. <em>Branch support</em> is the branch support for the reconstructed
+or as a gap. <b>Branch support</b> is the branch support for the reconstructed
 node. It ranges from 0 (no support) to 100 (high support).
 
 The linked csv file has site-by-site statistics on the reconstruction. The 
-site_type column will be one of: "good": the alt amino acid has posterior
+<b>site_type column</b> will be one of: "good": the alt amino acid has posterior
 probability (pp) below alt_cutoff; "ambiguous_similar": alt amino acid has pp
 above alt_cutoff, but ML and alt amino acids are similar (e.g., T vs. S); 
 "ambiguous_dissimilar": alt amino acid has pp above alt_cutoff, with ML and alt
 dissimilar (e.g., E vs. F); "possible_gap": ambiguous whether this should be gap
-or not; or "gap": is a gap. The entropy column is the Shannon entropy of the
+or not; or "gap": is a gap. The <b>entropy column</b> is the Shannon entropy of the
 posterior probabilities for all amino acids at that site. It ranges from 0 (one
 amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
 have pp = 0.05). 
@@ -62,6 +62,42 @@ removed.
 The linked pdf file has the posterior probability plot. (Note: this pdf file is
 likely easier to edit in Illustrator or Inkscape than the svg plot shown in the
 report). 
+"""
+
+mlseq_help_text = \
+"""
+Maximum likelihood sequence of this ancestor. This sequence uses the amino acid
+with the highest posterior probability at each position. The sequence is colored
+by posterior probability. The gradient goes from <span style="color:red"><b>Red</b></span>,
+indicating a posterior probability of 0.5 or less, to <b>Black</b>, indicating a 
+posterior probability of 1.0.
+"""
+
+altall_help_text = \
+"""
+The altAll sequence starts with the maximum likelihood sequence, and then 
+replaces ambiguous sites with the next-most-probable reconstructed amino acids. 
+Ambiguous sites are defined as those where the posterior probability of the 
+next-most-probable site is above alt_cutoff. (In the posterior probability plot,
+these are sites where the red point is above the dashed line). One can determine
+if an experimental result is robust to phylogenetic uncertainty by characterizing
+both the maximum likelihood and altAll versions of an ancestor. In the graphic,
+the maximum likelihood sites are white; the sites replaced with an alternate 
+reconstruction are shown in black. For more information, see
+<a href="https://doi.org/10.1093/molbev/msw223">Eick et al.</a>.
+"""
+
+pp_plot_help_text = \
+"""
+The black points show the posterior probability of the most likely amino acid at
+each position. The distribution of these probabilities is given by the gray
+histogram on the right. The average posterior probability is the mean of these
+values. The red points show the probability of the second most likely amino acid
+at each position, with its distribution on the right. The horizontal dashed line
+shows alt_cutoff. Any red point above this dashed line will be included in the
+altAll sequence. Shaded gray regions indicate gaps; vertical purple dashed lines
+represent ambiguously gapped positions.
+
 """
 
 def create_ancestor_card(anc_dict,
@@ -206,8 +242,9 @@ def create_ancestor_card(anc_dict,
                                     [f"{a} csv",f"{a} fasta",f"{a} posterior probability plot"])
 
         help_html = create_info_modal(modal_text=overview_help_text,
-                                      modal_title="Ancestor overview")
-
+                                      modal_title="Ancestor overview",
+                                      extra_button_class="text-end")
+    
         card_contents = "".join([stats_html,icon_html,help_html])
         
         stats_card = create_card(card_title=f"{a} overview",
@@ -226,10 +263,16 @@ def create_ancestor_card(anc_dict,
                                    prop_value=pp,
                                    prop_span=(0.5,1),
                                    color=["red","black"]))
+        help_html = create_info_modal(modal_text=mlseq_help_text,
+                                      modal_title="Maximum likelihood sequence",
+                                      extra_button_class="text-end")
+        help_html = f"<br/>{help_html}"
+        ml_out.append(help_html)
         ml_card = create_card(card_title="Maximum likelihood sequence",
                             card_contents="".join(ml_out))
         anc_out.append(ml_card)
         anc_out.append("<br/>")
+        
 
         # ----------------------------------------------------------------------
         # Create card holding the altAll sequence of the ancestor
@@ -243,9 +286,16 @@ def create_ancestor_card(anc_dict,
                                     prop_span=(0,1),
                                     color=["white","black"]))
      
+        help_html = create_info_modal(modal_text=altall_help_text,
+                                      modal_title="altAll sequence",
+                                      extra_button_class="text-end")
+        help_html = f"<br/>{help_html}"
+        alt_out.append(help_html)
+
         alt_card = create_card(card_title="altAll sequence",
-                            card_contents="".join(alt_out))
+                               card_contents="".join(alt_out))
         anc_out.append(alt_card)
+        
         anc_out.append("<br/>")
 
         # ----------------------------------------------------------------------
@@ -255,7 +305,14 @@ def create_ancestor_card(anc_dict,
         pp_plot_out.append("<div class=\"text-center\">")
         pp_plot_out.append(f"<img src=\"{a}.svg\" alt=\"{anc_id} posterior probability plot\"/>")
         pp_plot_out.append("</div>")
-    
+
+        help_html = create_info_modal(modal_text=pp_plot_help_text,
+                                      modal_title="posterior probability plot",
+                                      extra_button_class="text-end")
+        help_html = f"<br/>{help_html}"
+        pp_plot_out.append(help_html)    
+
+
         pp_plot_card = create_card(card_title="Posterior probability plot",
                                 card_contents="".join(pp_plot_out))
         

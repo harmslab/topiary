@@ -154,9 +154,9 @@ def create_name_dict(df,tip_columns=None,separator="|",disambiguate=True):
     tip_columns : list, optional
         columns in dataframe to use to create human-readable names for tips on
         tree. For example, :code:`tip_columns = ["species","nickname"]` would
-        give names like :code:`"Homo sapiens|LY96"`. If None, try
-        :code:`["species","nickname"]`. If nickname is not in dataframe,
-        fall back to :code:`["species",f"{name[:10]}..."]`.
+        give names like :code:`"Homo sapiens|LY96"`. If None, try 
+        :code:`["species","recip_paralog"], then :code:`["species","nickname"]`,
+        then :code:`["species",f"{name[:10]}..."]`.
     separator : str
         separator to use between pretty names. Cannot be "#,;:'\")(" as these
         are used in newick format.
@@ -181,12 +181,11 @@ def create_name_dict(df,tip_columns=None,separator="|",disambiguate=True):
 
     local_df = df.loc[df.keep,:]
     if tip_columns is None:
-
-        try:
-            local_df.nickname
+        if "recip_paralog" in df.columns:
+            tip_columns = ["species","recip_paralog"]
+        elif "nickname" in df.columns:
             tip_columns = ["species","nickname"]
-        except AttributeError:
-
+        else:
             local_df = df.copy()
             trunc_name = []
             for i in range(len(local_df)):

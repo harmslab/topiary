@@ -7,6 +7,8 @@ import topiary
 from topiary._private import Supervisor
 
 from topiary.io.tree import load_trees
+from topiary.io.tree import write_trees
+from topiary.draw.core import create_name_dict
 
 from topiary.reports.elements import create_output_directory
 from topiary.reports.elements import canvas_to_html
@@ -15,12 +17,14 @@ from topiary.reports.elements import df_to_table
 from topiary.reports.elements import create_card
 from topiary.reports.elements import create_row
 from topiary.reports.elements import create_icon_row
+from topiary.reports.elements import create_info_modal
 
 from topiary.reports.cards import create_ancestor_card
 from topiary.reports.cards import create_input_card
 from topiary.reports.cards import create_model_card
 
 from topiary.reports.quality import check_duplication
+
 
 import pandas as pd
 import numpy as np
@@ -30,6 +34,85 @@ import shutil
 
 EVENT_COLOR = {"D":"#64007F","L":"#BAD316","T":"#407E98","S":"#023E55",None:"#000000"}
 EVENT_NAME = {"S":"speciation","D":"duplication","L":"loss","T":"transfer",None:'N/A'}
+
+run_parameters_help_text = \
+"""
+Shows parameters for this analysis. <b>Evolutionary model</b>: amino acid 
+substitution model used. <b>Reconciled gene and species tree</b>: if False, the
+tree is a gene tree; if True, the tree is the reconciled gene/species tree. 
+<b>Supports calculated</b>: whether or not branch supports have been calculated.
+(If running topiary as a pipeline, the "topiary-bootstrap-reconcile" script must
+be run to generate branch supports for the reconciled tree). <b>Ancestor 
+alt-all cutoff</b>: posterior probability cutoff used for determining the 
+sequence of the alt-all ancestor. (This is the dashed line in the ancestor
+posterior probability plots).
+"""
+
+summary_files_help_text = \
+"""
+The linked csv file has site-by-site statistics on all reconstructed ancestors. The
+<b>site_type column</b> will be one of: "good": the alt amino acid has posterior
+probability (pp) below alt_cutoff; "ambiguous_similar": alt amino acid has pp
+above alt_cutoff, but ML and alt amino acids are similar (e.g., T vs. S); 
+"ambiguous_dissimilar": alt amino acid has pp above alt_cutoff, with ML and alt
+dissimilar (e.g., E vs. F); "possible_gap": ambiguous whether this should be gap
+or not; or "gap": is a gap. The <b>entropy column</b> is the Shannon entropy of the
+posterior probabilities for all amino acids at that site. It ranges from 0 (one
+amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
+have pp = 0.05). 
+
+The fasta file holds all maximum likelihood and altAll ancestors.
+
+The pdf holds the phylogenetic tree. In our experience,
+the pdf version of the tree from is better than the svg file shown in the 
+main panel for loading into Adobe Illustrator or Inkscape for figure creation. 
+
+The newick file holds up to four phylogenetic trees in a single file. The tips
+are labeled with species and paralog. The internal nodes are labeled with
+ancestor names (a1, a2, etc.), ancestor posterior probabilities (0.0-1.0), 
+branch supports (0-100), and, for reconciled trees, evolutionary events 
+(D: duplication, T: transfer, S: speciation, L: loss). This file should be 
+readable by all phylogenetic tree plotting and editing software. 
+"""
+
+tree_plot_help_text = \
+"""
+On the evolutionary tree, branch lengths represent the average number of amino acid
+substitutions per site on that branch and can be estimated using the scale bar. 
+The tree is rooted by the midpoint method (for the gene tree) or using the 
+species tree (reconciled tree). 
+
+Reconstructed ancestral sequences at each node are labeled with a unique name
+(a1, a2, etc.). These labels are links to more detailed information about that
+ancestor. 
+
+Each ancestral node is indicated with up to three concentric circles. The
+outermost circle denotes the evolutionary event for that node. (This is only 
+relevant for reconciled trees). Duplication events are marked in 
+<span style="color:#64007F">purple</span> and transfers in
+<span style="color:#407E98">teal</span>. Speciation events are not labeled. 
+The middle circle indicates bootstrap support, ranging from weak (50 or below;
+white) to strong (100; black). The center circle indicates average ancestor
+posterior probability across all non-gap sites, ranging from weak (0.7 or below;
+white) to strong (1.0; orange). 
+
+In our experience, the pdf version of the tree from the Summary Files panel is 
+better than this svg tree for loading into Adobe Illustrator or Inkscape for
+figure creation. 
+"""
+
+gene_tree_help_text = \
+"""
+Ancestors calculated using the maximum likelihood gene tree rather than the 
+reconciled gene species tree.
+"""
+
+reconciled_tree_help_text = \
+"""
+Ancestors calculated using the reconciled gene/species tree rather than the 
+maximum likelihood gene tree.
+"""
+
 
 def _find_directories(calculation_directory):
     """
@@ -192,6 +275,9 @@ def tree_report(tree_directory,
 
     print(f"Generating report in {output_directory}",flush=True)
     
+    # -------------------------------------------------------------------------
+    # Create output directory and put in dataframe
+
     # Build output directory
     create_output_directory(output_directory=output_directory,
                             overwrite=overwrite)
@@ -201,6 +287,28 @@ def tree_report(tree_directory,
     # Card stack will hold all of the generated html output
     card_stack = []
 
+    # -------------------------------------------------------------------------
+    # Trees as a newick file
+
+    # Figure out what to call tips of tree
+    if "recip_paralog" in supervisor.df.columns:
+        tip_columns = ["species","recip_paralog","uid"]
+    elif "nickname" in supervisor.df.columns:
+        tip_columns = ["species","nickname","uid"]
+    else:
+        tip_columns = ["species","name","uid"]
+
+    # Create dictionary mapping between uid and pretty name format for tips
+    name_dict = create_name_dict(df=supervisor.df,
+                                 tip_columns=tip_columns,
+                                 disambiguate=True)
+
+    # Write out trees as a newick file
+    write_trees(T,
+                name_dict=name_dict,
+                out_file=os.path.join(output_directory,"trees.newick"))
+
+            
     # -------------------------------------------------------------------------
     # Title card
 
@@ -266,16 +374,30 @@ def tree_report(tree_directory,
     param_df = pd.DataFrame({"name":names,
                              "value":values})
     param_table = df_to_table(param_df,add_header=False,show_row_numbers=False)
+    help_html = create_info_modal(modal_text=run_parameters_help_text,
+                                  modal_title="Run parameters",
+                                  extra_button_class="text-end")
+    help_html = f"<br/>{help_html}"
+    param_table = f"{param_table}{help_html}"
+
     param_html = create_card("Run parameters",card_contents=param_table)
 
     # -------------------------------------------------------------------------
     # Icon card
 
-    icon_html = create_icon_row([f"ancestor-data.csv",f"ancestors.fasta",f"summary-tree.pdf"],
-                                [f"all ancestors csv",f"all ancestors fasta",f"ancestor tree pdf"])
+    icon_html = create_icon_row(["ancestor-data.csv","ancestors.fasta","summary-tree.pdf","trees.newick"],
+                                ["all ancestors csv","all ancestors fasta","ancestor tree pdf","trees in newick format"])
+
+    help_html = create_info_modal(modal_text=summary_files_help_text,
+                                  modal_title="Summary files",
+                                  extra_button_class="text-end")
+    help_html = 7*"<br/>"+ help_html
+    icon_html = f"{icon_html}{help_html}"
 
     icon_html = create_card(card_title="Summary files",
                             card_contents=icon_html)
+
+    
 
     # Combine
     card_stack.append(create_row([input_html,param_html,icon_html]))
@@ -293,6 +415,12 @@ def tree_report(tree_directory,
                                     return_canvas=True)
     
     tree_html = canvas_to_html(tree_canvas)
+
+    help_html = create_info_modal(modal_text=tree_plot_help_text,
+                                  modal_title="Tree plot",
+                                  extra_button_class="text-end")
+    help_html = f"<br/>{help_html}"
+    tree_html = f"{tree_html}{help_html}"
 
     card_stack.append(create_card(card_contents=tree_html))
 
@@ -392,8 +520,15 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        this_html = create_card(f"<h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>")
-        tree_stack.append(this_html)
+        html = f"<h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>"
+
+        help_html = create_info_modal(modal_text=gene_tree_help_text,
+                                      modal_title="Gene tree ancestors",
+                                      extra_button_class="text-end")
+        help_html = f"<br/>{help_html}"
+        html = f"{html}{help_html}"
+
+        tree_stack.append(create_card(html))
 
     if recon_dirs["tree"] is not None:
 
@@ -406,8 +541,15 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        this_html = create_card(f"<h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>")
-        tree_stack.append(this_html)
+        html = f"<h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>"
+
+        help_html = create_info_modal(modal_text=reconciled_tree_help_text,
+                                      modal_title="Reconciled tree ancestors",
+                                      extra_button_class="text-end")
+        help_html = f"<br/>{help_html}"
+        html = f"{html}{help_html}"
+
+        tree_stack.append(create_card(html))
 
 
     if len(tree_stack) > 0:

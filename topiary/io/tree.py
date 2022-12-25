@@ -2,6 +2,8 @@
 Load a tree into an ete3 tree data structure.
 """
 
+from topiary._private.check import check_bool
+
 import ete3
 from ete3 import Tree
 import dendropy as dp
@@ -50,17 +52,16 @@ def read_tree(tree,fmt=None):
     """
 
     # Already an ete3 tree.
-    if type(tree) is ete3.TreeNode:
+    if issubclass(type(tree),ete3.TreeNode):
         return tree
 
     # Convert dendropy tree into newick (drop root)
-    if type(tree) is dp.Tree:
+    if issubclass(type(tree),dp.Tree):
         tree = tree.as_string(schema="newick",suppress_rooting=True)
 
     # If we get here, we need to convert. If fmt is not specified, try to parse
     # without a format string.
     if fmt is None:
-
 
         try:
             t = Tree(tree)
@@ -429,3 +430,164 @@ def load_trees(directory=None,
                     n.add_feature("anc_pp",stash_values["anc_pp"])
 
     return out_tree
+
+def write_trees(T,
+                name_dict=None,
+                out_file=None,
+                overwrite=False,
+                anc_pp=True,
+                anc_label=True,
+                bs_support=True,
+                event=True):
+    """
+    Write out an ete3.Tree as a newick format. This function looks for features
+    set by :code:`load_trees` and then writes an individual tree out with each
+    feature. The features are :code:`anc_pp`, :code:`anc_label`, :code:`bs_support`,
+    and :event:`event`. This will write out trees for any of these features 
+    present; not all features need to be in place for this function to work. 
+
+    Parameters
+    ----------
+    T : ete3.TreeNode
+        ete3 tree with information loaded into appropriate features. This is the
+        tree returned by :code:`load_trees`. 
+    name_dict : dict
+        name_dict : dict, optional
+        dictionary mapping strings in node.name to more useful names. (Can be
+        generated using :code:`topiary.draw.core.create_name_dict`). If not 
+        specified, trees are written out with uid as tip names
+    out_file : str, optional
+        output file. If defined, write the newick string the file.
+    overwrite : bool, default=False
+        whether or not to overwrite an existing file
+    anc_pp : bool, default=True
+        whether or not to write a tree with anc_pp as support values
+    anc_label : bool, default=True
+        whether or not to write a tree with anc_label as internal node names
+    bs_support : bool, default=True
+        whether or not to write a tree with bs_support as support values
+    event : bool, default=True
+        whether or not to write a tree with events as internal node names
+
+    Returns
+    -------
+    tree : str
+        Newick string representation of the output tree(s)
+    """
+    
+    # --------------------------------------------------------------------------
+    # Parameter sanity checking
+
+    if not issubclass(type(T),ete3.TreeNode):
+        err = "\nT must be an ete3.Tree instance\n\n"
+        raise ValueError(err)
+
+    if name_dict is not None:
+        if not issubclass(type(name_dict),dict):
+            err = "\nname_dict must be a dictionary\n\n"
+            raise ValueError(err)
+    
+    if out_file is not None:
+        if not issubclass(type(out_file),str):
+            err = "\nout_file must be a string pointing to a file to write out\n\n"
+            raise ValueError(err)
+        
+        overwrite = check_bool(overwrite,"overwrite")
+
+        if os.path.exists(out_file):
+            if os.path.isfile(out_file):
+                if overwrite:
+                    os.remove(out_file)
+                else:
+                    err = f"\nout_file '{out_file}' exists. Either delete or set overwrite to True\n\n"
+                    raise FileExistsError(err)
+            else:
+                err = f"\nout_file '{out_file}' exists but is a directory. Cannot write output.\n\n"
+                raise FileExistsError(err)
+
+    anc_pp = check_bool(anc_pp,"anc_pp")
+    anc_label = check_bool(anc_label,"anc_label")
+    bs_support = check_bool(bs_support,"bs_support")
+    event = check_bool(event,"event")
+
+    # --------------------------------------------------------------------------
+    # Set up output
+
+    out_trees = []
+
+    # Work on a copy
+    T = T.copy()
+
+    # If name dict is specified
+    if name_dict is not None:
+        for n in T.traverse():
+            if n.is_leaf():
+                n.name = name_dict[n.name]
+
+    # --------------------------------------------------------------------------
+    # Create bs_supports, events, anc_label, and anc_pp
+
+    # bs_supports
+    if bs_support:
+        write_bs_supports = False
+        for n in T.traverse():
+            if not n.is_leaf():
+                if n.bs_support is not None:
+                    n.support = n.bs_support
+                    write_bs_supports = True
+
+        # format=2 --> all branches + leaf names + internal supports
+        if write_bs_supports:
+            out_trees.append(T.write(format=2))
+
+    # event
+    if event:
+        write_events = False
+        for n in T.traverse():
+            if not n.is_leaf():
+                if n.event is not None:
+                    n.name = n.event
+                    write_events = True
+
+        # format=3 --> all branches + all names
+        if write_events:
+            out_trees.append(T.write(format=3))
+
+    # anc_label
+    if anc_label:
+        write_anc_label = False
+        for n in T.traverse():
+            if not n.is_leaf():
+                if n.anc_label is not None:
+                    n.name = n.anc_label
+                    write_anc_label = True
+
+        # format=3 --> all branches + all names
+        if write_anc_label:
+            out_trees.append(T.write(format=3))
+
+    # anc_pp
+    if anc_pp:
+        write_anc_pp = False
+        for n in T.traverse():
+            if not n.is_leaf():
+                if n.anc_pp is not None:
+                    n.support = n.anc_pp
+                    write_anc_pp = True
+
+        # format=2 --> all branches + leaf names + internal supports
+        if write_anc_pp:
+            out_trees.append(T.write(format=2))
+
+    # --------------------------------------------------------------------------
+    # Finalize output
+
+    out_trees = "\n".join(out_trees)
+
+    if out_file is not None:
+        f = open(out_file,'w')
+        f.write(out_trees)
+        f.close()
+
+    return out_trees 
+    
