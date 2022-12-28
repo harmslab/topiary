@@ -49,8 +49,8 @@ Features
 Try it out on Google Colab
 ==========================
 
-+ `Go from a few initial sequences to a full alignment <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynbb>`_
-+ `Build a phylogenetic tree and reconstruct ancestors <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_
++ `Go from a few initial sequences to a full alignment <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynb>`_
++ `Build a phylogenetic tree and reconstruct ancestors <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/alignment-to-ancestors.ipynb>`_
 
 
 Workflow

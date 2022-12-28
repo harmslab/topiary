@@ -106,8 +106,7 @@ def create_ancestor_card(anc_dict,
                          event_color,
                          event_name):
     """
-    Create a bootstrap card holding all of the ancestors as individual 
-    accordion entries. 
+    Create a card holding all of the ancestors as individual accordion entries. 
     """
 
     anc_csv = glob.glob(os.path.join(ancestor_directory,
@@ -122,7 +121,6 @@ def create_ancestor_card(anc_dict,
 
     shutil.copy(anc_csv,output_directory)
     shutil.copy(os.path.join(anc_dir,"ancestors.fasta"),output_directory)
-    shutil.copy(os.path.join(anc_dir,"..","summary-tree.pdf"),output_directory)
 
     anc_out = []
     start, _ = create_element("div",{"class":"accordion",
@@ -248,7 +246,8 @@ def create_ancestor_card(anc_dict,
         card_contents = "".join([stats_html,icon_html,help_html])
         
         stats_card = create_card(card_title=f"{a} overview",
-                                 card_contents=card_contents)
+                                 card_contents=card_contents,
+                                 title_tag="h5")
         
         anc_out.append(stats_card)
         anc_out.append("<br/>")
@@ -269,7 +268,8 @@ def create_ancestor_card(anc_dict,
         help_html = f"<br/>{help_html}"
         ml_out.append(help_html)
         ml_card = create_card(card_title="Maximum likelihood sequence",
-                            card_contents="".join(ml_out))
+                              card_contents="".join(ml_out),
+                              title_tag="h5")
         anc_out.append(ml_card)
         anc_out.append("<br/>")
         
@@ -293,7 +293,8 @@ def create_ancestor_card(anc_dict,
         alt_out.append(help_html)
 
         alt_card = create_card(card_title="altAll sequence",
-                               card_contents="".join(alt_out))
+                               card_contents="".join(alt_out),
+                               title_tag="h5")
         anc_out.append(alt_card)
         
         anc_out.append("<br/>")
@@ -314,7 +315,8 @@ def create_ancestor_card(anc_dict,
 
 
         pp_plot_card = create_card(card_title="Posterior probability plot",
-                                card_contents="".join(pp_plot_out))
+                                   card_contents="".join(pp_plot_out),
+                                   title_tag="h5")
         
         anc_out.append(pp_plot_card)
         anc_out.append("<br/>")                                              
@@ -329,5 +331,7 @@ def create_ancestor_card(anc_dict,
     anc_out.append("</div>") #ancAccordion div
     anc_html = "".join(anc_out)
     
-    return create_card(card_contents=anc_html)
+    return create_card(card_contents=anc_html,
+                       card_title="Ancestors",
+                       title_tag="h4")
 

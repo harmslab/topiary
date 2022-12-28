@@ -475,7 +475,7 @@ def create_modal(modal_text,modal_title,modal_label):
     """
     Create a modal with this format:
 
-    .. code-block:: python
+    .. code-block:: html
 
         <!-- s_all -->
         <div class="modal fade" id="{modal_label}" tabindex="-1" role="dialog" aria-labelledby="{modal_label}Title" aria-hidden="true">

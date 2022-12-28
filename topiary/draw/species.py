@@ -15,6 +15,7 @@ def species_tree(species_tree,
                  vertical_pixels_per_tip=20,
                  min_height=300,
                  tip_labels_align=True,
+                 return_canvas=False,
                  **kwargs):
     """
     Draw a species tree with tips labeled by species name.
@@ -39,6 +40,10 @@ def species_tree(species_tree,
         minimum height for figure (pixels)
     tip_labels_align : bool, default=True
         align species names on the right of the plot
+    return_canvas : bool, default=False
+        if True, return the canvas whether this is being called in a notebook
+        or not. (canvas will be returned in a jupyter notebook regardless of this
+        setting)
     **kwargs : dict, optional
         pass any other keyword arguments directly to toytree.tree.draw
 
@@ -69,7 +74,7 @@ def species_tree(species_tree,
 
     # If this is in a notebook, return it so it appears
     ret = None
-    if topiary._in_notebook:
+    if topiary._in_notebook or return_canvas:
         ret = pt.canvas
 
     return ret

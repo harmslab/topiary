@@ -78,7 +78,7 @@ def create_input_card(supervisor,
 
     input_card_input = f"<div>{input_table}{input_icons}{help_html}</div>"
 
-    input_html = create_card("Input",card_contents=input_card_input)
+    input_html = create_card("Input",card_contents=input_card_input,title_tag="h4")
 
     return input_html
 

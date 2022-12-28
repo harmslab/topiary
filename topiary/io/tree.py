@@ -443,7 +443,7 @@ def write_trees(T,
     Write out an ete3.Tree as a newick format. This function looks for features
     set by :code:`load_trees` and then writes an individual tree out with each
     feature. The features are :code:`anc_pp`, :code:`anc_label`, :code:`bs_support`,
-    and :event:`event`. This will write out trees for any of these features 
+    and :code:`event`. This will write out trees for any of these features 
     present; not all features need to be in place for this function to work. 
 
     Parameters

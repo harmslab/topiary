@@ -7,8 +7,7 @@ import topiary
 from topiary._private import Supervisor
 
 from topiary.io.tree import load_trees
-from topiary.io.tree import write_trees
-from topiary.draw.core import create_name_dict
+
 
 from topiary.reports.elements import create_output_directory
 from topiary.reports.elements import canvas_to_html
@@ -22,9 +21,10 @@ from topiary.reports.elements import create_info_modal
 from topiary.reports.cards import create_ancestor_card
 from topiary.reports.cards import create_input_card
 from topiary.reports.cards import create_model_card
-
-from topiary.reports.quality import check_duplication
-
+from topiary.reports.cards import create_duplications_card
+from topiary.reports.cards import create_species_tree_card
+from topiary.reports.cards import create_asr_tree_card
+from topiary.reports.cards import create_param_card
 
 import pandas as pd
 import numpy as np
@@ -34,19 +34,6 @@ import shutil
 
 EVENT_COLOR = {"D":"#64007F","L":"#BAD316","T":"#407E98","S":"#023E55",None:"#000000"}
 EVENT_NAME = {"S":"speciation","D":"duplication","L":"loss","T":"transfer",None:'N/A'}
-
-run_parameters_help_text = \
-"""
-Shows parameters for this analysis. <b>Evolutionary model</b>: amino acid 
-substitution model used. <b>Reconciled gene and species tree</b>: if False, the
-tree is a gene tree; if True, the tree is the reconciled gene/species tree. 
-<b>Supports calculated</b>: whether or not branch supports have been calculated.
-(If running topiary as a pipeline, the "topiary-bootstrap-reconcile" script must
-be run to generate branch supports for the reconciled tree). <b>Ancestor 
-alt-all cutoff</b>: posterior probability cutoff used for determining the 
-sequence of the alt-all ancestor. (This is the dashed line in the ancestor
-posterior probability plots).
-"""
 
 summary_files_help_text = \
 """
@@ -62,43 +49,6 @@ amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
 have pp = 0.05). 
 
 The fasta file holds all maximum likelihood and altAll ancestors.
-
-The pdf holds the phylogenetic tree. In our experience,
-the pdf version of the tree from is better than the svg file shown in the 
-main panel for loading into Adobe Illustrator or Inkscape for figure creation. 
-
-The newick file holds up to four phylogenetic trees in a single file. The tips
-are labeled with species and paralog. The internal nodes are labeled with
-ancestor names (a1, a2, etc.), ancestor posterior probabilities (0.0-1.0), 
-branch supports (0-100), and, for reconciled trees, evolutionary events 
-(D: duplication, T: transfer, S: speciation, L: loss). This file should be 
-readable by all phylogenetic tree plotting and editing software. 
-"""
-
-tree_plot_help_text = \
-"""
-On the evolutionary tree, branch lengths represent the average number of amino acid
-substitutions per site on that branch and can be estimated using the scale bar. 
-The tree is rooted by the midpoint method (for the gene tree) or using the 
-species tree (reconciled tree). 
-
-Reconstructed ancestral sequences at each node are labeled with a unique name
-(a1, a2, etc.). These labels are links to more detailed information about that
-ancestor. 
-
-Each ancestral node is indicated with up to three concentric circles. The
-outermost circle denotes the evolutionary event for that node. (This is only 
-relevant for reconciled trees). Duplication events are marked in 
-<span style="color:#64007F">purple</span> and transfers in
-<span style="color:#407E98">teal</span>. Speciation events are not labeled. 
-The middle circle indicates bootstrap support, ranging from weak (50 or below;
-white) to strong (100; black). The center circle indicates average ancestor
-posterior probability across all non-gap sites, ranging from weak (0.7 or below;
-white) to strong (1.0; orange). 
-
-In our experience, the pdf version of the tree from the Summary Files panel is 
-better than this svg tree for loading into Adobe Illustrator or Inkscape for
-figure creation. 
 """
 
 gene_tree_help_text = \
@@ -135,20 +85,23 @@ def _find_directories(calculation_directory):
         last completed directory with an ancestor or tree inference, respectively.
     """
 
-    if os.path.isfile(os.path.join(calculation_directory,"run_parameters.json")):
-        return calculation_directory, None
-
     calc_dirs = {"model"     :None,
                  "gene"      :{"anc":[],
                                "tree":[]},
                  "reconciled":{"anc":[],
                                "tree":[]}}
-    for c in os.listdir(calculation_directory):
 
-        this_dir = os.path.join(calculation_directory,c)
-        if os.path.isdir(this_dir):
-            if os.path.exists(os.path.join(this_dir,"run_parameters.json")):
-                sv = Supervisor(this_dir)
+    if os.path.isfile(os.path.join(calculation_directory,"run_parameters.json")):
+        input_calc_dirs = [calculation_directory]
+    else:
+        input_calc_dirs = [os.path.join(calculation_directory,c) for c in 
+                           os.listdir(calculation_directory)]
+
+    for c in input_calc_dirs:
+
+        if os.path.isdir(c):
+            if os.path.exists(os.path.join(c,"run_parameters.json")):
+                sv = Supervisor(c)
 
                 # Run has not finished
                 if sv.status != "complete":
@@ -161,29 +114,35 @@ def _find_directories(calculation_directory):
                     t = -1                
 
                 if sv.calc_type == "find_best_model":
-                    calc_dirs["model"] = this_dir
+                    calc_dirs["model"] = c
 
                 # tree type (will be gene, reconciled, or None)
                 tree_type = sv.tree_prefix
                 if tree_type is None:
                     continue
 
-                # Is an ancestor dir
+                # Is an ancestor dir, append to both anc and tree
                 if "ancestors" in sv.calc_type:
-                    type_key = "anc"
-                else:
-                    type_key = "tree"
+                    calc_dirs[tree_type]["anc"].append((t,c))
+                    calc_dirs[tree_type]["tree"].append((t,c))
 
-                calc_dirs[tree_type][type_key].append((t,this_dir))
+                # If a tree dir, append ot only anc
+                else:
+                    calc_dirs[tree_type]["tree"].append((t,c))
 
     for tree_type in ["gene","reconciled"]:
+
+        # Take last anc and tree calcs seen
         for type_key in ["anc","tree"]:
+
+            # no calc -- set to None
             if len(calc_dirs[tree_type][type_key]) == 0:
                 calc_dirs[tree_type][type_key] = None
                 continue
 
             calc_dirs[tree_type][type_key].sort()
             calc_dirs[tree_type][type_key] = calc_dirs[tree_type][type_key][-1][1]
+
 
     return calc_dirs
 
@@ -218,15 +177,18 @@ def tree_report(tree_directory,
     # Load calculation into supervisor
     supervisor = Supervisor(tree_directory)
     
-    # Get information about ancestors (pp support, evolutionary event, 
-    # bs_support, etc.) Stick into anc_dict
-    T = load_trees(supervisor.output_dir,prefix=supervisor.tree_prefix)
+    # Load trees in as an ete3 tree
+    T = load_trees(supervisor.output_dir,
+                   prefix=supervisor.tree_prefix)
 
+    # Figure out column with paralog calls
     if "recip_paralog" in supervisor.df.columns:
         p_column = "recip_paralog"
     else:
         p_column = "name"
 
+    # Get information about ancestors (pp support, evolutionary event, 
+    # bs_support, etc.) Stick into anc_dict
     anc_dict = {}
     for n in T.traverse():
 
@@ -287,56 +249,19 @@ def tree_report(tree_directory,
     # Card stack will hold all of the generated html output
     card_stack = []
 
-    # -------------------------------------------------------------------------
-    # Trees as a newick file
-
-    # Figure out what to call tips of tree
-    if "recip_paralog" in supervisor.df.columns:
-        tip_columns = ["species","recip_paralog","uid"]
-    elif "nickname" in supervisor.df.columns:
-        tip_columns = ["species","nickname","uid"]
-    else:
-        tip_columns = ["species","name","uid"]
-
-    # Create dictionary mapping between uid and pretty name format for tips
-    name_dict = create_name_dict(df=supervisor.df,
-                                 tip_columns=tip_columns,
-                                 disambiguate=True)
-
-    # Write out trees as a newick file
-    write_trees(T,
-                name_dict=name_dict,
-                out_file=os.path.join(output_directory,"trees.newick"))
-
             
     # -------------------------------------------------------------------------
     # Title card
 
     title_html = create_card(html_description,tree_directory,"h3")
-    card_stack.append(title_html)
+    card_stack.append(f"{title_html}<br/>")
 
     # -------------------------------------------------------------------------
-    # warning card
+    # Warning card
 
     if supervisor.tree_prefix == "reconciled":
-        expect, obs, duplication_df = check_duplication(supervisor,T,p_column)
-        if obs > expect > 0:
-
-            out = []
-            out.append(f"We expected {expect} duplications,")
-            out.append(f"but observed {obs} duplications.")
-            out.append("These extra duplications could be real, but could")
-            out.append("also reflect model violation or incomplete lineage")
-            out.append("sorting. The unexpected duplications--and number")
-            out.append("of affected descendants--are shown below.")
-
-            txt = " ".join(out)
-            out = f"<p>{txt}</p><br/>"
-            warning_table = df_to_table(duplication_df,show_row_numbers=False)
-            warning_txt = f"{out}{warning_table}"
-
-            warning_html = create_card("<span color=\"var(--red-2)\">Warning</span>",warning_txt,"h5")
-            card_stack.append(warning_html)
+        duplications_card = create_duplications_card(supervisor,T,p_column)
+        card_stack.append(duplications_card)
 
     # -------------------------------------------------------------------------
     # input card
@@ -346,83 +271,38 @@ def tree_report(tree_directory,
     # -------------------------------------------------------------------------
     # Run parameters
 
-    # Figure out if reconciled
-    model = supervisor.model
-    if supervisor.tree_prefix == "reconciled":
-        reconciled = True
-    else:
-        reconciled = False
-
-    # Figure out if supports have been calculated
-    supports = False
-    for k in anc_dict:
-        if anc_dict[k]["bs_support"] is not None:
-            supports = True
-        break
-
-    names = ["Evolutionary model",
-             "Reconciled gene and species tree",
-             "Supports calculated"]
-
-    values = [model,reconciled,supports]
-
-    if ancestor_directory is not None:
-        alt_cutoff = Supervisor(ancestor_directory).run_parameters["alt_cutoff"]
-        names.append("Ancestor alt-all cutoff")
-        values.append(f"{alt_cutoff:.2f}")
-
-    param_df = pd.DataFrame({"name":names,
-                             "value":values})
-    param_table = df_to_table(param_df,add_header=False,show_row_numbers=False)
-    help_html = create_info_modal(modal_text=run_parameters_help_text,
-                                  modal_title="Run parameters",
-                                  extra_button_class="text-end")
-    help_html = f"<br/>{help_html}"
-    param_table = f"{param_table}{help_html}"
-
-    param_html = create_card("Run parameters",card_contents=param_table)
+    param_html = create_param_card(supervisor,anc_dict,ancestor_directory)
 
     # -------------------------------------------------------------------------
     # Icon card
 
-    icon_html = create_icon_row(["ancestor-data.csv","ancestors.fasta","summary-tree.pdf","trees.newick"],
-                                ["all ancestors csv","all ancestors fasta","ancestor tree pdf","trees in newick format"])
+    icon_html = create_icon_row(["ancestor-data.csv","ancestors.fasta"],
+                                ["all ancestors csv","all ancestors fasta"])
 
     help_html = create_info_modal(modal_text=summary_files_help_text,
                                   modal_title="Summary files",
                                   extra_button_class="text-end")
-    help_html = 7*"<br/>"+ help_html
-    icon_html = f"{icon_html}{help_html}"
+    help_html = 6*"<br/>"+ help_html
+    icon_html = f"<br/>{icon_html}{help_html}"
 
     icon_html = create_card(card_title="Summary files",
-                            card_contents=icon_html)
+                            card_contents=icon_html,title_tag="h4")
 
-    
-
-    # Combine
+    # Combine input, param, and icon into a single row
     card_stack.append(create_row([input_html,param_html,icon_html]))
 
     # -------------------------------------------------------------------------
-    # Tree card
+    # Species tree card
 
-    if ancestor_directory is not None:
-        anc_link_path = "<a href=\"#{anc_label}\">{anc_label}</a>"
-    else:
-        anc_link_path = None
+    if supervisor.tree_prefix == "reconciled":
+        species_tree_card = create_species_tree_card(supervisor,output_directory)
+        card_stack.append(species_tree_card)
 
-    tree_canvas = topiary.draw.tree(supervisor,
-                                    anc_link_path=anc_link_path,
-                                    return_canvas=True)
-    
-    tree_html = canvas_to_html(tree_canvas)
+    # -------------------------------------------------------------------------
+    # ASR tree card
 
-    help_html = create_info_modal(modal_text=tree_plot_help_text,
-                                  modal_title="Tree plot",
-                                  extra_button_class="text-end")
-    help_html = f"<br/>{help_html}"
-    tree_html = f"{tree_html}{help_html}"
-
-    card_stack.append(create_card(card_contents=tree_html))
+    asr_tree_card = create_asr_tree_card(supervisor,output_directory,ancestor_directory,T)
+    card_stack.append(asr_tree_card)
 
     # -------------------------------------------------------------------------
     # Ancestors card
@@ -436,12 +316,11 @@ def tree_report(tree_directory,
         card_stack.append(anc_card)
         
 
-
     # Assemble final report html
 
-    container = ["<div class=\"container-lg px-4 gy-4\">"]
+    container = ["<div class=\"container-lg px-4 gy-4\"><br/>"]
     container.append("".join(card_stack))
-    container.append("</div>")
+    container.append("<br/></div>")
     container_html = "".join(container)
 
     top, bottom = create_main_html(description=html_description,
@@ -498,7 +377,7 @@ def pipeline_report(pipeline_directory,
     
     card_stack = []
     title_html = create_card(html_description,pipeline_directory,"h3")
-    card_stack.append(title_html)
+    card_stack.append(f"{title_html}<br/>")
 
     tree_stack = []
     for some_dir in [model_dir,gene_dirs["tree"],recon_dirs["tree"]]:
@@ -520,12 +399,12 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        html = f"<h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>"
+        html = f"<br/><h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>"
 
         help_html = create_info_modal(modal_text=gene_tree_help_text,
                                       modal_title="Gene tree ancestors",
                                       extra_button_class="text-end")
-        help_html = f"<br/>{help_html}"
+        help_html = 7*"<br/>" + help_html
         html = f"{html}{help_html}"
 
         tree_stack.append(create_card(html))
@@ -541,12 +420,12 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        html = f"<h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>"
+        html = f"<br/><h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>"
 
         help_html = create_info_modal(modal_text=reconciled_tree_help_text,
                                       modal_title="Reconciled tree ancestors",
                                       extra_button_class="text-end")
-        help_html = f"<br/>{help_html}"
+        help_html = 7*"<br/>" + help_html
         html = f"{html}{help_html}"
 
         tree_stack.append(create_card(html))
@@ -567,9 +446,9 @@ def pipeline_report(pipeline_directory,
         card_stack.append(model_html)
 
 
-    container = ["<div class=\"container-lg px-4 gy-4\">"]
+    container = ["<div class=\"container-lg px-4 gy-4\"><br/>"]
     container.append("".join(card_stack))
-    container.append("</div>")
+    container.append("</br></div>")
     container_html = "".join(container)
 
     top, bottom = create_main_html(description=html_description,

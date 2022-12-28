@@ -544,3 +544,7 @@ def small_phylo():
 @pytest.fixture(scope="module")
 def raxml_output():
     return get_files(os.path.join("data","raxml-output"))
+
+@pytest.fixture(scope="module")
+def alignment_input():
+    return get_files(os.path.join("data","alignment-input"))
