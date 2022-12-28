@@ -34,7 +34,7 @@ else:
 
 # Packages
 packages = find_packages(exclude=('tests',))
-packages.extend(glob.glob("topiary/reports/assets/"))
+package_data = {"topiary":["reports/assets/*"]}
 
 # Where the magic happens:
 setup(
@@ -48,8 +48,10 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=packages,
-    scripts=glob.glob("bin/topiary-*"),
+    package_data=package_data,
+    zip_safe=False,
     include_package_data=True,
+    scripts=glob.glob("bin/topiary-*"),
     license='MIT',
     classifiers=[
       'Development Status :: 3 - Alpha',

@@ -13,8 +13,7 @@ import ete3
 import pandas as pd
 import numpy as np
 
-import re, copy
-
+import copy
 
 def df_to_species_tree(df,strict=False):
     """

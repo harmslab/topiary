@@ -1,7 +1,10 @@
 import pytest
 import pandas as pd
-import os, glob, inspect, json
-
+import os
+import glob
+import inspect
+import json
+from html.parser import HTMLParser
 
 def pytest_addoption(parser):
     """
@@ -162,6 +165,95 @@ def get_public_param_defaults(public_function,private_function):
 
     return kwargs
 
+class HTMLValidator(HTMLParser):
+    """
+    Class for validating html.
+    """
+
+    DOES_NOT_STACK = ["br","img","meta","link"]
+
+    def __init__(self,*args,**kwargs):
+        
+        self._stack = []
+        self._tag_dict = {}
+        self._counter = 0
+
+        super(HTMLValidator, self).__init__(*args, **kwargs)
+    
+    def handle_starttag(self, tag, attrs):
+        """
+        Start tag.
+        """
+    
+        # If something like "img" or "meta" that does not have a closing tag,
+        # don't stick in the stack. 
+        if not tag in self.DOES_NOT_STACK:
+
+            # Record tag in stack
+            self._stack.append(tag)
+        
+        # Create dictionary from tag attributes
+        attr_dict = {}
+        for a in attrs:
+            
+            key = a[0]
+            values = a[1].strip().split()
+            attr_dict[key] = values
+        
+        # Create new entry in tag_dict if needed
+        if tag not in self._tag_dict:
+            self._tag_dict[tag] = []
+        
+        # tag_dict is keyed to tag, then records positions, attributes, and data
+        # for each element seen. data starts as None. 
+        self._tag_dict[tag].append([self._counter,attr_dict,None])
+        self._counter += 1
+    
+        
+    def handle_endtag(self, tag):
+        """
+        End tag.
+        """
+        
+        # Delete last tag from stack, only if it matches. If the last tag does
+        # not match, there's mangled html. 
+        if self._stack[-1] == tag:
+            self._stack = self._stack[:-1]
+        else:
+            err = "mangled html\n"
+            err += f"observed </{tag}> but expected </{self._stack[-1]}>\n"
+            raise RuntimeError(err)
+
+    def handle_data(self, data):
+        """
+        Data
+        """
+        
+        # Skip empty data
+        if data.strip() == "":
+            return None
+
+        # If data comes in, append it to the last tag
+        last_tag = self._stack[-1]
+        self._tag_dict[last_tag][-1][-1] = data
+    
+
+    @property
+    def is_valid(self):
+        """
+        Properly nested html will have nothing in the stack.
+        """
+
+        return len(self._stack) == 0
+
+    @property
+    def tag_dict(self):
+        """
+        Dictionary of tags. Keys are tags. Values are order seen in feed
+        (integer), dictionary of this tag attributes, and (possibly) data.
+        """
+        
+        return self._tag_dict
 
 @pytest.fixture(scope="module")
 def ncbi_lines():
@@ -452,3 +544,7 @@ def small_phylo():
 @pytest.fixture(scope="module")
 def raxml_output():
     return get_files(os.path.join("data","raxml-output"))
+
+@pytest.fixture(scope="module")
+def alignment_input():
+    return get_files(os.path.join("data","alignment-input"))

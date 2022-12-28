@@ -12,6 +12,28 @@ import xml
 import os
 import shutil
 import copy
+import random
+import string
+import re
+
+def _process_text_for_html(text):
+    """
+    Add paragraph breaks to text, using the rule that a double carriage return
+    should be a paragraph break. Convert all other paragraph breaks into spaces.
+    """
+
+    text = text.strip()
+    paragraphs = text.split("\n\n")
+    
+    out = []
+    for p in paragraphs:
+        p = re.sub("\n"," ",p)
+        p = re.sub("  "," ",p)
+
+        out.append(f"<p>{p}</p>")
+    
+    return "".join(out)
+
 
 def create_output_directory(output_directory,overwrite=False):
     """
@@ -258,7 +280,7 @@ def sequence_box(text,
                                               "font-monospace"]})
     out.append(start)
     
-    # If both of these conditions are met, we need to contruct a text string 
+    # If both of these conditions are met, we need to construct a text string 
     # with a set of spans
     if prop_value is not None and not issubclass(type(color),str):
 
@@ -321,7 +343,7 @@ def create_card(card_title=None,card_contents=None,title_tag="h6",match_height=T
     if card_title is not None:
         out.append(f"<{title_tag} class=\"card-title\">{card_title}</{title_tag}>")
     if card_contents is not None:
-        out.append(f"<div class=\"align-middle\">{card_contents}</div>")
+        out.append(f"<div>{card_contents}</div>")
     out.append("</div></div>")
 
     return "".join(out)
@@ -385,13 +407,15 @@ def create_icon_row(files_to_link,descriptions):
 
     ext_files = {"csv":".assets/csv_icon.svg",
                  "pdf":".assets/pdf_icon.svg",
-                 "txt":".assets/txt_icon.svg"}
+                 "txt":".assets/txt_icon.svg",
+                 "fasta":".assets/fasta_icon.svg",
+                 "newick":".assets/newick_icon.svg"}
 
     out = []
     for i, f in enumerate(files_to_link):
 
         try:
-            icon = ext_files[f[-3:]]
+            icon = ext_files[f.split(".")[-1]]
         except KeyError:
             icon = ext_files["txt"]
 
@@ -402,7 +426,7 @@ def create_icon_row(files_to_link,descriptions):
                                     "href":f})
 
         out.append(s)
-        out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" />")
+        out.append(f"<img src=\"{icon}\" class=\"img-fluid\" width=\"35px\" height=\"35px\" >")
         out.append(e)
     
     return "".join(out)
@@ -446,7 +470,141 @@ def create_row(elements):
     this_out.append(f"{re}{con_e}")
     
     return "".join(this_out)
+
+def create_modal(modal_text,modal_title,modal_label):
+    """
+    Create a modal with this format:
+
+    .. code-block:: html
+
+        <!-- s_all -->
+        <div class="modal fade" id="{modal_label}" tabindex="-1" role="dialog" aria-labelledby="{modal_label}Title" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <!-- header -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="{modal_label}Title">{modal_title}</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <!-- text -->
+                    <div class="modal-body">
+                        {modal_text}
+                    </div>
+
+                    <-- close -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+
+                <!-- e_all -->
+                </div>
+            </div>
+        </div>
     
+    Parameters
+    ----------
+    modal_text : str
+        text for modal
+    modal_title : str
+        title of modal
+    modal_label : str
+        unique id for modal
+    
+    Returns
+    -------
+    html : str
+        html described above
+    """
+
+    # Create outermost three levels
+    s0, e0 = create_element("div",{"class":["modal","fade"],
+                                   "id":[modal_label],
+                                   "tabindex":[-1],
+                                   "role":["dialog"],
+                                   "aria-labelledby":[f"{modal_label}Label"],
+                                   "aria-hidden":["true"]})
+    s1, e1 = create_element("div",{"class":["modal-dialog","modal-dialog-scrollable"],
+                                   "role":["document"]})
+    s2, e2 = create_element("div",{"class":["modal-content"]})
+
+    s_all = f"{s0}{s1}{s2}"
+    e_all = f"{e2}{e1}{e0}"
+
+    # Create title element with "X" to close
+    s3, e3 = create_element("div",{"class":["modal-header"]})
+    s4, e4 = create_element("h5",{"class":["modal-title"],
+                                  "id":[f"{modal_label}Label"]})
+    title_elem = f"{s4}{modal_title}{e4}"
+
+    s5, e5 = create_element("button",{"type":["button"],
+                                      "class":["close"],
+                                      "data-bs-dismiss":["modal"],
+                                      "aria-label":["Close"]})
+    x_elem = f"{s5}<span aria-hidden=\"true\">&times;</span>{e5}"
+
+    header = f"{s3}{title_elem}{x_elem}{e3}"
+
+    # Create main text element
+    s6, e6 = create_element("div",{"class":["modal-body","text-start"]})
+    text = f"{s6}{modal_text}{e6}"
+
+    # Create close button element
+    s7, e7 = create_element("div",{"class":["modal-footer"]})
+    s8, e8 = create_element("button",{"class":["btn","btn-secondary"],
+                                      "data-bs-dismiss":["modal"]})
+    close = f"{s7}{s8}Close{e8}{e7}"
+
+    return f"{s_all}{header}{text}{close}{e_all}"
+
+
+def create_info_modal(modal_text,
+                      modal_title,
+                      process_text=True,
+                      button_label="Help",
+                      extra_button_class=None):
+    """
+    Create a button labeled '{button_label}' that brings up an informational
+    modal when clicked.
+
+    Parameters
+    ----------
+    modal_text : str
+        text for modal
+    modal_title : str
+        title for the modal
+    process_text : bool, default=True
+        whether or not to process text (very minimal html pre-processing); see
+        _process_text_for_html function
+    button_label : str, default="Help"
+        label for button that brings up modal
+    extra_button_class : str, optional
+        wrap button in a div with this class string
+    
+    Returns
+    -------
+    html : str
+        html for button that brings up modal
+    """
         
-        
-        
+    modal_id = "".join([random.choice(string.ascii_letters) for _ in range(10)])
+    modal_id = f"modal{modal_id}"
+
+    s, e = create_element("button",{"class":["btn","btn-outline-dark"],
+                                     "data-bs-toggle":["modal"],
+                                     "data-bs-target":[f"#{modal_id}"]})
+    button = f"{s}{button_label}{e}"
+    if extra_button_class is not None:
+        button = f"<div class=\"{extra_button_class}\">{button}</div>"
+
+    if process_text:
+        modal_text = _process_text_for_html(modal_text)
+
+    modal = create_modal(modal_text,modal_title,modal_id)
+
+    return f"{button}{modal}"
+
+

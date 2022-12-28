@@ -171,14 +171,6 @@ def tree(calculation,
     if df is None:
         df = supervisor.df
 
-    if tip_columns is None:
-        if "recip_paralog" in df.columns:
-            recip_columns = ["species","recip_paralog"]
-        elif "nickname" in df.columns:
-            recip_columns = ["species","nickname"]
-        else:
-            recip_columns = ["species","name"]
-
     # Create dictionary mapping between uid and pretty name format
     name_dict = create_name_dict(df=df,
                                  tip_columns=tip_columns,

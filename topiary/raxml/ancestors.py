@@ -422,7 +422,7 @@ def _parse_raxml_anc_output(df,
 
     # Write ancestor df to csv
     anc_df = pd.concat(df_list,ignore_index=True)
-    anc_df.to_csv(f"ancestor-data.csv")
+    anc_df.to_csv(f"ancestor-data.csv",index=False)
 
     # Create final tree
     _make_ancestor_summary_trees(df,

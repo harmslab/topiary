@@ -332,7 +332,7 @@ def find_best_model(df,
 
     # Write dataframe comparing models
     final_df.to_csv(os.path.join(supervisor.output_dir,
-                                 "model-comparison.csv"))
+                                 "model-comparison.csv"),index=False)
 
     # Print best model to stdout
     print("\nTop 10 models:\n")

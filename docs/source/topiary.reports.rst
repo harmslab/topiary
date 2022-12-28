@@ -9,26 +9,16 @@ topiary.reports
    :show-inheritance:
 
 
-topiary.reports.cards
-----------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: topiary.reports.cards
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   topiary.reports.cards
+
 
 topiary.reports.elements
 -------------------------------
 
 .. automodule:: topiary.reports.elements
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-topiary.reports.quality
-------------------------------
-
-.. automodule:: topiary.reports.quality
    :members:
    :undoc-members:
    :show-inheritance:

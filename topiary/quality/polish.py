@@ -148,8 +148,6 @@ def polish_alignment(df,
     top_fx_missing = _get_cutoff(df.fx_missing_dense,pct=fx_missing_percentile)
     df.loc[pd.isnull(df.partial),"partial"] = False
 
-    df.to_csv("stupid.csv")
-
     to_drop_2 = np.logical_and(df.fx_missing_dense >= top_fx_missing,
                                df.partial == True)
 

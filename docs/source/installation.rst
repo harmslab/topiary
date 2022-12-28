@@ -10,28 +10,38 @@
 Installation
 ============
 
-Cross-platform installation instructions
-========================================
+.. note::
 
-We recommend using conda to install topiary on all operating systems. (Some
-system-specific instructions for installation of wrapped software packages
-are in the next sections).
+  If you plan to generate alignments but not ancestors, you may want to run 
+  topiary on `google colab <https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynb>`_
+  instead of installing it locally. Running the full ancestral inference pipeline
+  will require installing topiary in a high-performance Linux or macOS environment.
+
+The basic installation instructions for topiary are:
+
+1. Download and install `miniconda <miniconda-link_>`_
+2. Install topiary using conda
+3. Install supporting software packages
+
+1. Install miniconda
+====================
 
 To prevent interference with other packages, we recommend installing topiary in
-its own conda environment.If you do not have conda installed, download and
-install `miniconda <miniconda-link_>`_ before proceeding. Once conda is installed,
-run the following commands in a standard terminal (Linux or macOS) or the
-Anaconda Prompt (Windows):
+its own conda environment. If you do not have conda installed, download and
+install `miniconda <miniconda-link_>`_ before proceeding. Installation instructions
+are available on the `linked miniconda page <miniconda-link_>`_. 
+
+2. Install topiary
+==================
+
+Once conda is installed, open a standard terminal (Linux or macOS) or an 
+Anaconda Prompt (Windows). Copy the following commands into the prompt to run 
+them. 
 
 .. code-block:: shell-session
 
   conda install git
   git clone https://github.com/harmslab/topiary
-
-You can then install topiary via conda:
-
-.. code-block:: shell-session
-
   cd topiary
   conda config --set channel_priority strict
   conda env create -f environment.yml
@@ -42,9 +52,8 @@ At this point, you have topiary, but not the software packages it wraps,
 installed. The next sections describe how to install the entire software
 stack.
 
-
-Validate the installation
-=========================
+3. Install supporting software packages
+=======================================
 
 You can check which software packages are visible to topiary by:
 
@@ -67,20 +76,21 @@ sections below.
   Windows users must specify the complete path to each script when running
   topiary commands. To run the above command (:code:`topiary-check-installed`)
   please type: :code:`python c:\\users\\harmsm\\topiary\\bin\\topiary-check-installed`,
-  replacing the first part of the path (:code:`:c\\users\\harmsm`) with the path
+  replacing the first part of the path (:code:`c:\\users\\harmsm`) with the path
   on your system.
 
 
 .. _macos-linux-section:
 
+----------------------------
 macOS and Linux instructions
-============================
+----------------------------
 
 You can install the software packages with:
 
 .. code-block:: shell-session
 
-  conda install -c conda-forge -c bioconda "mpi4py" "openmpi<4.1.3" "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
+  conda install -c conda-forge -c bioconda mpi4py openmpi "muscle>=5.0" "raxml-ng>=1.1" "generax>=2.0" "blast>=2.2"
 
 You can then check to make sure everything installed correctly by running:
 
@@ -110,8 +120,9 @@ instructions).
 
 .. _windows-section:
 
+--------------------
 Windows instructions
-====================
+--------------------
 
 .. important::
 

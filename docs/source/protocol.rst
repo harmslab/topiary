@@ -447,14 +447,14 @@ conda environment named `topiary`.
 .. note::
 
   You can run this as a Jupyter notebook instead of using the command line. 
-  For an example, see `this notebook <https://github.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb>`_. 
+  For an example, see `this notebook <https://github.com/harmslab/topiary-examples/blob/main/notebooks/alignment-to-ancestors.ipynb>`_. 
   To run this notebook interactively (for a toy dataset) on Google Colab,
   click the button below. 
 
   .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :align: center
     :alt: open seed to alignment in colab
-    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb
+    :target: https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/alignment-to-ancestors.ipynb
 
 
 Copy the final dataframe up to the cluster.
@@ -641,54 +641,22 @@ The most important option is:
   them can take years; it is worth making sure the ancestors are well 
   reconstructed before ordering genes!
 
-With that in mind, there are a few things worth covering for interpreting 
-ancestors. 
-
--------------
-Tree topology
--------------
-
-Before selecting ancestors to characterize, it is important to make sure the
-phylogenetic tree is reasonable. 
-
-Model violation
----------------
-
-The probabilistic models used in ASR are powerful, but do not capture all
-possible evolutionary events. If an evolving protein underwent events not
-captured by these models, the resulting ancestors could be nonsensical. 
-Two common problems are:
-
-1. :emph:`Incomplete lineage sorting` (ILS). This is where a gene duplicates and
-exists as several variants in a population when speciation occurs. Different
-duplicates are preserved along the descendant lineages, meaning this cannot be
-classified as a simple duplication or speciation event. 
-2. :emph:`Gene fusion`. This is where different parts of a single gene have
-different evolutionary histories, then merged at some point in the past.
-
-Looking at the reconciled tree can help you decide if this might apply to your
-family. A standard signal for both ILS and gene fusion is high discordance
-between the inferred gene and species trees. This will manifest as an
-unexpectedly high number of duplication and/or transfer events in the reconciled
-tree. If, for example, you are studying a protein family where you expect
-two paralogs, but you observe 20 duplication events scattered throughout the
-tree, there is a good chance that the evolutionary models used for ASR are not
-appropriate for your protein family. 
-
-Topiary warns users in its summary output if there are an anomalous number of
-duplication events, suggesting model-violation. 
-
-Solutions
-If your protein has more than one domain, one option would be to try to reconstruct each domain independently. If the discordance disappears, it’s good evidence for a gene fusion event. If the discordance remains, proceed with extreme caution. 
-One way forward in the face of discordance is to compare the sequences—and functional characteristics—for any ancestors of interest reconstructed using either the gene tree alone or the reconciled gene tree. (Topiary returns ancestors inferred on both trees.) If the results for ancestors reconstructed on the two trees differ dramatically, one cannot infer the ancestral sequence with confidence given standard ASR methods. ILS and gene fusion are longstanding problems in phylogenetics; treating them requires expert input. 
-
+The output from the *alignment-to-ancestors* and *bootstrap-reconcile* pipelines
+will be in the *results* directory. (This directory is also automatically
+compressed to *results.zip* for easy downloading). Open *results/index.html* 
+in a web browser. There are "Help" icons throughout this page to help you 
+navigate the output. 
 
 ---------------
 Quality metrics
 ---------------
-Before synthesizing and characterizing ancestral proteins, we evaluate their
-quality. We look at two metrics. The first is the average posterior probability
-for the ML amino acid at all positions in the ancestor. A well reconstructed
+
+.. image:: _static/img/supports.svg
+  :align: center
+  :alt: Supports
+
+**The first quality metric to consider is the average posterior probability (PP)
+for the ML amino acid** at all positions in the ancestor. A well reconstructed
 ancestor would have an average PP of 1.0, meaning the model has high confidence
 in the sequence at all sites. At the other extreme, a completely ambiguous
 ancestor would have an average PP of ~1/20 (0.05), meaning each site could have
@@ -696,24 +664,28 @@ any one of the amino acids. Generally, ancestors in published studies have
 average PP for the ML reconstructed states > 0.85. 
 
 To assess the effect of phylogenetic uncertainty on inferences about the
-functions of ancestors, we synthesize two versions of every ancestor. The first
-is the ML ancestor, as described above. The second is the so-called altAll
-ancestor27. For the altAll ancestor, we replace all ambiguous ML amino acids
+functions of ancestors, we recommend synthesizing two versions of every ancestor.
+The first is the ML ancestor, as described above. The second is the altAll
+ancestor. For the altAll ancestor, we replace all ambiguous ML amino acids
 with the next-most-probable amino acid. If an ancestor has 10 ambiguous sites,
 the ML and altAll would differ at all 10 of these sites. By functionally
 characterizing both the ML and altAll versions of an ancestors, we can determine
-which features are robust to uncertainty in the reconstruction7,9,28–31.
+which features are robust to uncertainty in the reconstruction.
 
-The second quality metric is the branch support for a given ancestral node.
+A similar sensitivity analysis can be performed if their are ambiguous gaps in 
+the sequence. Topiary does not generate an altAll sequence for gaps; however, 
+ambiguous gaps can be identified by looking in the csv file linked off the 
+ancestor summary page. 
+
+**The second quality metric is the branch support for a given ancestral node.**
 Posterior probabilities measure our confidence in the ancestral sequence given a
 particular phylogenetic tree, but they do not measure our confidence in the tree
 itself. (Put another way, we have the sequence of an ancestral node, but how
 confident are we that the node existed?) Branch supports measure this
-confidence. We discuss how these are estimated in The Topiary Pipeline section;
-for now, we focus on interpretation. 
+confidence. 
 
 A branch support measures our confidence that a given group of sequences cluster
-together, typically on a 0-100 scale. Figure 2G shows branch supports for two
+together, typically on a 0-100 scale. The figure shows branch supports for two
 possible arrangements of the tree: placing paralog A with B (orange with blue)
 or paralog B with the fish outgroup (blue with green). In this example we have
 high support (98/100) for placing paralogs A and B together, with contrasting
@@ -721,4 +693,66 @@ low support for separating them (2/100). For an ASR study, we need to have high
 confidence that an ancestral node existed (typically branch support > 85) prior
 to characterizing the ancestral protein. 
 
-Reconcilation & not
+
+
+---------------
+Model violation
+---------------
+
+In addition to checking the posterior probability and branch supports, it is 
+important to make sure the tree topology is reasonable. 
+
+The probabilistic models used in ASR are powerful, but do not capture all
+possible evolutionary events. One common problem is incomplete lineage sorting
+(ILS), where a gene duplicates but exists as several variants in a population
+when speciation occurs. Different duplicates are preserved along the
+descendant lineages, meaning this cannot be classified as a simple duplication
+or speciation event. ILS is a general problem with all ASR methods and is
+specifically noted as being outside the scope of GeneRax (the software topiary
+uses for gene/species tree reconciliation). 
+
+Another problem is gene fusion, where different parts of a single gene have
+different evolutionary histories. The methods used by topiary all assume a
+single genetic history for each protein sequence. If we force such a model to
+fit a fused alignment, we will likely end up with a nonsensical evolutionary
+tree and meaningless ancestral sequences. 
+
+A standard signal for both ILS and gene fusion is high discordance between the
+inferred gene and species trees. This manifests as an unexpectedly high
+number of duplication and/or transfer events in the reconciled tree. If, for
+example, you are studying a protein family where you expect two paralogs, but
+you observe 20 duplication events scattered throughout the tree, there is a good
+chance that the evolutionary models used for ASR are not appropriate for your
+protein family. 
+
+**If topiary detects discordance, it will place a warning in the 
+results for the reconciled tree.** 
+
+Excess duplications could be observed for benign reasons. The first is
+lineage-specific duplication, where one or more organisms has more than one copy
+of a given gene. These will appear as recent duplications near the tips of the
+tree. The second benign reason would be previously unrecognized gene 
+duplication(s). This will appear as a duplication with taxonomically reasonable
+descendants. For example, if a gene duplicated in the ancestor of humans, chimps,
+and gorillas, we would see human/chimp/gorilla on both sides of the duplication
+event (i.e., six total sequences). 
+
+If these conditions are not met, it is likely that model violation is in play. 
+
+If your protein has more than one domain, one option would be to try to
+reconstruct each domain independently. If the discordance disappears, it's good
+evidence for a gene fusion event. If the discordance remains, proceed with
+extreme caution. 
+
+Another way forward in the face of discordance is to compare the sequences--and
+functional characteristics--for any ancestors of interest reconstructed using
+either the reconciled gene tree and on the gene tree alone. If the results for
+ancestors reconstructed on the two trees differ dramatically, one cannot infer
+the ancestral sequence with confidence given standard ASR methods. If the results
+for the reconstructions on both trees are similar, it suggests whatever features
+you are trying to reconstruct are robust to uncertainty in the tree topology. 
+Topiary warns users in its summary output if there are an anomalous number of
+duplication events, suggesting model-violation. 
+
+
+
