@@ -117,7 +117,8 @@ def test_create_main_html(tmpdir):
 
 def test_df_to_table():
     
-    test_df = pd.DataFrame({"test":[1,2,3],"this":[4.1,5.2,6.3]})
+    test_df = pd.DataFrame({"test":np.array([1,2,3],dtype=int),
+                            "this":np.array([4.1,5.2,6.3],dtype=float)})
 
     # Test show_row_numbers and add_header (which interact)
 
