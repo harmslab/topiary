@@ -26,11 +26,11 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test1")
 
-    assert out['model'] == 'test1/00_find-model'
-    assert out['gene']['anc'] == 'test1/02_gene-tree-ancestors'
-    assert out['gene']['tree'] == 'test1/05_gene-tree-bootstraps'
-    assert out['reconciled']['anc'] == 'test1/04_reconciled-tree-ancestors'
-    assert out['reconciled']['tree'] == 'test1/06_reconciled-tree-bootstraps'
+    assert out['model'] == os.path.join('test1','00_find-model')
+    assert out['gene']['anc'] == os.path.join('test1','02_gene-tree-ancestors')
+    assert out['gene']['tree'] == os.path.join('test1','05_gene-tree-bootstraps')
+    assert out['reconciled']['anc'] == os.path.join('test1','04_reconciled-tree-ancestors')
+    assert out['reconciled']['tree'] == os.path.join('test1','06_reconciled-tree-bootstraps')
 
     # -------------------------------------------------------------------------
     # No reconciled bootstraps
@@ -48,11 +48,11 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test2")
 
-    assert out['model'] == 'test2/00_find-model'
-    assert out['gene']['anc'] == 'test2/02_gene-tree-ancestors'
-    assert out['gene']['tree'] == 'test2/05_gene-tree-bootstraps'
-    assert out['reconciled']['anc'] == 'test2/04_reconciled-tree-ancestors'
-    assert out['reconciled']['tree'] == 'test2/04_reconciled-tree-ancestors'
+    assert out['model'] == os.path.join('test2','00_find-model')
+    assert out['gene']['anc'] == os.path.join('test2','02_gene-tree-ancestors')
+    assert out['gene']['tree'] == os.path.join('test2','05_gene-tree-bootstraps')
+    assert out['reconciled']['anc'] == os.path.join('test2','04_reconciled-tree-ancestors')
+    assert out['reconciled']['tree'] == os.path.join('test2','04_reconciled-tree-ancestors')
 
     # -------------------------------------------------------------------------
     # No gene tree bootstraps
@@ -69,11 +69,11 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test3")
 
-    assert out['model'] == 'test3/00_find-model'
-    assert out['gene']['anc'] == 'test3/02_gene-tree-ancestors'
-    assert out['gene']['tree'] == 'test3/02_gene-tree-ancestors'
-    assert out['reconciled']['anc'] == 'test3/04_reconciled-tree-ancestors'
-    assert out['reconciled']['tree'] == 'test3/04_reconciled-tree-ancestors'
+    assert out['model'] == os.path.join('test3','00_find-model')
+    assert out['gene']['anc'] == os.path.join('test3','02_gene-tree-ancestors')
+    assert out['gene']['tree'] == os.path.join('test3','02_gene-tree-ancestors')
+    assert out['reconciled']['anc'] == os.path.join('test3','04_reconciled-tree-ancestors')
+    assert out['reconciled']['tree'] == os.path.join('test3','04_reconciled-tree-ancestors')
 
     # -------------------------------------------------------------------------
     # No reconciled ancestors
@@ -89,11 +89,11 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test4")
 
-    assert out['model'] == 'test4/00_find-model'
-    assert out['gene']['anc'] == 'test4/02_gene-tree-ancestors'
-    assert out['gene']['tree'] == 'test4/02_gene-tree-ancestors'
+    assert out['model'] == os.path.join('test4','00_find-model')
+    assert out['gene']['anc'] == os.path.join('test4','02_gene-tree-ancestors')
+    assert out['gene']['tree'] == os.path.join('test4','02_gene-tree-ancestors')
     assert out['reconciled']['anc'] is None
-    assert out['reconciled']['tree'] == 'test4/03_reconciled-tree'
+    assert out['reconciled']['tree'] == os.path.join('test4','03_reconciled-tree')
 
 
     # -------------------------------------------------------------------------
@@ -109,9 +109,9 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test5")
 
-    assert out['model'] == 'test5/00_find-model'
-    assert out['gene']['anc'] == 'test5/02_gene-tree-ancestors'
-    assert out['gene']['tree'] == 'test5/02_gene-tree-ancestors'
+    assert out['model'] == os.path.join('test5','00_find-model')
+    assert out['gene']['anc'] == os.path.join('test5','02_gene-tree-ancestors')
+    assert out['gene']['tree'] == os.path.join('test5','02_gene-tree-ancestors')
     assert out['reconciled']['anc'] is None
     assert out['reconciled']['tree'] is None
 
@@ -127,9 +127,9 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test6")
 
-    assert out['model'] == 'test6/00_find-model'
+    assert out['model'] == os.path.join('test6','00_find-model')
     assert out['gene']['anc'] is None
-    assert out['gene']['tree'] == 'test6/01_gene-tree'
+    assert out['gene']['tree'] == os.path.join('test6','01_gene-tree')
     assert out['reconciled']['anc'] is None
     assert out['reconciled']['tree'] is None
 
@@ -144,7 +144,7 @@ def test__find_directories(tmpdir,small_phylo):
     
     out = _find_directories("test7")
 
-    assert out['model'] == 'test7/00_find-model'
+    assert out['model'] == os.path.join('test7','00_find-model')
     assert out['gene']['anc'] is None
     assert out['gene']['tree'] is None
     assert out['reconciled']['anc'] is None
