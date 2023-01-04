@@ -163,7 +163,8 @@ How to cite
 If you use topiary in your research, please cite:
 
 Orlandi KN\ :sup:`*`, Phillips SR\ :sup:`*`, Sailer ZR, Harman JL, Harms MJ. "Topiary: pruning the
-manual labor from ancestral sequence reconstruction" (in press) *Protein Science* 
+manual labor from ancestral sequence reconstruction" (2022) *Protein Science* 
+`10.1002/pro.4551 <topiary-link_>`_.
 
 :sup:`*` *Authors contributed equally*
 

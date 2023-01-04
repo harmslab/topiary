@@ -23,13 +23,43 @@ following python generates the following output
   :align: center
   :alt: Topiary tree drawing
 
-.. note::
-
-  Jupyter examples coming soon.
-
 
 Description of arguments
 ========================
+
+You have a lot of control over how the tree is drawn depending on the arguments
+you pass into :code:`topiary.draw.tree`. 
+
+.. code-block:: python
+
+  topiary.draw.tree("05_reconcile-bootstraps",
+                    output_file=None,
+                    bs_color={50:"#ffffff",100:"#000000"},
+                    pp_color={0.7:"#ffffff",1.0:"#DC801A"},
+                    event_color={"D":"#64007F","L":"#BAD316","T":"#407E98"},
+                    bs_label=False,
+                    pp_label=False,
+                    event_label=False,
+                    anc_label=True,
+                    tip_columns=None,
+                    tip_name_separator="|",
+                    disambiguate_tip_names=True,
+                    node_color=None,
+                    node_size=None,
+                    font_size=15,
+                    tip_text_style=None,
+                    label_text_style=None,
+                    label_position="right",
+                    label_position_offset=None,
+                    label_color="gray",
+                    stroke_width=2,
+                    vertical_pixels_per_tip=25,
+                    min_height=300,
+                    df=None,
+                    anc_link_path=None,
+                    return_canvas=False,
+                    **kwargs)
+
 
 ---------------------
 General plot features
@@ -45,6 +75,8 @@ General plot features
 + :code:`vertical_pixels_per_tip`. How many vertical pixels to assign each
   tip on the tree. This controls the height of the plot.
 + :code:`min_height`. Make sure the plot is at least this many pixels high.
++ :code:`return_canvas`. Return the toyplot canvas even if not in a Jupyter 
+  notebook. (Canvas is always returned in a Jupyter notebook.)
 
 --------------------------
 Internal nodes (ancestors)
@@ -75,6 +107,12 @@ Labels
   + :code:`label_text_style`. This gives detailed control over the node label
     styling. This is a dictionary that contains css properties for the text.
     For details see the :ref:`CSS section<CSS Section>` below.
+  + :code:`anc_link_path`. This string lets you specify that the ancestor labels
+    should be links. For example, you could set this to: 
+    :code:`"<a href=\"{anc_label}.html\">{anc_label}</a>"` so each ancestor is
+    labeled by :code:`anc_label` as a hyperlink to an html file called 
+    :code:`anc_label.html`. 
+
 
 Colors
 ------
@@ -133,7 +171,8 @@ Even more customization
 The :code:`topiary.draw.tree` object is a wrapper that constructs a
 :code:`topiary.draw.PrettyTree` object. Advanced users can create custom
 instances of this object to further customize tree outputs. Please see the
-:ref:`API<api-doc>` and :code:`topiary.draw.PrettyTree` docstring for details.
+`PrettyTree API docs <topiary.draw.html#topiary.draw.prettytree.PrettyTree>`_
+for details.
 
 Topiary draws trees using the `toytree <toytree-link_>`_ library, which is
 built on the `toyplot <toyplot-link_>`_ library. The :code:`topiary.draw.tree`

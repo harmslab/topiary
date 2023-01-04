@@ -11,6 +11,8 @@ on:
     branches: [ main   ]
   pull_request:
     branches: [ main   ]
+  schedule:
+    - cron:  '0 0 * * *'    # Every night at midnight
 
 jobs:
   build-nix:
@@ -19,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest,macos-latest]
-        python-version: ['3.8', '3.9', '3.10' ]
+        python-version: ['3.8', '3.9', '3.10' , '3.11']
 
     steps:
     - name: checkout
@@ -60,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
-        python-version: ['3.8', '3.9', '3.10' ]
+        python-version: ['3.8', '3.9', '3.10' , '3.11']
 
     steps:
     - name: checkout
