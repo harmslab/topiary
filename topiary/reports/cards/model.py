@@ -13,18 +13,19 @@ import os
 model_selection_help_text = \
 """
 The table shows the results of a comparison between different models of sequence
-evolution implemented in RAxML-NG. Topiary uses RAxML-NG to generate a maximum
-parsimony tree, then optimizes the branch lengths using each of the listed 
-models. For each model, it grabs the likelihood (L) and number of parameters (N). 
-It then compares the models using a corrected Akaike Information Criterion test. 
-This test penalizes models for adding excess parameters that have a small effect
-on the likelihood. (Put another way, it controls for over-fitting.) After
-calculating the AICc for all models, it does a weighted comparison of those
-models, calculating the probability (p) that that model minimizes the
-information loss. The table is sorted from highest to lowest p. Topiary also
-returns other test statistics: an AIC not corrected for sampling (AIC) and the
-Bayesian Information Criterion (BIC). The entire table can be downloaded using
-the csv icon. 
+evolution implemented in RAxML-NG. Only the top 10 models are shown on in the 
+report. The entire table can be downloaded using the csv icon. 
+
+Topiary uses RAxML-NG to generate a maximum parsimony tree, then optimizes the
+branch lengths using each of the listed models. For each model, it grabs the
+likelihood (L) and number of parameters (N). It then compares the models using
+a corrected Akaike Information Criterion test. This test penalizes models with 
+extra parameters that only slightly improve the likelihood. (Put another way, it
+controls for over-fitting.) After calculating the AICc for all models, it does a
+weighted comparison of those models, calculating the probability (p) that each
+model minimizes the information loss. The table is sorted from highest to lowest
+p. Topiary also returns other test statistics: an AIC not corrected for sampling
+(AIC) and the Bayesian Information Criterion (BIC). 
 """
 
 

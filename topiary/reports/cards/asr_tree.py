@@ -21,15 +21,15 @@ Reconstructed ancestral sequences at each node are labeled with a unique name
 (a1, a2, etc.). These labels are links to more detailed information about that
 ancestor. 
 
-Each ancestral node is indicated with up to three concentric circles. The
+Each ancestral node is annotated with up to three concentric circles. The
 outermost circle denotes the evolutionary event for that node. (This is only 
 relevant for reconciled trees). Duplication events are marked in 
 <span style="color:#64007F">purple</span> and transfers in
 <span style="color:#407E98">teal</span>. Speciation events are not labeled. 
 The middle circle indicates bootstrap support, ranging from weak (50 or below;
-white) to strong (100; black). The center circle indicates average ancestor
+white) to strong (100; <b>black</b>). The center circle indicates average ancestor
 posterior probability across all non-gap sites, ranging from weak (0.7 or below;
-white) to strong (1.0; orange). 
+white) to strong (1.0; <span style="color:#DC801A">orange</span>). 
 
 The newick file holds up to four phylogenetic trees in a single file. The tips
 are labeled with species and paralog. The internal nodes are labeled with
@@ -38,9 +38,9 @@ branch supports (0-100), and, for reconciled trees, evolutionary events
 (D: duplication, T: transfer, S: speciation, L: loss). This file should be 
 readable by all phylogenetic tree plotting and editing software. 
 
-The pdf holds the phylogenetic tree. In our experience,
-the pdf version of the tree from is better than the svg file shown in the 
-main panel for loading into Adobe Illustrator or Inkscape for figure creation. 
+The pdf holds the phylogenetic tree. In our experience, the pdf version of the
+tree is better than the svg file shown in the main panel for loading into Adobe
+Illustrator or Inkscape for figure creation. 
 """
 
 def create_asr_tree_card(supervisor,output_directory,ancestor_directory,T):

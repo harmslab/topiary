@@ -8,7 +8,6 @@ from topiary._private import Supervisor
 
 from topiary.io.tree import load_trees
 
-
 from topiary.reports.elements import create_output_directory
 from topiary.reports.elements import canvas_to_html
 from topiary.reports.elements import create_main_html
@@ -48,13 +47,13 @@ posterior probabilities for all amino acids at that site. It ranges from 0 (one
 amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
 have pp = 0.05). 
 
-The fasta file holds all maximum likelihood and altAll ancestors.
+The fasta file holds an alignment of all maximum likelihood and altAll ancestors.
 """
 
 gene_tree_help_text = \
 """
 Ancestors calculated using the maximum likelihood gene tree rather than the 
-reconciled gene species tree.
+reconciled gene species tree. 
 """
 
 reconciled_tree_help_text = \
@@ -63,6 +62,14 @@ Ancestors calculated using the reconciled gene/species tree rather than the
 maximum likelihood gene tree.
 """
 
+anc_warning_text = \
+"""
+Note: The names of the ancestors on the gene and reconciled trees are not 
+equivalent, meaning "a1" on the gene tree is NOT the same as "a1" on 
+the reconciled tree.
+"""
+anc_warning_text = anc_warning_text.split()
+anc_warning_text = " ".join([a for a in anc_warning_text if a != ""])
 
 def _find_directories(calculation_directory):
     """
@@ -253,7 +260,10 @@ def tree_report(tree_directory,
     # -------------------------------------------------------------------------
     # Title card
 
-    title_html = create_card(html_description,tree_directory,"h3")
+    contents = f"Run directory: {tree_directory}"
+    title_html = create_card(html_description,
+                             card_contents=contents,
+                             title_tag="h3")
     card_stack.append(f"{title_html}<br/>")
 
     # -------------------------------------------------------------------------
@@ -376,7 +386,9 @@ def pipeline_report(pipeline_directory,
     top, bottom = create_main_html(description=html_description,title=html_title)
     
     card_stack = []
-    title_html = create_card(html_description,pipeline_directory,"h3")
+    title_html = create_card(card_title=html_description,
+                             card_contents=f"Run directory: {pipeline_directory}",
+                             title_tag="h3")
     card_stack.append(f"{title_html}<br/>")
 
     tree_stack = []
@@ -387,6 +399,10 @@ def pipeline_report(pipeline_directory,
             input_html = create_input_card(sv)
             tree_stack.append(input_html)
             break
+
+    anc_warning = "<p><br/><br/><br/><br/><br/></p>"
+    if gene_dirs["tree"] is not None and recon_dirs["tree"] is not None:
+        anc_warning = f"<p>{anc_warning_text}</p>"
 
     if gene_dirs["tree"] is not None:
 
@@ -399,12 +415,12 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        html = f"<br/><h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>"
+        html = f"<br/><h4><a href=\"gene-tree/index.html\">Gene Tree Ancestors</a></h4>{anc_warning}"
 
         help_html = create_info_modal(modal_text=gene_tree_help_text,
                                       modal_title="Gene tree ancestors",
                                       extra_button_class="text-end")
-        help_html = 7*"<br/>" + help_html
+        help_html = 2*"<br/>" + help_html
         html = f"{html}{help_html}"
 
         tree_stack.append(create_card(html))
@@ -420,12 +436,12 @@ def pipeline_report(pipeline_directory,
                     overwrite=overwrite,
                     create_zip_file=False)
 
-        html = f"<br/><h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>"
+        html = f"<br/><h4 style=\"vertical-align:middle;\" class=\"align-middle\"><a href=\"reconciled-tree/index.html\">Reconciled Tree Ancestors</a></h4>{anc_warning}"
 
         help_html = create_info_modal(modal_text=reconciled_tree_help_text,
                                       modal_title="Reconciled tree ancestors",
                                       extra_button_class="text-end")
-        help_html = 7*"<br/>" + help_html
+        help_html = "<br/>" + help_html
         html = f"{html}{help_html}"
 
         tree_stack.append(create_card(html))
