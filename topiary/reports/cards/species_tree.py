@@ -12,8 +12,12 @@ import os
 
 species_tree_help_text = \
 """
-Species tree used for the gene/species tree reconciliation. This was pulled
-down from the Open Tree of Life database and fed into GeneRax.
+Species tree used for the gene/species tree reconciliation. This is a cladogram
+(the branch lengths are not meaningful). The species names are aligned on the 
+right, with dashed lines connecting the labels to the relevant branches.  This
+tree is the latest synthetic tree downloaded from the 
+<a href="https://tree.opentreeoflife.org/">Open Tree of Life</a> database. The
+tree can be downloaded in newick format or as a pdf using the links to the left.
 """
 
 def create_species_tree_card(supervisor,output_directory):

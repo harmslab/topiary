@@ -33,4 +33,7 @@
   + [PastML](https://pastml.pasteur.fr)
   + [toytree](https://toyplot.readthedocs.io/)
 
-Publication forthcoming in *Protein Science*. Stay tuned. 
+#### Citing topiary
+Orlandi KN, Phillips SR, Sailer ZR, Harman JL, Harms MJ. "Topiary: pruning the
+manual labor from ancestral sequence reconstruction" (2022) *Protein Science* 
+[doi: 10.1002/pro.4551](https://onlinelibrary.wiley.com/doi/10.1002/pro.4551)

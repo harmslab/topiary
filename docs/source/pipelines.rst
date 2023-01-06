@@ -41,14 +41,15 @@ initial alignment. The steps it does are:
    sequences to merge that sample the species tree. (See the `topiary paper <topiary-link_>`_
    for details). 
 #. Align all sequences in the current dataset, which will have ~1.1 times the
-   target alignment size. Remove the worst aligning sequences. This is done
-   + Remove the sequences with the most characters in non-dense columns (drop worst 2.5%).
-   + Remove the sequences with the most missing dense columns (drop worst 2.5%).
+   target alignment size. Remove the worst aligning sequences. This is done by 
+   first removing the sequences with the most characters in non-dense columns
+   (dropping the worst 2.5%), and then removing the sequences with the most
+   missing dense columns (dropping the worst 2.5%).
 #. Re-align the dataset. It should now have ~1.05 times the target alignment
    size and be ready for manual alignment editing. 
 
 
-The pipeline does writes out five *.csv* files over the course of this analysis,
+The pipeline writes out five *.csv* files over the course of this analysis,
 allowing one to track what changes are made. Topiary will add sequences and/or
 columns at each step. Until the final step, it does not delete sequences, but
 rather sets the :code:`keep` column to :code:`False` when a sequence is removed.

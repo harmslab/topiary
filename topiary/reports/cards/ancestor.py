@@ -56,8 +56,7 @@ posterior probabilities for all amino acids at that site. It ranges from 0 (one
 amino acid has pp of 1; all others have pp of 0) to 3 (all twenty amino acids
 have pp = 0.05). 
 
-The linked txt file is a fasta file holding the ML and altAll sequenes with gaps
-removed.
+The linked fasta file holds the ML and altAll sequences with gaps removed.
 
 The linked pdf file has the posterior probability plot. (Note: this pdf file is
 likely easier to edit in Illustrator or Inkscape than the svg plot shown in the
@@ -89,15 +88,18 @@ reconstruction are shown in black. For more information, see
 
 pp_plot_help_text = \
 """
-The black points show the posterior probability of the most likely amino acid at
-each position. The distribution of these probabilities is given by the gray
-histogram on the right. The average posterior probability is the mean of these
-values. The red points show the probability of the second most likely amino acid
-at each position, with its distribution on the right. The horizontal dashed line
-shows alt_cutoff. Any red point above this dashed line will be included in the
-altAll sequence. Shaded gray regions indicate gaps; vertical purple dashed lines
-represent ambiguously gapped positions.
-
+The <b>black</b> points show the posterior probability of the most likely amino
+acid at each position. The distribution of these probabilities is given by the
+<span style="color:gray;">gray</span> histogram on the right. The average posterior
+probability is the mean of these values. The <span style="color:red;">red</span>
+points show the probability of the second most likely amino acid at each position,
+with its distribution in <span style="color:red;">red</span> on the right. The
+horizontal dashed line indicates the alt_cutoff. Any
+<span style="color:red;">red</span> point above this dashed line will be
+included in the altAll sequence. Shaded <span style="color:gray;">gray</span>
+regions indicate gaps; vertical <span style="color:purple;">purple</span> dashed
+lines represent ambiguously gapped positions. The locations of these gaps can 
+be identified in the csv file linked to in the ancestor overview. 
 """
 
 def create_ancestor_card(anc_dict,

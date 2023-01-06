@@ -644,19 +644,54 @@ The most important option is:
 The output from the *alignment-to-ancestors* and *bootstrap-reconcile* pipelines
 will be in the *results* directory. (This directory is also automatically
 compressed to *results.zip* for easy downloading). Open *results/index.html* 
-in a web browser. There are "Help" icons throughout this page to help you 
-navigate the output. 
+in a web browser. 
+
+The main page of the report gives information about the input to the inference, 
+a link to the ancestors inferred on the gene tree, a link to ancestors 
+inferred on the and reconciled gene/species tree (if that calculation was done), 
+and information about evolutionary model selection. Each panel has a "Help" 
+button with information about how to interpret the results. 
+
+.. image:: _static/img/report-landing-page.png
+  :align: center
+  :alt: Report landing page
+
+:raw-html:`<br />`
+The ancestor pages have information about the input to the calculation, the 
+parameters used for the run, links to summary files, the species tree used
+(if the gene and species trees were reconciled), and the tree used for the 
+reconstruction. As with the main page, there are "Help" buttons throughout to 
+help you interpret the results. 
+
+.. image:: _static/img/tree-report-page.png
+  :align: center
+  :alt: Ancestral tree report page
+
+:raw-html:`<br />`
+Detailed information is also available for each ancestor. This includes 
+information about ancestor support, sequence, and posterior probability. The 
+"Help" buttons can help interpret the output. 
+
+.. image:: _static/img/anc-report-page.png
+  :align: center
+  :alt: Ancestor report summary page
+
+:raw-html:`<br />`
 
 ---------------
 Quality metrics
 ---------------
 
+When you have identified an ancestor you may want to reconstruct, there are two 
+quality metrics to consider deciding to characterize that gene. 
+
 .. image:: _static/img/supports.svg
   :align: center
   :alt: Supports
 
-**The first quality metric to consider is the average posterior probability (PP)
-for the ML amino acid** at all positions in the ancestor. A well reconstructed
+:raw-html:`<br />`
+**The first quality metric is the average posterior probability (PP) for the ML 
+amino acid** at all positions in the ancestor. A well reconstructed
 ancestor would have an average PP of 1.0, meaning the model has high confidence
 in the sequence at all sites. At the other extreme, a completely ambiguous
 ancestor would have an average PP of ~1/20 (0.05), meaning each site could have
@@ -693,8 +728,6 @@ low support for separating them (2/100). For an ASR study, we need to have high
 confidence that an ancestral node existed (typically branch support > 85) prior
 to characterizing the ancestral protein. 
 
-
-
 ---------------
 Model violation
 ---------------
@@ -728,6 +761,21 @@ protein family.
 **If topiary detects discordance, it will place a warning in the 
 results for the reconciled tree.** 
 
+.. image:: _static/img/duplication-warning.png
+  :align: center
+  :alt: Excess duplication warning
+
+:raw-html:`<br />`
+You can find the excess duplications by looking for purple "duplication" nodes
+in  unexpected places on the tree. (In this example, these extra duplications are
+present in the human and rat.)
+
+.. image:: _static/img/duplication-warning_tree.png
+  :align: center
+  :alt: Tree with excess duplications
+  :width: 80%
+
+:raw-html:`<br />`
 Excess duplications could be observed for benign reasons. The first is
 lineage-specific duplication, where one or more organisms has more than one copy
 of a given gene. These will appear as recent duplications near the tips of the
@@ -751,8 +799,3 @@ ancestors reconstructed on the two trees differ dramatically, one cannot infer
 the ancestral sequence with confidence given standard ASR methods. If the results
 for the reconstructions on both trees are similar, it suggests whatever features
 you are trying to reconstruct are robust to uncertainty in the tree topology. 
-Topiary warns users in its summary output if there are an anomalous number of
-duplication events, suggesting model-violation. 
-
-
-

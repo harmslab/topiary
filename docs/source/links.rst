@@ -68,4 +68,4 @@
 
 .. _`aliview-link` : https://ormbunkar.se/aliview/
 
-.. _`topiary-link` : coming_soon
+.. _`topiary-link` : https://onlinelibrary.wiley.com/doi/10.1002/pro.4551
