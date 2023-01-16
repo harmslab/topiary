@@ -9,6 +9,7 @@ from topiary._private import Supervisor
 from topiary._private import threads
 from topiary._private import mpi
 from topiary._private import run_cleanly
+from topiary._private.interface import rmtree
 
 from topiary.raxml._raxml import run_raxml
 from topiary.raxml import check_convergence
@@ -729,7 +730,7 @@ def reconcile_bootstrap(df,
     f = tarfile.open("replicates.tar.gz","w:gz")
     f.add("replicates")
     f.close()
-    shutil.rmtree("replicates")
+    rmtree("replicates")
 
     # Write message indicating where to look for further output
     msg = "For more information on the reconciliation events (orthgroups,\n"

@@ -99,7 +99,7 @@ def create_new_dir(dir_name=None,overwrite=False):
     # If directory already exists, throw error
     if os.path.exists(dir_name):
         if overwrite:
-            shutil.rmtree(dir_name)
+            rmtree(dir_name)
         else:
             err = f"{dir_name} already exists.\n"
             raise FileExistsError(err)
@@ -338,4 +338,50 @@ def launch(cmd,
     # Leave working directory
     os.chdir(cwd)
 
+def rmtree(path,num_attempts=10):
+    """
+    Delete a directory that may or may not be empty. This wraps shutil.rmtree
+    and adds several attempts to account for strange behavior for directories
+    inside of NFS mounts. 
 
+    See https://bugzilla.redhat.com/show_bug.cgi?id=1362667 for example.
+
+    Parameters
+    ----------
+    path : str
+        directory to delete
+    num_attempts : int
+        number of times to try the deletion before giving up. 
+    """
+
+    try:
+        num_attempts = int(num_attempts)
+        if num_attempts < 1:
+            raise ValueError
+    except (ValueError,TypeError):
+        err = f"num_attempts must be an integer > 0\n"
+        raise ValueError(err)
+
+    i = 0
+    while True:
+        
+        try:
+            shutil.rmtree(path)
+            success = True
+            break
+
+        except OSError as raised_error:
+
+            if i == num_attempts:
+                if not success:
+                    err = f"Could not delete directory {path} after {num_attempts}\n."
+                    err += "See the raised OSError for details. If python is\n"
+                    err += "complaining that the directory is not empty, this could\n"
+                    err += "be because the directory is mounted using NFS. You can\n"
+                    err += "try running this again or re-run the calculation in\n"
+                    err += "a local directory.\n"
+                    
+                    raise OSError(err) from raised_error
+
+            i += 1
+            time.sleep(1)

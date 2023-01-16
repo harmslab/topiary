@@ -3,6 +3,7 @@ Check a newick file containing bootstrap replicates for convergence using
 a specified convergence cutoff.
 """
 from topiary._private import check
+from topiary._private.interface import rmtree
 from ._raxml import run_raxml, RAXML_BINARY
 
 import pandas as pd
@@ -136,6 +137,6 @@ def check_convergence(bs_newick,
 
     # Clean up
     if delete_output:
-        shutil.rmtree(calc_dir)
+        rmtree(calc_dir)
 
     return converged, df

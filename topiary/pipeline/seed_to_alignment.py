@@ -9,6 +9,7 @@ import topiary
 from topiary._private import installed
 from topiary._private import check
 from topiary._private import run_cleanly
+from topiary._private.interface import rmtree
 
 import random
 import string
@@ -284,7 +285,7 @@ def seed_to_alignment(seed_df,
         if os.path.exists(out_dir):
             if os.path.isdir(out_dir):
                 if overwrite:
-                    shutil.rmtree(out_dir)
+                    rmtree(out_dir)
                 elif restart:
                     pass
                 else:

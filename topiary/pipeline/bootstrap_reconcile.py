@@ -13,6 +13,7 @@ from topiary._private.mpi import check_mpi_configuration
 from topiary._private import check
 from topiary._private import Supervisor
 from topiary._private import run_cleanly
+from topiary._private.interface import rmtree
 from topiary.reports import pipeline_report
 
 import os
@@ -186,7 +187,7 @@ def bootstrap_reconcile(previous_run_dir,
     calc_dir = f"{dir_counter+1:02d}_reconciled-tree-bootstraps"
     if os.path.isdir(calc_dir):
         if overwrite:
-            shutil.rmtree(calc_dir)
+            rmtree(calc_dir)
 
         if (not restart) and (not overwrite):
             err = f"'{previous_run_dir}/{calc_dir}' already exists. Either remove\n"
