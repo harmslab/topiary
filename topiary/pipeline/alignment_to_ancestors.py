@@ -12,6 +12,7 @@ from topiary._private import software_requirements
 from topiary._private import check
 from topiary._private import run_cleanly
 from topiary._private.mpi import check_mpi_configuration
+from topiary._private.interface import rmtree
 from topiary.reports import pipeline_report
 
 import pandas as pd
@@ -38,7 +39,7 @@ def _check_restart(output,restart):
         else:
             # Nuke partial directory
             if os.path.isdir(output):
-                shutil.rmtree(output)
+                rmtree(output)
 
 
     return True
@@ -290,7 +291,7 @@ def alignment_to_ancestors(df,
         cannot_proceed = True
         if os.path.isdir(out_dir):
             if overwrite:
-                shutil.rmtree(out_dir)
+                rmtree(out_dir)
                 os.mkdir(out_dir)
                 cannot_proceed = False
 

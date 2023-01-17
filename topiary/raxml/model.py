@@ -5,12 +5,14 @@ given an alignment and (possibly) a tree.
 
 import topiary
 
-from ._raxml import RAXML_BINARY, run_raxml
+from ._raxml import RAXML_BINARY
+from ._raxml import run_raxml
 
 from topiary._private import check
 from topiary._private import threads
 from topiary._private import Supervisor
 from topiary._private import run_cleanly
+from topiary._private.interface import rmtree
 
 import pandas as pd
 import numpy as np
@@ -132,7 +134,7 @@ def _model_thread_function(kwargs):
         result = None
 
     # Nuke temporary directory
-    shutil.rmtree(tmp_dir)
+    rmtree(tmp_dir)
 
     return result
 

@@ -3,6 +3,7 @@ Functions for generating html elements used in the report.
 """
 import topiary
 from topiary.draw.core import construct_colormap
+from topiary._private.interface import rmtree
 
 import pandas as pd
 import toyplot
@@ -50,7 +51,7 @@ def create_output_directory(output_directory,overwrite=False):
     # Create output directory
     if os.path.isdir(output_directory):
         if overwrite:
-            shutil.rmtree(output_directory)
+            rmtree(output_directory)
         else:
             err = f"output_directory '{output_directory}' already exists. Either\n"
             err += "choose a new output directory or set overwrite = True.\n\n"

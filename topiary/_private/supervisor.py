@@ -1,6 +1,7 @@
 
 import topiary
 from topiary._private.interface import gen_seed
+from topiary._private.interface import rmtree
 from topiary._private import check
 
 import os
@@ -240,7 +241,7 @@ class Supervisor:
         # Make sure we can make the calc_dir
         if os.path.exists(calc_dir):
             if overwrite:
-                shutil.rmtree(calc_dir)
+                rmtree(calc_dir)
             else:
                 err = f"\ncalc_dir '{calc_dir}' already exists\n\n"
                 raise FileExistsError(err)

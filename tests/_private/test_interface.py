@@ -6,6 +6,7 @@ from topiary._private.interface import launch
 from topiary._private.interface import create_new_dir
 from topiary._private.interface import copy_input_file
 from topiary._private.interface import run_cleanly
+from topiary._private.interface import rmtree
 
 import os
 import sys
@@ -169,3 +170,31 @@ def test_launch(tmpdir,programs):
     assert len(lines) == 2
     assert len(lines[0].split(";")) == 3
     assert len(lines[1].split(";")) == 3
+
+def test_rmtree(tmpdir):
+
+    current_dir = os.getcwd()
+    os.chdir(tmpdir)
+
+    os.mkdir("testdir")
+    with pytest.raises(ValueError):
+        rmtree("testdir","not_an_integer")
+
+    assert os.path.isdir("testdir")
+    rmtree("testdir")
+    assert not os.path.exists("testdir")
+
+    os.mkdir("another-test")
+    f = open(os.path.join("another-test","stupid.txt"),"w")
+    f.write("something")
+    f.close()
+
+    assert os.path.isfile(os.path.join("another-test","stupid.txt"))
+    rmtree("another-test")
+    assert not os.path.exists("another-test")
+
+    # I'm not sure how to simulate a broken NFS situation where this will 
+    # fail. Kind of incomplete as a test. 
+
+
+    os.chdir(current_dir)

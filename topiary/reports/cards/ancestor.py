@@ -210,7 +210,7 @@ def create_ancestor_card(anc_dict,
 
         paralogs = anc_dict[a]["paralogs"]
 
-        mean_pp = np.float(anc_dict[a]["anc_pp"])
+        mean_pp = float(anc_dict[a]["anc_pp"])
         bs_support = anc_dict[a]["bs_support"]
         if bs_support is None:
             bs_support = "N/A"
