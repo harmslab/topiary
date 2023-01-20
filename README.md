@@ -6,8 +6,8 @@
 
 ### Try it out on Google Colab
 
-+ [Go from a few initial sequences to a full alignment](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/01_seed_to_alignment.ipynb)
-+ [Build a phylogenetic tree and reconstruct ancestors](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/03_alignment_to_ancestors.ipynb)
++ [Go from a few initial sequences to a full alignment](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/seed-to-alignment.ipynb)
++ [Build a phylogenetic tree and reconstruct ancestors](https://githubtocolab.com/harmslab/topiary-examples/blob/main/notebooks/alignment-to-ancestors.ipynb)
 
 ![ASR pipeline](docs/source/_static/img/asr-pipeline-01.png)
 
