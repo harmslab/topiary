@@ -336,13 +336,12 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
         # Try to read output.
         try:
 
-            # NCBI limits requests to 3 per second for normal users. Use a lock
-            # when launching that sleeps for 0.5 seconds. This means we'll make
-            # a maximum of two requests per second across all threads and
-            # should avoid the NCBI limit.
+            # NCBI limits requests to 3 per second for normal users and 10 per
+            # second for users with an API key. Use a lock to enforce a sleep
+            # that enforces this limit across all threads.
             lock.acquire()
             try:
-                time.sleep(0.5)
+                time.sleep(topiary.ncbi.NCBI_REQUEST_FREQ)
             finally:
                 lock.release()
 

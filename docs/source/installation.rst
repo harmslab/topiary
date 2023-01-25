@@ -79,6 +79,20 @@ sections below.
   replacing the first part of the path (:code:`c:\\users\\harmsm`) with the path
   on your system.
 
+----------------------------
+NCBI API Key
+----------------------------
+
+If you wish to use an `NCBI API Key <https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/>`_,
+set the environment variable :code:`NCBI_API_KEY` to point to your key. For 
+example: 
+
+.. code-block:: shell-session
+
+  export NCBI_API_KEY='abcdef012'
+
+Topiary will recognize this key and increase the number of allowed requests per
+second to NCBI servers. 
 
 .. _macos-linux-section:
 
