@@ -76,8 +76,17 @@ def ncbi_ftp_download(full_url,
     file_name = f"{split[-1]}{file_base}"
 
     # Get md5 sum file
-    ftp_download(md5_file,path,url,resume=False,silent=True)
-    md5_dict = _read_md5_file(md5_file)
+    md5_attempts = 0
+    while True:
+        try:
+            ftp_download(md5_file,path,url,resume=False,silent=True)
+            md5_dict = _read_md5_file(md5_file)
+            break
+        except Exception as e:
+            md5_attempts += 1
+            if md5_attempts > 5:
+                err = "Could not download md5sum file.\n"
+                raise Exception(err) from e
 
     try:
         md5_dict[file_name]
