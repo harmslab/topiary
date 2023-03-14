@@ -40,6 +40,9 @@ def _get_cutoff(x,avg_bin_contents=None,pct=0.975):
         x = np.array(x.copy())
         x.sort()
         idx = int(np.round(len(x)*pct,0))
+        if idx > len(x) - 1:
+            idx = len(x) - 1
+
         return x[idx]
 
     else:
@@ -105,6 +108,7 @@ def polish_alignment(df,
     """
 
     df = check.check_topiary_dataframe(df)
+
     realign = check.check_int(realign,"realign")
     # sparse_column_cutoff and align_trim checked immediately by score_alignment
     fx_sparse_percentile = check.check_float(fx_sparse_percentile,
