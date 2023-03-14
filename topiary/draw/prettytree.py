@@ -556,13 +556,16 @@ class PrettyTree:
             scatter_style = {"marker":"o",
                              "mstyle":{"stroke": "black",
                                        "stroke-width":stroke_width}}
+            
+        # Only plot if there there are nodes to plot. 
+        if len(x) > 0:
 
-        self._tree_ax.scatterplot(x,y,size=sizes,color=colors,**scatter_style)
+            self._tree_ax.scatterplot(x,y,size=sizes,color=colors,**scatter_style)
 
-        # If there was a property label, record that we plotted it for legend
-        # construction.
-        if property_label is not None and property_label.strip() != "":
-            self._plotted_nodes[property_label] = (cm,cm_span,sm,sm_span,scatter_style)
+            # If there was a property label, record that we plotted it for legend
+            # construction.
+            if property_label is not None and property_label.strip() != "":
+                self._plotted_nodes[property_label] = (cm,cm_span,sm,sm_span,scatter_style)
 
         return self
 
