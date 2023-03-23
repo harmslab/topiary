@@ -121,9 +121,12 @@ def read_seed(df,
                 w += f"    '{b}'\n"
             warnings.warn(w)
 
+
+        tmp_ott_list = [ott for ott in ott_list if ott is not None]
+
         # Figure out if the default is to reconcile or not based on taxonomic 
         # distribution of alignment. 
-        mrca = topiary.opentree.ott_to_mrca(ott_list=ott_list,
+        mrca = topiary.opentree.ott_to_mrca(ott_list=tmp_ott_list,
                                             avoid_all_life=True)
 
         if mrca["is_microbial"]:
