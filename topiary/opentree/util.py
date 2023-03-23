@@ -438,6 +438,7 @@ def ott_to_mrca(ott_list=None,
         out["ott_rank"] = "no rank"
         out["lineage"] = None
         out["taxid"] = 1
+        out["is_microbial"] = False
 
         return out
 
