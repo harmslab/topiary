@@ -165,6 +165,9 @@ def check_topiary_dataframe(df):
         # Validate this as a boolean column
         df.loc[:,"keep"] = column_to_bool(df.loc[:,"keep"],"keep")
 
+        # Force it to really be bool
+        df = df.astype({"keep":bool})
+
     # -------------------------------------------------------------------------
     # Process uid column
 

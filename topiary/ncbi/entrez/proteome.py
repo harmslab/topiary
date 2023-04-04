@@ -186,7 +186,7 @@ def get_proteome(taxid=None,species=None):
     # Now get summary data for these records.
     esummary_query = ",".join(returned_ids)
     esummary_handle = Entrez.esummary(db="assembly",id=esummary_query)
-    esummary_record = Entrez.read(esummary_handle)
+    esummary_record = Entrez.read(esummary_handle,validate=False)
 
     try:
         records = esummary_record["DocumentSummarySet"]["DocumentSummary"]
