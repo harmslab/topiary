@@ -1,6 +1,9 @@
 
 import topiary
-from topiary._private.check.standard import check_bool, check_float, check_int, check_iter
+from topiary._private.check.standard import check_bool
+from topiary._private.check.standard import check_float
+from topiary._private.check.standard import check_int
+from topiary._private.check.standard import check_iter
 from topiary._private.check.standard import column_to_bool
 
 import pytest

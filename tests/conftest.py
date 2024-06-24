@@ -68,7 +68,7 @@ def get_files(base_dir):
     Traverse base_dir and return a dictionary that keys all files and some
     rudimentary *.ext expressions to absolute paths to those files. They keys
     will be things like "some_dir/test0/rocket.txt" mapping to
-    "c:\some_dir\life\base_dir\some_dir\test0\rocket.txt". The idea is to have
+    "c:/some_dir/life/base_dir/some_dir/test0/rocket.txt". The idea is to have
     easy-to-read cross-platform keys within unit tests.
 
     Classes of keys:

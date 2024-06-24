@@ -92,7 +92,7 @@ def test_create_nicknames(test_dataframes):
     # Do again, but do some stuff that requires escape characters and more
     # interesting regular expressions
     test_df = df.copy()
-    test_df.loc[:,"name"] = ["|rocking","rock","\in","the","usa"]
+    test_df.loc[:,"name"] = ["|rocking","rock","\\in","the","usa"]
     paralog_patterns = {"fixed":("|rock","out"),
                         "junk":(re.compile("the|us."))}
     out_df = util.create_nicknames(test_df,output_column="test1",paralog_patterns=paralog_patterns)

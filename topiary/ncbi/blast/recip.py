@@ -608,7 +608,7 @@ def recip_blast(df,
        LY96; hits with 'lymphocyte antigen 86' or 'MD-1' will map to LY86. Hits
        that match neither would not be assigned a paralog. String patterns are
        interpreted literally. The pattern :code:`"[A-Z]"` would be escaped to
-       look for :code:`"\[A\-Z\]"`. If you want to use regular expressions in
+       look for :code:`"\\[A\\-Z\\]"`. If you want to use regular expressions in
        your patterns, pass them in as compiled regular expressions. For example,
 
        .. code-block:: python

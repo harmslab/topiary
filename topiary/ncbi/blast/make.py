@@ -62,7 +62,7 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
     try:
         subprocess.run([makeblastdb_binary],capture_output=True)
     except FileNotFoundError:
-        err = f"\makeblastdb_binary binary '{makeblastdb_binary}' not found in path\n\n"
+        err = f"makeblastdb_binary binary '{makeblastdb_binary}' not found in path\n\n"
         raise ValueError(err)
 
     rand_string = "".join([random.choice(string.ascii_letters) for _ in range(10)])

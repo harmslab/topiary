@@ -9,7 +9,6 @@ from topiary._private import Supervisor
 import ete3
 
 import os
-import shutil
 
 @pytest.mark.run_generax
 def test_reconcile_no_bootstrap(generax_data,tmpdir):
