@@ -2,13 +2,10 @@ import pytest
 
 from topiary.io import read_dataframe
 from topiary.io import write_dataframe
-import numpy as np
 import pandas as pd
 
 import warnings
 import os
-import shutil
-import re
 
 def test_read_dataframe(dataframe_good_files,test_dataframes):
     """

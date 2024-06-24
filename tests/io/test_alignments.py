@@ -7,7 +7,8 @@ from topiary.io.alignments import _validate_seq_writer
 import numpy as np
 import pandas as pd
 
-import os, shutil, re
+import os
+import re
 
 
 def test__validate_seq_writer():
@@ -16,7 +17,10 @@ def test__validate_seq_writer():
     I'm using those unit tests because I can validate written output.
     """
 
-    return True
+    _validate_seq_writer
+    assert True
+    return None
+
 
 def test_write_fasta(test_dataframes,tmpdir):
 

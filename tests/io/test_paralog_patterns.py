@@ -15,12 +15,12 @@ import copy
 def test__get_alias_regex():
 
     test_strings = {"ABC": "abc",
-                    "ABC1" :"abc[\ \-_\.]*1",
-                    "1ABc" :"1[\ \-_\.]*abc",
+                    "ABC1" :"abc[\\ \\-_\\.]*1",
+                    "1ABc" :"1[\\ \\-_\\.]*abc",
                     " ABC ":"abc",
-                    "AB C" :"ab[\ \-_\.]*c",
-                    "(ABC)":"\(abc\)",
-                    "[AB C]" :"\[ab[\ \-_\.]*c\]"}
+                    "AB C" :"ab[\\ \\-_\\.]*c",
+                    "(ABC)":"\\(abc\\)",
+                    "[AB C]" :"\\[ab[\\ \\-_\\.]*c\\]"}
     spacers = [" ","-","_","."]
     for t in test_strings:
         assert _get_alias_regex(t,spacers) == test_strings[t]
@@ -37,9 +37,9 @@ def test__get_alias_regex():
 
     test_strings = {"A" :"a",
                     "1" :"1",
-                    "1A":"1[\ \-_\.]*a",
-                    "A1":"a[\ \-_\.]*1",
-                    " A1 " :"a[\ \-_\.]*1"}
+                    "1A":"1[\\ \\-_\\.]*a",
+                    "A1":"a[\\ \\-_\\.]*1",
+                    " A1 " :"a[\\ \\-_\\.]*1"}
     spacers = [" ","-","_","."]
     for t in test_strings:
         assert _get_alias_regex(t,spacers) == test_strings[t]

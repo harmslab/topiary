@@ -48,7 +48,7 @@ class IterFromFile(argparse.Action):
                         final_values.append(self._value_type(v))
                     except (TypeError,ValueError):
 
-                        err = f"\n\Reading '{option_string} {values[0]}' as a file.\n"
+                        err = f"\nReading '{option_string} {values[0]}' as a file.\n"
                         err += f"Could not parse line '{v}' as '{type_name}'. {option_string} should\n"
                         err += f"either have a single argument that points to a file with one '{type_name}'\n"
                         err += f"on each line or have one or more arguments that can be interpreted as\n"
