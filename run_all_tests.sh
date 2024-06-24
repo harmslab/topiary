@@ -22,7 +22,7 @@ grep MISSING reports/completeness-crawler.txt
 
 echo "Running coverage.py"
 coverage erase
-coverage run --branch -m pytest --run-raxml --run-generax --junit-xml=reports/junit/junit.xml
+coverage run --branch -m pytest --run-raxml --run-generax --run-blast --junit-xml=reports/junit/junit.xml
 
 echo "Generating reports"
 coverage html

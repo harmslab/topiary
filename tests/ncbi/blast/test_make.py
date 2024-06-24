@@ -8,6 +8,7 @@ import os
 import glob
 
 @pytest.mark.skipif(os.name == "nt",reason="makeblastdb cannot be installed via conda on windows")
+@pytest.mark.run_blast
 def test_make_blast_db(make_blast_db_files,tmpdir):
 
     cwd = os.getcwd()

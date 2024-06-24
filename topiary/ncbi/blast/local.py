@@ -5,10 +5,11 @@ Run BLAST against a local database.
 import topiary
 from topiary._private import check
 from topiary._private import threads
+from topiary._private import interface
 from .util import _standard_blast_args_checker
 from .read import read_blast_xml
 
-import Bio.Blast.Applications as apps
+#import Bio.Blast.Applications as apps
 
 import numpy as np
 import pandas as pd
@@ -31,51 +32,61 @@ def _prepare_for_blast(sequence,
 
     Parameters
     ----------
-        sequence: sequence as a string OR list of string sequences
-        db: name of local blast database
-        blast_program: NCBI blast program to use (blastp, tblastn, etc.)
-        hitlist_size: download only the top hitlist_size hits
-        e_value_cutoff: only take hits with e_value better than e_value_cutoff
-        gapcosts: BLAST gapcosts (length 2 tuple of ints)
-        kwargs: extra keyword arguments are passed directly to
-                apps.NcbiblastXXXCommandline, overriding anything constructed
-                above.
-        test_skip_blast_program_check: skip the check for a working blast
-                                       program (for testing)
+    sequence : str or list
+        sequence as a string OR list of string sequences
+    db: str
+        name of local blast database
+    blast_program : str
+        NCBI blast program to use (blastp, tblastn, etc.)
+    hitlist_size : int
+        download only the top hitlist_size hits
+    e_value_cutoff : float
+        only take hits with e_value better than e_value_cutoff
+    gapcosts : tuple
+        BLAST gapcosts (length 2 tuple of ints)
+    kwargs : dict
+        extra keyword arguments are passed directly to blast. keys should be 
+        valid arguments to pass to blast program {"db":"blah"}. This function
+        will append '-' to front of those arguments. 
+    test_skip_blast_program_check : bool
+        skip the check for a working blast program (for testing)
 
     Return
     ------
-        dataframe (single query) or list of dataframes (multiple sequences).
-        if no hits found, warns and returns None.
+    sequence_list : list
+        list of sequences
+     blast_args : list
+        list containing the blast command to run (e.g. ["blastp","-db","blah"...]),
+    return_singleton : bool
+        whether or not to return final output as a single sequence or list of
+        sequences.
     """
 
-    recognized_functions = {"blastp":apps.NcbiblastpCommandline,
-                            "blastn":apps.NcbiblastnCommandline,
-                            "blastx":apps.NcbiblastxCommandline,
-                            "tblastn":apps.NcbitblastnCommandline,
-                            "tblastx":apps.NcbitblastxCommandline,
-                            "psiblast":apps.NcbipsiblastCommandline,
-                            "rpsblast":apps.NcbirpsblastCommandline,
-                            "rpstblastn":apps.NcbirpstblastnCommandline,
-                            "deltablast":apps.NcbideltablastCommandline}
+    recognized_functions = ["blastp",
+                            "blastn",
+                            "blastx",
+                            "tblastn",
+                            "tblastx",
+                            "psiblast",
+                            "rpsblast",
+                            "rpstblastn",
+                            "deltablast"]
 
     if not os.path.exists(f"{db}.psq"):
         err = f"db {db}.psq not found!\n"
         raise FileNotFoundError(err)
 
     # Make sure we can actually run the local blasting
-    try:
-        blast_function = recognized_functions[blast_program]
-    except (KeyError,TypeError):
+    if blast_program not in recognized_functions:
         err = "\nblast_program '{}' not recognized.\n\nAllowed programs:\n".format(blast_program)
-        for k in recognized_functions.keys():
-            err += "    {}\n".format(k)
+        for f in recognized_functions:
+            err += "    {}\n".format(f)
         raise ValueError(err)
 
     # Make sure the blast program is installed.
     if not test_skip_blast_program_check:
         try:
-            ret = subprocess.run([blast_program],stderr=subprocess.DEVNULL)
+            _ = subprocess.run([blast_program],stderr=subprocess.DEVNULL)
         except FileNotFoundError:
             err = f"\nBLAST program {blast_program} is not in path. Is it installed?\n\n"
             raise FileNotFoundError(err)
@@ -90,25 +101,23 @@ def _prepare_for_blast(sequence,
     gapcosts = out[3]
     return_singleton = out[4]
 
-    gaps = '{} {}'.format(*gapcosts)
-
-    # Construct keyword arguments to pass to function
-    blast_kwargs = {"cmd":blast_program,
-                    "db":db,
-                    "outfmt":5,
-                    "max_target_seqs":hitlist_size,
-                    "threshold":e_value_cutoff,
-                    "gapopen":gapcosts[0],
-                    "gapextend":gapcosts[1]}
+    # Construct blast arguments to pass in as a process
+    blast_args = [blast_program]
+    blast_args.extend(["-db",db])
+    blast_args.extend(["-outfmt","5"])
+    blast_args.extend(["-max_target_seqs",f"{hitlist_size:d}"])
+    blast_args.extend(["-threshold",f"{e_value_cutoff:.5e}"])
+    blast_args.extend(["-gapopen",f"{gapcosts[0]:d}"])
+    blast_args.extend(["-gapextend",f"{gapcosts[1]:d}"])
+    
+    # Load in any keyword arguments
     for k in kwargs:
-        blast_kwargs[k] = kwargs[k]
+        blast_args.extend([f"-{k}","{}".format(kwargs[k])])
 
-
-    return sequence_list, blast_function, blast_kwargs, return_singleton
+    return sequence_list, blast_args, return_singleton
 
 def _construct_args(sequence_list,
-                    blast_function,
-                    blast_kwargs,
+                    blast_args,
                     keep_blast_xml=False,
                     block_size=20,
                     num_threads=-1,
@@ -118,16 +127,25 @@ def _construct_args(sequence_list,
 
     Parameters
     ----------
-        sequence_list: list of sequences as strings
-        blast_function: blast function to use
-        blast_kwargs: keyword arguments to pass to blast call
-        keep_blast_xml: whether or not to keep temporary files
-        num_threads: number of threads to use. if -1, use all available.
-        block_size: break into block_size sequence chunks
-
-    Return
-    ------
-        list of args to pass for each calculation, number of threads
+    sequence_list : list
+        list of sequences as strings
+    blast_args : list
+        list of blast arguments
+    keep_blast_xml : bool, default=False
+        whether or not to keep temporary files
+    block_size : int, default=20
+        break into block_size sequence chunks
+    num_threads : int, default=-1
+        number of threads to use. if -1, use all available.
+    manual_num_cores : int, optional
+        use exactly this number of cores
+        
+    Returns
+    -------
+    kwargs_dict : dict
+        dictionary of keyword arguments to pass
+    num_threads : int
+        number of threads to use for the calculation
     """
 
     # Validate inputs that have not yet been validated.
@@ -184,8 +202,7 @@ def _construct_args(sequence_list,
 
         kwargs_list.append({"sequence_list":sequence_list,
                             "index":i_block,
-                            "blast_function":blast_function,
-                            "blast_kwargs":blast_kwargs,
+                            "blast_args":blast_args,
                             "keep_blast_xml":keep_blast_xml})
 
 
@@ -194,8 +211,7 @@ def _construct_args(sequence_list,
 
 def _local_blast_thread_function(sequence_list,
                                  index,
-                                 blast_function,
-                                 blast_kwargs,
+                                 blast_args,
                                  keep_blast_xml):
     """
     Run local blast on a list of sequences.
@@ -206,10 +222,8 @@ def _local_blast_thread_function(sequence_list,
         list of sequences
     index : tuple
         indexes to pull from sequence_list
-    blast_function : function
-        blast function to run
-    blast_kwargs : dict
-        kwargs to pass to blast function
+    blast_args : list
+        list holding blast command to past (e.g. ["blastp","-db","yo",...])
     keep_blast_xml : bool
         whether or not to keep temporary files
 
@@ -229,15 +243,20 @@ def _local_blast_thread_function(sequence_list,
         f.write("".join(f">count{i}\n{sequence_list[i]}\n"))
     f.close()
 
-    blast_kwargs = copy.deepcopy(blast_kwargs)
-    blast_kwargs["query"] = input_file
-    blast_kwargs["out"] = out_file
+    blast_args = copy.deepcopy(blast_args)
+    blast_args.extend(["-query",input_file])
+    blast_args.extend(["-out",out_file])
 
-    blast_function(**blast_kwargs)()
+    interface.launch(blast_args,
+                     run_directory=".",
+                     suppress_output=True)
+
+    
+
 
     # Parse output
     try:
-        out_dfs, xml_files = read_blast_xml(out_file)
+        out_dfs, _ = read_blast_xml(out_file)
     except FileNotFoundError:
         err = "\nLocal blast failed on sequence:\n"
         err += f"    '{sequence_list[i]}'\n\n"
@@ -333,9 +352,11 @@ def local_blast(sequence,
     block_size : int, default=20
         run blast in blocks of block_size sequences
     **kwargs : dict, optional
-        extra keyword arguments are passed directly to
-        apps.NcbiblastXXXCommandline.
-
+        extra keyword arguments are passed directly to the blast call. keys
+        should be valid arguments to pass to a blast program. For example, 
+        this could be {"db":"blah"}. The function will append "-" to the front,
+        making "-db blah" when calling the blast program. 
+        
     Returns
     -------
     blast_output : pandas.DataFrame or list
@@ -354,14 +375,12 @@ def local_blast(sequence,
                               kwargs=kwargs)
 
     sequence_list = prep[0]
-    blast_function = prep[1]
-    blast_kwargs = prep[2]
-    return_singleton = prep[3]
+    blast_args = prep[1]
+    return_singleton = prep[2]
 
     # Construct a list of arguments to pass into _thread_manager
     kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
-                                               blast_function=blast_function,
-                                               blast_kwargs=blast_kwargs,
+                                               blast_args=blast_args,
                                                keep_blast_xml=keep_blast_xml,
                                                block_size=block_size,
                                                num_threads=num_threads)

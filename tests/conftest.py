@@ -20,6 +20,11 @@ def pytest_addoption(parser):
                      action="store_true",
                      default=False,
                      help="Run tests involving raxml")
+    
+    parser.addoption("--run-blast",
+                     action="store_true",
+                     default=False,
+                     help="Run tests involving blast")
 
 def pytest_collection_modifyitems(config, items):
     """
@@ -39,6 +44,13 @@ def pytest_collection_modifyitems(config, items):
         skipper = pytest.mark.skip(reason="Only run when --run-raxml is given")
         for item in items:
             if "run_raxml" in item.keywords:
+                item.add_marker(skipper)
+
+    # Look for --run-blast argument. Skip test if this is not specified.
+    if not config.getoption("--run-blast"):
+        skipper = pytest.mark.skip(reason="Only run when --run-blast is given")
+        for item in items:
+            if "run_blast" in item.keywords:
                 item.add_marker(skipper)
 
     # If this is a windows box, skip any test with run_generax or run_raxml
