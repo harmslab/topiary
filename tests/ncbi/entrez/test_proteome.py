@@ -4,6 +4,7 @@ import pytest
 import topiary
 from topiary.ncbi.entrez.proteome import _get_genome_url
 from topiary.ncbi.entrez.proteome import get_proteome_ids
+from topiary.ncbi.entrez.proteome import _get_records
 from topiary.ncbi.entrez.proteome import get_proteome
 
 import numpy as np
@@ -73,6 +74,27 @@ def test_get_proteome_ids():
 
     # Make sure species and taxid queries bring down equivalent ids
     assert np.array_equal(by_species,by_taxid)
+
+def test__get_records(tmpdir):
+
+    cwd = os.getcwd()
+    os.chdir(tmpdir)
+
+    # I'm not sure if this is a stable test. If these ids change or are deleted,
+    # it could start failing... 
+    good_test_ids = ['11968211','11828891']
+
+    output = _get_records(good_test_ids)
+    assert len(output) == 2
+    
+    # Try to access output key that should always be there
+    output[0]["SpeciesName"]
+    output[1]["SpeciesName"]
+
+    output = _get_records(["NOT_AN_ID"])
+    assert len(output) == 0
+
+    os.chdir(cwd)
 
 
 def test_get_proteome(tmpdir):
