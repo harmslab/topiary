@@ -88,7 +88,7 @@ class PrettyTree:
         # Load tree and give pretty tip names
 
         # Convert tree into a toytree tree from ete3,
-        if issubclass(type(T),toytree.tree):
+        if issubclass(type(T),toytree.Toytree.ToyTree):
             self._tT = T.copy()
         else:
             # Convert to a toytree

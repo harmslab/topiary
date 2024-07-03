@@ -42,10 +42,15 @@ def test_PrettyTree():
             pt = prettytree.PrettyTree(T=tree,vertical_pixels_per_tip=b)
 
 def test_integrated_single():
+
     T = toytree.rtree.rtree(50)
-    for n in T.idx_dict:
-        T.idx_dict[n].add_feature("test_feature",n)
-        T.idx_dict[n].add_feature("other_feature",len(T.idx_dict)-n)
+
+    tree_data = list(T.idx_dict.keys())
+    v1 = dict([(k,i) for i, k in enumerate(tree_data)])
+    v2 = dict([(k,0) for i, k in enumerate(tree_data)])
+
+    T = T.set_node_values(feature="test_feature",values=v1)
+    T = T.set_node_values(feature="other_feature",values=v2)
 
     pt = topiary.draw.PrettyTree(T,tip_labels_align=True)
 
@@ -58,6 +63,11 @@ def test_integrated_single():
 def test_integrated_gradient():
 
     T = toytree.rtree.rtree(50)
+
+    # Change in toytree api moved idx_dict to _idx_dict
+    if not hasattr(T,"idx_dict"):
+        T.idx_dict = T._idx_dict
+
     for n in T.idx_dict:
         T.idx_dict[n].add_feature("test_feature",n)
         T.idx_dict[n].add_feature("other_feature",len(T.idx_dict)-n)
@@ -74,6 +84,11 @@ def test_integrated_gradient():
 def test_integrated_categories():
 
     T = toytree.rtree.rtree(50)
+
+    # Change in toytree api moved idx_dict to _idx_dict
+    if not hasattr(T,"idx_dict"):
+        T.idx_dict = T._idx_dict
+
     for n in T.idx_dict:
         T.idx_dict[n].add_feature("test_feature",np.random.choice(["A","B","C","D"]))
         T.idx_dict[n].add_feature("other_feature",len(T.idx_dict)-n)

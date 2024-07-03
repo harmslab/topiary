@@ -6,6 +6,7 @@ import inspect
 import json
 from html.parser import HTMLParser
 
+
 def pytest_addoption(parser):
     """
     Add options to the pytest command line parser.
