@@ -162,11 +162,14 @@ def check_topiary_dataframe(df):
 
     if keep is not None:
 
-        # Validate this as a boolean column
-        df.loc[:,"keep"] = column_to_bool(df.loc[:,"keep"],"keep")
+        # Validate this as a boolean column, casting if needed
+        column_as_bool = column_to_bool(df.loc[:,"keep"],"keep")
 
         # Force it to really be bool
         df = df.astype({"keep":bool})
+
+        # Assign our converted values
+        df.loc[:,"keep"] = column_as_bool
 
     # -------------------------------------------------------------------------
     # Process uid column

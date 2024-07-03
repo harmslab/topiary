@@ -24,12 +24,12 @@ def code_loader(filename,is_test):
     """
 
     if is_test:
-        function_finder = re.compile("def test_.*?\(.*?")
+        function_finder = re.compile("def test_.*?\\(.*?")
     else:
-        function_finder = re.compile("def .*?\(.*?")
+        function_finder = re.compile("def .*?\\(.*?")
 
     class_check = re.compile("class .*?:")
-    in_class_check = re.compile("def .*?\(self")
+    in_class_check = re.compile("def .*?\\(self")
 
     def_lines = []
     current_function = None
@@ -173,7 +173,7 @@ def completeness_crawler(code_dir,test_dir,bin_dir=None):
             if class_name is not None:
 
                 # Record as method
-                if re.search("\(self",f):
+                if re.search("\\(self",f):
                     fcn = f"{class_name}.{fcn}"
 
                 # Otherwise, not a method, we've moved out of the class

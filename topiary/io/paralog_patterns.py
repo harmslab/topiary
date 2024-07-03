@@ -34,10 +34,10 @@ def _get_alias_regex(some_string,
     expressions to match those patterns. 
 
     Examples (for spacers = [" ","-","_","."]):
-        "LY96" -> "ly[\ \-_\.]*96"
-        "MD-2" -> "md[\ \-_\.]*2"
-        "myeloid factor 2" -> "myeloid[\ \-_\.]*factor[\ \-_\.]*2"
-        "CDR2L" -> "cdr[\ \-_\.]*2[\ \-_\.]*L"
+        "LY96" -> "ly[\\ \\-_\\.]*96"
+        "MD-2" -> "md[\\ \\-_\\.]*2"
+        "myeloid factor 2" -> "myeloid[\\ \\-_\\.]*factor[\\ \\-_\\.]*2"
+        "CDR2L" -> "cdr[\\ \\-_\\.]*2[\\ \\-_\\.]*L"
 
     Parameters
     ----------

@@ -49,8 +49,8 @@ def test_read_seed(seed_dataframes,user_seed_dataframes):
 
         # Test paralog patterns
         expected_patterns = {
-            "LY96":"esop[\ \-_\.]*1|ly[\ \-_\.]*96|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*96|myeloid[\ \-_\.]*differentiation[\ \-_\.]*protein[\ \-_\.]*2",
-            "LY86":"ly[\ \-_\.]*86|lymphocyte[\ \-_\.]*antigen[\ \-_\.]*86|md[\ \-_\.]*1|mmd[\ \-_\.]*1|rp[\ \-_\.]*105[\ \-_\.]*associated[\ \-_\.]*3"
+            "LY96":"esop[\\ \\-_\\.]*1|ly[\\ \\-_\\.]*96|lymphocyte[\\ \\-_\\.]*antigen[\\ \\-_\\.]*96|myeloid[\\ \\-_\\.]*differentiation[\\ \\-_\\.]*protein[\\ \\-_\\.]*2",
+            "LY86":"ly[\\ \\-_\\.]*86|lymphocyte[\\ \\-_\\.]*antigen[\\ \\-_\\.]*86|md[\\ \\-_\\.]*1|mmd[\\ \\-_\\.]*1|rp[\\ \\-_\\.]*105[\\ \\-_\\.]*associated[\\ \\-_\\.]*3"
         }
         for k in paralog_patterns:
             print(paralog_patterns[k].pattern)

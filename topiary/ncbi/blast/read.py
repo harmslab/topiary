@@ -113,58 +113,60 @@ def records_to_df(blast_records):
         pandas dataframe with all blast hits
     """
 
+    column_stereotype = {'accession': str,
+                         'hit_def': str,
+                         'hit_id': str,
+                         'title': str,
+                         'length': int,
+                         'e_value': float,
+                         'bits': float,
+                         'sequence': str,
+                         'subject_start': int,
+                         'subject_end':int,
+                         'query_start':int,
+                         'query_end':int,
+                         'query':str}
+
     out_df = []
     for record in blast_records:
 
-        # Prepare DataFrame fields.
-        data = {'accession': [],
-                'hit_def': [],
-                'hit_id': [],
-                'title': [],
-                'length': [],
-                'e_value': [],
-                'bits': [],
-                'sequence': [],
-                'subject_start': [],
-                'subject_end':[],
-                'query_start':[],
-                'query_end':[],
-                'query':[]}
-
+        # Make dictionary of empty lists to populate with datatypes
+        data = dict([(c,[]) for c in column_stereotype])
+        
         # Get alignments from blast result.
-        for i, s in enumerate(record.alignments):
+        if len(record.alignments) > 0:
 
-            data['accession'].append(s.accession)
-            data['hit_def'].append(s.hit_def)
-            data['hit_id'].append(s.hit_id)
-            data['title'].append(s.title)
-            data['length'].append(s.length)
-            data['e_value'].append(s.hsps[0].expect)
-            data['bits'].append(s.hsps[0].bits)
-            data['sequence'].append(s.hsps[0].sbjct)
-            data['subject_start'].append(s.hsps[0].sbjct_start)
-            data['subject_end'].append(s.hsps[0].sbjct_end)
-            data['query_start'].append(s.hsps[0].query_start)
-            data['query_end'].append(s.hsps[0].query_end)
-            data['query'].append(record.query)
+            for s in record.alignments:
 
-        if len(record.alignments) == 0:
-            data['accession'].append(pd.NA)
-            data['hit_def'].append(pd.NA)
-            data['hit_id'].append(pd.NA)
-            data['title'].append(pd.NA)
-            data['length'].append(pd.NA)
-            data['e_value'].append(pd.NA)
-            data['bits'].append(pd.NA)
-            data['sequence'].append(pd.NA)
-            data['subject_start'].append(pd.NA)
-            data['subject_end'].append(pd.NA)
-            data['query_start'].append(pd.NA)
-            data['query_end'].append(pd.NA)
-            data['query'].append(record.query)
+                data['accession'].append(s.accession)
+                data['hit_def'].append(s.hit_def)
+                data['hit_id'].append(s.hit_id)
+                data['title'].append(s.title)
+                data['length'].append(int(s.length))
+                data['e_value'].append(float(s.hsps[0].expect))
+                data['bits'].append(float(s.hsps[0].bits))
+                data['sequence'].append(s.hsps[0].sbjct)
+                data['subject_start'].append(int(s.hsps[0].sbjct_start))
+                data['subject_end'].append(int(s.hsps[0].sbjct_end))
+                data['query_start'].append(int(s.hsps[0].query_start))
+                data['query_end'].append(int(s.hsps[0].query_end))
+                data['query'].append(record.query)
 
-        # Port to DataFrame.
-        out_df.append(pd.DataFrame(data))
+                this_df = pd.DataFrame(data)
+
+        else:
+
+            # Build an empty dataframe with defined column types
+            this_df = pd.DataFrame(data)
+            this_df = this_df.astype(column_stereotype)
+            dummy_row = [pd.NA,pd.NA,pd.NA,pd.NA,
+                         pd.NA,np.nan,np.nan,pd.NA,
+                         pd.NA,pd.NA,pd.NA,pd.NA,
+                         record.query]
+            this_df.loc[0,:] = dummy_row
+                         
+        # Append newly constructed dataframe
+        out_df.append(this_df)
 
     out_df = pd.concat(out_df,ignore_index=True)
 

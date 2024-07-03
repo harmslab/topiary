@@ -83,6 +83,11 @@ def create_nicknames(df,
             err = f"\ndataframe already has output_column '{output_column}'.\n"
             err += "To overwrite set overwrite_output = True\n\n"
             raise ValueError(err)
+        
+        # Drop existing column if we are overwriting in case it has a different
+        # type from the incoming type (str)
+        df = df.drop(columns=[output_column])
+
     except KeyError:
         pass
 

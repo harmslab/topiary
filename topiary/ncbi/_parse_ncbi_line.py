@@ -152,16 +152,16 @@ def parse_ncbi_line(line,accession=None):
 
     # Start with [[genus] species]
     sm = None
-    species_pattern = re.compile("\[.*?\[.*?].*?]")
+    species_pattern = re.compile("\\[.*?\\[.*?].*?]")
     for sm in species_pattern.finditer(line):
         pass
     if sm:
         species = sm.group(0)[1:-1]
-        species = re.sub("[\[\]]","",species)
+        species = re.sub("[\\[\\]]","",species)
 
     # If we didn't get species yet, look for [something this]
     if species is None:
-        species_pattern = re.compile("\[.*?\]")
+        species_pattern = re.compile("\\[.*?\\]")
         sm = None
         for sm in species_pattern.finditer(line):
             pass

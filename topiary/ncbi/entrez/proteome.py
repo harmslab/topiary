@@ -67,6 +67,7 @@ def _get_genome_url(record):
 
     return None
 
+
 def get_proteome_ids(taxid=None,species=None):
     """
     Query entrez to get a list of proteome ids that match a taxid or species.
@@ -111,7 +112,7 @@ def get_proteome_ids(taxid=None,species=None):
     # Make sure the taxid is sane
     taxid = check.check_int(taxid,"taxid")
 
-    returned_ids = None
+    found_ids = []
 
     # Look for assembly ids for this taxid. Get reference genome first, then
     # go on to not reference. Sort
@@ -132,15 +133,11 @@ def get_proteome_ids(taxid=None,species=None):
         except KeyError:
             continue
 
-        if len(returned_ids) == 0:
-            continue
-
-    if returned_ids is None:
-        err = "\nThe Entrez.esearch query failed.\n\n"
-        return None, err
+        if len(returned_ids) > 0:
+            found_ids.extend(returned_ids)
 
     # Make sure something came back
-    if len(returned_ids) == 0:
+    if len(found_ids) == 0:
         err = f"\nThe Entrez.eserch query '{query_text}' returned no assemblies.\n\n"
         return None, err
 
@@ -150,7 +147,26 @@ def get_proteome_ids(taxid=None,species=None):
     except FileNotFoundError:
         pass
 
-    return returned_ids, None
+    return found_ids, None
+
+
+def _get_records(id_list):
+
+    # Make sure this is a set of strings of ids
+    id_list = ["{}".format(some_id) for some_id in id_list]
+
+    # Get summary data for these records.
+    esummary_query = ",".join(id_list)
+    esummary_handle = Entrez.esummary(db="assembly",id=esummary_query)
+    esummary_record = Entrez.read(esummary_handle,validate=False)
+
+    try:
+        records = esummary_record["DocumentSummarySet"]["DocumentSummary"]
+    except KeyError:
+        err = "\nThe Entrez.esummary query failed.\n\n"
+        raise RuntimeError(err)
+
+    return records
 
 def get_proteome(taxid=None,species=None):
     """
@@ -182,18 +198,7 @@ def get_proteome(taxid=None,species=None):
     else:
         print(f"Downloading proteome for taxid '{taxid}'",flush=True)
 
-
-    # Now get summary data for these records.
-    esummary_query = ",".join(returned_ids)
-    esummary_handle = Entrez.esummary(db="assembly",id=esummary_query)
-    esummary_record = Entrez.read(esummary_handle,validate=False)
-
-    try:
-        records = esummary_record["DocumentSummarySet"]["DocumentSummary"]
-    except KeyError:
-        err = "\nThe Entrez.esummary query failed.\n\n"
-        raise RuntimeError(err)
-
+    records = _get_records(returned_ids)
 
     # Get list of urls from all records
     urls = []
@@ -211,7 +216,6 @@ def get_proteome(taxid=None,species=None):
         genome_url = u[3]
         refseq_name = os.path.basename(genome_url)
         out_file = f"{refseq_name}_protein.faa.gz"
-        remote_file = f"{genome_url}/{out_file}"
 
         try:
             ncbi_ftp_download(genome_url,file_base="_protein.faa.gz")

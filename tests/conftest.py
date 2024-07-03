@@ -6,6 +6,7 @@ import inspect
 import json
 from html.parser import HTMLParser
 
+
 def pytest_addoption(parser):
     """
     Add options to the pytest command line parser.
@@ -20,6 +21,11 @@ def pytest_addoption(parser):
                      action="store_true",
                      default=False,
                      help="Run tests involving raxml")
+    
+    parser.addoption("--run-blast",
+                     action="store_true",
+                     default=False,
+                     help="Run tests involving blast")
 
 def pytest_collection_modifyitems(config, items):
     """
@@ -41,6 +47,13 @@ def pytest_collection_modifyitems(config, items):
             if "run_raxml" in item.keywords:
                 item.add_marker(skipper)
 
+    # Look for --run-blast argument. Skip test if this is not specified.
+    if not config.getoption("--run-blast"):
+        skipper = pytest.mark.skip(reason="Only run when --run-blast is given")
+        for item in items:
+            if "run_blast" in item.keywords:
+                item.add_marker(skipper)
+
     # If this is a windows box, skip any test with run_generax or run_raxml
     # decorators.
     if os.name == "nt":
@@ -56,7 +69,7 @@ def get_files(base_dir):
     Traverse base_dir and return a dictionary that keys all files and some
     rudimentary *.ext expressions to absolute paths to those files. They keys
     will be things like "some_dir/test0/rocket.txt" mapping to
-    "c:\some_dir\life\base_dir\some_dir\test0\rocket.txt". The idea is to have
+    "c:/some_dir/life/base_dir/some_dir/test0/rocket.txt". The idea is to have
     easy-to-read cross-platform keys within unit tests.
 
     Classes of keys:
