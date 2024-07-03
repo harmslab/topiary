@@ -1,4 +1,4 @@
-numpy<1.22
+numpy<2.0
 pandas
 xlrd
 openpyxl
@@ -7,6 +7,6 @@ biopython
 tqdm
 ete3
 dendropy
-toytree
+toytree==2.0.5
 pastml
 opentree
