@@ -37,3 +37,11 @@ def test_create_input_card(tiny_phylo, mocker):
     html = create_input_card(sv_no_ott)
     assert "Input" in html
     assert "Taxonomic distribution" in html
+
+    # Test with ott column missing entirely (e.g. dataframe without species
+    # information -- gene/species reconciliation was never run)
+    sv_missing_ott = Supervisor(calc_dir)
+    sv_missing_ott._df = sv_missing_ott.df.drop(columns=["ott"])
+    html = create_input_card(sv_missing_ott)
+    assert "Input" in html
+    assert "Taxonomic distribution" in html

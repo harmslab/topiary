@@ -51,7 +51,7 @@ def create_input_card(supervisor,
     paralogs.sort()
     num_paralogs = len(paralogs)
     
-    if np.sum(pd.isnull(this_df.ott)) == 0:
+    if "ott" in this_df.columns and np.sum(pd.isnull(this_df.ott)) == 0:
         ott_list = np.unique(this_df.ott)
         mrca = topiary.opentree.ott_to_mrca(ott_list=ott_list)
         taxonomic_distribution = mrca["ott_name"]
