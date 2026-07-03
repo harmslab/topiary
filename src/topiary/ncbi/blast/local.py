@@ -22,6 +22,7 @@ def _prepare_for_blast(sequence,
                        hitlist_size,
                        e_value_cutoff,
                        gapcosts,
+                       num_threads,
                        kwargs,
                        test_skip_blast_program_check=False):
     """
@@ -72,8 +73,17 @@ def _prepare_for_blast(sequence,
                             "rpstblastn",
                             "deltablast"]
 
-    if not os.path.exists(f"{db}.psq"):
-        err = f"db {db}.psq not found!\n"
+    # Check for database existence. Modern BLAST databases can be multi-volume
+    # (with .00.psq, etc.) and/or have alias files (.pal or .nal). 
+    extensions = [".psq",".nsq",".pal",".nal",".00.psq",".00.nsq"]
+    found = False
+    for ext in extensions:
+        if os.path.exists(f"{db}{ext}"):
+            found = True
+            break
+    
+    if not found:
+        err = f"db {db} not found! (Checked for extensions: {extensions})\n"
         raise FileNotFoundError(err)
 
     # Make sure we can actually run the local blasting
@@ -114,6 +124,10 @@ def _prepare_for_blast(sequence,
     for k in kwargs:
         blast_args.extend([f"-{k}","{}".format(kwargs[k])])
 
+    # Set number of threads if not already specified in kwargs
+    if "num_threads" not in kwargs:
+        blast_args.extend(["-num_threads",f"{num_threads:d}"])
+
     return sequence_list, blast_args, return_singleton
 
 def _construct_args(sequence_list,
@@ -121,7 +135,8 @@ def _construct_args(sequence_list,
                     keep_blast_xml=False,
                     block_size=20,
                     num_threads=-1,
-                    manual_num_cores=None):
+                    manual_num_cores=None,
+                    name_prefix=None):
     """
     Construct a list of arguments to pass to each thread in the pool.
 
@@ -139,6 +154,8 @@ def _construct_args(sequence_list,
         number of threads to use. if -1, use all available.
     manual_num_cores : int, optional
         use exactly this number of cores
+    name_prefix : str, optional
+        prefix for any temporary files created
         
     Returns
     -------
@@ -162,8 +179,19 @@ def _construct_args(sequence_list,
     max_useful_threads = len(sequence_list)//block_size
     if max_useful_threads < 1:
         max_useful_threads = 1
-    if max_useful_threads > num_threads:
-        max_useful_threads = num_threads
+
+    # If the user specifically requested more threads than the block_size
+    # heuristic allowed, and we have enough sequences to actually split the
+    # work, allow more threads by reducing block_size. 
+    if num_threads > max_useful_threads:
+        if len(sequence_list) > max_useful_threads:
+            max_useful_threads = num_threads
+            if max_useful_threads > len(sequence_list):
+                max_useful_threads = len(sequence_list)
+            
+            block_size = len(sequence_list) // max_useful_threads
+            if block_size < 1:
+                block_size = 1
 
     # Set number of threads
     if num_threads > max_useful_threads:
@@ -203,7 +231,8 @@ def _construct_args(sequence_list,
         kwargs_list.append({"sequence_list":sequence_list,
                             "index":i_block,
                             "blast_args":blast_args,
-                            "keep_blast_xml":keep_blast_xml})
+                            "keep_blast_xml":keep_blast_xml,
+                            "name_prefix":name_prefix})
 
 
     return kwargs_list, num_threads
@@ -212,7 +241,8 @@ def _construct_args(sequence_list,
 def _local_blast_thread_function(sequence_list,
                                  index,
                                  blast_args,
-                                 keep_blast_xml):
+                                 keep_blast_xml,
+                                 name_prefix=None):
     """
     Run local blast on a list of sequences.
 
@@ -226,6 +256,8 @@ def _local_blast_thread_function(sequence_list,
         list holding blast command to past (e.g. ["blastp","-db","yo",...])
     keep_blast_xml : bool
         whether or not to keep temporary files
+    name_prefix : str, optional
+        prefix for any temporary files created
 
     Returns
     -------
@@ -235,8 +267,13 @@ def _local_blast_thread_function(sequence_list,
 
     # make a 10-character random string for temporary files
     tmp_file_root = "".join([random.choice(string.ascii_letters) for i in range(10)])
-    input_file = "topiary-tmp_{}_blast-in.fasta".format(tmp_file_root)
-    out_file = "topiary-tmp_{}_blast-out.xml".format(tmp_file_root)
+    
+    if name_prefix is not None:
+        input_file = f"{name_prefix}_topiary-tmp_{tmp_file_root}_blast-in.fasta"
+        out_file = f"{name_prefix}_topiary-tmp_{tmp_file_root}_blast-out.xml"
+    else:
+        input_file = "topiary-tmp_{}_blast-in.fasta".format(tmp_file_root)
+        out_file = "topiary-tmp_{}_blast-out.xml".format(tmp_file_root)
 
     f = open(input_file,'w')
     for i in range(index[0],index[1]):
@@ -325,6 +362,7 @@ def local_blast(sequence,
                 keep_blast_xml=False,
                 num_threads=-1,
                 block_size=20,
+                name_prefix=None,
                 **kwargs):
     """
     Perform a blast query against a local blast database. Takes a sequence or
@@ -351,6 +389,8 @@ def local_blast(sequence,
         number of threads to use. if -1, use all available.
     block_size : int, default=20
         run blast in blocks of block_size sequences
+    name_prefix : str, optional
+        prefix for any temporary files created
     **kwargs : dict, optional
         extra keyword arguments are passed directly to the blast call. keys
         should be valid arguments to pass to a blast program. For example, 
@@ -365,6 +405,29 @@ def local_blast(sequence,
         query. If no hits are found for a given query, return an empty dataframe.
     """
 
+    # Figure out how many threads to use total
+    num_threads = threads.get_num_threads(num_threads)
+
+    # Determine the number of sequences
+    if issubclass(type(sequence),pd.Series) or issubclass(type(sequence),pd.DataFrame):
+        num_sequences = len(sequence)
+    elif hasattr(sequence,"__iter__") and type(sequence) is not str:
+        num_sequences = len(sequence)
+    else:
+        num_sequences = 1
+
+    # Decide how much to parallelize at the process level (num_threads_pool) vs 
+    # the binary level (num_threads_blast). For small datasets (< 50 
+    # sequences), use binary-level parallelism. This is much more memory 
+    # efficient because it only maps the blast database once. 
+    if num_sequences < 50:
+        num_threads_pool = 1
+        num_threads_blast = num_threads
+        block_size = num_sequences
+    else:
+        num_threads_pool = num_threads
+        num_threads_blast = 1
+
     # Generate BLAST input
     prep = _prepare_for_blast(sequence=sequence,
                               db=db,
@@ -372,6 +435,7 @@ def local_blast(sequence,
                               hitlist_size=hitlist_size,
                               e_value_cutoff=e_value_cutoff,
                               gapcosts=gapcosts,
+                              num_threads=num_threads_blast,
                               kwargs=kwargs)
 
     sequence_list = prep[0]
@@ -379,16 +443,17 @@ def local_blast(sequence,
     return_singleton = prep[2]
 
     # Construct a list of arguments to pass into _thread_manager
-    kwargs_list, num_threads = _construct_args(sequence_list=sequence_list,
-                                               blast_args=blast_args,
-                                               keep_blast_xml=keep_blast_xml,
-                                               block_size=block_size,
-                                               num_threads=num_threads)
+    kwargs_list, num_threads_pool = _construct_args(sequence_list=sequence_list,
+                                                    blast_args=blast_args,
+                                                    keep_blast_xml=keep_blast_xml,
+                                                    block_size=block_size,
+                                                    num_threads=num_threads_pool,
+                                                    name_prefix=name_prefix)
 
     # Run multi-threaded local blast
     hits = threads.thread_manager(kwargs_list,
                                   _local_blast_thread_function,
-                                  num_threads)
+                                  num_threads_pool)
 
     # Combine hits into dataframes, one for each query
     out_df = _combine_hits(hits,return_singleton)

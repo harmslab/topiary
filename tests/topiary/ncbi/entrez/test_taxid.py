@@ -26,6 +26,17 @@ def test_get_taxid():
     with pytest.raises(RuntimeError):
         get_taxid(["Not a species"])
 
+@pytest.mark.run_ncbi_server
+def test_get_taxid_strains():
+    # Escherichia coli (strain K12) should map to 562 (Escherichia coli) 
+    # after stripping.
+    obs_taxid = get_taxid("Escherichia coli (strain K12)")
+    assert obs_taxid == "562"
+
+    # Rhizobium meliloti (strain 1021) -> Rhizobium meliloti
+    obs_taxid = get_taxid("Rhizobium meliloti (strain 1021)")
+    assert obs_taxid == "382"
+
 
     bad_species = [None,1.5,{1:"test"},float,str]
     for b in bad_species:

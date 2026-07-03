@@ -46,7 +46,14 @@ def make_blast_db(input_files,db_name,overwrite=False,makeblastdb_binary="makebl
     overwrite = check.check_bool(overwrite)
 
     # If we are overwriting an existing blast database.
-    if os.path.exists(f"{db_name}.psq"):
+    extensions = [".psq",".pal",".00.psq"]
+    found = False
+    for ext in extensions:
+        if os.path.exists(f"{db_name}{ext}"):
+            found = True
+            break
+
+    if found:
         if overwrite:
             expected_extensions = ["pdb","pin","pot","ptf","phr","psq","pto"]
             for e in expected_extensions:

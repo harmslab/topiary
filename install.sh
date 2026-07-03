@@ -14,6 +14,8 @@ is_cluster="n"
 overwrite="ignore"
 NON_INTERACTIVE=0
 KEEP_EXISTING=0
+DO_GENERAX=1
+DO_RAXML=1
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -36,6 +38,14 @@ while [[ $# -gt 0 ]]; do
       shift ;;
     --keep-existing)
       KEEP_EXISTING=1
+      NON_INTERACTIVE=1
+      shift ;;
+    --no-generax)
+      DO_GENERAX=0
+      NON_INTERACTIVE=1
+      shift ;;
+    --no-raxml)
+      DO_RAXML=0
       NON_INTERACTIVE=1
       shift ;;
     *)
@@ -137,8 +147,12 @@ args=""
 if [ $KEEP_EXISTING -eq 1 ]; then
     args="--keep-existing"
 fi
-conda run -n $ENV_NAME bash compile-generax.sh $args
-conda run -n $ENV_NAME bash compile-raxml-ng.sh $args
+if [ $DO_GENERAX -eq 1 ]; then
+    conda run -n $ENV_NAME bash compile-generax.sh $args
+fi
+if [ $DO_RAXML -eq 1 ]; then
+    conda run -n $ENV_NAME bash compile-raxml-ng.sh $args
+fi
 
 #return to start
 cd ..

@@ -54,6 +54,7 @@ topiary-create-report = "topiary.cli_scripts.create_report:main"
 topiary-dataframe-from-fasta = "topiary.cli_scripts.dataframe_from_fasta:main"
 topiary-fasta-into-dataframe = "topiary.cli_scripts.fasta_into_dataframe:main"
 topiary-seed-to-alignment = "topiary.cli_scripts.seed_to_alignment:main"
+topiary-uniprot-to-seed = "topiary.cli_scripts.uniprot_to_seed:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "topiary.__version__.__version__" }

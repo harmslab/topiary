@@ -12,7 +12,7 @@ import numpy as np
 
 import re, copy
 
-def get_df_ott(df,verbose=True,keep_anyway=False):
+def get_df_ott(df,verbose=True,keep_anyway=False,species_aware=True):
     """
     Return a copy of df with an ott column holding open tree of life
     names for each species. It also adds a "resolvable" column indicating
@@ -28,6 +28,10 @@ def get_df_ott(df,verbose=True,keep_anyway=False):
     keep_anyway : bool, default=False
         Do not set keep = False for species that cannot be found or resolved on
         the OTT.
+    species_aware : bool, default=True
+        whether or not to perform Open Tree of Life lookups. If False,
+        populate the ott column with pd.NA and the resolvable column with True
+        without hitting the OTT database.
 
     Returns
     -------
@@ -53,6 +57,11 @@ def get_df_ott(df,verbose=True,keep_anyway=False):
     # Make copy of df and copy current species to original species
     local_df = df.copy()
     local_df["orig_species"] = local_df.loc[:,"species"]
+
+    if not species_aware:
+        local_df["ott"] = pd.NA
+        local_df["resolvable"] = True
+        return local_df
 
     # Get ott and clean species names from opentree database
     ott_list, species_list, ott_results_dict = species_to_ott(local_df.species)

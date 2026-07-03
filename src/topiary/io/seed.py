@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 import warnings
+import os
 
 def read_seed(df,
               species_aware=None):
@@ -100,11 +101,17 @@ def read_seed(df,
     # -----------------------------------------------------------------------
     # Get species ott
 
-    bad_species = []
-    ott_list, species_list, _ = species_to_ott(np.unique(df.loc[:,"species"]))
-    for i in range(len(species_list)):
-        if ott_list[i] is None:
-            bad_species.append(species_list[i])
+    # If we are not species aware, skip OTT lookup
+    if species_aware is False:
+        ott_list = [None for _ in np.unique(df.loc[:,"species"])]
+        species_list = list(np.unique(df.loc[:,"species"]))
+        bad_species = []
+    else:
+        bad_species = []
+        ott_list, species_list, _ = species_to_ott(np.unique(df.loc[:,"species"]))
+        for i in range(len(species_list)):
+            if ott_list[i] is None:
+                bad_species.append(species_list[i])
 
     # -------------------------------------------------------------------------
     # Figure out whether to keep_unresolvable if not specified in function call
@@ -238,6 +245,8 @@ def df_from_seed(seed_df,
                  num_ncbi_blast_threads=1,
                  num_local_blast_threads=-1,
                  keep_blast_xml=False,
+                 intermediate_file=None,
+                 blast_taxid=None,
                  **kwargs):
     """
     Construct a topiary dataframe from a seed dataframe, blasting to fill in the
@@ -287,6 +296,11 @@ def df_from_seed(seed_df,
         number of threads to use for local blast. -1 means all available.
     keep_blast_xml : bool, default=False
         whether or not to keep raw blast xml output
+    intermediate_file : str, optional
+        path to a file to use to save/restore intermediate results (downloaded
+        sequences before OTT lookup).
+    blast_taxid : int or str, optional
+        limit NCBI BLAST to this taxid. If not provided, infer from key_species.
     **kwargs : dict, optional
         extra keyword arguments are passed directly to biopython
         NcbiblastXXXCommandline (for local blast) or qblast (for remote
@@ -335,99 +349,129 @@ def df_from_seed(seed_df,
 
         raise RuntimeError(err)
 
-    # Validate blast database arguments
-    if ncbi_blast_db is not None and local_blast_db is not None and blast_xml is None:
-        err = "\nYou must specify ncbi_blast_db or local_blast_db or\n"
-        err += "blast_xml or some combination thereof to find sequences.\n\n"
-        raise ValueError(err)
 
-    # database, hitlist_size, e_value_cutoff, gapcosts, num_threads, and
-    # kwargs will all be validated by the blast call itself.
+    # If intermediate_file exists, load it and skip BLAST/Download
+    df = None
+    if intermediate_file is not None:
+        if os.path.exists(intermediate_file):
+            print(f"Loading intermediate downloaded sequences from {intermediate_file}")
+            df = pd.read_csv(intermediate_file)
 
-    # ncbi blast
-    blast_df = []
-    blast_source = []
-    if ncbi_blast_db is not None:
+    if df is None:
 
-        print(f"BLASTing against NCBI database {ncbi_blast_db}")
+        # Validate blast database arguments
+        if ncbi_blast_db is None and local_blast_db is None and blast_xml is None:
+            err = "\nYou must specify ncbi_blast_db or local_blast_db or\n"
+            err += "blast_xml or some combination thereof to find sequences.\n\n"
+            raise ValueError(err)
 
-        # Infer phylogenetic context from key species
-        phylo_context = topiary.opentree.ott_to_mrca(species_list=key_species,
-                                                     move_up_by=move_mrca_up_by)
-        try:
-            taxid = phylo_context["taxid"]
-        except KeyError:
-            taxid = None
+        # database, hitlist_size, e_value_cutoff, gapcosts, num_threads, and
+        # kwargs will all be validated by the blast call itself.
 
-        tmp_blast_df = topiary.ncbi.ncbi_blast(seed_df.sequence,
-                                               db=ncbi_blast_db,
-                                               taxid=taxid,
-                                               hitlist_size=hitlist_size,
-                                               e_value_cutoff=e_value_cutoff,
-                                               gapcosts=gapcosts,
-                                               num_threads=num_ncbi_blast_threads,
-                                               keep_blast_xml=keep_blast_xml,
-                                               **kwargs)
+        # Get name prefix if in kwargs (used for renumbering in pipeline)
+        # Pop so it does not get passed twice to the blast calls below
+        name_prefix = kwargs.pop("name_prefix",None)
 
-        for i in range(len(tmp_blast_df)):
-            if len(tmp_blast_df[i]) == 0:
-                seed_name = seed_df.loc[seed_df.index[i],"name"]
-                seed_species = seed_df.loc[seed_df.index[i],"species"]
+        # ncbi blast
+        blast_df = []
+        blast_source = []
+        if ncbi_blast_db is not None:
 
-                w = f"\nThere were no hits from the ncbi {ncbi_blast_db} database\n"
-                w += f"using {seed_name} from {seed_species}.\n\n"
-                print(w,flush=True)
+            print(f"BLASTing against NCBI database {ncbi_blast_db}")
 
-        blast_df.extend(tmp_blast_df)
-        for idx in seed_df.index:
-            db = ncbi_blast_db
-            name = seed_df.loc[idx,"name"]
-            species = seed_df.loc[idx,"species"]
-            blast_source.append(f"ncbi {db}|{name}|{species}")
+            # If blast_taxid is provided, use it
+            if blast_taxid is not None:
+                taxid = blast_taxid
+            else:
+                # Infer phylogenetic context from key species
+                if species_aware:
+                    phylo_context = topiary.opentree.ott_to_mrca(species_list=key_species,
+                                                                 move_up_by=move_mrca_up_by)
+                    try:
+                        taxid = phylo_context["taxid"]
+                    except KeyError:
+                        taxid = None
+                else:
+                    # Provide an NCBI-based fallback if not species aware
+                    print("Inferring BLAST context from NCBI taxonomy (OpenTreeOfLife disabled).")
+                    taxid = topiary.ncbi.get_mrca_taxid(key_species)
 
-    # local blast
-    if local_blast_db is not None:
+            tmp_blast_df = topiary.ncbi.ncbi_blast(seed_df.sequence,
+                                                   db=ncbi_blast_db,
+                                                   taxid=taxid,
+                                                   hitlist_size=hitlist_size,
+                                                   e_value_cutoff=e_value_cutoff,
+                                                   gapcosts=gapcosts,
+                                                   num_threads=num_ncbi_blast_threads,
+                                                   keep_blast_xml=keep_blast_xml,
+                                                   name_prefix=name_prefix,
+                                                   **kwargs)
 
-        print(f"BLASTing against local database {local_blast_db}")
+            for i in range(len(tmp_blast_df)):
+                if len(tmp_blast_df[i]) == 0:
+                    seed_name = seed_df.loc[seed_df.index[i],"name"]
+                    seed_species = seed_df.loc[seed_df.index[i],"species"]
 
-        tmp_blast_df = topiary.ncbi.local_blast(seed_df.sequence,
-                                                db=local_blast_db,
-                                                hitlist_size=hitlist_size,
-                                                e_value_cutoff=e_value_cutoff,
-                                                gapcosts=gapcosts,
-                                                num_threads=num_local_blast_threads,
-                                                keep_blast_xml=keep_blast_xml,
-                                                **kwargs)
+                    w = f"\nThere were no hits from the ncbi {ncbi_blast_db} database\n"
+                    w += f"using {seed_name} from {seed_species}.\n\n"
+                    print(w,flush=True)
 
-        for i in range(len(tmp_blast_df)):
-            if len(tmp_blast_df[i]) == 0:
-                seed_name = seed_df.loc[seed_df.index[i],"name"]
-                seed_species = seed_df.loc[seed_df.index[i],"species"]
+            blast_df.extend(tmp_blast_df)
+            for idx in seed_df.index:
+                db = ncbi_blast_db
+                name = seed_df.loc[idx,"name"]
+                species = seed_df.loc[idx,"species"]
+                blast_source.append(f"ncbi {db}|{name}|{species}")
 
-                w = f"\nThere were no hits from the local {local_blast_db} database\n"
-                w += f"using {seed_name} from {seed_species}.\n\n"
-                print(w,flush=True)
+        # local blast
+        if local_blast_db is not None:
 
-        blast_df.extend(tmp_blast_df)
-        for idx in seed_df.index:
-            db = local_blast_db
-            name = seed_df.loc[idx,"name"]
-            species = seed_df.loc[idx,"species"]
-            blast_source.append(f"local {db}|{name}|{species}")
+            print(f"BLASTing against local database {local_blast_db}")
 
-    # Load blast xml
-    if blast_xml is not None:
+            tmp_blast_df = topiary.ncbi.local_blast(seed_df.sequence,
+                                                    db=local_blast_db,
+                                                    hitlist_size=hitlist_size,
+                                                    e_value_cutoff=e_value_cutoff,
+                                                    gapcosts=gapcosts,
+                                                    num_threads=num_local_blast_threads,
+                                                    keep_blast_xml=keep_blast_xml,
+                                                    name_prefix=name_prefix,
+                                                    **kwargs)
 
-        print(f"Loading existing blast results from from {blast_xml}")
+            for i in range(len(tmp_blast_df)):
+                if len(tmp_blast_df[i]) == 0:
+                    seed_name = seed_df.loc[seed_df.index[i],"name"]
+                    seed_species = seed_df.loc[seed_df.index[i],"species"]
 
-        tmp_blast_df, xml_files = read_blast_xml(blast_xml)
+                    w = f"\nThere were no hits from the local {local_blast_db} database\n"
+                    w += f"using {seed_name} from {seed_species}.\n\n"
+                    print(w,flush=True)
 
-        blast_df.extend(tmp_blast_df)
-        for x in xml_files:
-            blast_source.append(f"xml {x}")
+            blast_df.extend(tmp_blast_df)
+            for idx in seed_df.index:
+                db = local_blast_db
+                name = seed_df.loc[idx,"name"]
+                species = seed_df.loc[idx,"species"]
+                blast_source.append(f"local {db}|{name}|{species}")
 
-    # Merge and annotate the blast input from all sources
-    df = merge_and_annotate(blast_df,blast_source)
+        # Load blast xml
+        if blast_xml is not None:
+
+            print(f"Loading existing blast results from from {blast_xml}")
+
+            tmp_blast_df, xml_files = read_blast_xml(blast_xml)
+
+            blast_df.extend(tmp_blast_df)
+            for x in xml_files:
+                blast_source.append(f"xml {x}")
+
+        # Merge and annotate the blast input from all sources
+        df = merge_and_annotate(blast_df,blast_source)
+
+        # Save intermediate results if requested
+        if intermediate_file is not None:
+            print(f"Saving downloaded sequences to {intermediate_file}")
+            df.to_csv(intermediate_file,index=False)
 
     # Append uid (to prevent user-visible topiary warnings) and then
     # convert to a topiary dataframe
@@ -456,7 +500,7 @@ def df_from_seed(seed_df,
         keep_anyway = False
     else:
         keep_anyway = True
-    df = topiary.get_df_ott(df,verbose=False,keep_anyway=keep_anyway)
+    df = topiary.get_df_ott(df,verbose=False,keep_anyway=keep_anyway,species_aware=species_aware)
 
     # Create nicknames for sequences in dataframe
     df = topiary.create_nicknames(df,paralog_patterns)

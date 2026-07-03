@@ -5,6 +5,7 @@ Use entrez to get the NCBI taxid for species.
 import topiary
 from topiary._private import check
 
+import re
 from Bio import Entrez
 
 def get_taxid(species_list):
@@ -33,7 +34,19 @@ def get_taxid(species_list):
         species_list = [species_list]
         return_singleton = True
 
-    species_list = list(set(species_list))
+    # Clean up species names (strip whitespace and common strain information).
+    # NCBI is often picky about strains in general taxonomy searches.
+    clean_species = []
+    for s in species_list:
+        s = s.strip()
+        # "Escherichia coli (strain K12)" -> "Escherichia coli"
+        # "Escherichia coli strain K12" -> "Escherichia coli"
+        s = re.sub(r"\s*\(?strain.*\)?", "", s, flags=re.IGNORECASE).strip()
+        # "Escherichia coli str. K12" -> "Escherichia coli"
+        s = re.sub(r"\s*\(?str\..*\)?", "", s, flags=re.IGNORECASE).strip()
+        clean_species.append(s)
+
+    species_list = list(set(clean_species))
     species_list.sort()
 
     # return nothing if nothing was passed in

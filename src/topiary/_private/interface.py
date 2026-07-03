@@ -356,7 +356,14 @@ def launch(cmd,
         err += "\n\n"
 
         if ret.stdout is not None:
-            err += "".join([line for line in ret.stdout.decode()])
+            err += "stdout:\n"
+            err += ret.stdout.decode()
+            err += "\n"
+
+        if ret.stderr is not None:
+            err += "stderr:\n"
+            err += ret.stderr.decode()
+            err += "\n"
 
         raise RuntimeError(err)
 

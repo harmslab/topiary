@@ -192,7 +192,8 @@ def _construct_args(sequence_list,
                     num_tries_allowed,
                     keep_blast_xml,
                     num_threads=-1,
-                    manual_num_cores=None):
+                    manual_num_cores=None,
+                    name_prefix=None):
     """
     Construct a list of arguments to pass to each thread that will run a
     blast query.
@@ -214,6 +215,8 @@ def _construct_args(sequence_list,
         number of threads to use (locally). if -1 use all available.
     manual_num_cores : int
         send in a hacked number of cores for testing purposes
+    name_prefix : str, optional
+        prefix for any temporary files created
 
     Returns
     ------
@@ -301,12 +304,13 @@ def _construct_args(sequence_list,
         query["sequence"] = seq
         kwargs_list.append({"this_query":query,
                             "num_tries_allowed":num_tries_allowed,
-                            "keep_blast_xml":keep_blast_xml})
+                            "keep_blast_xml":keep_blast_xml,
+                            "name_prefix":name_prefix})
 
     return kwargs_list, num_threads
 
 
-def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock):
+def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock,name_prefix=None):
     """
     Run an NCBIWWW.qblast call on a single thread, making several attempts.
     Return parsed output as a dataframe.
@@ -321,6 +325,8 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
         whether or not to keep temporary blast xml files
     lock : multiprocessing.Manager().Lock()
         lock used to prevent hammering NCBI servers at too high of a rate.
+    name_prefix : str, optional
+        prefix for any temporary files created
 
     Returns
     ------
@@ -350,7 +356,12 @@ def _ncbi_blast_thread_function(this_query,num_tries_allowed,keep_blast_xml,lock
             # Write temporary file
             tmp_root = "".join([random.choice(string.ascii_letters)
                                 for _ in range(10)])
-            tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
+            
+            if name_prefix is not None:
+                tmp_file = f"{name_prefix}_{tmp_root}_ncbi-blast-result.xml"
+            else:
+                tmp_file = f"{tmp_root}_ncbi-blast-result.xml"
+
             f = open(tmp_file,"w")
             f.write(result.read())
             f.close()
@@ -450,6 +461,7 @@ def ncbi_blast(sequence,
                num_threads=1,
                verbose=False,
                keep_blast_xml=False,
+               name_prefix=None,
                **kwargs):
     """
     Perform a blast query against a remote NCBI blast database. Takes a sequence
@@ -489,6 +501,8 @@ def ncbi_blast(sequence,
         whether or not to use verbose output
     keep_blast_xml : bool, default=False
         whether or not to keep raw blast xml output
+    name_prefix : str, optional
+        prefix for any temporary files created
     **kwargs : dict, optional
         extra keyword arguments are passed directly to Bio.Blast.NCBIWWW.qblast,
         overriding anything constructed above. You could, for example, pass
@@ -534,13 +548,14 @@ def ncbi_blast(sequence,
                                                max_query_length=max_query_length,
                                                num_tries_allowed=num_tries_allowed,
                                                keep_blast_xml=keep_blast_xml,
-                                               num_threads=num_threads)
+                                               num_threads=num_threads,
+                                               name_prefix=name_prefix)
 
     all_hits = threads.thread_manager(kwargs_list,
                                       _ncbi_blast_thread_function,
                                       num_threads,
-                                      progress_bar=False,
-                                      pass_lock=True)
+                               progress_bar=False,
+                               pass_lock=True)
 
     # If all_hits has None, at least one of our queries hit a cpu limit on the
     # ncbi server. Try again, doing each query one at a time on a single thread.

@@ -17,6 +17,7 @@ import re
 import sys
 import copy
 import itertools
+from tqdm.auto import tqdm
 
 def _prepare_for_blast(df,
                        paralog_patterns,
@@ -238,6 +239,7 @@ def _run_blast(sequence_list,
                              gapcosts=gapcosts,
                              num_threads=num_threads,
                              keep_blast_xml=keep_blast_xml,
+                             name_prefix="topiary-recip-blast",
                              **kwargs)
 
     # Local blast
@@ -250,6 +252,7 @@ def _run_blast(sequence_list,
                               gapcosts=gapcosts,
                               num_threads=num_threads,
                               keep_blast_xml=keep_blast_xml,
+                              name_prefix="topiary-recip-blast",
                               **kwargs)
 
     return hit_dfs
@@ -380,7 +383,7 @@ def _make_recip_blast_calls(df,
                "recip_prob_match":[],
                "recip_bit_score":[]}
 
-    for _, hits in enumerate(hit_dfs):
+    for _, hits in tqdm(enumerate(hit_dfs),total=len(hit_dfs),desc="Processing results",leave=False):
 
         # No recip blast hits at all for this sequence
         if len(hits) == 0:

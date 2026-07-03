@@ -49,6 +49,7 @@ def test__prepare_for_blast(test_dataframes,tmpdir):
     default_kwargs["db"] = fake_blast_db
     default_kwargs["test_skip_blast_program_check"] = True
     default_kwargs["kwargs"] = {}
+    default_kwargs["num_threads"] = 1
     df = test_dataframes["good-df"].copy()
     default_kwargs["sequence"] = df.sequence
 
@@ -249,7 +250,7 @@ def test__construct_args(test_dataframes,tmpdir):
                                    blast_args=blast_args,
                                    num_threads=5,
                                    keep_blast_xml=False,
-                                   block_size=1,
+                                   block_size=5, # Set larger block size so num_threads re-adjusts it
                                    manual_num_cores=5)
 
     assert type(kwargs_list) is list
@@ -369,6 +370,10 @@ def test__construct_args(test_dataframes,tmpdir):
 
 
     # Make sure splitting looks reasonable -- 2, 2, 1
+    # block_size is 2, num_sequences is 5. 
+    # max_useful_threads = 5 // 2 = 2.
+    # num_threads = -1 (detected as 1 if manual_num_cores=1)
+    # 1 <= 2, so it doesn't re-adjust. 
     all_args, num_threads = _construct_args(sequence_list,
                                 blast_args=blast_args,
                                 block_size=2,
@@ -504,6 +509,7 @@ def test__local_blast_thread_function(test_dataframes,
     pfb_kwargs["db"] = "blastdb"
     pfb_kwargs["test_skip_blast_program_check"] = False
     pfb_kwargs["kwargs"] = {}
+    pfb_kwargs["num_threads"] = 1
     df = test_dataframes["good-df"].copy()
     pfb_kwargs["sequence"] = df.sequence
 

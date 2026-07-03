@@ -136,6 +136,31 @@ def test_species_to_ott():
     assert results["Neosciurus carolinensis"]["msg"].startswith("No exact match")
 
 
+def test_species_to_ott_strains():
+    # Test strain stripping
+    input_species_list = ["Escherichia coli (strain K12)",
+                          "Escherichia coli strain K12",
+                          "Escherichia coli str. K12",
+                          "Vibrio cholerae O1 biovar El Tor str. N16961"]
+    
+    # All E. coli should map to Escherichia coli (ott 474506)
+    # The Vibrio should map to Vibrio cholerae (ott 671232)
+    
+    ott_list, species_list, results = species_to_ott(input_species_list)
+    
+    # Check E. coli results
+    for i in range(3):
+        assert ott_list[i] == 474506
+        assert species_list[i] == "Escherichia coli"
+        assert results[input_species_list[i]]["matched"] == True
+        
+    # Check Vibrio result
+    assert ott_list[3] == 77943
+    # Note: this might be 'Vibrio cholerae O1 biovar El Tor' since only the
+    # 'str. N16961' was stripped.
+    assert "Vibrio cholerae" in species_list[3]
+
+
 def test_ott_to_species_tree():
 
     input_ott = [770315,276534,565131,356221]

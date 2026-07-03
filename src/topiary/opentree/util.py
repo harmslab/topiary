@@ -13,6 +13,7 @@ import ete4 as ete
 import pandas as pd
 import numpy as np
 
+import re
 import time
 
 def _validate_ott_or_species(ott_list=None,species_list=None):
@@ -120,9 +121,22 @@ def species_to_ott(species):
                                                 required_value_type=str,
                                                 is_not_type=str)
 
-    # Get unique species.
-    unique_species = list(set(species))
-    unique_species = [s.strip() for s in species]
+    # Clean up species names (strip whitespace and common strain information).
+    # Open Tree of Life isn't aware of strains, so we strip that information
+    # before querying.
+    clean_species = []
+    for s in species:
+        s = s.strip()
+        # "Escherichia coli (strain K12)" -> "Escherichia coli"
+        # "Escherichia coli strain K12" -> "Escherichia coli"
+        s = re.sub(r"\s*\(?strain.*\)?", "", s, flags=re.IGNORECASE).strip()
+        # "Escherichia coli str. K12" -> "Escherichia coli"
+        s = re.sub(r"\s*\(?str\..*\)?", "", s, flags=re.IGNORECASE).strip()
+        clean_species.append(s)
+
+    # Get unique species for TNRS match
+    unique_species = list(set(clean_species))
+    unique_species.sort()
 
     # Grab species names
     ot_matches = OT.tnrs_match(unique_species,do_approximate_matching=True)
@@ -205,14 +219,24 @@ def species_to_ott(species):
     # Create list of ott from these results
     ott_list = []
     species_list = []
-    for s in species:
-        m = results[s]
+    # Map all original species names back to the results for the cleaned names
+    for i in range(len(species)):
+        results[species[i]] = results[clean_species[i]]
+
+    # Create list of ott from these results
+    ott_list = []
+    species_list = []
+    for i in range(len(species)):
+        s_clean = clean_species[i]
+        s_orig = species[i]
+        
+        m = results[s_clean]
         if m["msg"] == "success":
             ott_list.append(m["ott_id"])
             species_list.append(m["ott_name"])
         else:
             ott_list.append(None)
-            species_list.append(s)
+            species_list.append(s_orig)
 
     return ott_list, species_list, results
 
