@@ -116,6 +116,10 @@ exists to locate the fd exhaustion seen when running the whole suite.
 | `smoke` | conda (muscle, blast) | 2 OS x 3 python | yes |
 | `integration` | compiled RAxML-NG + GeneRax + live network | 1 config per push, full matrix nightly | no, serialized |
 
+A manual `workflow_dispatch` run is treated exactly like the nightly —
+full matrix, coverage, and the NCBI drift check — so a nightly-only failure
+can be reproduced on demand instead of only at 07:00 UTC.
+
 Only `integration` is serialized (`max-parallel: 1` plus a repo-wide
 concurrency group) — it is the only job that reaches a live service (Open Tree
 of Life), so it is the only one that can contend for one. That contention is why

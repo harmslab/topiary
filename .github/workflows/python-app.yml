@@ -123,13 +123,15 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        # Push/PR: one representative configuration. Nightly: the full matrix.
+        # Push/PR: one representative configuration. Nightly -- and a manual
+        # workflow_dispatch, so the nightly is reproducible on demand rather
+        # than only at 07:00 UTC -- the full matrix.
         os: >-
-          ${{ github.event_name == 'schedule'
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
               && fromJSON('["ubuntu-latest","macos-latest"]')
               || fromJSON('["ubuntu-latest"]') }}
         python-version: >-
-          ${{ github.event_name == 'schedule'
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
               && fromJSON('["3.11","3.12","3.13"]')
               || fromJSON('["3.13"]') }}
 
@@ -234,13 +236,13 @@ jobs:
     # --run-ncbi-server is deliberately left out of CI entirely -- see the
     # nightly step below for why.
     - name: run integration tests
-      if: github.event_name != 'schedule'
+      if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
       shell: bash -l {0}
       run: |
         pytest tests --run-raxml --run-generax --run-blast --run-network -q
 
     - name: run integration tests (nightly, everything)
-      if: github.event_name == 'schedule'
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
       shell: bash -l {0}
       run: |
         # NOTE: --run-ncbi-server is deliberately absent.
@@ -260,24 +262,45 @@ jobs:
         # To run these against the live server, do it locally:
         #     pytest tests --run-ncbi-server
         # Setting NCBI_API_KEY raises the limit to ~10 req/s if you need it.
-        # Capture pytest's status rather than letting it end the step, so the
-        # coverage checks below always run. Otherwise a test failure hides
-        # whether coverage collected anything, and the two get conflated.
+        # Every command's status is captured and reported by name rather than
+        # letting `set -e` end the step at the first failure. A step that only
+        # says "exit code 1" after an all-green test summary is unactionable --
+        # it does not say whether pytest, the coverage guard, the floor check or
+        # the wrapper produced the 1. Each of those now prints its own verdict.
         set +e
+
         coverage run -m pytest tests \
           --run-raxml --run-generax --run-blast --run-network -q
         pytest_status=$?
-        set -e
 
         echo "::group::coverage"
         # Did coverage watch the code the tests actually imported? Without this
         # a mismatch shows up as 0% everywhere and looks like a regression.
         ./tests/check_coverage_collected.py
-        coverage report
+        guard_status=$?
+
+        # Only the --fail-under report is run: it prints the same table as a
+        # bare `coverage report`, so running both just doubled the log.
         coverage report --fail-under=92
+        floor_status=$?
         echo "::endgroup::"
 
-        exit $pytest_status
+        echo "pytest=$pytest_status coverage-guard=$guard_status coverage-floor=$floor_status"
+
+        if [ "$pytest_status" -ne 0 ]; then
+          echo "::error::pytest exited $pytest_status -- if the summary above shows no failures, that status came from the wrapper rather than from a test. Compare it with the 'pytest exit status' line tests/conftest.py prints whenever pytest itself exits nonzero: if that line is absent, pytest returned 0 and coverage.py invented the failure."
+          exit "$pytest_status"
+        fi
+
+        if [ "$guard_status" -ne 0 ]; then
+          echo "::error::coverage collected nothing usable (guard exited $guard_status)"
+          exit "$guard_status"
+        fi
+
+        if [ "$floor_status" -ne 0 ]; then
+          echo "::error::coverage is below the 92% floor (exited $floor_status)"
+          exit "$floor_status"
+        fi
 
     # A handful of real NCBI calls, to catch the API changing shape underneath
     # us -- everything else mocks NCBI, so drift would otherwise surface as a
@@ -289,7 +312,7 @@ jobs:
     # error, so a busy NCBI cannot turn this red.
     - name: NCBI API drift check
       if: >-
-        github.event_name == 'schedule'
+        (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         && matrix.os == 'ubuntu-latest'
         && matrix.python-version == '3.13'
       shell: bash -l {0}

@@ -229,8 +229,19 @@ def track_file_descriptors(request):
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     """
-    Print the file-descriptor report, if one was requested.
+    Say what pytest is exiting with, and print the file-descriptor report if
+    one was requested.
+
+    The exit status is reported whenever it is not success. A green summary
+    followed by a nonzero exit status is indistinguishable, in a CI log, from a
+    wrapper (coverage.py, the shell) inventing a failure of its own -- and a
+    nightly that reported "452 passed" and then failed the build with exit 1
+    cost an afternoon to tell those two apart. One line settles it: if the line
+    is absent, pytest returned 0 and the failure came from outside pytest.
     """
+
+    if exitstatus != 0:
+        terminalreporter.write_line(f"pytest exit status: {int(exitstatus)}")
 
     if not config.getoption("--fd-report"):
         return
